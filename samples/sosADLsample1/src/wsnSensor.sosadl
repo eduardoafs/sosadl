@@ -1,0 +1,71 @@
+
+with Base
+with Localization   // 'with' imports declarations from an already defined library
+
+// Description of Sensor as a System Abstraction
+library WsnSensor is {   // 'sos' is a library providing a runable architecture  
+  // 'system' declares a user-defined archetype for creating system constituents
+  system Sensor(lps: Coordinate) is {
+    // Declaration of local types -- the scope is the system declaration
+    datatype RawData {   // 'datatype' declares an abstract datatype that needs to be concretized
+      function (data:Rawdata)::convert():Depth is {
+        value magnitude = 10    // ERREUR AVEC : value magnitude is 10, cf. regle Valuing
+        return Depth(data/magnitude)   // Depth() converts to type Depth // // the only base type is Integer -- all types are implicitly typed by Integer equipped with the usual operations
+      }
+    }
+    datatype Depth   // an atomic type may be seen when needed as a simple tuple type, e.g. tuple{:Depth}
+    datatype Measure is tuple{coordinate:Coordinate,depth:Depth}   // 'tuple' may have labels or not
+    datatype Energy
+
+    // 'gate' is the interface of a system -- a system may have several gates
+  	gate measurement is {   // 'gate' is defined by one or several connections
+      	environment connection sense is in{RawData}   // data coming from the electronique part of the sensor device -- to be bound to the 'environment'
+      	connection pass is in{MeasureData}   // measure received by the sensor from its neighbors
+      	connection measure is out{MeasureData}   // measure sent by the sensor to its neighbors
+  	} guarantee {   // 'guarantee' declares the assertions that are guaranteed by the behaviors through the gate
+  		protocol measurementpact is   // 'protocol' defines the usage of the gate -- a gate may have several protocols
+  		  forever{   // the 'protocol' is declared using the same language as behaviors
+  				choose{
+  					via measurement::sense receive data   // the type of the received data is inferred from the connection type
+  					repeat{anyaction}   // 'anyaction' declares a wildcard for actions including unobservable actions
+  					via measurement::measure send tuple{coordinate=any,depth=data::convert()}   // 'any' declares a wildcard for values including any value // '=' binds value to tuple fields
+  				} or {
+  					via measurement::pass receive data   // the prefix measurement:: is optional as the scope is the gate
+  					via measurement::measure send data   // the type of the sent data is inferred from the connection type
+  			    }
+        }
+  	}
+    
+  	gate energy is {
+    	environment connection threshold is in{Energy}
+    	environment connection power is in{Energy}
+  	} guarantee {
+  		protocol energypact is {
+  			via energy::threshold receive powerthreshold
+  			forever {via energy::power receive powerlevel}
+        }
+  	}
+  	
+  	behavior sensing(lps) is {   // the argument lps is bound by the system parameter // 'behavior' executes when the system is created
+  	  assert location is {coordinate = lps}
+  	  via powering::threshold receive powerthreshold
+  	  forever {
+  		via powering::power receive powerlevel
+        if (powerlevel > powerthreshold) then {   // 'if' only tests the condition without blocking
+          assert powering is {powerlevel > powerthreshold}    // 'assert' the specified constraint with name and type extrusions
+  		  choose{
+  			via measuringGate::sense receive data
+  			via measuringGate::measure send tuple{coordinate=lps,depth=data::convert()}
+  		  } or {
+  			via measuringGate::pass receive data
+  			via measuringGate::measure send data
+          }
+        }
+      }
+  	}
+  } guarantee {
+  	assertion measuring is {
+  	  always{energy::power > energy::threshold implies anynext{via measurement::measure send any}} // assertion using temporal operators 'always' and 'anynext'
+    }
+  }
+}
