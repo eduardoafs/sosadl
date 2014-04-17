@@ -1,6 +1,6 @@
 grammar org.archware.sosadl.SosADL with org.eclipse.xtext.common.Terminals
 
-generate sosADL 'http://www-archware.irisa.fr/sosadl/SosADL2'
+generate sosADL 'http://www-archware.irisa.fr/sosadl/SosADL'
 
 SosADL: (imports+=Import)* content=(NewNamedLibrary | NewSoS);
 
