@@ -4,7 +4,6 @@ with Base   // 'with' imports declarations from an already defined library
 // Base is the predefined SoS ADL library
 
 library Localization is {   // a user-defined library is declared using 'library'
-
   datatype Abscissa
   datatype Ordinate
   datatype Coordinate is tuple{x:Abscissa,y:Ordinate}
