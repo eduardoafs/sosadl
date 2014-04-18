@@ -64,7 +64,6 @@ AssertionDecl:
     assertionExpr=Assertion '}'
 ;
 
-
 ProtocolDecl:
     'protocol' protocolName=Name 'is' protocolBody=Protocol
 ;
@@ -79,12 +78,12 @@ PrefixedProtocol returns Protocol:
 	| FinalProtocol
 	;
 
-FinalProtocol returns Protocol:
-   {IfThenElse} 'if' cond=BooleanExpression 'then' '{' ifTrueProtocol=PrefixedProtocol '}' ('else' '{' ifFalseProtocol=PrefixedProtocol '}')?
-	| {Choose} 'choose' '{' choiceBehavior+=PrefixedProtocol '}'  ('or'  '{' choiceProtocol+=PrefixedProtocol '}' )+  // au lieu de 'choose { b1 or ... or bn }' car 'or' apparait dans Expression et Behavior
-	| {ForEach} 'foreach' name=Name 'in' setOfValues=Expression '{' foreachProtocol=ProtocolStatement '}'
+FinalProtocol returns FinalProtocol:
+    {IfThenElseProtocol} 'if' cond=BooleanExpression 'then' '{' ifTrueProtocol=PrefixedProtocol '}' ('else' '{' ifFalseProtocol=PrefixedProtocol '}')?
+	| {ChooseProtocol} 'choose' '{' choiceProtocol+=PrefixedProtocol '}'  ('or'  '{' choiceProtocol+=PrefixedProtocol '}' )+  // au lieu de 'choose { b1 or ... or bn }' car 'or' apparait dans Expression et Behavior
+	| {ForEachProtocol} 'foreach' name=Name 'in' setOfValues=Expression '{' foreachProtocol=ProtocolStatement '}'
 	| {DoExpr} 'do' expr=Expression
-	| {RepeatForever} 'forever' '{' repeatedProtocol=PrefixedProtocol '}' 
+	| {RepeatForeverProtocol} 'forever' '{' repeatedProtocol=PrefixedProtocol '}' 
     | {Done} 'done'
 	;
 
@@ -92,16 +91,18 @@ ProtocolStatement:
 	Valuing
 	| Assert
 	| ProtocolAction
-	| {AnyAction} 'anyaction'
-	| {Repeat} 'repeat' '{' (repeatedProtocol+=ProtocolStatement)+ '}' 
+	| ({AnyAction} 'anyaction')
+	| ({Repeat} 'repeat' '{' (repeatedProtocol+=ProtocolStatement)+ '}') 
 ;
 
 ProtocolAction:
-	'via' ComplexName
-	(({SendProtocolAction.target=current} 'send' sendExpression=FinalExpression)
-		| ('receive' (({ReceiveAnyProtocolAction.target=current} 'any')
-			| {ReceiveProtocolAction.target=current} receivedValue=ComplexName
-		)))
+	'via' complexName=ComplexName suite=ProtocolActionSuite
+;
+
+ProtocolActionSuite:
+	({SendProtocolAction} 'send' sendExpression=FinalExpression)
+	| ('receive' ({ReceiveAnyProtocolAction} 'any'
+	   			 |{ReceiveProtocolAction} receivedValue=ComplexName))
 ;
 
 BehaviorDecl:
@@ -115,14 +116,14 @@ Behavior:
 
 PrefixedBehavior returns Behavior:
 	({PrefixedBehavior} (statements+=BehaviorStatement)+ finalBehavior=FinalBehavior?)
-	| FinalBehavior
+	| ({FinalBehavior} final=FinalBehavior)
 	;
 
 FinalBehavior returns Behavior:
-	{Forever} 'forever' '{' repeatedBehavior=PrefixedBehavior '}'
-	| {IfThenElse} 'if' cond=BooleanExpression 'then' '{' ifTrueBehavior=PrefixedBehavior '}' ('else' '{' ifFalseBehavior=PrefixedBehavior '}')?
-	| {Choose} 'choose' '{' choiceBehavior+=PrefixedBehavior '}'  ('or'  '{' choiceBehavior+=PrefixedBehavior '}' )+  // au lieu de 'choose { b1 or ... or bn }' car 'or' apparait dans Expression et Behavior
-	| {ForEach} 'foreach' name=Name 'in' setOfValues=Expression '{' foreachBehavior=BehaviorStatement '}'
+	{ForeverBehavior} 'forever' '{' repeatedBehavior=PrefixedBehavior '}'
+	| {IfThenElseBehavior} 'if' cond=BooleanExpression 'then' '{' ifTrueBehavior=PrefixedBehavior '}' ('else' '{' ifFalseBehavior=PrefixedBehavior '}')?
+	| {ChooseBehavior} 'choose' '{' choiceBehavior+=PrefixedBehavior '}'  ('or'  '{' choiceBehavior+=PrefixedBehavior '}' )+  // au lieu de 'choose { b1 or ... or bn }' car 'or' apparait dans Expression et Behavior
+	| {ForEachBehavior} 'foreach' name=Name 'in' setOfValues=Expression '{' foreachBehavior=BehaviorStatement '}'
 	| {DoExpr} 'do' expr=Expression
 	| {Done} 'done'
 	| {RecursiveCall} 'behavior' '(' (paramExpr+=Expression (',' paramExpr+=Expression)*)? ')'
@@ -144,8 +145,12 @@ AssertExpression:
 ;
 
 Action:
-	'via' ComplexName (({SendAction.target=current} 'send' sendExpression=FinalExpression)
-		| ({ReceiveAction.target=current} 'receive' receivedValue=ComplexName))
+	'via' complexName=ComplexName suite=ActionSuite
+;
+
+ActionSuite:
+	{SendAction} 'send' sendExpression=FinalExpression
+	| {ReceiveAction} 'receive' receivedValue=ComplexName
 ;
 
 ArchBehaviorDecl:
@@ -165,11 +170,15 @@ Constituent:
 Binding:
 	{Relay} 'relay' gate=ComplexName 'to' connection=ComplexName
 	| {Unify} 'unify' multLeft=Multiplicity '{' connLeft=ComplexName '}' 'to' multRight=Multiplicity '{' connRight=ComplexName '}'
-	| {Quantify} quantifier=Quantifier '{' element+=Name 'in' constituent+=Name (',' element+=Name 'in' constituent+=Name)* 'suchthat' bindings=BindingExpression '}'
+	| {Quantify} quantifier=Quantifier '{' elementInConstituent+=ElementInConstituent (',' elementInConstituent+=ElementInConstituent)* 'suchthat' bindings=BindingExpression '}'
 ;
 
 Quantifier:
 	'forall' | 'exists'
+;
+
+ElementInConstituent:
+	element=Name 'in' constituent=Name
 ;
 
 Multiplicity:
@@ -202,7 +211,7 @@ BaseType:
 ;
 
 ConstructedType:
-	{TupleType} 'tuple' '{' field+= LabelledType (',' field+=LabelledType)* '}'
+	{TupleType} 'tuple' '{' field+=LabelledType (',' field+=LabelledType)* '}'
 	| {SequenceType} 'sequence' '{' typeOfSequence=DataType '}'
 	| {RangeType} 'integer' '{' vmin=Expression '..' vmax=Expression '}'  // range of Integer
 	| {ConnectionType} mode=ModeType '{' typeOfConnection=DataType '}'
