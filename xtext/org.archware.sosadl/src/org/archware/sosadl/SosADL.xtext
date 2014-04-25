@@ -115,11 +115,11 @@ Behavior:
 ;
 
 PrefixedBehavior returns Behavior:
-	({PrefixedBehavior} (statements+=BehaviorStatement)+ finalBehavior=FinalBehavior?)
-	| ({FinalBehavior} final=FinalBehavior)
+	{PrefixedBehavior} (statements+=BehaviorStatement)+ finalBehavior=FinalBehavior?
+	| FinalBehavior
 	;
 
-FinalBehavior returns Behavior:
+FinalBehavior returns FinalBehavior:
 	{ForeverBehavior} 'forever' '{' repeatedBehavior=PrefixedBehavior '}'
 	| {IfThenElseBehavior} 'if' cond=BooleanExpression 'then' '{' ifTrueBehavior=PrefixedBehavior '}' ('else' '{' ifFalseBehavior=PrefixedBehavior '}')?
 	| {ChooseBehavior} 'choose' '{' choiceBehavior+=PrefixedBehavior '}'  ('or'  '{' choiceBehavior+=PrefixedBehavior '}' )+  // au lieu de 'choose { b1 or ... or bn }' car 'or' apparait dans Expression et Behavior
@@ -140,9 +140,9 @@ Assert:
 ;
 
 AssertExpression:
-	valueing=Valuing
-	| constraint=BooleanExpression
-;
+	Valuing
+	| BooleanExpression
+	;
 
 Action:
 	'via' complexName=ComplexName suite=ActionSuite
@@ -155,11 +155,11 @@ ActionSuite:
 
 ArchBehaviorDecl:
 	'behavior' behaviorName=Name '(' (paramExpr+=Expression (',' paramExpr+=Expression)*)? ')'
-	'is' 'compose' '{' constituentList=ConstituentAndList '}'
+	'is' 'compose' '{' constituentList=ConstituentList '}'
 	'binding' '{' bindings=BindingExpression '}' 
 ;
 
-ConstituentAndList:
+ConstituentList:
 	(constituent+=Constituent)+
 ;
 
@@ -196,7 +196,6 @@ DataType:
 FunctionDecl:
 	'function' '(' dataName=Name ':' dataTypeName=Name ')' '::'
 	functionName=Name '(' (params+=ParamType (',' params+=ParamType)*)? ')' ':' returnType=DataType 'is' '{'
-	    // TODO! syntax of valuing and statements
 	    (valuing+=Valuing)*
 		'return' returnExpression=Expression
 	'}'
@@ -309,7 +308,7 @@ BinaryExpression7 returns Expression:
 FinalExpression returns Expression:
 	UnaryExpression
 	| CallExpression
-	| '(' Expression ')'
+	| '(' innerExpression=Expression ')'
 	| Binding
 ;
 
@@ -317,16 +316,23 @@ UnaryExpression:
 	op=UnaryOp right=FinalExpression
 	;
 
-CallExpression returns Expression:
-	( Ident
-	 ({FunctionCall.target=current} '(' (params+=Expression (',' params+=Expression)*)? ')')?
-	 | LitteralExpression
+/*
+ * CallExpression est réécrite:
+ * - ne rend plus Expression
+ * - la suite d'expressions derrière des :: fait appel à une nouvelle règle CallExpressionSuite
+ */
+CallExpression://; returns Expression:
+	 ( ident=Ident ('(' (params+=Expression (',' params+=Expression)*)? ')')? 
+	  | litteral=LitteralExpression
 	 )
-	 (    {Field.target=current} '::' field+=Name
-	 	| {Select.target=current} '::' 'select' '{' var=Name 'suchthat' res=Expression '}'
-	 	| {Map.target=current} '::' 'map' '{' var=Name 'to' res=Expression '}'
-	 	| {MethodCall.target=current} '::' method+=Name '(' (params+=Expression (',' params+=Expression)*)? ')'
-	 )*
+	 (fieldSuite+=CallExpressionSuite)*
+;
+
+CallExpressionSuite:
+     {Field} '::' fieldName=Name
+	 | {Select} '::' 'select' '{' selectName=Name 'suchthat' selectExpr=Expression '}'
+	 | {Map} '::' 'map' '{' mapName=Name 'to' mapExpr=Expression '}'
+	 | {MethodCall} '::' methodName=Name '(' (params+=Expression (',' params+=Expression)*)? ')'
 ;
 
 LitteralExpression returns Expression:
@@ -401,26 +407,35 @@ UnaryAssertion:
 	op=UnaryOp right=FinalAssertion
 	;
 
-CallAssertion returns Assertion:
-	( Ident
-	 ({FunctionCall.target=current} '(' (params+=Expression (',' params+=Expression)*)? ')')?
-	 | LitteralAssertion
+/*
+ * CallAssertion est supprimée car en fait, elle est identique à CallExpression.
+ * En effet, LitteralAssertion est identique à LitteralExpression.
+ * Autre conséquence : LitteralAssertion est supprimée. 
+ */
+
+FinalAssertion returns Assertion:
+	UnaryAssertion
+	| CallExpression
+	| '(' innerAssertion=Assertion ')'
+	| {Always} 'always' '{' expr=Assertion '}'
+	| {Anynext} 'anynext' '{' expr=Assertion '}'
+;
+/*
+CallAssertion: //; returns Expression:
+	 ( ident=Ident ('(' (params+=Expression (',' params+=Expression)*)? ')')? 
+	  | litteral=LitteralAssertion
 	 )
-	 (    {Field.target=current} '::' field+=Name
-	 	| {Select.target=current} '::' 'select' '{' var=Name 'suchthat' res=Expression '}'
-	 	| {Map.target=current} '::' 'map' '{' var=Name 'to' res=Expression '}'
-	 	| {MethodCall.target=current} '::' method+=Name '(' (params+=Expression (',' params+=Expression)*)? ')'
-	 )*
+	 (fieldSuite+=CallAssertionSuite)*
+;
+
+CallAssertionSuite:
+     {Field} '::' fieldName=Name
+	 | {Select} '::' 'select' '{' selectName=Name 'suchthat' selectExpr=Expression '}'
+	 | {Map} '::' 'map' '{' mapName=Name 'to' mapExpr=Expression '}'
+	 | {MethodCall} '::' methodName=Name '(' (params+=Expression (',' params+=Expression)*)? ')'
 ;
 
 LitteralAssertion returns Assertion:
 	Value
 ;
-
-FinalAssertion returns Assertion:
-	UnaryAssertion
-	| CallAssertion
-	| '(' Assertion ')'
-	| {Always} 'always' '{' expr=Assertion '}'
-	| {Anynext} 'anynext' '{' expr=Assertion '}'
-;
+*/
