@@ -36,9 +36,9 @@ sos WsnMonitoringSos is {
     }
     
     behavior coalition() is compose {
-        sensors is sequence{Sensor()}
-  	    gateway is Gateway()
-        transmitters is sequence{Transmitter()}
+        sensors is sequence{Sensor()}  // ERREUR! recognized as:  sensors is sequence{Sensor}
+  	    gateway is Gateway()           // ERREUR! recognized as:  gateway is Gateway
+        transmitters is sequence{Transmitter()} // ERREUR! recognized as: transmitters is sequence{Transmitter}
       } binding {
         relay warning::alert to gateway::notification::alert
         and relay request::coordinate to gateway::request::coordinate
