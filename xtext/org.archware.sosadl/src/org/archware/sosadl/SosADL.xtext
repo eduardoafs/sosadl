@@ -31,7 +31,7 @@ ArchitectureDecl: 'architecture' architectureName=Name '(' (params+=ParamType ('
 	(datatypes+=DataTypeDecl)*
 	(gates+=GateDecl)+
 	archBehavior=ArchBehaviorDecl
-	'}'
+	'}' ('guarantee' '{' assertionDecl=AssertionDecl '}')?
 	;
 
 MediatorDecl: 'mediator' mediatorName=Name '(' (params+=ParamType (',' params+=ParamType)*)? ')' 'is' '{'
@@ -59,7 +59,7 @@ Connection:
 	(envConnection?='environment')? 'connection' name=Name 'is' mode=ModeType '{' valueType=DataType '}';
 
 AssertionDecl:
-	'assertion' assertionName=Name 'is' '{'
+	'property' assertionName=Name 'is' '{'
     (valuing+=Valuing+ 'within')?
     assertionExpr=Assertion '}'
 ;
@@ -68,6 +68,7 @@ ProtocolDecl:
     'protocol' protocolName=Name 'is' protocolBody=Protocol
 ;
 
+/* previous version distinguishes PrefixedProtocol and FinalProtocol
 Protocol:
 	'{' PrefixedProtocol '}'
 	| FinalProtocol
@@ -94,6 +95,24 @@ ProtocolStatement:
 	| ({AnyAction} 'anyaction')
 	| ({Repeat} 'repeat' '{' (repeatedProtocol+=ProtocolStatement)+ '}') 
 ;
+*/
+
+Protocol:
+	'{' (statements+=ProtocolStatement)+ '}'
+;
+
+ProtocolStatement:
+	Valuing
+	| Assert
+	| ProtocolAction
+	| {AnyAction} 'anyaction'
+	| {RepeatProtocol} 'repeat' repeatedProtocol=Protocol
+	| {IfThenElseProtocol} 'if' cond=BooleanExpression 'then' ifTrueProtocol=Protocol ('else' ifFalseProtocol=Protocol)?
+	| {ChooseProtocol} 'choose' choiceProtocol+=Protocol  ('or' choiceProtocol+=Protocol)+  // au lieu de 'choose { b1 or ... or bn }' car 'or' apparait dans Expression et Behavior
+	| {ForEachProtocol} 'foreach' name=Name 'in' setOfValues=Expression foreachProtocol=Protocol
+	| {DoExpr} 'do' expr=Expression
+	| {Done} 'done'
+;
 
 ProtocolAction:
 	'via' complexName=ComplexName suite=ProtocolActionSuite
@@ -109,6 +128,7 @@ BehaviorDecl:
 	'behavior' behaviorName=Name '(' (paramExpr+=Expression (',' paramExpr+=Expression)*)? ')' 'is' behaviorBody=Behavior
 ;
 
+/* previous version distinguishes PrefixedBehavior and FinalBehavior
 Behavior:
 	'{' PrefixedBehavior '}'
 	| FinalBehavior
@@ -134,9 +154,28 @@ BehaviorStatement:
 	| Assert
 	| Action
 ;
+*/
+
+Behavior:
+	'{' (statements+=BehaviorStatement)+ '}'
+;
+
+BehaviorStatement:
+	Valuing
+	| Assert
+	| Action
+	| {RepeatBehavior} 'repeat' repeatedBehavior=Behavior
+	| {IfThenElseBehavior} 'if' cond=BooleanExpression 'then' ifTrueBehavior=Behavior ('else' ifFalseBehavior=Behavior)?
+	| {ChooseBehavior} 'choose' choiceBehavior+=Behavior  ('or' choiceBehavior+=Behavior )+  // au lieu de 'choose { b1 or ... or bn }' car 'or' apparait dans Expression et Behavior
+	| {ForEachBehavior} 'foreach' name=Name 'in' setOfValues=Expression foreachBehavior=Behavior
+	| {DoExpr} 'do' expr=Expression
+	| {Done} 'done'
+	| {RecursiveCall} 'behavior' '(' (paramExpr+=Expression (',' paramExpr+=Expression)*)? ')'
+;
 
 Assert:
-	'assert' assertName=Name 'is' '{' assertExpression=AssertExpression '}'
+	{TellAssertion} 'assert' assertName=Name 'is' '{' assertExpression=AssertExpression '}'
+	| {AskAssertion} 'ask' assertName=Name 'is' '{' assertExpression=AssertExpression '}'
 ;
 
 AssertExpression:

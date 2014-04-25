@@ -72,7 +72,6 @@ class SosADLGenerator implements IGenerator {
     «FOR d : e.datatypes»
       «d.compile»
     «ENDFOR»
-    
     «FOR f : e.functions»
       «f.compile»
     «ENDFOR»
@@ -114,7 +113,10 @@ class SosADLGenerator implements IGenerator {
         «ENDFOR»
         
         «a.archBehavior.compile»
+      }«IF a.assertionDecl != null» guarantee {
+        «a.assertionDecl.compile»
       }
+      «ENDIF»
 	'''
 
     def compile(MediatorDecl m)'''
@@ -157,7 +159,7 @@ class SosADLGenerator implements IGenerator {
 	def compile(Connection c)'''«IF c.envConnection»environment «ENDIF»connection «c.name» is «c.mode»{«c.valueType.compile»}'''
 	
 	def compile(AssertionDecl a)'''
-      assertion «a.assertionName» is {
+      property «a.assertionName» is {
         «IF ! a.valuing.isEmpty»
         «FOR v:a.valuing»
         «v.compile»
@@ -172,38 +174,25 @@ class SosADLGenerator implements IGenerator {
       protocol «p.protocolName» is «p.protocolBody.compile»
     '''
     
-    def compile(Protocol p)'''«
-    IF p instanceof PrefixedProtocol»
-	{
-	  «(p as PrefixedProtocol).compile»
-	}
-	«ELSEIF p instanceof FinalProtocol»«(p as FinalProtocol).compile»«
-	ENDIF»
-	'''
-	
-	def compile(PrefixedProtocol p)'''
-    «FOR s : p.statements»
+    def compile(Protocol p)'''
+    {
+      «FOR s : p.statements»
       «s.compile»
-    «ENDFOR»
-    «IF p.finalProtocol != null»
-      «IF p.finalProtocol instanceof IfThenElseProtocol»
-        «(p.finalProtocol as IfThenElseProtocol).compile»
-      «ELSEIF p.finalProtocol instanceof ChooseProtocol»
-        «(p.finalProtocol as ChooseProtocol).compile»
-      «ELSEIF p.finalProtocol instanceof ForEachProtocol»
-        «(p.finalProtocol as ForEachProtocol).compile»
-      «ELSEIF p.finalProtocol instanceof DoExpr»
-        «(p.finalProtocol as DoExpr).compile»
-      «ELSEIF p.finalProtocol instanceof RepeatForeverProtocol»
-        «(p.finalProtocol as RepeatForeverProtocol).compile»
-      «ELSEIF p.finalProtocol instanceof Done»
-        «(p.finalProtocol as Done).compile»
-      «ENDIF»
-    «ENDIF»
+      «ENDFOR»
+    }
 	'''
-		
-	def compile(FinalProtocol p)'''
-    «IF p instanceof IfThenElseProtocol»
+	def compile(ProtocolStatement p)'''
+    «IF p instanceof Valuing»
+      «(p as Valuing).compile»
+    «ELSEIF p instanceof Assert»
+      «(p as Assert).compile»
+    «ELSEIF p instanceof ProtocolAction»
+      «(p as ProtocolAction).compile»
+    «ELSEIF p instanceof AnyAction»
+      «(p as AnyAction).compile»
+    «ELSEIF p instanceof RepeatProtocol»
+      «(p as RepeatProtocol).compile»
+    «ELSEIF p instanceof IfThenElseProtocol»
       «(p as IfThenElseProtocol).compile»
     «ELSEIF p instanceof ChooseProtocol»
       «(p as ChooseProtocol).compile»
@@ -211,8 +200,6 @@ class SosADLGenerator implements IGenerator {
       «(p as ForEachProtocol).compile»
     «ELSEIF p instanceof DoExpr»
       «(p as DoExpr).compile»
-    «ELSEIF p instanceof RepeatForeverProtocol»
-      «(p as RepeatForeverProtocol).compile»
     «ELSEIF p instanceof Done»
       «(p as Done).compile»
     «ENDIF»
@@ -228,7 +215,7 @@ class SosADLGenerator implements IGenerator {
 	'''
 	
 	def compile(ChooseProtocol c)'''
-    choose «c.choiceProtocol.map[compile].join(" or ")»
+    choose «c.choiceProtocol.map[compile].join("or ")»
 	'''
 	
 	def compile(ForEachProtocol f)'''
@@ -239,34 +226,12 @@ class SosADLGenerator implements IGenerator {
     do «d.expr.compile»
 	'''
 	
-	def compile(RepeatForeverProtocol r)'''
-    forever «r.repeatedProtocol.compile»
+	def compile(RepeatProtocol r)'''
+    repeat «r.repeatedProtocol.compile»
 	''' 
 	
 	def compile(Done d)'''done'''
-    
-    def compile(ProtocolStatement p)'''
-    «IF p instanceof Valuing»
-      «(p as Valuing).compile»
-    «ELSEIF p instanceof Assert»
-      «(p as Assert).compile»
-    «ELSEIF p instanceof ProtocolAction»
-      «(p as ProtocolAction).compile»
-    «ELSEIF p instanceof AnyAction»
-      «(p as AnyAction).compile»
-    «ELSEIF p instanceof Repeat»
-      «(p as Repeat).compile»
-    «ENDIF»
-	'''
 	    
-    def compile(Repeat r)'''
-    repeat {
-      «FOR s:r.repeatedProtocol»
-        «s.compile»
-      «ENDFOR»
-    }
-    '''
-    
     def compile(ProtocolAction p)'''
     via «p.complexName.compile»«
     IF p.suite instanceof SendProtocolAction»«
@@ -291,56 +256,39 @@ class SosADLGenerator implements IGenerator {
     '''
 
 	def compile(Behavior b)'''
-    «IF b instanceof PrefixedBehavior»{
-      «(b as PrefixedBehavior).compile»
-    }«
-    ELSEIF b instanceof FinalBehavior»«(b as FinalBehavior).compile»«
-    ENDIF» 
-    '''
-   	
-	def compile(PrefixedBehavior p)'''
-    «FOR s:p.statements»
+    {
+      «FOR s : b.statements»
       «s.compile»
-    «ENDFOR»
-    «IF p.finalBehavior != null»
-      «IF p.finalBehavior instanceof ForeverBehavior»
-        «(p.finalBehavior as ForeverBehavior).compile»
-      «ELSEIF (p.finalBehavior) instanceof IfThenElseBehavior»
-        «(p.finalBehavior as IfThenElseBehavior).compile»
-      «ELSEIF p.finalBehavior instanceof ChooseBehavior»
-        «(p.finalBehavior as ChooseBehavior).compile»
-      «ELSEIF p.finalBehavior instanceof ForEachBehavior»
-        «(p.finalBehavior as ForEachBehavior).compile»
-      «ELSEIF p.finalBehavior instanceof DoExpr»
-        «(p.finalBehavior as DoExpr).compile»
-      «ELSEIF p.finalBehavior instanceof Done»
-        «(p.finalBehavior as Done).compile»
-      «ELSEIF p.finalBehavior instanceof RecursiveCall»
-        «(p.finalBehavior as RecursiveCall).compile»
-      «ENDIF»
+      «ENDFOR»
+    } 
+    '''
+    
+    def compile(BehaviorStatement b)'''
+    «IF b instanceof Valuing»
+      «(b as Valuing).compile»
+    «ELSEIF b instanceof Assert»
+      «(b as Assert).compile»
+    «ELSEIF b instanceof Action»
+      «(b as Action).compile»
+    «ELSEIF b instanceof RepeatBehavior»
+      «(b as RepeatBehavior).compile»
+    «ELSEIF b instanceof IfThenElseBehavior»
+      «(b as IfThenElseBehavior).compile»
+    «ELSEIF b instanceof ChooseBehavior»
+      «(b as ChooseBehavior).compile»
+    «ELSEIF b instanceof ForEachBehavior»
+      «(b as ForEachBehavior).compile»
+    «ELSEIF b instanceof DoExpr»
+      «(b as DoExpr).compile»
+    «ELSEIF b instanceof Done»
+      «(b as Done).compile»
+    «ELSEIF b instanceof RecursiveCall»
+      «(b as RecursiveCall).compile»
     «ENDIF»
     '''
-	
-	def compile(FinalBehavior f)'''
-    «IF f instanceof ForeverBehavior»
-      «(f as ForeverBehavior).compile»
-    «ELSEIF f instanceof IfThenElseBehavior»
-      «(f as IfThenElseBehavior).compile»
-    «ELSEIF f instanceof ChooseBehavior»
-      «(f as ChooseBehavior).compile»
-    «ELSEIF f instanceof ForEachBehavior»
-      «(f as ForEachBehavior).compile»
-    «ELSEIF f instanceof DoExpr»
-      «(f as DoExpr).compile»
-    «ELSEIF f instanceof Done»
-      «(f as Done).compile»
-    «ELSEIF f instanceof RecursiveCall»
-      «(f as RecursiveCall).compile»
-    «ENDIF»
-	'''
 
-	def compile(ForeverBehavior f)'''
-    forever «f.repeatedBehavior.compile»
+	def compile(RepeatBehavior f)'''
+    repeat «f.repeatedBehavior.compile»
     '''
 	
 	def compile(IfThenElseBehavior i)'''
@@ -351,7 +299,7 @@ class SosADLGenerator implements IGenerator {
 	'''
 	
 	def compile(ChooseBehavior c)'''
-    choose «c.choiceBehavior.map[compile].join(" or ")»
+    choose «c.choiceBehavior.map[compile].join("or ")»
 	'''
 	
 	def compile(ForEachBehavior f)'''
@@ -362,18 +310,20 @@ class SosADLGenerator implements IGenerator {
     behavior («r.paramExpr.map[compile].join(", ")»)
 	'''
 	
-	def compile(BehaviorStatement b)'''
-    «IF b instanceof Valuing»
-      «(b as Valuing).compile»
-    «ELSEIF b instanceof Assert»
-      «(b as Assert).compile»
-    «ELSEIF b instanceof Action»
-      «(b as Action).compile»
-    «ENDIF»
-	'''
-	
     def compile(Assert a)'''
+    «IF a instanceof TellAssertion»
+       «(a as TellAssertion).compile»
+    «ELSEIF a instanceof AskAssertion»
+       «(a as AskAssertion).compile»
+    «ENDIF»
+    '''
+    
+    def compile(TellAssertion a)'''
     assert «a.assertName» is {«a.assertExpression.compile»}
+    '''
+    
+    def compile(AskAssertion a)'''
+    ask «a.assertName» is {«a.assertExpression.compile»}
     '''
 
 	def compile(AssertExpression a)'''«
