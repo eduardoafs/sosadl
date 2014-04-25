@@ -9,37 +9,35 @@ with WsnMediator
 sos WsnMonitoringSos is {
   architecture WnsMonitoringSosArchitecture() is {
   
-    datatype Abscissa
-    datatype Ordinate
-    datatype Coordinate is tuple{x:Abscissa,y:Ordinate}
-  
     gate warning is {
       connection alert is out{MeasureData}  // alert sent to its environment
     } guarantee {
-      protocol alertpact is
-      	forever {
+      protocol alertpact is {
+      	repeat {
           repeat {anyaction}
           repeat {via warning::alert send any}
         }
+      }
     }
     
     gate request is {
       connection coordinate is in{Coordinate}
       connection depth is out{Depth}
     } guarantee {
-      protocol requestpact is
-      	forever {  // in the case of one statement '{' '}' are not needed
+      protocol requestpact is {
+      	repeat {  // in the case of one statement '{' '}' are not needed
           via request::coordinate receive any
           repeat {anyaction}
           via request::depth send any
         }
+      }
     }
     
     behavior coalition() is compose {
-        sensors is sequence{Sensor()}  // ERREUR! recognized as:  sensors is sequence{Sensor}
-  	    gateway is Gateway()           // ERREUR! recognized as:  gateway is Gateway
-        transmitters is sequence{Transmitter()} // ERREUR! recognized as: transmitters is sequence{Transmitter}
-      } binding {
+        sensors is sequence{Sensor}
+  	    gateway is Gateway
+        transmitters is sequence{Transmitter}
+    } binding {
         relay warning::alert to gateway::notification::alert
         and relay request::coordinate to gateway::request::coordinate
         and relay request::depth to gateway::request::depth
@@ -51,6 +49,10 @@ sos WsnMonitoringSos is {
               xor unify one{itransmitter::toGateway} to one{igateway::notification::measure}
             )
         }
-      }
+    }
+  } guarantee {
+  	property alerting is {
+  		always {via notification::alert send any}
+  	}
   }
 }

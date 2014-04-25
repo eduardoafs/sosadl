@@ -15,8 +15,8 @@ library WsnGateway is {
   	    connection measure is out{MeasureData}  // measure sent by the gateway
       	connection alert is out{MeasureData}  // alert sent by the gateway
     } guarantee {
-  		protocol notificationpact is
-  			forever {
+  		protocol notificationpact is {
+  			repeat {
   				repeat {
   					via notification::measure receive any
   					repeat {anyaction}
@@ -25,23 +25,25 @@ library WsnGateway is {
   					via notification::alert send any
   				}
   			}
+  		}
   	}
   	
   	gate request is {
     	connection coordinate is in{Coordinate}
     	connection depth is out{Depth}
   	} guarantee {
-  		protocol requestpact is
-  		  forever {
+  		protocol requestpact is {
+  		  repeat {
   			  via request::coordinate receive any
   			  repeat {anyaction}
   			  via request::depth send any
           }
+        }
   	}
   	
   	behavior serving() is {
     	value localbase is sequence{MeasureData} = sequence{}   // 'sequence{MeasureData}' au lieu de 'sequence(MeasureData)' ?
-    	forever {
+    	repeat {
       	  choose {
       		via notification::measure receive measure
       		do localbase::append(measure)   // 'append' adds an element to the sequence at the end, 'prepend' at the beginning // '::' applies operations to collection values

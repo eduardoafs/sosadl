@@ -3,7 +3,7 @@ with Localization
 
 // Description of Transmitter as a Mediator Abstraction
 library WsnMediator is {
-  datatype Distance {
+  datatype Coordinate {
       function (onecoordinate:Coordinate)::distance(othercoordinate:Coordinate):Distance is {
         return sqrt(sqr(onecoordinate::x-othercoordinate::x)+sqr(onecoordinate::y-othercoordinate::y))
       }
@@ -20,7 +20,7 @@ library WsnMediator is {
       connection fromSensors is in{MeasureData}  // measure received from a sensor
       connection towardsGateway is out{MeasureData}  // measure sent towards the gateway
     } require {
-      assertion inrange is {
+      property inrange is {
       	value sender = sender(transmit::fromSensors) // type is inferred
         value receiver = receiver(distance::towardsGateway) // type is inferred
         within
@@ -28,17 +28,19 @@ library WsnMediator is {
         sender::coordinate::distance(receiver::coordinate) < distancebetweengates   // 'value', 'sender' and 'receiver' are introspections on connection
       }
     } assume {
-      protocol transmitpact is
-      	forever {
+      protocol transmitpact is {
+      	repeat {
           via transmit::fromSensor receive measure
           via transmit::towardsGateway send measure
         }
+      }
     }
   
-  	behavior transmitting(distancebetweengates) is
-      forever {
+  	behavior transmitting(distancebetweengates) is {
+      repeat {
           via transmit::fromSensors receive measure
     	  via transmit::towardsGateway send measure
       }
+    }
   }
 }

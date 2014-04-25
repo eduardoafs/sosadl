@@ -23,8 +23,8 @@ library WsnSensor is {   // 'sos' is a library providing a runable architecture
       	connection pass is in{MeasureData}   // measure received by the sensor from its neighbors
       	connection measure is out{MeasureData}   // measure sent by the sensor to its neighbors
   	} guarantee {   // 'guarantee' declares the assertions that are guaranteed by the behaviors through the gate
-  		protocol measurementpact is   // 'protocol' defines the usage of the gate -- a gate may have several protocols
-  		  forever{   // the 'protocol' is declared using the same language as behaviors
+  		protocol measurementpact is {  // 'protocol' defines the usage of the gate -- a gate may have several protocols
+  		  repeat{   // the 'protocol' is declared using the same language as behaviors
   				choose{
   					via measurement::sense receive data   // the type of the received data is inferred from the connection type
   					repeat{anyaction}   // 'anyaction' declares a wildcard for actions including unobservable actions
@@ -33,6 +33,7 @@ library WsnSensor is {   // 'sos' is a library providing a runable architecture
   					via measurement::pass receive data   // the prefix measurement:: is optional as the scope is the gate
   					via measurement::measure send data   // the type of the sent data is inferred from the connection type
   			    }
+  		  }
         }
   	}
     
@@ -42,14 +43,14 @@ library WsnSensor is {   // 'sos' is a library providing a runable architecture
   	} guarantee {
   		protocol energypact is {
   			via energy::threshold receive powerthreshold
-  			forever {via energy::power receive powerlevel}
+  			repeat {via energy::power receive powerlevel}
         }
   	}
   	
   	behavior sensing(lps) is {   // the argument lps is bound by the system parameter // 'behavior' executes when the system is created
-  	  assert location is {coordinate = lps}
+  	  assert location is {coordinate = lps}  // TODO! valeur coordinate definie nulle part
   	  via powering::threshold receive powerthreshold
-  	  forever {
+  	  repeat {
   		via powering::power receive powerlevel
   		if (powerlevel > powerthreshold) then {   // 'if' only tests the condition without blocking
           assert powering is {powerlevel > powerthreshold}    // 'assert' the specified constraint with name and type extrusions
@@ -63,8 +64,9 @@ library WsnSensor is {   // 'sos' is a library providing a runable architecture
         }
       }
   	}
+  	
   } guarantee {
-  	assertion measuring is {
+  	property measuring is {
   	  always{energy::power > energy::threshold implies anynext{via measurement::measure send any}
   	  } // assertion using temporal operators 'always' and 'anynext'
     }
