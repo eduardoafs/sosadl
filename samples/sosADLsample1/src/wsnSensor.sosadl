@@ -9,7 +9,7 @@ library WsnSensor is {   // 'sos' is a library providing a runable architecture
     // Declaration of local types -- the scope is the system declaration
     datatype RawData {   // 'datatype' declares an abstract datatype that needs to be concretized
       function (data:Rawdata)::convert():Depth is {
-        value magnitude = 10    // ERREUR AVEC : value magnitude is 10, cf. regle Valuing
+        value magnitude = 10
         return Depth(data/magnitude)   // Depth() converts to type Depth // // the only base type is Integer -- all types are implicitly typed by Integer equipped with the usual operations
       }
     }
@@ -51,7 +51,7 @@ library WsnSensor is {   // 'sos' is a library providing a runable architecture
   	  via powering::threshold receive powerthreshold
   	  forever {
   		via powering::power receive powerlevel
-        if (powerlevel > powerthreshold) then {   // 'if' only tests the condition without blocking
+  		if (powerlevel > powerthreshold) then {   // 'if' only tests the condition without blocking
           assert powering is {powerlevel > powerthreshold}    // 'assert' the specified constraint with name and type extrusions
   		  choose{
   			via measuringGate::sense receive data
@@ -65,7 +65,8 @@ library WsnSensor is {   // 'sos' is a library providing a runable architecture
   	}
   } guarantee {
   	assertion measuring is {
-  	  always{energy::power > energy::threshold implies anynext{via measurement::measure send any}} // assertion using temporal operators 'always' and 'anynext'
+  	  always{energy::power > energy::threshold implies anynext{via measurement::measure send any}
+  	  } // assertion using temporal operators 'always' and 'anynext'
     }
   }
 }
