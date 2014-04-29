@@ -49,6 +49,36 @@ sos WsnMonitoringSos is {
               xor unify one{itransmitter::toGateway} to one{igateway::notification::measure}
             )
         }
+/* The binding using 1st order logic (using Alloy quantifiers):
+     - all = forall
+     - one = exists unique
+
+    relay warning::alert to gateway::notification::alert
+    and relay request::coordinate to gateway::request::coordinate
+    and relay request::depth to gateway::request::depth
+    all{s1 in sensors
+      suchthat one{t in transmitters
+                 suchthat all{s2 in sensors suchthat unify t::fromSensors to s2::measurement::measure implies s1=s2}
+                      and unify t::fromSensors to s1::measurement::measure
+	              and (unify t::toGateway to gateway::notification::measure
+	                   xor one{s2 in sensors
+                                 suchthat s1<>s2
+                                      and unify t::toGateway to s2::measurement::pass})}
+
+
+   Alternative 1st order logic:
+
+    all{s in sensors suchthat one{t in transmitters suchthat unify t::fromSensors to s::measurement::measure}}
+and all{t in transmitters suchthat one{s in sensors suchthat unify t::fromSensors to s::measurement::measure}}
+and all{t in transmitters suchthat (one{s in sensors suchthat unify t::toGateway to s::measurement::pass} xor unify t::toGateway to gateway::notification::measure)}
+
+
+
+   Attempt with multiplicities:
+
+    unify one{sensors::measurement::measure} to one{transmitters::fromSensors}
+    and unify all{transmitters::toGateway} to (one{sensors::measurement::pass} xor {gateway::notification::measure})
+*/
     }
   } guarantee {
   	property alerting is {
