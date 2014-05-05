@@ -347,7 +347,7 @@ BinaryExpression7 returns Expression:
 FinalExpression returns Expression:
 	UnaryExpression
 	| CallExpression
-	| '(' innerExpression=Expression ')'
+	| '(' Expression ')'
 	| Binding
 ;
 
@@ -360,18 +360,22 @@ UnaryExpression:
  * - ne rend plus Expression
  * - la suite d'expressions derrière des :: fait appel à une nouvelle règle CallExpressionSuite
  */
-CallExpression://; returns Expression:
-	 ( ident=Ident ('(' (params+=Expression (',' params+=Expression)*)? ')')? 
-	  | litteral=LitteralExpression
-	 )
-	 (fieldSuite+=CallExpressionSuite)*
-;
+CallExpression returns Expression:
+	(
+		{IdentExpression} ident=Ident
+		| {CallExpression} functionName=Ident '(' (params+=Expression (',' params+=Expression)*)? ')'
+	    | LitteralExpression
+	)
+	
+	('::'
+		(
+			{Field.object=current} fieldName=Name
+			| {Select.object=current} 'select' '{' selectName=Name 'suchthat' selectExpr=Expression '}'
+			| {Map.object=current} 'map' '{' mapName=Name 'to' mapExpr=Expression '}'
+			| {MethodCall.object=current} methodName=Name '(' (params+=Expression (',' params+=Expression)*)? ')'
+		)
+	)*
 
-CallExpressionSuite:
-     {Field} '::' fieldName=Name
-	 | {Select} '::' 'select' '{' selectName=Name 'suchthat' selectExpr=Expression '}'
-	 | {Map} '::' 'map' '{' mapName=Name 'to' mapExpr=Expression '}'
-	 | {MethodCall} '::' methodName=Name '(' (params+=Expression (',' params+=Expression)*)? ')'
 ;
 
 LitteralExpression returns Expression:
@@ -455,7 +459,7 @@ UnaryAssertion:
 FinalAssertion returns Assertion:
 	UnaryAssertion
 	| CallExpression
-	| '(' innerAssertion=Assertion ')'
+	| '(' Assertion ')'
 	| {Always} 'always' '{' expr=Assertion '}'
 	| {Anynext} 'anynext' '{' expr=Assertion '}'
 ;

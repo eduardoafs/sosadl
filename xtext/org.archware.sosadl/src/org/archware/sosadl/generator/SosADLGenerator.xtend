@@ -474,47 +474,43 @@ class SosADLGenerator implements IGenerator {
      * - la suite d'expressions derrière les :: est reportée dans une règle CallExpressionSuite
      */
     def compile(Expression e)'''«
-	IF e instanceof BinaryExpression»«(e as BinaryExpression).left.compile» «(e as BinaryExpression).op» «(e as BinaryExpression).right.compile»«
-	ELSEIF e instanceof UnaryExpression» «(e as UnaryExpression).op» «(e as UnaryExpression).right.compile»«
+	IF e instanceof BinaryExpression»(«(e as BinaryExpression).left.compile») «(e as BinaryExpression).op» («(e as BinaryExpression).right.compile»)«
+	ELSEIF e instanceof UnaryExpression» «(e as UnaryExpression).op» («(e as UnaryExpression).right.compile»)«
 	ELSEIF e instanceof Binding»«(e as Binding).compile»«
-	ELSEIF e.innerExpression != null»(«e.innerExpression.compile»)«
 	ELSEIF e instanceof CallExpression»«(e as CallExpression).compile»«
+	ELSEIF e instanceof IdentExpression»«(e as IdentExpression).ident.name»«
+	ELSEIF e instanceof UnobservableValue»unobservable«
+	ELSEIF e instanceof Any»any«
+    ELSEIF e instanceof Tuple»«(e as Tuple).compile»«
+    ELSEIF e instanceof Sequence»«(e as Sequence).compile»«
+    ELSEIF e instanceof IntegerValue»«(e as IntegerValue).compile»«
+    ELSEIF e instanceof CallExpression»«(e as CallExpression).compile»«
+    ELSEIF e instanceof Field»«(e as Field).object.compile»::«(e as Field).fieldName»«
+    ELSEIF e instanceof Select»«(e as Select).compile»«
+    ELSEIF e instanceof Map»«(e as Map).compile»«
+    ELSEIF e instanceof MethodCall»«(e as MethodCall).compile»«
 	ENDIF»'''
 	
 	def compile(CallExpression e)'''«
-	IF e.ident != null»«
-	  e.ident.compile»«IF !e.params.isEmpty»(«e.params.map[compile].join(", ")»)«ENDIF»«
-	ENDIF»«
-	IF e.litteral != null»«
-      IF e.litteral instanceof IntegerValue»«(e.litteral as IntegerValue).compile»«
-      ELSEIF e.litteral instanceof Any»any«
-      ELSEIF e.litteral instanceof UnobservableValue»unobservable«
-      ELSEIF e.litteral instanceof Tuple»«(e.litteral as Tuple).compile»«
-      ELSEIF e.litteral instanceof Sequence»«(e.litteral as Sequence).compile»«ENDIF»«
-    ENDIF»«
-    IF !e.fieldSuite.isEmpty»«
-    	FOR f:e.fieldSuite»::«
-    		IF f instanceof Field»«
-    			(f as Field).fieldName»«
-    		ELSEIF f instanceof Select»select{«
-    			(f as Select).selectName» suchthat «(f as Select).selectExpr.compile»}«
-    		ELSEIF f instanceof Map»map{«
-    			(f as Map).mapName» to «(f as Map).mapExpr.compile»}«
-    		ELSEIF f instanceof MethodCall»«
-    			(f as MethodCall).methodName»(«(f as MethodCall).params.map[compile].join(", ")»)«
-    		ENDIF»«
-    	ENDFOR»«
-    ENDIF»'''
+	e.functionName.name»(«e.params.map[compile].join(", ")»)'''
+	
+	def compile(Select e)'''«
+	e.object.compile»::select{«e.selectName» suchthat «e.selectExpr.compile»}'''
+
+	def compile(Map e)'''«
+	e.object.compile»::map{«e.mapName» to «e.mapExpr.compile»}'''
+
+	def compile(MethodCall e)'''«
+	e.object.compile»::«e.methodName»(«e.params.map[compile].join(", ")»)'''
 	
     def compile(UnaryExpression u)'''«u.op» «u.right.compile»'''
     
     def compile(Ident i)'''«i.name»'''
     
     def compile(Assertion a)'''«
-	IF a instanceof BinaryAssertion»«(a as BinaryAssertion).left.compile» «(a as BinaryAssertion).op» «(a as BinaryAssertion).right.compile»«
-	ELSEIF a instanceof UnaryAssertion» «(a as UnaryAssertion).op» «(a as UnaryAssertion).right.compile»«
-	ELSEIF a.innerAssertion != null»(«a.innerAssertion.compile»)«
-	ELSEIF a instanceof CallExpression»«(a as CallExpression).compile»«
+	IF a instanceof BinaryAssertion»(«(a as BinaryAssertion).left.compile») «(a as BinaryAssertion).op» («(a as BinaryAssertion).right.compile»)«
+	ELSEIF a instanceof UnaryAssertion» «(a as UnaryAssertion).op» («(a as UnaryAssertion).right.compile»)«
+	ELSEIF a instanceof Expression»«(a as Expression).compile»«
 	ELSEIF a instanceof Always»«(a as Always).compile»«
 	ELSEIF a instanceof Anynext»«(a as Anynext).compile»«
 	ELSEIF a instanceof Action»«(a as Action).compile»«
