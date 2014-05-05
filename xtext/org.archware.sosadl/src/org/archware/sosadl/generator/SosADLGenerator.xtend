@@ -202,7 +202,7 @@ class SosADLGenerator implements IGenerator {
       protocol «p.protocolName» is «p.protocolBody.compile»
     '''
     
-    def compile(Protocol p)'''
+    def CharSequence compile(Protocol p)'''
     {
       «FOR s : p.statements»
       «s.compile»
@@ -284,7 +284,7 @@ class SosADLGenerator implements IGenerator {
     behavior «b.behaviorName» («b.paramExpr.map[compile].join(", ")») is «b.behaviorBody.compile»
     '''
 
-	def compile(Behavior b)'''
+	def CharSequence compile(Behavior b)'''
     {
       «FOR s : b.statements»
       «s.compile»
@@ -424,7 +424,7 @@ class SosADLGenerator implements IGenerator {
     «ENDIF»
 	'''
 	
-	def compile(DataType d)'''«
+	def CharSequence compile(DataType d)'''«
 	IF d instanceof BaseType»«
       (d as BaseType).compile»«
     ELSEIF d instanceof ConstructedType»«
@@ -502,7 +502,7 @@ class SosADLGenerator implements IGenerator {
      * - CallFunction est supprimé dans CallExpression
      * - la suite d'expressions derrière les :: est reportée dans une règle CallExpressionSuite
      */
-    def compile(Expression e)'''«
+    def CharSequence compile(Expression e)'''«
 	IF e instanceof BinaryExpression»(«(e as BinaryExpression).left.compile») «(e as BinaryExpression).op» («(e as BinaryExpression).right.compile»)«
 	ELSEIF e instanceof UnaryExpression» «(e as UnaryExpression).op» («(e as UnaryExpression).right.compile»)«
 	ELSEIF e instanceof Binding»«(e as Binding).compile»«
@@ -536,7 +536,7 @@ class SosADLGenerator implements IGenerator {
     
     def compile(Ident i)'''«i.name»'''
     
-    def compile(Assertion a)'''«
+    def CharSequence compile(Assertion a)'''«
 	IF a instanceof BinaryAssertion»(«(a as BinaryAssertion).left.compile») «(a as BinaryAssertion).op» («(a as BinaryAssertion).right.compile»)«
 	ELSEIF a instanceof UnaryAssertion» «(a as UnaryAssertion).op» («(a as UnaryAssertion).right.compile»)«
 	ELSEIF a instanceof Expression»«(a as Expression).compile»«
