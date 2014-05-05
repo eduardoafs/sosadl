@@ -37,8 +37,8 @@ class SosADLGenerator implements IGenerator {
 			//System.out.println("e ='"+e+"'")
 			//System.out.println("e fullname='"+e.fullyQualifiedName+"'")
 			val c = e.compile
-			// System.out.println(c)
-			check_roundtrip(resource.URI, e, c.toString())
+		    System.out.println(c)
+			//check_roundtrip(resource.URI, e, c.toString())
 		}
 	}
 	
