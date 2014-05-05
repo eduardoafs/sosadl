@@ -66,10 +66,10 @@ class SosADLGenerator implements IGenerator {
       «i.compile»
     «ENDFOR»
 
-    «IF s.content instanceof NewNamedLibrary»
-      «(s.content as NewNamedLibrary).compile»
-    «ELSEIF s.content instanceof NewSoS»
-      «(s.content as NewSoS).compile »
+    «IF s.content instanceof Library»
+      «(s.content as Library).compile»
+    «ELSEIF s.content instanceof SoS»
+      «(s.content as SoS).compile »
     «ENDIF»
 	'''
 
@@ -77,14 +77,14 @@ class SosADLGenerator implements IGenerator {
 	with «i.importName»
 	'''
 
-	def compile(NewNamedLibrary l)'''
+	def compile(Library l)'''
     
     library «l.libraryName» is {
       «l.decls.compile»
     }
 	'''
 
-	def compile(NewSoS s)'''
+	def compile(SoS s)'''
       sos «s.sosName» is {
         «s.decls.compile»
       }
@@ -203,6 +203,7 @@ class SosADLGenerator implements IGenerator {
       «ENDFOR»
     }
 	'''
+	
 	def compile(ProtocolStatement p)'''
     «IF p instanceof Valuing»
       «(p as Valuing).compile»

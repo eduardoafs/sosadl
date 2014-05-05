@@ -6,9 +6,9 @@ SosADL: (imports+=Import)* content=(NewNamedLibrary | NewSoS);
 
 Import: 'with' importName=Name;
 
-NewNamedLibrary: 'library' libraryName=Name 'is' '{' decls=EntityBlock '}';
+NewNamedLibrary returns Unit: {Library} 'library' libraryName=Name 'is' '{' decls=EntityBlock '}';
 
-NewSoS: 'sos' sosName=Name 'is' '{'
+NewSoS returns Unit: {SoS} 'sos' sosName=Name 'is' '{'
   (decls=EntityBlock)
   '}';
 
