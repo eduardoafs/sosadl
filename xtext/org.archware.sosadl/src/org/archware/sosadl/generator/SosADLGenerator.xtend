@@ -460,7 +460,7 @@ class SosADLGenerator implements IGenerator {
 	
 	def compile(SequenceType s)'''sequence{«s.typeOfSequence.compile»}'''
 	
-	def compile(LabelledType l)'''«l.label.toString»:«l.type.compile»'''
+	//def compile(LabelledType l)'''«l.label.toString»:«l.type.compile»'''
 
 	def compile(ModeType m)'''«m.literal»'''
 	

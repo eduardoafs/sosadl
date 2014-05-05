@@ -249,15 +249,12 @@ BaseType:
 ;
 
 ConstructedType:
-	{TupleType} 'tuple' '{' field+=LabelledType (',' field+=LabelledType)* '}'
+	{TupleType} 'tuple' '{' field+=ParamType (',' field+=ParamType)* '}'
 	| {SequenceType} 'sequence' '{' typeOfSequence=DataType '}'
 	| {RangeType} 'integer' '{' vmin=Expression '..' vmax=Expression '}'  // range of Integer
 	| {ConnectionType} mode=ModeType '{' typeOfConnection=DataType '}'
 	;
-	
-LabelledType:
-	label=Label ':' type=DataType
-;
+
 
 enum ModeType:
 	ModeTypeIn='in' | ModeTypeOut='out' | ModeTypeInout='inout';

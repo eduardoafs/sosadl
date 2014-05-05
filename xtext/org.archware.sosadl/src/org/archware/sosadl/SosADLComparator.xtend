@@ -21,7 +21,7 @@ import org.archware.sosadl.sosADL.Unit
 import org.eclipse.xtext.xbase.lib.Functions
 import org.eclipse.xtext.xbase.lib.Pair
 import org.archware.sosadl.sosADL.TupleType
-import org.archware.sosadl.sosADL.LabelledType
+//import org.archware.sosadl.sosADL.LabelledType
 import org.archware.sosadl.sosADL.Expression
 import org.archware.sosadl.sosADL.ParamType
 import org.archware.sosadl.sosADL.Valuing
@@ -133,7 +133,7 @@ class SosADLComparator {
 	def static dispatch boolean compareDataType(TupleType l, TupleType r)		{ sameElements(l.field, r.field, [p, q | compare(p, q)]) }
 	def static dispatch boolean compareDataType(DataType l, DataType r)			{ false }
 	
-	def static compare(LabelledType l, LabelledType r) { l.label.equals(r.label) && compareDataType(l.type, r.type) }
+	//def static compare(LabelledType l, LabelledType r) { l.label.equals(r.label) && compareDataType(l.type, r.type) }
 	
 	def static compare(FunctionDecl l, FunctionDecl r) {
 		l.dataName.equals(r.dataName) && l.dataTypeName.equals(r.dataTypeName) && l.functionName.equals(r.functionName)
