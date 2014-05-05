@@ -13,6 +13,9 @@ import org.archware.sosadl.SosADLStandaloneSetup
 import org.eclipse.xtext.resource.XtextResourceSet
 import org.eclipse.emf.common.util.URI
 import org.eclipse.xtext.util.StringInputStream
+import org.archware.sosadl.SosADLComparator
+import org.eclipse.xtext.parser.IParser
+import java.io.StringReader
 
 /**
  * Generates code from your model files on save.
@@ -34,17 +37,20 @@ class SosADLGenerator implements IGenerator {
 			//System.out.println("e ='"+e+"'")
 			//System.out.println("e fullname='"+e.fullyQualifiedName+"'")
 			val c = e.compile
-			System.out.println(c)
+			// System.out.println(c)
 			check_roundtrip(resource.URI, e, c.toString())
 		}
 	}
 	
 	private def do_parse(CharSequence c) {
 		val injector = new SosADLStandaloneSetup().createInjectorAndDoEMFRegistration
-		val resourceSet = injector.getInstance(XtextResourceSet)
-		val res = resourceSet.createResource(URI.createURI("dummy:/temp.sosadl"))
-		res.load(new StringInputStream(c.toString), #{})
-		res.contents.get(0) as SosADL
+		val parser = injector.getInstance(IParser)
+		val result = parser.parse(new StringReader(c.toString()))
+		if(result.hasSyntaxErrors) {
+			result.getSyntaxErrors.forEach[e | System.out.println(e.toString())]
+		} else {
+			result.getRootASTElement as SosADL
+		}
 	}
 	
 	private def check_roundtrip(URI uri, SosADL e, String c) {
@@ -52,7 +58,7 @@ class SosADLGenerator implements IGenerator {
 		val e1 = p1.compile.toString()
 		val p2 = do_parse(e1)
 		val e2 = p2.compile.toString()
-		System.out.println("roundtrip test for " + uri.toString() + ": " + e1.equals(e2))		
+		System.out.println("roundtrip test for " + uri.toString() + ": " + SosADLComparator.compare(e, p1) + " / " + SosADLComparator.compare(e, p2) + " / " + e1.equals(e2))		
 	}
 
 /* switch equivalent aux IF en cascade (sauf les espaces):
