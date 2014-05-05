@@ -9,6 +9,10 @@ import org.eclipse.xtext.generator.IFileSystemAccess
 import org.archware.sosadl.sosADL.*
 import org.eclipse.xtext.naming.IQualifiedNameProvider
 import com.google.inject.Inject
+import org.archware.sosadl.SosADLStandaloneSetup
+import org.eclipse.xtext.resource.XtextResourceSet
+import org.eclipse.emf.common.util.URI
+import org.eclipse.xtext.util.StringInputStream
 
 /**
  * Generates code from your model files on save.
@@ -29,8 +33,26 @@ class SosADLGenerator implements IGenerator {
 		for (e : resource.allContents.toIterable.filter(SosADL)) {
 			//System.out.println("e ='"+e+"'")
 			//System.out.println("e fullname='"+e.fullyQualifiedName+"'")
-			System.out.println(e.compile)
+			val c = e.compile
+			System.out.println(c)
+			check_roundtrip(resource.URI, e, c.toString())
 		}
+	}
+	
+	private def do_parse(CharSequence c) {
+		val injector = new SosADLStandaloneSetup().createInjectorAndDoEMFRegistration
+		val resourceSet = injector.getInstance(XtextResourceSet)
+		val res = resourceSet.createResource(URI.createURI("dummy:/temp.sosadl"))
+		res.load(new StringInputStream(c.toString), #{})
+		res.contents.get(0) as SosADL
+	}
+	
+	private def check_roundtrip(URI uri, SosADL e, String c) {
+		val p1 = do_parse(c)
+		val e1 = p1.compile.toString()
+		val p2 = do_parse(e1)
+		val e2 = p2.compile.toString()
+		System.out.println("roundtrip test for " + uri.toString() + ": " + e1.equals(e2))		
 	}
 
 /* switch equivalent aux IF en cascade (sauf les espaces):
