@@ -212,16 +212,21 @@ Binding:
 	| {Quantify} quantifier=Quantifier '{' elementInConstituent+=ElementInConstituent (',' elementInConstituent+=ElementInConstituent)* 'suchthat' bindings=BindingExpression '}'
 ;
 
-Quantifier:
-	'forall' | 'exists'
+enum Quantifier:
+	QuantifierForall='forall' | QuantifierExists='exists'
 ;
 
 ElementInConstituent:
 	element=Name 'in' constituent=Name
 ;
 
-Multiplicity:
-	'one' | 'none' | 'lone' | 'any' | 'some' | 'all'
+enum Multiplicity:
+	MultiplicityOne='one'
+	| MultiplicityNone='none'
+	| MultiplicityLone='lone'
+	| MultiplicityAny='any'
+	| MultiplicitySome='some'
+	| MultiplicityAll='all'
 ;
 
 DataTypeDecl: 'datatype' datatypeName=Name ('is' datatype=DataType)? ('{' function+=FunctionDecl+ '}')?;
