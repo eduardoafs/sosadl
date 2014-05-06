@@ -263,14 +263,6 @@ ConstructedType:
 
 enum ModeType:
 	ModeTypeIn='in' | ModeTypeOut='out' | ModeTypeInout='inout';
-	
-Label:
-	Name;
-
-/*
-Ident:
-	name=Name;
-*/
 
 Name: ID ;
 
@@ -292,7 +284,7 @@ BaseValue returns Expression:
 	| {Any} 'any'
 ;
 
-// IntegerValue est un entier naturel >=0. Pour avoir un entier <0, utiliser une expression
+// IntegerValue is a natural integer (>=0). Use a UnaryExpression to get a negative value.
 IntegerValue:
 	absInt=INT // INT == ('0'..'9')+ rend une valeur ecore::EInt;
 ;
@@ -359,11 +351,6 @@ UnaryExpression:
 	op=UnaryOp right=FinalExpression
 	;
 
-/*
- * CallExpression est réécrite:
- * - ne rend plus Expression
- * - la suite d'expressions derrière des :: fait appel à une nouvelle règle CallExpressionSuite
- */
 CallExpression returns Expression:
 	(
 		{IdentExpression} ident=Name
@@ -454,12 +441,6 @@ UnaryAssertion:
 	op=UnaryOp right=FinalAssertion
 	;
 
-/*
- * CallAssertion est supprimée car en fait, elle est identique à CallExpression.
- * En effet, LitteralAssertion est identique à LitteralExpression.
- * Autre conséquence : LitteralAssertion est supprimée. 
- */
-
 FinalAssertion returns Assertion:
 	UnaryAssertion
 	| CallExpression
@@ -467,22 +448,5 @@ FinalAssertion returns Assertion:
 	| {Always} 'always' '{' expr=Assertion '}'
 	| {Anynext} 'anynext' '{' expr=Assertion '}'
 ;
-/*
-CallAssertion: //; returns Expression:
-	 ( ident=Ident ('(' (params+=Expression (',' params+=Expression)*)? ')')? 
-	  | litteral=LitteralAssertion
-	 )
-	 (fieldSuite+=CallAssertionSuite)*
-;
 
-CallAssertionSuite:
-     {Field} '::' fieldName=Name
-	 | {Select} '::' 'select' '{' selectName=Name 'suchthat' selectExpr=Expression '}'
-	 | {Map} '::' 'map' '{' mapName=Name 'to' mapExpr=Expression '}'
-	 | {MethodCall} '::' methodName=Name '(' (params+=Expression (',' params+=Expression)*)? ')'
-;
-
-LitteralAssertion returns Assertion:
-	Value
-;
-*/
+// the end.
