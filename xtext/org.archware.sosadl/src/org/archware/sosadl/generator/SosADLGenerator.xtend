@@ -8,7 +8,7 @@ import org.eclipse.xtext.generator.IGenerator
 import org.eclipse.xtext.generator.IFileSystemAccess
 import org.archware.sosadl.sosADL.*
 import org.eclipse.xtext.naming.IQualifiedNameProvider
-import com.google.inject.Inject
+//import com.google.inject.Inject
 import org.archware.sosadl.SosADLStandaloneSetup
 import org.eclipse.xtext.resource.XtextResourceSet
 import org.eclipse.emf.common.util.URI
@@ -24,7 +24,7 @@ import java.io.StringReader
  */
 class SosADLGenerator implements IGenerator {
 
-	@Inject extension IQualifiedNameProvider
+	//@Inject extension IQualifiedNameProvider
 
 	override void doGenerate(Resource resource, IFileSystemAccess fsa) {
 
@@ -38,12 +38,12 @@ class SosADLGenerator implements IGenerator {
 			//System.out.println("e fullname='"+e.fullyQualifiedName+"'")
 			val c = e.compile
 		    System.out.println(c)
-			//check_roundtrip(resource.URI, e, c.toString())
+			check_roundtrip(resource.URI, e, c.toString())
 		}
 	}
 	
 	private def do_parse(CharSequence c) {
-		val injector = new SosADLStandaloneSetup().createInjectorAndDoEMFRegistration
+		val injector = new SosADLStandaloneSetup().createInjector //.createInjectorAndDoEMFRegistration
 		val parser = injector.getInstance(IParser)
 		val result = parser.parse(new StringReader(c.toString()))
 		if(result.hasSyntaxErrors) {
