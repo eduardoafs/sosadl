@@ -21,7 +21,6 @@ import org.archware.sosadl.sosADL.Unit
 import org.eclipse.xtext.xbase.lib.Functions
 import org.eclipse.xtext.xbase.lib.Pair
 import org.archware.sosadl.sosADL.TupleType
-//import org.archware.sosadl.sosADL.LabelledType
 import org.archware.sosadl.sosADL.Expression
 import org.archware.sosadl.sosADL.ParamType
 import org.archware.sosadl.sosADL.Valuing
@@ -35,7 +34,6 @@ import org.archware.sosadl.sosADL.ProtocolDecl
 import org.archware.sosadl.sosADL.Protocol
 import org.archware.sosadl.sosADL.Behavior
 import org.archware.sosadl.sosADL.ConstituentList
-import org.archware.sosadl.sosADL.BindingExpression
 import org.archware.sosadl.sosADL.Assertion
 import org.archware.sosadl.sosADL.ProtocolStatement
 import org.archware.sosadl.sosADL.BehaviorStatement
@@ -58,7 +56,6 @@ import org.archware.sosadl.sosADL.ElementInConstituent
 import org.archware.sosadl.sosADL.ComplexName
 import org.archware.sosadl.sosADL.Sequence
 import org.archware.sosadl.sosADL.Field
-//import org.archware.sosadl.sosADL.Ident
 import org.archware.sosadl.sosADL.TupleElement
 import org.archware.sosadl.sosADL.Action
 import org.archware.sosadl.sosADL.Always
@@ -80,7 +77,6 @@ import org.archware.sosadl.sosADL.IfThenElseProtocol
 import org.archware.sosadl.sosADL.ProtocolAction
 import org.archware.sosadl.sosADL.RepeatProtocol
 import org.archware.sosadl.sosADL.AssertExpression
-import org.archware.sosadl.sosADL.BooleanExpression
 import org.archware.sosadl.sosADL.ProtocolActionSuite
 import org.archware.sosadl.sosADL.ReceiveAnyProtocolAction
 import org.archware.sosadl.sosADL.ReceiveProtocolAction
@@ -132,8 +128,6 @@ class SosADLComparator {
 	def static dispatch boolean compareDataType(SequenceType l, SequenceType r)	{ compareDataType(l.typeOfSequence, r.typeOfSequence) }
 	def static dispatch boolean compareDataType(TupleType l, TupleType r)		{ sameElements(l.field, r.field, [p, q | compare(p, q)]) }
 	def static dispatch boolean compareDataType(DataType l, DataType r)			{ false }
-	
-	//def static compare(LabelledType l, LabelledType r) { l.label.equals(r.label) && compareDataType(l.type, r.type) }
 	
 	def static compare(FunctionDecl l, FunctionDecl r) {
 		l.dataName.equals(r.dataName) && l.dataTypeName.equals(r.dataTypeName) && l.functionName.equals(r.functionName)
@@ -202,7 +196,7 @@ class SosADLComparator {
 		l.behaviorName.equals(r.behaviorName)
 		&& sameElements(l.paramExpr, r.paramExpr, [p, q | compareExpression(p, q)])
 		&& compare(l.constituentList, r.constituentList)
-		&& compareBindingExpression(l.bindings, r.bindings)
+		&& compareExpression(l.bindings, r.bindings)
 	}
 	
 	def static compare(AssertionDecl l, AssertionDecl r) {
@@ -221,7 +215,7 @@ class SosADLComparator {
 	
 	def static dispatch boolean compareExpression(Any l, Any r)								{ true }
 	def static dispatch boolean compareExpression(BinaryExpression l, BinaryExpression r)	{ compareExpression(l.left, r.left) && l.op.equals(r.op) && compareExpression(l.right, r.right) }
-	def static dispatch boolean compareExpression(Quantify l, Quantify r)					{ l.quantifier.equals(r.quantifier) && sameElements(l.elementInConstituent, r.elementInConstituent, [p, q | compare(p, q)]) && compareBindingExpression(l.bindings, r.bindings) }
+	def static dispatch boolean compareExpression(Quantify l, Quantify r)					{ l.quantifier.equals(r.quantifier) && sameElements(l.elementInConstituent, r.elementInConstituent, [p, q | compare(p, q)]) && compareExpression(l.bindings, r.bindings) }
 	def static dispatch boolean compareExpression(Relay l, Relay r)							{ compare(l.gate, r.gate) && compare(l.connection, r.connection) }
 	def static dispatch boolean compareExpression(Unify l, Unify r)							{ l.multLeft.equals(r.multLeft) && compare(l.connLeft, r.connLeft) && l.multRight.equals(r.multRight) && compare(l.connRight, r.connRight) }
 	def static dispatch boolean compareExpression(CallExpression l, CallExpression r)		{ l.functionName.equals(r.functionName) && sameElements(l.params, r.params, [p, q | compareExpression(p, q)]) }
@@ -245,13 +239,8 @@ class SosADLComparator {
 		sameElements(l.complexName, r.complexName, [p, q | p.equals(q)])
 	}
 	
-	//def static compare(Ident l, Ident r) { l.name.equals(r.name) }
-	
 	def static compare(TupleElement l, TupleElement r) { l.elementLabel.equals(r.elementLabel) && compareExpression(l.elementValue, r.elementValue) }
 
-	def static dispatch boolean compareBindingExpression(Expression l, Expression r)				{ compareExpression(l, r) }	
-	def static dispatch boolean compareBindingExpression(BindingExpression l, BindingExpression r)	{ false }
-	
 	def static dispatch boolean compareAssertion(Action l, Action r)					{ compare(l.complexName, r.complexName) && compareActionSuite(l.suite, r.suite) }
 	def static dispatch boolean compareAssertion(Always l, Always r)					{ compareAssertion(l.expr, r.expr) }
 	def static dispatch boolean compareAssertion(Anynext l, Anynext r)					{ compareAssertion(l.expr, r.expr) }
@@ -271,7 +260,7 @@ class SosADLComparator {
 	def static dispatch boolean compareProtocolStatement(DoExpr l, DoExpr r)							{ compareExpression(l.expr, r.expr) }
 	def static dispatch boolean compareProtocolStatement(Done l, Done r)								{ true }
 	def static dispatch boolean compareProtocolStatement(ForEachProtocol l, ForEachProtocol r)			{ l.name.equals(r.name) && compareExpression(l.setOfValues, r.setOfValues) && compare(l.foreachProtocol, r.foreachProtocol) }
-	def static dispatch boolean compareProtocolStatement(IfThenElseProtocol l, IfThenElseProtocol r)	{ compareBooleanExpression(l.cond, r.cond) && compare(l.ifTrueProtocol, r.ifTrueProtocol) && compareOpt(l.ifFalseProtocol, r.ifFalseProtocol, [p, q | compare(p, q)]) }
+	def static dispatch boolean compareProtocolStatement(IfThenElseProtocol l, IfThenElseProtocol r)	{ compareExpression(l.cond, r.cond) && compare(l.ifTrueProtocol, r.ifTrueProtocol) && compareOpt(l.ifFalseProtocol, r.ifFalseProtocol, [p, q | compare(p, q)]) }
 	def static dispatch boolean compareProtocolStatement(ProtocolAction l, ProtocolAction r)			{ compare(l.complexName, r.complexName) && compareProtocolActionSuite(l.suite, r.suite) }
 	def static dispatch boolean compareProtocolStatement(RepeatProtocol l, RepeatProtocol r)			{ compare(l.repeatedProtocol, r.repeatedProtocol) }
 	def static dispatch boolean compareProtocolStatement(Valuing l, Valuing r)							{ compare(l, r) }
@@ -289,16 +278,13 @@ class SosADLComparator {
 	def static dispatch boolean compareBehaviorStatement(DoExpr l, DoExpr r)							{ compareExpression(l.expr, r.expr) }
 	def static dispatch boolean compareBehaviorStatement(Done l, Done r)								{ true }
 	def static dispatch boolean compareBehaviorStatement(ForEachBehavior l, ForEachBehavior r)			{ l.name.equals(r.name) && compareExpression(l.setOfValues, r.setOfValues) && compare(l.foreachBehavior, r.foreachBehavior) }
-	def static dispatch boolean compareBehaviorStatement(IfThenElseBehavior l, IfThenElseBehavior r)	{ compareBooleanExpression(l.cond, r.cond) && compare(l.ifTrueBehavior, r.ifTrueBehavior) && compareOpt(l.ifFalseBehavior, r.ifFalseBehavior, [p, q | compare(p, q)]) }
+	def static dispatch boolean compareBehaviorStatement(IfThenElseBehavior l, IfThenElseBehavior r)	{ compareExpression(l.cond, r.cond) && compare(l.ifTrueBehavior, r.ifTrueBehavior) && compareOpt(l.ifFalseBehavior, r.ifFalseBehavior, [p, q | compare(p, q)]) }
 	def static dispatch boolean compareBehaviorStatement(RecursiveCall l, RecursiveCall r)				{ sameElements(l.paramExpr, r.paramExpr, [p, q | compareExpression(p, q)]) }
 	def static dispatch boolean compareBehaviorStatement(RepeatBehavior l, RepeatBehavior r)			{ compare(l.repeatedBehavior, r.repeatedBehavior) }
 	def static dispatch boolean compareBehaviorStatement(Valuing l, Valuing r)							{ compare(l, r) }
 	def static dispatch boolean compareBehaviorStatement(BehaviorStatement l, BehaviorStatement r)		{ false }
 	
-	def static dispatch boolean compareAssertExpression(BooleanExpression l, BooleanExpression r)	{ compareBooleanExpression(l, r) }
+	def static dispatch boolean compareAssertExpression(Expression l, Expression r)					{ compareExpression(l, r) }
 	def static dispatch boolean compareAssertExpression(Valuing l, Valuing r)						{ compare(l, r) }
-	def static dispatch boolean compareAssertExpression(AssertExpression l, AssertExpression r)	{ false }
-	
-	def static dispatch boolean compareBooleanExpression(Expression l, Expression r)				{ compareExpression(l, r) }
-	def static dispatch boolean compareBooleanExpression(BooleanExpression l, BooleanExpression r)	{ false }
+	def static dispatch boolean compareAssertExpression(AssertExpression l, AssertExpression r)		{ false }
 }

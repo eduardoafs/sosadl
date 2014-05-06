@@ -302,10 +302,10 @@ TupleElement:
 ;
 
 // BindingExpression is just an alias for Expression to help the poor human reader.
-BindingExpression: Expression;
+BindingExpression returns Expression: Expression;
 
 // BooleanExpression is just an alias for Expression to help the poor human reader.
-BooleanExpression: Expression;
+BooleanExpression returns Expression: Expression;
 
 Expression:
 	BinaryExpression0

@@ -358,8 +358,8 @@ class SosADLGenerator implements IGenerator {
 	def compile(AssertExpression a)'''«
 	IF a instanceof Valuing»«
 	  (a as Valuing).compile»«
-	ELSEIF a instanceof BooleanExpression»«
-	  (a as BooleanExpression).compile»«
+	ELSEIF a instanceof Expression»«
+	  (a as Expression).compile»«
 	ENDIF»'''
 
 	def compile(Action a)'''
@@ -489,10 +489,6 @@ class SosADLGenerator implements IGenerator {
 	
 	def compile(Sequence s)'''sequence{«s.paramExpr.map[compile].join(", ")»}'''
 
-    def compile(BindingExpression b)'''«(b as Expression).compile»'''
-
-    def compile(BooleanExpression b)'''«(b as Expression).compile»'''
-    
     /*
      * La compilation de la règle initiale Expression était illisible : la faute à la grammaire abstraite !
      * En effet, presque toutes les règles de la grammaire concrète pour Expression
@@ -533,8 +529,6 @@ class SosADLGenerator implements IGenerator {
 	e.object.compile»::«e.methodName»(«e.params.map[compile].join(", ")»)'''
 	
     def compile(UnaryExpression u)'''«u.op» «u.right.compile»'''
-    
-    //def compile(Ident i)'''«i.name»'''
     
     def CharSequence compile(Assertion a)'''«
 	IF a instanceof BinaryAssertion»(«(a as BinaryAssertion).left.compile») «(a as BinaryAssertion).op» («(a as BinaryAssertion).right.compile»)«
