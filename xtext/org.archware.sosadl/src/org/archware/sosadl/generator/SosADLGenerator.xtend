@@ -507,7 +507,7 @@ class SosADLGenerator implements IGenerator {
 	ELSEIF e instanceof UnaryExpression» «(e as UnaryExpression).op» («(e as UnaryExpression).right.compile»)«
 	ELSEIF e instanceof Binding»«(e as Binding).compile»«
 	ELSEIF e instanceof CallExpression»«(e as CallExpression).compile»«
-	ELSEIF e instanceof IdentExpression»«(e as IdentExpression).ident.name»«
+	ELSEIF e instanceof IdentExpression»«(e as IdentExpression).ident»«
 	ELSEIF e instanceof UnobservableValue»unobservable«
 	ELSEIF e instanceof Any»any«
     ELSEIF e instanceof Tuple»«(e as Tuple).compile»«
@@ -521,7 +521,7 @@ class SosADLGenerator implements IGenerator {
 	ENDIF»'''
 	
 	def compile(CallExpression e)'''«
-	e.functionName.name»(«e.params.map[compile].join(", ")»)'''
+	e.functionName»(«e.params.map[compile].join(", ")»)'''
 	
 	def compile(Select e)'''«
 	e.object.compile»::select{«e.selectName» suchthat «e.selectExpr.compile»}'''
@@ -534,7 +534,7 @@ class SosADLGenerator implements IGenerator {
 	
     def compile(UnaryExpression u)'''«u.op» «u.right.compile»'''
     
-    def compile(Ident i)'''«i.name»'''
+    //def compile(Ident i)'''«i.name»'''
     
     def CharSequence compile(Assertion a)'''«
 	IF a instanceof BinaryAssertion»(«(a as BinaryAssertion).left.compile») «(a as BinaryAssertion).op» («(a as BinaryAssertion).right.compile»)«

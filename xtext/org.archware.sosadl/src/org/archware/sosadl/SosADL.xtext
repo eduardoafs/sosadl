@@ -262,8 +262,10 @@ enum ModeType:
 Label:
 	Name;
 
+/*
 Ident:
 	name=Name;
+*/
 
 Name: ID ;
 
@@ -359,8 +361,8 @@ UnaryExpression:
  */
 CallExpression returns Expression:
 	(
-		{IdentExpression} ident=Ident
-		| {CallExpression} functionName=Ident '(' (params+=Expression (',' params+=Expression)*)? ')'
+		{IdentExpression} ident=Name
+		| {CallExpression} functionName=Name '(' (params+=Expression (',' params+=Expression)*)? ')'
 	    | LitteralExpression
 	)
 	

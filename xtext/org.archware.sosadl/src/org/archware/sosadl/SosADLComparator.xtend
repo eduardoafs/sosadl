@@ -58,7 +58,7 @@ import org.archware.sosadl.sosADL.ElementInConstituent
 import org.archware.sosadl.sosADL.ComplexName
 import org.archware.sosadl.sosADL.Sequence
 import org.archware.sosadl.sosADL.Field
-import org.archware.sosadl.sosADL.Ident
+//import org.archware.sosadl.sosADL.Ident
 import org.archware.sosadl.sosADL.TupleElement
 import org.archware.sosadl.sosADL.Action
 import org.archware.sosadl.sosADL.Always
@@ -224,11 +224,11 @@ class SosADLComparator {
 	def static dispatch boolean compareExpression(Quantify l, Quantify r)					{ l.quantifier.equals(r.quantifier) && sameElements(l.elementInConstituent, r.elementInConstituent, [p, q | compare(p, q)]) && compareBindingExpression(l.bindings, r.bindings) }
 	def static dispatch boolean compareExpression(Relay l, Relay r)							{ compare(l.gate, r.gate) && compare(l.connection, r.connection) }
 	def static dispatch boolean compareExpression(Unify l, Unify r)							{ l.multLeft.equals(r.multLeft) && compare(l.connLeft, r.connLeft) && l.multRight.equals(r.multRight) && compare(l.connRight, r.connRight) }
-	def static dispatch boolean compareExpression(CallExpression l, CallExpression r)		{ compare(l.functionName, r.functionName) && sameElements(l.params, r.params, [p, q | compareExpression(p, q)]) }
+	def static dispatch boolean compareExpression(CallExpression l, CallExpression r)		{ l.functionName.equals(r.functionName) && sameElements(l.params, r.params, [p, q | compareExpression(p, q)]) }
 	def static dispatch boolean compareExpression(Sequence l, Sequence r)					{ sameElements(l.paramExpr, r.paramExpr, [p, q | compareExpression(p, q)]) }
 	def static dispatch boolean compareExpression(Tuple l, Tuple r)							{ sameElements(l.tupleElement, r.tupleElement, [p, q | compare(p, q)]) }
 	def static dispatch boolean compareExpression(Field l, Field r)							{ compareExpression(l.object, r.object) && l.fieldName.equals(r.fieldName) }
-	def static dispatch boolean compareExpression(IdentExpression l, IdentExpression r)		{ compare(l.ident, r.ident) }
+	def static dispatch boolean compareExpression(IdentExpression l, IdentExpression r)		{ l.ident.equals(r.ident) }
 	def static dispatch boolean compareExpression(IntegerValue l, IntegerValue r)			{ l.absInt == r.absInt }
 	def static dispatch boolean compareExpression(Map l, Map r)								{ compareExpression(l.object, r.object) && l.mapName.equals(r.mapName) && compareExpression(l.mapExpr, r.mapExpr) }
 	def static dispatch boolean compareExpression(MethodCall l, MethodCall r)				{ compareExpression(l.object, r.object) && l.methodName.equals(r.methodName) && sameElements(l.params, r.params, [p, q | compareExpression(p, q)]) }
@@ -245,7 +245,7 @@ class SosADLComparator {
 		sameElements(l.complexName, r.complexName, [p, q | p.equals(q)])
 	}
 	
-	def static compare(Ident l, Ident r) { l.name.equals(r.name) }
+	//def static compare(Ident l, Ident r) { l.name.equals(r.name) }
 	
 	def static compare(TupleElement l, TupleElement r) { l.elementLabel.equals(r.elementLabel) && compareExpression(l.elementValue, r.elementValue) }
 
