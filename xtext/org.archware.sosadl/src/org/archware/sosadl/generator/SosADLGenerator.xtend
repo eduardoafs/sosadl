@@ -7,12 +7,8 @@ import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.xtext.generator.IGenerator
 import org.eclipse.xtext.generator.IFileSystemAccess
 import org.archware.sosadl.sosADL.*
-import org.eclipse.xtext.naming.IQualifiedNameProvider
-//import com.google.inject.Inject
 import org.archware.sosadl.SosADLStandaloneSetup
-import org.eclipse.xtext.resource.XtextResourceSet
 import org.eclipse.emf.common.util.URI
-import org.eclipse.xtext.util.StringInputStream
 import org.archware.sosadl.SosADLComparator
 import org.eclipse.xtext.parser.IParser
 import java.io.StringReader
@@ -24,18 +20,9 @@ import java.io.StringReader
  */
 class SosADLGenerator implements IGenerator {
 
-	//@Inject extension IQualifiedNameProvider
-
 	override void doGenerate(Resource resource, IFileSystemAccess fsa) {
 
-		//		fsa.generateFile('greetings.txt', 'People to greet: ' + 
-		//			resource.allContents
-		//				.filter(typeof(Greeting))
-		//				.map[name]
-		//				.join(', '))
 		for (e : resource.allContents.toIterable.filter(SosADL)) {
-			//System.out.println("e ='"+e+"'")
-			//System.out.println("e fullname='"+e.fullyQualifiedName+"'")
 			val c = e.compile
 		    System.out.println(c)
 			check_roundtrip(resource.URI, e, c.toString())
@@ -43,7 +30,7 @@ class SosADLGenerator implements IGenerator {
 	}
 	
 	private def do_parse(CharSequence c) {
-		val injector = new SosADLStandaloneSetup().createInjector //.createInjectorAndDoEMFRegistration
+		val injector = new SosADLStandaloneSetup().createInjector
 		val parser = injector.getInstance(IParser)
 		val result = parser.parse(new StringReader(c.toString()))
 		if(result.hasSyntaxErrors) {
@@ -460,8 +447,6 @@ class SosADLGenerator implements IGenerator {
 	
 	def compile(SequenceType s)'''sequence{«s.typeOfSequence.compile»}'''
 	
-	//def compile(LabelledType l)'''«l.label.toString»:«l.type.compile»'''
-
 	def compile(ModeType m)'''«m.literal»'''
 	
 	def compile(TypeName t)'''«t.typeName»'''
@@ -489,15 +474,6 @@ class SosADLGenerator implements IGenerator {
 	
 	def compile(Sequence s)'''sequence{«s.paramExpr.map[compile].join(", ")»}'''
 
-    /*
-     * La compilation de la règle initiale Expression était illisible : la faute à la grammaire abstraite !
-     * En effet, presque toutes les règles de la grammaire concrète pour Expression
-     * se traduisaient dans l'unique classe Expression...
-     * Remède :
-     * - CallExpression ne retourne plus Expression
-     * - CallFunction est supprimé dans CallExpression
-     * - la suite d'expressions derrière les :: est reportée dans une règle CallExpressionSuite
-     */
     def CharSequence compile(Expression e)'''«
 	IF e instanceof BinaryExpression»(«(e as BinaryExpression).left.compile») «(e as BinaryExpression).op» («(e as BinaryExpression).right.compile»)«
 	ELSEIF e instanceof UnaryExpression» «(e as UnaryExpression).op» («(e as UnaryExpression).right.compile»)«
