@@ -276,7 +276,7 @@ class SosADLGenerator implements IGenerator {
     
     def compile(ReceiveAnyProtocolAction r)''' receive any'''
     
-    def compile(ReceiveProtocolAction r)''' receive «r.receivedValue.compile»'''
+    def compile(ReceiveProtocolAction r)''' receive «r.receivedValue»'''
     
     def compile(AnyAction a)'''anyaction'''
     
@@ -370,7 +370,7 @@ class SosADLGenerator implements IGenerator {
 	
 	def compile(SendAction s)''' send «s.sendExpression.compile»'''
     
-    def compile(ReceiveAction r)''' receive «r.receivedValue.compile»'''
+    def compile(ReceiveAction r)''' receive «r.receivedValue»'''
         
 	def compile(ArchBehaviorDecl a)'''
     behavior «a.behaviorName» («a.paramExpr.map[compile].join(", ")») is compose {

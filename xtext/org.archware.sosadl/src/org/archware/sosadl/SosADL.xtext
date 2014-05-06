@@ -121,7 +121,7 @@ ProtocolAction:
 ProtocolActionSuite:
 	({SendProtocolAction} 'send' sendExpression=FinalExpression)
 	| ('receive' ({ReceiveAnyProtocolAction} 'any'
-	   			 |{ReceiveProtocolAction} receivedValue=ComplexName))
+	   			 |{ReceiveProtocolAction} receivedValue=Name))
 ;
 
 BehaviorDecl:
@@ -189,7 +189,7 @@ Action:
 
 ActionSuite:
 	{SendAction} 'send' sendExpression=FinalExpression
-	| {ReceiveAction} 'receive' receivedValue=ComplexName
+	| {ReceiveAction} 'receive' receivedValue=Name
 ;
 
 ArchBehaviorDecl:

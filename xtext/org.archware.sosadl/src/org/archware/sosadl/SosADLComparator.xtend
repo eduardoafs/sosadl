@@ -249,7 +249,7 @@ class SosADLComparator {
 	def static dispatch boolean compareAssertion(UnaryAssertion l, UnaryAssertion r)	{ l.op.equals(r.op) && compareAssertion(l.right, r.right) }
 	def static dispatch boolean compareAssertion(Assertion l, Assertion r)				{ false }
 
-	def static dispatch boolean compareActionSuite(ReceiveAction l, ReceiveAction r)	{ compare(l.receivedValue, r.receivedValue) }
+	def static dispatch boolean compareActionSuite(ReceiveAction l, ReceiveAction r)	{ l.receivedValue.equals(r.receivedValue) }
 	def static dispatch boolean compareActionSuite(SendAction l, SendAction r)			{ compareExpression(l.sendExpression, r.sendExpression) }
 	def static dispatch boolean compareActionSuite(ActionSuite l, ActionSuite r)		{ false }
 	
@@ -267,7 +267,7 @@ class SosADLComparator {
 	def static dispatch boolean compareProtocolStatement(ProtocolStatement l, ProtocolStatement r)		{ false }
 	
 	def static dispatch boolean compareProtocolActionSuite(ReceiveAnyProtocolAction l, ReceiveAnyProtocolAction r)	{ true }
-	def static dispatch boolean compareProtocolActionSuite(ReceiveProtocolAction l, ReceiveProtocolAction r)		{ compare(l.receivedValue, r.receivedValue) }
+	def static dispatch boolean compareProtocolActionSuite(ReceiveProtocolAction l, ReceiveProtocolAction r)		{ l.receivedValue.equals(r.receivedValue) }
 	def static dispatch boolean compareProtocolActionSuite(SendProtocolAction l, SendProtocolAction r)				{ compareExpression(l.sendExpression, r.sendExpression) }
 	def static dispatch boolean compareProtocolActionSuite(ProtocolActionSuite l, ProtocolActionSuite r)			{ false }
 
