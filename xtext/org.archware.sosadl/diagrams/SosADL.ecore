@@ -192,8 +192,6 @@
     <eStructuralFeatures xsi:type="ecore:EReference" name="type" eType="#//DataType"
         containment="true"/>
   </eClassifiers>
-  <eClassifiers xsi:type="ecore:EClass" name="BaseType" eSuperTypes="#//DataType"/>
-  <eClassifiers xsi:type="ecore:EClass" name="ConstructedType" eSuperTypes="#//DataType"/>
   <eClassifiers xsi:type="ecore:EClass" name="FieldDecl">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="type" eType="#//DataType"
@@ -335,22 +333,22 @@
   <eClassifiers xsi:type="ecore:EClass" name="NamedType" eSuperTypes="#//DataType">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
   </eClassifiers>
-  <eClassifiers xsi:type="ecore:EClass" name="IntegerType" eSuperTypes="#//BaseType"/>
-  <eClassifiers xsi:type="ecore:EClass" name="TupleType" eSuperTypes="#//ConstructedType">
+  <eClassifiers xsi:type="ecore:EClass" name="IntegerType" eSuperTypes="#//DataType"/>
+  <eClassifiers xsi:type="ecore:EClass" name="TupleType" eSuperTypes="#//DataType">
     <eStructuralFeatures xsi:type="ecore:EReference" name="fields" upperBound="-1"
         eType="#//FieldDecl" containment="true"/>
   </eClassifiers>
-  <eClassifiers xsi:type="ecore:EClass" name="SequenceType" eSuperTypes="#//ConstructedType">
+  <eClassifiers xsi:type="ecore:EClass" name="SequenceType" eSuperTypes="#//DataType">
     <eStructuralFeatures xsi:type="ecore:EReference" name="type" eType="#//DataType"
         containment="true"/>
   </eClassifiers>
-  <eClassifiers xsi:type="ecore:EClass" name="RangeType" eSuperTypes="#//ConstructedType">
+  <eClassifiers xsi:type="ecore:EClass" name="RangeType" eSuperTypes="#//DataType">
     <eStructuralFeatures xsi:type="ecore:EReference" name="vmin" eType="#//Expression"
         containment="true"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="vmax" eType="#//Expression"
         containment="true"/>
   </eClassifiers>
-  <eClassifiers xsi:type="ecore:EClass" name="ConnectionType" eSuperTypes="#//ConstructedType">
+  <eClassifiers xsi:type="ecore:EClass" name="ConnectionType" eSuperTypes="#//DataType">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="mode" eType="#//ModeType"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="type" eType="#//DataType"
         containment="true"/>

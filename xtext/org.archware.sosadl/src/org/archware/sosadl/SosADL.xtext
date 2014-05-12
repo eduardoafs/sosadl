@@ -240,11 +240,11 @@ FormalParameter:
 	name=Name ':' type=DataType
 ;
 
-BaseType:
+BaseType returns DataType:
 	{IntegerType} 'integer'
 ;
 
-ConstructedType:
+ConstructedType returns DataType:
 	{TupleType} 'tuple' '{' fields+=FieldDecl (',' fields+=FieldDecl)* '}'
 	| {SequenceType} 'sequence' '{' type=DataType '}'
 	| {RangeType} 'integer' '{' vmin=Expression '..' vmax=Expression '}'  // range of Integer
