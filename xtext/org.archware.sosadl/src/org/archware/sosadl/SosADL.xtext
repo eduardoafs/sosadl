@@ -4,11 +4,11 @@ generate sosADL 'http://www-archware.irisa.fr/sosadl/SosADL'
 
 SosADL: (imports+=Import)* content=(NewNamedLibrary | NewSoS);
 
-Import: 'with' importName=Name;
+Import: 'with' importedLibrary=Name;
 
-NewNamedLibrary returns Unit: {Library} 'library' libraryName=Name 'is' '{' decls=EntityBlock '}';
+NewNamedLibrary returns Unit: {Library} 'library' name=Name 'is' '{' decls=EntityBlock '}';
 
-NewSoS returns Unit: {SoS} 'sos' sosName=Name 'is' '{'
+NewSoS returns Unit: {SoS} 'sos' name=Name 'is' '{'
   (decls=EntityBlock)
   '}';
 
@@ -20,21 +20,21 @@ EntityBlock: {EntityBlock}
 	(architectures+=ArchitectureDecl)*
 ;
 
-SystemDecl: 'system' systemName=Name '(' (params+=ParamType (',' params+=ParamType)*)? ')' 'is' '{'
+SystemDecl: 'system' name=Name '(' (parameters+=FormalParameter (',' parameters+=FormalParameter)*)? ')' 'is' '{'
 	(datatypes+=DataTypeDecl)*
 	(gates+=GateDecl)+
 	behavior=BehaviorDecl
 	'}' ('guarantee' '{' assertionDecl=AssertionDecl '}')?
 	;
 
-ArchitectureDecl: 'architecture' architectureName=Name '(' (params+=ParamType (',' params+=ParamType)*)? ')' 'is' '{'
+ArchitectureDecl: 'architecture' name=Name '(' (parameters+=FormalParameter (',' parameters+=FormalParameter)*)? ')' 'is' '{'
 	(datatypes+=DataTypeDecl)*
 	(gates+=GateDecl)+
 	archBehavior=ArchBehaviorDecl
 	'}' ('guarantee' '{' assertionDecl=AssertionDecl '}')?
 	;
 
-MediatorDecl: 'mediator' mediatorName=Name '(' (params+=ParamType (',' params+=ParamType)*)? ')' 'is' '{'
+MediatorDecl: 'mediator' name=Name '(' (parameters+=FormalParameter (',' parameters+=FormalParameter)*)? ')' 'is' '{'
 	(datatypes+=DataTypeDecl)*
 	(duties+=DutyDecl)+
 	behavior=BehaviorDecl
@@ -42,13 +42,13 @@ MediatorDecl: 'mediator' mediatorName=Name '(' (params+=ParamType (',' params+=P
 	;
 
 GateDecl:
-	'gate' gateName=Name 'is' '{'
+	'gate' name=Name 'is' '{'
 	  (connections+=Connection)+
 	'}' 'guarantee' '{' protocolDecl=ProtocolDecl '}'
 ;
 
 DutyDecl:
-	'duty' dutyName=Name 'is' '{'
+	'duty' name=Name 'is' '{'
 	  (connections+=Connection)+
 	'}'
 	'require' '{' assertion=AssertionDecl '}'
@@ -59,13 +59,13 @@ Connection:
 	(envConnection?='environment')? 'connection' name=Name 'is' mode=ModeType '{' valueType=DataType '}';
 
 AssertionDecl:
-	'property' assertionName=Name 'is' '{'
+	'property' name=Name 'is' '{'
     (valuing+=Valuing+ 'within')?
     assertionExpr=Assertion '}'
 ;
 
 ProtocolDecl:
-    'protocol' protocolName=Name 'is' protocolBody=Protocol
+    'protocol' name=Name 'is' protocolBody=Protocol
 ;
 
 /* previous version distinguishes PrefixedProtocol and FinalProtocol
@@ -83,7 +83,7 @@ FinalProtocol returns FinalProtocol:
     {IfThenElseProtocol} 'if' cond=BooleanExpression 'then' '{' ifTrueProtocol=PrefixedProtocol '}' ('else' '{' ifFalseProtocol=PrefixedProtocol '}')?
 	| {ChooseProtocol} 'choose' '{' choiceProtocol+=PrefixedProtocol '}'  ('or'  '{' choiceProtocol+=PrefixedProtocol '}' )+  // au lieu de 'choose { b1 or ... or bn }' car 'or' apparait dans Expression et Behavior
 	| {ForEachProtocol} 'foreach' name=Name 'in' setOfValues=Expression '{' foreachProtocol=ProtocolStatement '}'
-	| {DoExpr} 'do' expr=Expression
+	| {DoExpr} 'do' expression=Expression
 	| {RepeatForeverProtocol} 'forever' '{' repeatedProtocol=PrefixedProtocol '}' 
     | {Done} 'done'
 	;
@@ -107,10 +107,10 @@ ProtocolStatement:
 	| ProtocolAction
 	| {AnyAction} 'anyaction'
 	| {RepeatProtocol} 'repeat' repeatedProtocol=Protocol
-	| {IfThenElseProtocol} 'if' cond=BooleanExpression 'then' ifTrueProtocol=Protocol ('else' ifFalseProtocol=Protocol)?
-	| {ChooseProtocol} 'choose' choiceProtocol+=Protocol  ('or' choiceProtocol+=Protocol)+  // au lieu de 'choose { b1 or ... or bn }' car 'or' apparait dans Expression et Behavior
-	| {ForEachProtocol} 'foreach' name=Name 'in' setOfValues=Expression foreachProtocol=Protocol
-	| {DoExpr} 'do' expr=Expression
+	| {IfThenElseProtocol} 'if' condition=Expression 'then' ifTrueProtocol=Protocol ('else' ifFalseProtocol=Protocol)?
+	| {ChooseProtocol} 'choose' branches+=Protocol  ('or' branches+=Protocol)+  // au lieu de 'choose { b1 or ... or bn }' car 'or' apparait dans Expression et Behavior
+	| {ForEachProtocol} 'foreach' variable=Name 'in' setOfValues=Expression foreachProtocol=Protocol
+	| {DoExpr} 'do' expression=Expression
 	| {Done} 'done'
 ;
 
@@ -121,11 +121,11 @@ ProtocolAction:
 ProtocolActionSuite:
 	({SendProtocolAction} 'send' sendExpression=FinalExpression)
 	| ('receive' ({ReceiveAnyProtocolAction} 'any'
-	   			 |{ReceiveProtocolAction} receivedValue=Name))
+	   			 |{ReceiveProtocolAction} variable=Name))
 ;
 
 BehaviorDecl:
-	'behavior' behaviorName=Name '(' (paramExpr+=Expression (',' paramExpr+=Expression)*)? ')' 'is' behaviorBody=Behavior
+	'behavior' name=Name '(' (parameters+=Expression (',' parameters+=Expression)*)? ')' 'is' body=Behavior
 ;
 
 /* previous version distinguishes PrefixedBehavior and FinalBehavior
@@ -143,8 +143,8 @@ FinalBehavior returns FinalBehavior:
 	{ForeverBehavior} 'forever' '{' repeatedBehavior=PrefixedBehavior '}'
 	| {IfThenElseBehavior} 'if' cond=BooleanExpression 'then' '{' ifTrueBehavior=PrefixedBehavior '}' ('else' '{' ifFalseBehavior=PrefixedBehavior '}')?
 	| {ChooseBehavior} 'choose' '{' choiceBehavior+=PrefixedBehavior '}'  ('or'  '{' choiceBehavior+=PrefixedBehavior '}' )+  // au lieu de 'choose { b1 or ... or bn }' car 'or' apparait dans Expression et Behavior
-	| {ForEachBehavior} 'foreach' name=Name 'in' setOfValues=Expression '{' foreachBehavior=BehaviorStatement '}'
-	| {DoExpr} 'do' expr=Expression
+	| {ForEachBehavior} 'foreach' variable=Name 'in' setOfValues=Expression '{' foreachBehavior=BehaviorStatement '}'
+	| {DoExpr} 'do' expression=Expression
 	| {Done} 'done'
 	| {RecursiveCall} 'behavior' '(' (paramExpr+=Expression (',' paramExpr+=Expression)*)? ')'
 	;
@@ -165,23 +165,18 @@ BehaviorStatement:
 	| Assert
 	| Action
 	| {RepeatBehavior} 'repeat' repeatedBehavior=Behavior
-	| {IfThenElseBehavior} 'if' cond=BooleanExpression 'then' ifTrueBehavior=Behavior ('else' ifFalseBehavior=Behavior)?
-	| {ChooseBehavior} 'choose' choiceBehavior+=Behavior  ('or' choiceBehavior+=Behavior )+  // au lieu de 'choose { b1 or ... or bn }' car 'or' apparait dans Expression et Behavior
-	| {ForEachBehavior} 'foreach' name=Name 'in' setOfValues=Expression foreachBehavior=Behavior
-	| {DoExpr} 'do' expr=Expression
+	| {IfThenElseBehavior} 'if' condition=Expression 'then' ifTrueBehavior=Behavior ('else' ifFalseBehavior=Behavior)?
+	| {ChooseBehavior} 'choose' branches+=Behavior  ('or' branches+=Behavior )+  // au lieu de 'choose { b1 or ... or bn }' car 'or' apparait dans Expression et Behavior
+	| {ForEachBehavior} 'foreach' variable=Name 'in' setOfValues=Expression foreachBehavior=Behavior
+	| {DoExpr} 'do' expression=Expression
 	| {Done} 'done'
-	| {RecursiveCall} 'behavior' '(' (paramExpr+=Expression (',' paramExpr+=Expression)*)? ')'
+	| {RecursiveCall} 'behavior' '(' (parameters+=Expression (',' parameters+=Expression)*)? ')'
 ;
 
 Assert:
-	{TellAssertion} 'assert' assertName=Name 'is' '{' assertExpression=AssertExpression '}'
-	| {AskAssertion} 'ask' assertName=Name 'is' '{' assertExpression=AssertExpression '}'
+	{TellAssertion} 'tell' name=Name 'is' '{' expression=Expression '}'
+	| {AskAssertion} 'ask' name=Name 'is' '{' expression=Expression '}'
 ;
-
-AssertExpression:
-	Valuing
-	| BooleanExpression
-	;
 
 Action:
 	'via' complexName=ComplexName suite=ActionSuite
@@ -189,27 +184,23 @@ Action:
 
 ActionSuite:
 	{SendAction} 'send' sendExpression=FinalExpression
-	| {ReceiveAction} 'receive' receivedValue=Name
+	| {ReceiveAction} 'receive' variable=Name
 ;
 
 ArchBehaviorDecl:
-	'behavior' behaviorName=Name '(' (paramExpr+=Expression (',' paramExpr+=Expression)*)? ')'
-	'is' 'compose' '{' constituentList=ConstituentList '}'
-	'binding' '{' bindings=BindingExpression '}' 
-;
-
-ConstituentList:
-	(constituent+=Constituent)+
+	'behavior' name=Name '(' (parameters+=Expression (',' parameters+=Expression)*)? ')'
+	'is' 'compose' '{' (constituents+=Constituent)+ '}'
+	'binding' '{' bindings=Expression '}' 
 ;
 
 Constituent:
-	constituentName=Name 'is' constituentValue=Expression
+	name=Name 'is' value=Expression
 ;
 
 Binding:
 	{Relay} 'relay' gate=ComplexName 'to' connection=ComplexName
 	| {Unify} 'unify' multLeft=Multiplicity '{' connLeft=ComplexName '}' 'to' multRight=Multiplicity '{' connRight=ComplexName '}'
-	| {Quantify} quantifier=Quantifier '{' elementInConstituent+=ElementInConstituent (',' elementInConstituent+=ElementInConstituent)* 'suchthat' bindings=BindingExpression '}'
+	| {Quantify} quantifier=Quantifier '{' elements+=ElementInConstituent (',' elements+=ElementInConstituent)* 'suchthat' bindings=Expression '}'
 ;
 
 enum Quantifier:
@@ -217,7 +208,7 @@ enum Quantifier:
 ;
 
 ElementInConstituent:
-	element=Name 'in' constituent=Name
+	variable=Name 'in' constituent=Name
 ;
 
 enum Multiplicity:
@@ -229,23 +220,23 @@ enum Multiplicity:
 	| MultiplicityAll='all'
 ;
 
-DataTypeDecl: 'datatype' datatypeName=Name ('is' datatype=DataType)? ('{' function+=FunctionDecl+ '}')?;
+DataTypeDecl: 'datatype' name=Name ('is' datatype=DataType)? ('{' functions+=FunctionDecl+ '}')?;
 
 DataType:
 	BaseType
 	| ConstructedType
-	| {TypeName} typeName=Name  // name of another type
+	| {NamedType} name=Name  // name of another type
 ;
 
 FunctionDecl:
 	'function' '(' dataName=Name ':' dataTypeName=Name ')' '::'
-	functionName=Name '(' (params+=ParamType (',' params+=ParamType)*)? ')' ':' returnType=DataType 'is' '{'
+	name=Name '(' (parameters+=FormalParameter (',' parameters+=FormalParameter)*)? ')' ':' type=DataType 'is' '{'
 	    (valuing+=Valuing)*
-		'return' returnExpression=Expression
+		'return' expression=Expression
 	'}'
 ;
 
-ParamType:
+FormalParameter:
 	name=Name ':' type=DataType
 ;
 
@@ -254,12 +245,15 @@ BaseType:
 ;
 
 ConstructedType:
-	{TupleType} 'tuple' '{' field+=ParamType (',' field+=ParamType)* '}'
+	{TupleType} 'tuple' '{' fields+=FieldDecl (',' fields+=FieldDecl)* '}'
 	| {SequenceType} 'sequence' '{' typeOfSequence=DataType '}'
 	| {RangeType} 'integer' '{' vmin=Expression '..' vmax=Expression '}'  // range of Integer
 	| {ConnectionType} mode=ModeType '{' typeOfConnection=DataType '}'
 	;
 
+FieldDecl:
+	name=Name ':' type=DataType
+;
 
 enum ModeType:
 	ModeTypeIn='in' | ModeTypeOut='out' | ModeTypeInout='inout';
@@ -267,11 +261,11 @@ enum ModeType:
 Name: ID ;
 
 ComplexName:
-	complexName+=Name ('::' complexName+=Name)*
+	name+=Name ('::' name+=Name)*
 ;
 
 Valuing:
-	'value' valueName=Name ('is' valueType=DataType)? '=' expression=Expression;
+	'value' variable=Name ('is' valueType=DataType)? '=' expression=Expression;
 
 Value returns Expression:
 	BaseValue
@@ -295,14 +289,8 @@ ConstructedValue:
 ;
 
 TupleElement:
-	elementLabel=Name '=' elementValue=Expression
+	label=Name '=' value=Expression
 ;
-
-// BindingExpression is just an alias for Expression to help the poor human reader.
-BindingExpression returns Expression: Expression;
-
-// BooleanExpression is just an alias for Expression to help the poor human reader.
-BooleanExpression returns Expression: Expression;
 
 Expression:
 	BinaryExpression0
@@ -354,16 +342,16 @@ UnaryExpression:
 CallExpression returns Expression:
 	(
 		{IdentExpression} ident=Name
-		| {CallExpression} functionName=Name '(' (params+=Expression (',' params+=Expression)*)? ')'
+		| {CallExpression} function=Name '(' (params+=Expression (',' params+=Expression)*)? ')'
 	    | LitteralExpression
 	)
 	
 	('::'
 		(
-			{Field.object=current} fieldName=Name
-			| {Select.object=current} 'select' '{' selectName=Name 'suchthat' selectExpr=Expression '}'
-			| {Map.object=current} 'map' '{' mapName=Name 'to' mapExpr=Expression '}'
-			| {MethodCall.object=current} methodName=Name '(' (params+=Expression (',' params+=Expression)*)? ')'
+			{Field.object=current} field=Name
+			| {Select.object=current} 'select' '{' variable=Name 'suchthat' condition=Expression '}'
+			| {Map.object=current} 'map' '{' variable=Name 'to' expression=Expression '}'
+			| {MethodCall.object=current} method=Name '(' (params+=Expression (',' params+=Expression)*)? ')'
 		)
 	)*
 
@@ -445,8 +433,8 @@ FinalAssertion returns Assertion:
 	UnaryAssertion
 	| CallExpression
 	| '(' Assertion ')'
-	| {Always} 'always' '{' expr=Assertion '}'
-	| {Anynext} 'anynext' '{' expr=Assertion '}'
+	| {Always} 'always' '{' expression=Assertion '}'
+	| {Anynext} 'anynext' '{' expression=Assertion '}'
 ;
 
 // the end.
