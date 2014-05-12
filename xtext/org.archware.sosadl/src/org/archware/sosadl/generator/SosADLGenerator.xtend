@@ -7,8 +7,11 @@ import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.xtext.generator.IGenerator
 import org.eclipse.xtext.generator.IFileSystemAccess
 import org.archware.sosadl.sosADL.*
-import org.eclipse.xtext.naming.IQualifiedNameProvider
-import com.google.inject.Inject
+import org.archware.sosadl.SosADLStandaloneSetup
+import org.eclipse.emf.common.util.URI
+import org.archware.sosadl.SosADLComparator
+import org.eclipse.xtext.parser.IParser
+import java.io.StringReader
 
 /**
  * Generates code from your model files on save.
@@ -17,20 +20,32 @@ import com.google.inject.Inject
  */
 class SosADLGenerator implements IGenerator {
 
-	@Inject extension IQualifiedNameProvider
-
 	override void doGenerate(Resource resource, IFileSystemAccess fsa) {
 
-		//		fsa.generateFile('greetings.txt', 'People to greet: ' + 
-		//			resource.allContents
-		//				.filter(typeof(Greeting))
-		//				.map[name]
-		//				.join(', '))
 		for (e : resource.allContents.toIterable.filter(SosADL)) {
-			//System.out.println("e ='"+e+"'")
-			//System.out.println("e fullname='"+e.fullyQualifiedName+"'")
-			System.out.println(e.compile)
+			val c = e.compile
+		    System.out.println(c)
+			check_roundtrip(resource.URI, e, c.toString())
 		}
+	}
+	
+	private def do_parse(CharSequence c) {
+		val injector = new SosADLStandaloneSetup().createInjector
+		val parser = injector.getInstance(IParser)
+		val result = parser.parse(new StringReader(c.toString()))
+		if(result.hasSyntaxErrors) {
+			result.getSyntaxErrors.forEach[e | System.out.println(e.toString())]
+		} else {
+			result.getRootASTElement as SosADL
+		}
+	}
+	
+	private def check_roundtrip(URI uri, SosADL e, String c) {
+		val p1 = do_parse(c)
+		val e1 = p1.compile.toString()
+		val p2 = do_parse(e1)
+		val e2 = p2.compile.toString()
+		System.out.println("roundtrip test for " + uri.toString() + ": " + SosADLComparator.compare(e, p1) + " / " + SosADLComparator.compare(e, p2) + " / " + e1.equals(e2))		
 	}
 
 /* switch equivalent aux IF en cascade (sauf les espaces):
@@ -44,10 +59,10 @@ class SosADLGenerator implements IGenerator {
       «i.compile»
     «ENDFOR»
 
-    «IF s.content instanceof NewNamedLibrary»
-      «(s.content as NewNamedLibrary).compile»
-    «ELSEIF s.content instanceof NewSoS»
-      «(s.content as NewSoS).compile »
+    «IF s.content instanceof Library»
+      «(s.content as Library).compile»
+    «ELSEIF s.content instanceof SoS»
+      «(s.content as SoS).compile »
     «ENDIF»
 	'''
 
@@ -55,14 +70,14 @@ class SosADLGenerator implements IGenerator {
 	with «i.importName»
 	'''
 
-	def compile(NewNamedLibrary l)'''
+	def compile(Library l)'''
     
     library «l.libraryName» is {
       «l.decls.compile»
     }
 	'''
 
-	def compile(NewSoS s)'''
+	def compile(SoS s)'''
       sos «s.sosName» is {
         «s.decls.compile»
       }
@@ -174,13 +189,14 @@ class SosADLGenerator implements IGenerator {
       protocol «p.protocolName» is «p.protocolBody.compile»
     '''
     
-    def compile(Protocol p)'''
+    def CharSequence compile(Protocol p)'''
     {
       «FOR s : p.statements»
       «s.compile»
       «ENDFOR»
     }
 	'''
+	
 	def compile(ProtocolStatement p)'''
     «IF p instanceof Valuing»
       «(p as Valuing).compile»
@@ -247,7 +263,7 @@ class SosADLGenerator implements IGenerator {
     
     def compile(ReceiveAnyProtocolAction r)''' receive any'''
     
-    def compile(ReceiveProtocolAction r)''' receive «r.receivedValue.compile»'''
+    def compile(ReceiveProtocolAction r)''' receive «r.receivedValue»'''
     
     def compile(AnyAction a)'''anyaction'''
     
@@ -255,7 +271,7 @@ class SosADLGenerator implements IGenerator {
     behavior «b.behaviorName» («b.paramExpr.map[compile].join(", ")») is «b.behaviorBody.compile»
     '''
 
-	def compile(Behavior b)'''
+	def CharSequence compile(Behavior b)'''
     {
       «FOR s : b.statements»
       «s.compile»
@@ -329,8 +345,8 @@ class SosADLGenerator implements IGenerator {
 	def compile(AssertExpression a)'''«
 	IF a instanceof Valuing»«
 	  (a as Valuing).compile»«
-	ELSEIF a instanceof BooleanExpression»«
-	  (a as BooleanExpression).compile»«
+	ELSEIF a instanceof Expression»«
+	  (a as Expression).compile»«
 	ENDIF»'''
 
 	def compile(Action a)'''
@@ -341,7 +357,7 @@ class SosADLGenerator implements IGenerator {
 	
 	def compile(SendAction s)''' send «s.sendExpression.compile»'''
     
-    def compile(ReceiveAction r)''' receive «r.receivedValue.compile»'''
+    def compile(ReceiveAction r)''' receive «r.receivedValue»'''
         
 	def compile(ArchBehaviorDecl a)'''
     behavior «a.behaviorName» («a.paramExpr.map[compile].join(", ")») is compose {
@@ -395,7 +411,7 @@ class SosADLGenerator implements IGenerator {
     «ENDIF»
 	'''
 	
-	def compile(DataType d)'''«
+	def CharSequence compile(DataType d)'''«
 	IF d instanceof BaseType»«
       (d as BaseType).compile»«
     ELSEIF d instanceof ConstructedType»«
@@ -431,8 +447,6 @@ class SosADLGenerator implements IGenerator {
 	
 	def compile(SequenceType s)'''sequence{«s.typeOfSequence.compile»}'''
 	
-	def compile(LabelledType l)'''«l.label.toString»:«l.type.compile»'''
-
 	def compile(ModeType m)'''«m.literal»'''
 	
 	def compile(TypeName t)'''«t.typeName»'''
@@ -460,61 +474,42 @@ class SosADLGenerator implements IGenerator {
 	
 	def compile(Sequence s)'''sequence{«s.paramExpr.map[compile].join(", ")»}'''
 
-    def compile(BindingExpression b)'''«(b as Expression).compile»'''
-
-    def compile(BooleanExpression b)'''«(b as Expression).compile»'''
-    
-    /*
-     * La compilation de la règle initiale Expression était illisible : la faute à la grammaire abstraite !
-     * En effet, presque toutes les règles de la grammaire concrète pour Expression
-     * se traduisaient dans l'unique classe Expression...
-     * Remède :
-     * - CallExpression ne retourne plus Expression
-     * - CallFunction est supprimé dans CallExpression
-     * - la suite d'expressions derrière les :: est reportée dans une règle CallExpressionSuite
-     */
-    def compile(Expression e)'''«
-	IF e instanceof BinaryExpression»«(e as BinaryExpression).left.compile» «(e as BinaryExpression).op» «(e as BinaryExpression).right.compile»«
-	ELSEIF e instanceof UnaryExpression» «(e as UnaryExpression).op» «(e as UnaryExpression).right.compile»«
+    def CharSequence compile(Expression e)'''«
+	IF e instanceof BinaryExpression»(«(e as BinaryExpression).left.compile») «(e as BinaryExpression).op» («(e as BinaryExpression).right.compile»)«
+	ELSEIF e instanceof UnaryExpression» «(e as UnaryExpression).op» («(e as UnaryExpression).right.compile»)«
 	ELSEIF e instanceof Binding»«(e as Binding).compile»«
-	ELSEIF e.innerExpression != null»(«e.innerExpression.compile»)«
 	ELSEIF e instanceof CallExpression»«(e as CallExpression).compile»«
+	ELSEIF e instanceof IdentExpression»«(e as IdentExpression).ident»«
+	ELSEIF e instanceof UnobservableValue»unobservable«
+	ELSEIF e instanceof Any»any«
+    ELSEIF e instanceof Tuple»«(e as Tuple).compile»«
+    ELSEIF e instanceof Sequence»«(e as Sequence).compile»«
+    ELSEIF e instanceof IntegerValue»«(e as IntegerValue).compile»«
+    ELSEIF e instanceof CallExpression»«(e as CallExpression).compile»«
+    ELSEIF e instanceof Field»«(e as Field).object.compile»::«(e as Field).fieldName»«
+    ELSEIF e instanceof Select»«(e as Select).compile»«
+    ELSEIF e instanceof Map»«(e as Map).compile»«
+    ELSEIF e instanceof MethodCall»«(e as MethodCall).compile»«
 	ENDIF»'''
 	
 	def compile(CallExpression e)'''«
-	IF e.ident != null»«
-	  e.ident.compile»«IF !e.params.isEmpty»(«e.params.map[compile].join(", ")»)«ENDIF»«
-	ENDIF»«
-	IF e.litteral != null»«
-      IF e.litteral instanceof IntegerValue»«(e.litteral as IntegerValue).compile»«
-      ELSEIF e.litteral instanceof Any»any«
-      ELSEIF e.litteral instanceof UnobservableValue»unobservable«
-      ELSEIF e.litteral instanceof Tuple»«(e.litteral as Tuple).compile»«
-      ELSEIF e.litteral instanceof Sequence»«(e.litteral as Sequence).compile»«ENDIF»«
-    ENDIF»«
-    IF !e.fieldSuite.isEmpty»«
-    	FOR f:e.fieldSuite»::«
-    		IF f instanceof Field»«
-    			(f as Field).fieldName»«
-    		ELSEIF f instanceof Select»select{«
-    			(f as Select).selectName» suchthat «(f as Select).selectExpr.compile»}«
-    		ELSEIF f instanceof Map»map{«
-    			(f as Map).mapName» to «(f as Map).mapExpr.compile»}«
-    		ELSEIF f instanceof MethodCall»«
-    			(f as MethodCall).methodName»(«(f as MethodCall).params.map[compile].join(", ")»)«
-    		ENDIF»«
-    	ENDFOR»«
-    ENDIF»'''
+	e.functionName»(«e.params.map[compile].join(", ")»)'''
+	
+	def compile(Select e)'''«
+	e.object.compile»::select{«e.selectName» suchthat «e.selectExpr.compile»}'''
+
+	def compile(Map e)'''«
+	e.object.compile»::map{«e.mapName» to «e.mapExpr.compile»}'''
+
+	def compile(MethodCall e)'''«
+	e.object.compile»::«e.methodName»(«e.params.map[compile].join(", ")»)'''
 	
     def compile(UnaryExpression u)'''«u.op» «u.right.compile»'''
     
-    def compile(Ident i)'''«i.name»'''
-    
-    def compile(Assertion a)'''«
-	IF a instanceof BinaryAssertion»«(a as BinaryAssertion).left.compile» «(a as BinaryAssertion).op» «(a as BinaryAssertion).right.compile»«
-	ELSEIF a instanceof UnaryAssertion» «(a as UnaryAssertion).op» «(a as UnaryAssertion).right.compile»«
-	ELSEIF a.innerAssertion != null»(«a.innerAssertion.compile»)«
-	ELSEIF a instanceof CallExpression»«(a as CallExpression).compile»«
+    def CharSequence compile(Assertion a)'''«
+	IF a instanceof BinaryAssertion»(«(a as BinaryAssertion).left.compile») «(a as BinaryAssertion).op» («(a as BinaryAssertion).right.compile»)«
+	ELSEIF a instanceof UnaryAssertion» «(a as UnaryAssertion).op» («(a as UnaryAssertion).right.compile»)«
+	ELSEIF a instanceof Expression»«(a as Expression).compile»«
 	ELSEIF a instanceof Always»«(a as Always).compile»«
 	ELSEIF a instanceof Anynext»«(a as Anynext).compile»«
 	ELSEIF a instanceof Action»«(a as Action).compile»«

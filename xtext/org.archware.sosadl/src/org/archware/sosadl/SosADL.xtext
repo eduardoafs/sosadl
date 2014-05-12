@@ -6,9 +6,9 @@ SosADL: (imports+=Import)* content=(NewNamedLibrary | NewSoS);
 
 Import: 'with' importName=Name;
 
-NewNamedLibrary: 'library' libraryName=Name 'is' '{' decls=EntityBlock '}';
+NewNamedLibrary returns Unit: {Library} 'library' libraryName=Name 'is' '{' decls=EntityBlock '}';
 
-NewSoS: 'sos' sosName=Name 'is' '{'
+NewSoS returns Unit: {SoS} 'sos' sosName=Name 'is' '{'
   (decls=EntityBlock)
   '}';
 
@@ -121,7 +121,7 @@ ProtocolAction:
 ProtocolActionSuite:
 	({SendProtocolAction} 'send' sendExpression=FinalExpression)
 	| ('receive' ({ReceiveAnyProtocolAction} 'any'
-	   			 |{ReceiveProtocolAction} receivedValue=ComplexName))
+	   			 |{ReceiveProtocolAction} receivedValue=Name))
 ;
 
 BehaviorDecl:
@@ -189,7 +189,7 @@ Action:
 
 ActionSuite:
 	{SendAction} 'send' sendExpression=FinalExpression
-	| {ReceiveAction} 'receive' receivedValue=ComplexName
+	| {ReceiveAction} 'receive' receivedValue=Name
 ;
 
 ArchBehaviorDecl:
@@ -212,16 +212,21 @@ Binding:
 	| {Quantify} quantifier=Quantifier '{' elementInConstituent+=ElementInConstituent (',' elementInConstituent+=ElementInConstituent)* 'suchthat' bindings=BindingExpression '}'
 ;
 
-Quantifier:
-	'forall' | 'exists'
+enum Quantifier:
+	QuantifierForall='forall' | QuantifierExists='exists'
 ;
 
 ElementInConstituent:
 	element=Name 'in' constituent=Name
 ;
 
-Multiplicity:
-	'one' | 'none' | 'lone' | 'any' | 'some' | 'all'
+enum Multiplicity:
+	MultiplicityOne='one'
+	| MultiplicityNone='none'
+	| MultiplicityLone='lone'
+	| MultiplicityAny='any'
+	| MultiplicitySome='some'
+	| MultiplicityAll='all'
 ;
 
 DataTypeDecl: 'datatype' datatypeName=Name ('is' datatype=DataType)? ('{' function+=FunctionDecl+ '}')?;
@@ -249,24 +254,15 @@ BaseType:
 ;
 
 ConstructedType:
-	{TupleType} 'tuple' '{' field+=LabelledType (',' field+=LabelledType)* '}'
+	{TupleType} 'tuple' '{' field+=ParamType (',' field+=ParamType)* '}'
 	| {SequenceType} 'sequence' '{' typeOfSequence=DataType '}'
 	| {RangeType} 'integer' '{' vmin=Expression '..' vmax=Expression '}'  // range of Integer
 	| {ConnectionType} mode=ModeType '{' typeOfConnection=DataType '}'
 	;
-	
-LabelledType:
-	label=Label ':' type=DataType
-;
+
 
 enum ModeType:
 	ModeTypeIn='in' | ModeTypeOut='out' | ModeTypeInout='inout';
-	
-Label:
-	Name;
-
-Ident:
-	name=Name;
 
 Name: ID ;
 
@@ -288,7 +284,7 @@ BaseValue returns Expression:
 	| {Any} 'any'
 ;
 
-// IntegerValue est un entier naturel >=0. Pour avoir un entier <0, utiliser une expression
+// IntegerValue is a natural integer (>=0). Use a UnaryExpression to get a negative value.
 IntegerValue:
 	absInt=INT // INT == ('0'..'9')+ rend une valeur ecore::EInt;
 ;
@@ -303,10 +299,10 @@ TupleElement:
 ;
 
 // BindingExpression is just an alias for Expression to help the poor human reader.
-BindingExpression: Expression;
+BindingExpression returns Expression: Expression;
 
 // BooleanExpression is just an alias for Expression to help the poor human reader.
-BooleanExpression: Expression;
+BooleanExpression returns Expression: Expression;
 
 Expression:
 	BinaryExpression0
@@ -347,7 +343,7 @@ BinaryExpression7 returns Expression:
 FinalExpression returns Expression:
 	UnaryExpression
 	| CallExpression
-	| '(' innerExpression=Expression ')'
+	| '(' Expression ')'
 	| Binding
 ;
 
@@ -355,23 +351,22 @@ UnaryExpression:
 	op=UnaryOp right=FinalExpression
 	;
 
-/*
- * CallExpression est réécrite:
- * - ne rend plus Expression
- * - la suite d'expressions derrière des :: fait appel à une nouvelle règle CallExpressionSuite
- */
-CallExpression://; returns Expression:
-	 ( ident=Ident ('(' (params+=Expression (',' params+=Expression)*)? ')')? 
-	  | litteral=LitteralExpression
-	 )
-	 (fieldSuite+=CallExpressionSuite)*
-;
+CallExpression returns Expression:
+	(
+		{IdentExpression} ident=Name
+		| {CallExpression} functionName=Name '(' (params+=Expression (',' params+=Expression)*)? ')'
+	    | LitteralExpression
+	)
+	
+	('::'
+		(
+			{Field.object=current} fieldName=Name
+			| {Select.object=current} 'select' '{' selectName=Name 'suchthat' selectExpr=Expression '}'
+			| {Map.object=current} 'map' '{' mapName=Name 'to' mapExpr=Expression '}'
+			| {MethodCall.object=current} methodName=Name '(' (params+=Expression (',' params+=Expression)*)? ')'
+		)
+	)*
 
-CallExpressionSuite:
-     {Field} '::' fieldName=Name
-	 | {Select} '::' 'select' '{' selectName=Name 'suchthat' selectExpr=Expression '}'
-	 | {Map} '::' 'map' '{' mapName=Name 'to' mapExpr=Expression '}'
-	 | {MethodCall} '::' methodName=Name '(' (params+=Expression (',' params+=Expression)*)? ')'
 ;
 
 LitteralExpression returns Expression:
@@ -446,35 +441,12 @@ UnaryAssertion:
 	op=UnaryOp right=FinalAssertion
 	;
 
-/*
- * CallAssertion est supprimée car en fait, elle est identique à CallExpression.
- * En effet, LitteralAssertion est identique à LitteralExpression.
- * Autre conséquence : LitteralAssertion est supprimée. 
- */
-
 FinalAssertion returns Assertion:
 	UnaryAssertion
 	| CallExpression
-	| '(' innerAssertion=Assertion ')'
+	| '(' Assertion ')'
 	| {Always} 'always' '{' expr=Assertion '}'
 	| {Anynext} 'anynext' '{' expr=Assertion '}'
 ;
-/*
-CallAssertion: //; returns Expression:
-	 ( ident=Ident ('(' (params+=Expression (',' params+=Expression)*)? ')')? 
-	  | litteral=LitteralAssertion
-	 )
-	 (fieldSuite+=CallAssertionSuite)*
-;
 
-CallAssertionSuite:
-     {Field} '::' fieldName=Name
-	 | {Select} '::' 'select' '{' selectName=Name 'suchthat' selectExpr=Expression '}'
-	 | {Map} '::' 'map' '{' mapName=Name 'to' mapExpr=Expression '}'
-	 | {MethodCall} '::' methodName=Name '(' (params+=Expression (',' params+=Expression)*)? ')'
-;
-
-LitteralAssertion returns Assertion:
-	Value
-;
-*/
+// the end.
