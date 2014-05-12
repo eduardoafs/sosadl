@@ -106,10 +106,10 @@ ProtocolStatement:
 	| Assert
 	| ProtocolAction
 	| {AnyAction} 'anyaction'
-	| {RepeatProtocol} 'repeat' repeatedProtocol=Protocol
-	| {IfThenElseProtocol} 'if' condition=Expression 'then' ifTrueProtocol=Protocol ('else' ifFalseProtocol=Protocol)?
+	| {RepeatProtocol} 'repeat' repeated=Protocol
+	| {IfThenElseProtocol} 'if' condition=Expression 'then' ifTrue=Protocol ('else' ifFalse=Protocol)?
 	| {ChooseProtocol} 'choose' branches+=Protocol  ('or' branches+=Protocol)+  // au lieu de 'choose { b1 or ... or bn }' car 'or' apparait dans Expression et Behavior
-	| {ForEachProtocol} 'foreach' variable=Name 'in' setOfValues=Expression foreachProtocol=Protocol
+	| {ForEachProtocol} 'foreach' variable=Name 'in' setOfValues=Expression repeated=Protocol
 	| {DoExpr} 'do' expression=Expression
 	| {Done} 'done'
 ;
@@ -119,13 +119,13 @@ ProtocolAction:
 ;
 
 ProtocolActionSuite:
-	({SendProtocolAction} 'send' sendExpression=FinalExpression)
+	({SendProtocolAction} 'send' expression=FinalExpression)
 	| ('receive' ({ReceiveAnyProtocolAction} 'any'
 	   			 |{ReceiveProtocolAction} variable=Name))
 ;
 
 BehaviorDecl:
-	'behavior' name=Name '(' (parameters+=Expression (',' parameters+=Expression)*)? ')' 'is' body=Behavior
+	'behavior' name=Name '(' (parameters+=FormalParameter (',' parameters+=FormalParameter)*)? ')' 'is' body=Behavior
 ;
 
 /* previous version distinguishes PrefixedBehavior and FinalBehavior
@@ -164,10 +164,10 @@ BehaviorStatement:
 	Valuing
 	| Assert
 	| Action
-	| {RepeatBehavior} 'repeat' repeatedBehavior=Behavior
-	| {IfThenElseBehavior} 'if' condition=Expression 'then' ifTrueBehavior=Behavior ('else' ifFalseBehavior=Behavior)?
+	| {RepeatBehavior} 'repeat' repeated=Behavior
+	| {IfThenElseBehavior} 'if' condition=Expression 'then' ifTrue=Behavior ('else' ifFalse=Behavior)?
 	| {ChooseBehavior} 'choose' branches+=Behavior  ('or' branches+=Behavior )+  // au lieu de 'choose { b1 or ... or bn }' car 'or' apparait dans Expression et Behavior
-	| {ForEachBehavior} 'foreach' variable=Name 'in' setOfValues=Expression foreachBehavior=Behavior
+	| {ForEachBehavior} 'foreach' variable=Name 'in' setOfValues=Expression repeated=Behavior
 	| {DoExpr} 'do' expression=Expression
 	| {Done} 'done'
 	| {RecursiveCall} 'behavior' '(' (parameters+=Expression (',' parameters+=Expression)*)? ')'
@@ -183,7 +183,7 @@ Action:
 ;
 
 ActionSuite:
-	{SendAction} 'send' sendExpression=FinalExpression
+	{SendAction} 'send' expression=FinalExpression
 	| {ReceiveAction} 'receive' variable=Name
 ;
 
@@ -246,9 +246,9 @@ BaseType:
 
 ConstructedType:
 	{TupleType} 'tuple' '{' fields+=FieldDecl (',' fields+=FieldDecl)* '}'
-	| {SequenceType} 'sequence' '{' typeOfSequence=DataType '}'
+	| {SequenceType} 'sequence' '{' type=DataType '}'
 	| {RangeType} 'integer' '{' vmin=Expression '..' vmax=Expression '}'  // range of Integer
-	| {ConnectionType} mode=ModeType '{' typeOfConnection=DataType '}'
+	| {ConnectionType} mode=ModeType '{' type=DataType '}'
 	;
 
 FieldDecl:
@@ -265,7 +265,7 @@ ComplexName:
 ;
 
 Valuing:
-	'value' variable=Name ('is' valueType=DataType)? '=' expression=Expression;
+	'value' variable=Name ('is' type=DataType)? '=' expression=Expression;
 
 Value returns Expression:
 	BaseValue
@@ -284,8 +284,8 @@ IntegerValue:
 ;
 
 ConstructedValue:
-	{Tuple} 'tuple' '{' tupleElement+=TupleElement (',' tupleElement+=TupleElement)* '}'
-	| {Sequence} 'sequence' '{' (paramExpr+=Expression (',' paramExpr+=Expression)*)? '}'
+	{Tuple} 'tuple' '{' elements+=TupleElement (',' elements+=TupleElement)* '}'
+	| {Sequence} 'sequence' '{' (elements+=Expression (',' elements+=Expression)*)? '}'
 ;
 
 TupleElement:
@@ -342,7 +342,7 @@ UnaryExpression:
 CallExpression returns Expression:
 	(
 		{IdentExpression} ident=Name
-		| {CallExpression} function=Name '(' (params+=Expression (',' params+=Expression)*)? ')'
+		| {CallExpression} function=Name '(' (parameters+=Expression (',' parameters+=Expression)*)? ')'
 	    | LitteralExpression
 	)
 	
@@ -351,7 +351,7 @@ CallExpression returns Expression:
 			{Field.object=current} field=Name
 			| {Select.object=current} 'select' '{' variable=Name 'suchthat' condition=Expression '}'
 			| {Map.object=current} 'map' '{' variable=Name 'to' expression=Expression '}'
-			| {MethodCall.object=current} method=Name '(' (params+=Expression (',' params+=Expression)*)? ')'
+			| {MethodCall.object=current} method=Name '(' (parameters+=Expression (',' parameters+=Expression)*)? ')'
 		)
 	)*
 
