@@ -67,18 +67,18 @@ class SosADLGenerator implements IGenerator {
 	'''
 
 	def compile(Import i)'''
-	with «i.importName»
+	with «i.importedLibrary»
 	'''
 
 	def compile(Library l)'''
     
-    library «l.libraryName» is {
+    library «l.name» is {
       «l.decls.compile»
     }
 	'''
 
 	def compile(SoS s)'''
-      sos «s.sosName» is {
+      sos «s.name» is {
         «s.decls.compile»
       }
 	'''
@@ -103,7 +103,7 @@ class SosADLGenerator implements IGenerator {
 	'''
 
 	def compile(SystemDecl s)'''
-      system «s.systemName» («s.params.map[compile].join(", ")») is {
+      system «s.name» («s.parameters.map[compile].join(", ")») is {
         «FOR d : s.datatypes»
           «d.compile»
         «ENDFOR»
@@ -119,7 +119,7 @@ class SosADLGenerator implements IGenerator {
 	'''
 
 	def compile(ArchitectureDecl a)'''
-      architecture «a.architectureName» («a.params.map[compile].join(", ")») is {
+      architecture «a.name» («a.parameters.map[compile].join(", ")») is {
         «FOR d : a.datatypes»
           «d.compile»
         «ENDFOR»
@@ -135,7 +135,7 @@ class SosADLGenerator implements IGenerator {
 	'''
 
     def compile(MediatorDecl m)'''
-      mediator «m.mediatorName» («m.params.map[compile].join(", ")») is {
+      mediator «m.name» («m.parameters.map[compile].join(", ")») is {
         «FOR d : m.datatypes»
           «d.compile»
         «ENDFOR»
@@ -149,7 +149,7 @@ class SosADLGenerator implements IGenerator {
 	
 	def compile(GateDecl g)'''
       
-      gate «g.gateName» is {
+      gate «g.name» is {
         «FOR c : g.connections»
         «c.compile»
         «ENDFOR»
@@ -160,7 +160,7 @@ class SosADLGenerator implements IGenerator {
 	
 	def compile(DutyDecl d)'''
       
-      duty «d.dutyName» is {
+      duty «d.name» is {
         «FOR c : d.connections»
         «c.compile»
         «ENDFOR»
@@ -174,7 +174,7 @@ class SosADLGenerator implements IGenerator {
 	def compile(Connection c)'''«IF c.envConnection»environment «ENDIF»connection «c.name» is «c.mode»{«c.valueType.compile»}'''
 	
 	def compile(AssertionDecl a)'''
-      property «a.assertionName» is {
+      property «a.name» is {
         «IF ! a.valuing.isEmpty»
         «FOR v:a.valuing»
         «v.compile»
@@ -186,7 +186,7 @@ class SosADLGenerator implements IGenerator {
     '''
     
     def compile(ProtocolDecl p)'''
-      protocol «p.protocolName» is «p.protocolBody.compile»
+      protocol «p.name» is «p.protocolBody.compile»
     '''
     
     def CharSequence compile(Protocol p)'''
@@ -222,28 +222,28 @@ class SosADLGenerator implements IGenerator {
 	'''
 	
 	def compile(IfThenElseProtocol i)'''
-    if «i.cond.compile» then {
-      «i.ifTrueProtocol.compile»
-    }«IF i.ifFalseProtocol != null» else {
-      «i.ifFalseProtocol.compile»
+    if «i.condition.compile» then {
+      «i.ifTrue.compile»
+    }«IF i.ifFalse != null» else {
+      «i.ifFalse.compile»
     }
     «ENDIF»
 	'''
 	
 	def compile(ChooseProtocol c)'''
-    choose «c.choiceProtocol.map[compile].join("or ")»
+    choose «c.branches.map[compile].join("or ")»
 	'''
 	
 	def compile(ForEachProtocol f)'''
-    foreach «f.name» in «f.setOfValues.compile» «f.foreachProtocol.compile»
+    foreach «f.variable» in «f.setOfValues.compile» «f.repeated.compile»
 	'''
 	
 	def compile(DoExpr d)'''
-    do «d.expr.compile»
+    do «d.expression.compile»
 	'''
 	
 	def compile(RepeatProtocol r)'''
-    repeat «r.repeatedProtocol.compile»
+    repeat «r.repeated.compile»
 	''' 
 	
 	def compile(Done d)'''done'''
@@ -259,16 +259,16 @@ class SosADLGenerator implements IGenerator {
     ENDIF»
     '''
     
-    def compile(SendProtocolAction s)''' send «s.sendExpression.compile»'''
+    def compile(SendProtocolAction s)''' send «s.expression.compile»'''
     
     def compile(ReceiveAnyProtocolAction r)''' receive any'''
     
-    def compile(ReceiveProtocolAction r)''' receive «r.receivedValue»'''
+    def compile(ReceiveProtocolAction r)''' receive «r.variable»'''
     
     def compile(AnyAction a)'''anyaction'''
     
     def compile(BehaviorDecl b)'''
-    behavior «b.behaviorName» («b.paramExpr.map[compile].join(", ")») is «b.behaviorBody.compile»
+    behavior «b.name» («b.parameters.map[compile].join(", ")») is «b.body.compile»
     '''
 
 	def CharSequence compile(Behavior b)'''
@@ -304,26 +304,26 @@ class SosADLGenerator implements IGenerator {
     '''
 
 	def compile(RepeatBehavior f)'''
-    repeat «f.repeatedBehavior.compile»
+    repeat «f.repeated.compile»
     '''
 	
 	def compile(IfThenElseBehavior i)'''
-    if «i.cond.compile» then «i.ifTrueBehavior.compile»«
-    IF i.ifFalseBehavior != null»
-    else «i.ifFalseBehavior.compile»
+    if «i.condition.compile» then «i.ifTrue.compile»«
+    IF i.ifFalse != null»
+    else «i.ifFalse.compile»
     «ENDIF»
 	'''
 	
 	def compile(ChooseBehavior c)'''
-    choose «c.choiceBehavior.map[compile].join("or ")»
+    choose «c.branches.map[compile].join("or ")»
 	'''
 	
 	def compile(ForEachBehavior f)'''
-    foreach «f.name» in «f.setOfValues.compile» «f.foreachBehavior.compile»
+    foreach «f.variable» in «f.setOfValues.compile» «f.repeated.compile»
 	'''
 	
 	def compile(RecursiveCall r)'''
-    behavior («r.paramExpr.map[compile].join(", ")»)
+    behavior («r.parameters.map[compile].join(", ")»)
 	'''
 	
     def compile(Assert a)'''
@@ -335,19 +335,12 @@ class SosADLGenerator implements IGenerator {
     '''
     
     def compile(TellAssertion a)'''
-    assert «a.assertName» is {«a.assertExpression.compile»}
+    tell «a.name» is {«a.expression.compile»}
     '''
     
     def compile(AskAssertion a)'''
-    ask «a.assertName» is {«a.assertExpression.compile»}
+    ask «a.name» is {«a.expression.compile»}
     '''
-
-	def compile(AssertExpression a)'''«
-	IF a instanceof Valuing»«
-	  (a as Valuing).compile»«
-	ELSEIF a instanceof Expression»«
-	  (a as Expression).compile»«
-	ENDIF»'''
 
 	def compile(Action a)'''
     via «a.complexName.compile»«
@@ -355,24 +348,21 @@ class SosADLGenerator implements IGenerator {
     ELSEIF a.suite instanceof ReceiveAction»«(a.suite as ReceiveAction).compile»«
     ENDIF»'''
 	
-	def compile(SendAction s)''' send «s.sendExpression.compile»'''
+	def compile(SendAction s)''' send «s.expression.compile»'''
     
-    def compile(ReceiveAction r)''' receive «r.receivedValue»'''
+    def compile(ReceiveAction r)''' receive «r.variable»'''
         
 	def compile(ArchBehaviorDecl a)'''
-    behavior «a.behaviorName» («a.paramExpr.map[compile].join(", ")») is compose {
-      «a.constituentList.compile»
+    behavior «a.name» («a.parameters.map[compile].join(", ")») is compose {
+      «FOR c:a.constituents»
+        «c.compile»
+      «ENDFOR»
     } binding {
       «a.bindings.compile»
     }
-	''' 
-	
-	def compile(ConstituentList l)'''
-    «FOR c:l.constituent»
-      «c.compile»
-    «ENDFOR»
 	'''
-	def compile(Constituent c)'''«c.constituentName» is «c.constituentValue.compile»'''
+	
+	def compile(Constituent c)'''«c.name» is «c.value.compile»'''
 
     def compile(Binding b)'''«
     IF b instanceof Relay»«
@@ -394,17 +384,17 @@ class SosADLGenerator implements IGenerator {
 
 	def compile(Quantify q)'''
     «q.quantifier» {
-      «q.elementInConstituent.map[compile].join(", ")»
+      «q.elements.map[compile].join(", ")»
       suchthat
       «q.bindings.compile»
     }
 	'''
 	
-	def compile(ElementInConstituent e)'''«e.element» in «e.constituent»'''
+	def compile(ElementInConstituent e)'''«e.variable» in «e.constituent»'''
 	
 	def compile(DataTypeDecl d)'''
-    datatype «d.datatypeName»«IF d.datatype != null» is «d.datatype.compile»«ENDIF»«IF !d.function.empty» { 
-      «FOR f : d.function»
+    datatype «d.name»«IF d.datatype != null» is «d.datatype.compile»«ENDIF»«IF !d.functions.empty» { 
+      «FOR f : d.functions»
       «f.compile»
       «ENDFOR»
     }
@@ -412,27 +402,34 @@ class SosADLGenerator implements IGenerator {
 	'''
 	
 	def CharSequence compile(DataType d)'''«
-	IF d instanceof BaseType»«
-      (d as BaseType).compile»«
-    ELSEIF d instanceof ConstructedType»«
-      (d as ConstructedType).compile»«
-    ELSEIF d instanceof TypeName»«
-      (d as TypeName).compile»«
+	IF d instanceof IntegerType»«
+	  (d as IntegerType).compile»«
+    ELSEIF d instanceof TupleType»«
+      (d as TupleType).compile»«
+    ELSEIF d instanceof SequenceType»«
+      (d as SequenceType).compile»«
+    ELSEIF d instanceof RangeType»integer{«(d as RangeType).vmin.compile»..«(d as RangeType).vmax.compile»}«
+    ELSEIF d instanceof ConnectionType»«
+      (d as ConnectionType).mode.compile»{«(d as ConnectionType).type.compile»}«
+    ELSEIF d instanceof NamedType»«
+      (d as NamedType).compile»«
     ENDIF»'''
 	
 	def compile(FunctionDecl f)'''
-      function («f.dataName»:«f.dataTypeName»)::«f.functionName»(«f.params.map[compile].join(", ")»):«f.returnType.compile» is {
+      function («f.dataName»:«f.dataTypeName»)::«f.name»(«f.parameters.map[compile].join(", ")»):«f.type.compile» is {
         «FOR v:f.valuing»
         «v.compile»
         «ENDFOR»
-        return «f.returnExpression.compile»
+        return «f.expression.compile»
       }
 	'''
 
-	def compile(ParamType p)'''«p.name»:«p.type.compile»'''
+	def compile(FormalParameter p)'''«p.name»:«p.type.compile»'''
 
-	def compile(BaseType t)'''integer'''
+	//def compile(BaseType t)'''integer'''
+	def compile(IntegerType t)'''integer'''
 
+/*
 	def compile(ConstructedType t)'''«
 	  IF t instanceof TupleType»«
         (t as TupleType).compile»«
@@ -440,21 +437,24 @@ class SosADLGenerator implements IGenerator {
         (t as SequenceType).compile»«
       ELSEIF t instanceof RangeType»integer{«(t as RangeType).vmin.compile»..«(t as RangeType).vmax.compile»}«
       ELSEIF t instanceof ConnectionType»«
-        (t as ConnectionType).mode.compile»{«(t as ConnectionType).typeOfConnection»}«
+        (t as ConnectionType).mode.compile»{«(t as ConnectionType).type.compile»}«
       ENDIF»'''
+      */
 	
-	def compile(TupleType t)'''tuple{«t.field.map[compile].join(", ")»}'''
+	def compile(TupleType t)'''tuple{«t.fields.map[compile].join(", ")»}'''
 	
-	def compile(SequenceType s)'''sequence{«s.typeOfSequence.compile»}'''
+	def compile(FieldDecl f)'''«f.name»:«f.type.compile»'''
+	
+	def compile(SequenceType s)'''sequence{«s.type.compile»}'''
 	
 	def compile(ModeType m)'''«m.literal»'''
 	
-	def compile(TypeName t)'''«t.typeName»'''
+	def compile(NamedType t)'''«t.name»'''
 
-    def compile(ComplexName c)'''«IF c.complexName != null»«c.complexName.join("::")»«ENDIF»'''
+    def compile(ComplexName c)'''«IF c.name != null»«c.name.join("::")»«ENDIF»'''
     
 	def compile(Valuing v)'''
-      value «v.valueName»«IF v.valueType != null» is «v.valueType.compile»«ENDIF» = «v.expression.compile»
+      value «v.variable»«IF v.type != null» is «v.type.compile»«ENDIF» = «v.expression.compile»
 	'''
 	
 	def compile(IntegerValue i)'''«i.absInt»'''
@@ -468,11 +468,11 @@ class SosADLGenerator implements IGenerator {
         (c as Sequence).compile»«
       ENDIF»'''
 	
-	def compile(Tuple t)'''tuple{«t.tupleElement.map[compile].join(", ")»}'''
+	def compile(Tuple t)'''tuple{«t.elements.map[compile].join(", ")»}'''
 	
-	def compile(TupleElement t)'''«t.elementLabel»=«t.elementValue.compile»'''
+	def compile(TupleElement t)'''«t.label»=«t.value.compile»'''
 	
-	def compile(Sequence s)'''sequence{«s.paramExpr.map[compile].join(", ")»}'''
+	def compile(Sequence s)'''sequence{«s.elements.map[compile].join(", ")»}'''
 
     def CharSequence compile(Expression e)'''«
 	IF e instanceof BinaryExpression»(«(e as BinaryExpression).left.compile») «(e as BinaryExpression).op» («(e as BinaryExpression).right.compile»)«
@@ -486,23 +486,23 @@ class SosADLGenerator implements IGenerator {
     ELSEIF e instanceof Sequence»«(e as Sequence).compile»«
     ELSEIF e instanceof IntegerValue»«(e as IntegerValue).compile»«
     ELSEIF e instanceof CallExpression»«(e as CallExpression).compile»«
-    ELSEIF e instanceof Field»«(e as Field).object.compile»::«(e as Field).fieldName»«
+    ELSEIF e instanceof Field»«(e as Field).object.compile»::«(e as Field).field»«
     ELSEIF e instanceof Select»«(e as Select).compile»«
     ELSEIF e instanceof Map»«(e as Map).compile»«
     ELSEIF e instanceof MethodCall»«(e as MethodCall).compile»«
 	ENDIF»'''
 	
 	def compile(CallExpression e)'''«
-	e.functionName»(«e.params.map[compile].join(", ")»)'''
+	e.function»(«e.parameters.map[compile].join(", ")»)'''
 	
 	def compile(Select e)'''«
-	e.object.compile»::select{«e.selectName» suchthat «e.selectExpr.compile»}'''
+	e.object.compile»::select{«e.variable» suchthat «e.condition.compile»}'''
 
 	def compile(Map e)'''«
-	e.object.compile»::map{«e.mapName» to «e.mapExpr.compile»}'''
+	e.object.compile»::map{«e.variable» to «e.expression.compile»}'''
 
 	def compile(MethodCall e)'''«
-	e.object.compile»::«e.methodName»(«e.params.map[compile].join(", ")»)'''
+	e.object.compile»::«e.method»(«e.parameters.map[compile].join(", ")»)'''
 	
     def compile(UnaryExpression u)'''«u.op» «u.right.compile»'''
     
@@ -517,7 +517,7 @@ class SosADLGenerator implements IGenerator {
 	
     def compile(UnaryAssertion u)'''«u.op»«u.right.compile»'''
     
-    def compile(Always a)'''always {«a.expr.compile»}'''
+    def compile(Always a)'''always {«a.expression.compile»}'''
     
-    def compile(Anynext a)'''anynext {«a.expr.compile»}'''
+    def compile(Anynext a)'''anynext {«a.expression.compile»}'''
 }

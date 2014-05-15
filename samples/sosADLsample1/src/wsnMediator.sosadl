@@ -36,7 +36,7 @@ library WsnMediator is {
       }
     }
   
-  	behavior transmitting(distancebetweengates) is {
+  	behavior transmitting(distancebetweengates:Distance) is {
       repeat {
           via transmit::fromSensors receive measure
     	  via transmit::towardsGateway send measure

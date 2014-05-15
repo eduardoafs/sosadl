@@ -24,14 +24,14 @@ SystemDecl: 'system' name=Name '(' (parameters+=FormalParameter (',' parameters+
 	(datatypes+=DataTypeDecl)*
 	(gates+=GateDecl)+
 	behavior=BehaviorDecl
-	'}' ('guarantee' '{' assertionDecl=AssertionDecl '}')?
+	'}' ('guarantee' '{' assertionDecl=AssertionDecl '}')?  // TODO: assertion instead of assertionDecl
 	;
 
 ArchitectureDecl: 'architecture' name=Name '(' (parameters+=FormalParameter (',' parameters+=FormalParameter)*)? ')' 'is' '{'
 	(datatypes+=DataTypeDecl)*
 	(gates+=GateDecl)+
-	archBehavior=ArchBehaviorDecl
-	'}' ('guarantee' '{' assertionDecl=AssertionDecl '}')?
+	archBehavior=ArchBehaviorDecl   // TODO: behavior instead of archBehavior
+	'}' ('guarantee' '{' assertionDecl=AssertionDecl '}')?  // TODO: assertion instead of assertionDecl
 	;
 
 MediatorDecl: 'mediator' name=Name '(' (parameters+=FormalParameter (',' parameters+=FormalParameter)*)? ')' 'is' '{'
@@ -44,7 +44,7 @@ MediatorDecl: 'mediator' name=Name '(' (parameters+=FormalParameter (',' paramet
 GateDecl:
 	'gate' name=Name 'is' '{'
 	  (connections+=Connection)+
-	'}' 'guarantee' '{' protocolDecl=ProtocolDecl '}'
+	'}' 'guarantee' '{' protocolDecl=ProtocolDecl '}'  // TODO: protocol instead of protocolDecl
 ;
 
 DutyDecl:
@@ -52,7 +52,7 @@ DutyDecl:
 	  (connections+=Connection)+
 	'}'
 	'require' '{' assertion=AssertionDecl '}'
-	'assume' '{' assumedProtocol=ProtocolDecl '}'
+	'assume' '{' assumedProtocol=ProtocolDecl '}'  // TODO: protocol instead of assumedProtocol
 ;
 
 Connection:
@@ -67,35 +67,6 @@ AssertionDecl:
 ProtocolDecl:
     'protocol' name=Name 'is' protocolBody=Protocol
 ;
-
-/* previous version distinguishes PrefixedProtocol and FinalProtocol
-Protocol:
-	'{' PrefixedProtocol '}'
-	| FinalProtocol
-;
-
-PrefixedProtocol returns Protocol:
-	({PrefixedProtocol} (statements+=ProtocolStatement)+ finalProtocol=FinalProtocol?)
-	| FinalProtocol
-	;
-
-FinalProtocol returns FinalProtocol:
-    {IfThenElseProtocol} 'if' cond=BooleanExpression 'then' '{' ifTrueProtocol=PrefixedProtocol '}' ('else' '{' ifFalseProtocol=PrefixedProtocol '}')?
-	| {ChooseProtocol} 'choose' '{' choiceProtocol+=PrefixedProtocol '}'  ('or'  '{' choiceProtocol+=PrefixedProtocol '}' )+  // au lieu de 'choose { b1 or ... or bn }' car 'or' apparait dans Expression et Behavior
-	| {ForEachProtocol} 'foreach' name=Name 'in' setOfValues=Expression '{' foreachProtocol=ProtocolStatement '}'
-	| {DoExpr} 'do' expression=Expression
-	| {RepeatForeverProtocol} 'forever' '{' repeatedProtocol=PrefixedProtocol '}' 
-    | {Done} 'done'
-	;
-
-ProtocolStatement:
-	Valuing
-	| Assert
-	| ProtocolAction
-	| ({AnyAction} 'anyaction')
-	| ({Repeat} 'repeat' '{' (repeatedProtocol+=ProtocolStatement)+ '}') 
-;
-*/
 
 Protocol:
 	'{' (statements+=ProtocolStatement)+ '}'
@@ -127,34 +98,6 @@ ProtocolActionSuite:
 BehaviorDecl:
 	'behavior' name=Name '(' (parameters+=FormalParameter (',' parameters+=FormalParameter)*)? ')' 'is' body=Behavior
 ;
-
-/* previous version distinguishes PrefixedBehavior and FinalBehavior
-Behavior:
-	'{' PrefixedBehavior '}'
-	| FinalBehavior
-;
-
-PrefixedBehavior returns Behavior:
-	{PrefixedBehavior} (statements+=BehaviorStatement)+ finalBehavior=FinalBehavior?
-	| FinalBehavior
-	;
-
-FinalBehavior returns FinalBehavior:
-	{ForeverBehavior} 'forever' '{' repeatedBehavior=PrefixedBehavior '}'
-	| {IfThenElseBehavior} 'if' cond=BooleanExpression 'then' '{' ifTrueBehavior=PrefixedBehavior '}' ('else' '{' ifFalseBehavior=PrefixedBehavior '}')?
-	| {ChooseBehavior} 'choose' '{' choiceBehavior+=PrefixedBehavior '}'  ('or'  '{' choiceBehavior+=PrefixedBehavior '}' )+  // au lieu de 'choose { b1 or ... or bn }' car 'or' apparait dans Expression et Behavior
-	| {ForEachBehavior} 'foreach' variable=Name 'in' setOfValues=Expression '{' foreachBehavior=BehaviorStatement '}'
-	| {DoExpr} 'do' expression=Expression
-	| {Done} 'done'
-	| {RecursiveCall} 'behavior' '(' (paramExpr+=Expression (',' paramExpr+=Expression)*)? ')'
-	;
-
-BehaviorStatement:
-	Valuing
-	| Assert
-	| Action
-;
-*/
 
 Behavior:
 	'{' (statements+=BehaviorStatement)+ '}'
