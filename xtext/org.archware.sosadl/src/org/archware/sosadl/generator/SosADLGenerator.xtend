@@ -112,8 +112,8 @@ class SosADLGenerator implements IGenerator {
         «ENDFOR»
       
         «s.behavior.compile»
-      }«IF s.assertionDecl != null» guarantee {
-        «s.assertionDecl.compile»
+      }«IF s.assertion != null» guarantee {
+        «s.assertion.compile»
       }
       «ENDIF»
 	'''
@@ -127,9 +127,9 @@ class SosADLGenerator implements IGenerator {
           «g.compile»
         «ENDFOR»
         
-        «a.archBehavior.compile»
-      }«IF a.assertionDecl != null» guarantee {
-        «a.assertionDecl.compile»
+        «a.behavior.compile»
+      }«IF a.assertion != null» guarantee {
+        «a.assertion.compile»
       }
       «ENDIF»
 	'''
@@ -154,7 +154,7 @@ class SosADLGenerator implements IGenerator {
         «c.compile»
         «ENDFOR»
       } guarantee {
-        «g.protocolDecl.compile»
+        «g.protocol.compile»
       }
 	'''
 	
@@ -167,11 +167,11 @@ class SosADLGenerator implements IGenerator {
       } require {
         «d.assertion.compile»
       } assume {
-        «d.assumedProtocol.compile»
+        «d.protocol.compile»
       }
       '''
 	
-	def compile(Connection c)'''«IF c.envConnection»environment «ENDIF»connection «c.name» is «c.mode»{«c.valueType.compile»}'''
+	def compile(Connection c)'''«IF c.environment»environment «ENDIF»connection «c.name» is «c.mode»{«c.valueType.compile»}'''
 	
 	def compile(AssertionDecl a)'''
       property «a.name» is {
@@ -181,12 +181,12 @@ class SosADLGenerator implements IGenerator {
         «ENDFOR»
         within
         «ENDIF»
-        «a.assertionExpr.compile»
+        «a.assertion.compile»
       }
     '''
     
     def compile(ProtocolDecl p)'''
-      protocol «p.name» is «p.protocolBody.compile»
+      protocol «p.name» is «p.body.compile»
     '''
     
     def CharSequence compile(Protocol p)'''

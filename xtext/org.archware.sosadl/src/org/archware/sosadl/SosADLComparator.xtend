@@ -145,7 +145,7 @@ class SosADLComparator {
 		&& sameElements(l.datatypes, r.datatypes, [p, q | compare(p, q)])
 		&& sameElements(l.gates, r.gates, [p, q | compare(p, q)])
 		&& compare(l.behavior, r.behavior)
-		&& compareOpt(l.assertionDecl, r.assertionDecl, [p, q | compare(p, q)])
+		&& compareOpt(l.assertion, r.assertion, [p, q | compare(p, q)])
 	}
 	
 	def static compare(MediatorDecl l, MediatorDecl r) {
@@ -159,32 +159,32 @@ class SosADLComparator {
 		l.name.equals(r.name) && sameElements(l.parameters, r.parameters, [p, q | compare(p, q)])
 		&& sameElements(l.datatypes, r.datatypes, [p, q | compare(p, q)])
 		&& sameElements(l.gates, r.gates, [p, q | compare(p, q)])
-		&& compare(l.archBehavior, r.archBehavior)
-		&& compareOpt(l.assertionDecl, r.assertionDecl, [p, q | compare(p, q)])
+		&& compare(l.behavior, r.behavior)
+		&& compareOpt(l.assertion, r.assertion, [p, q | compare(p, q)])
 	}
 	
 	def static compare(GateDecl l, GateDecl r) {
 		l.name.equals(r.name)
 		&& sameElements(l.connections, r.connections, [p, q | compare(p, q)])
-		&& compare(l.protocolDecl, r.protocolDecl)
+		&& compare(l.protocol, r.protocol)
 	}
 
 	def static compare(DutyDecl l, DutyDecl r) {
 		l.name.equals(r.name)
 		&& sameElements(l.connections, r.connections, [p, q | compare(p, q)])
 		&& compare(l.assertion, r.assertion)
-		&& compare(l.assumedProtocol, r.assumedProtocol)
+		&& compare(l.protocol, r.protocol)
 	}
 	
 	def static compare(Connection l, Connection r) {
-		l.envConnection == r.envConnection
+		l.environment == r.environment
 		&& l.name.equals(r.name)
 		&& l.mode == r.mode
 		&& compareDataType(l.valueType, r.valueType)
 	}
 	
 	def static compare(ProtocolDecl l, ProtocolDecl r) {
-		l.name.equals(r.name) && compare(l.protocolBody, r.protocolBody)
+		l.name.equals(r.name) && compare(l.body, r.body)
 	}
 	
 	def static compare(BehaviorDecl l, BehaviorDecl r) {
@@ -203,7 +203,7 @@ class SosADLComparator {
 	def static compare(AssertionDecl l, AssertionDecl r) {
 		l.name.equals(r.name)
 		&& sameElements(l.valuing, r.valuing, [p, q | compare(p, q)])
-		&& compareAssertion(l.assertionExpr, r.assertionExpr)
+		&& compareAssertion(l.assertion, r.assertion)
 	}
 	
 	def static compare(Protocol l, Protocol r) { sameElements(l.statements, r.statements, [p, q | compareProtocolStatement(p, q)]) }
