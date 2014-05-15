@@ -47,13 +47,13 @@ library WsnSensor is {   // 'sos' is a library providing a runable architecture
         }
   	}
   	
-  	behavior sensing(lps) is {   // the argument lps is bound by the system parameter // 'behavior' executes when the system is created
-  	  assert location is {coordinate = lps}  // TODO! valeur coordinate definie nulle part
+  	behavior sensing(lps: Coordinate) is {   // the argument lps is bound by the system parameter // 'behavior' executes when the system is created
+  	  tell location is {coordinate = lps}  // TODO! valeur coordinate definie nulle part
   	  via powering::threshold receive powerthreshold
   	  repeat {
   		via powering::power receive powerlevel
   		if (powerlevel > powerthreshold) then {   // 'if' only tests the condition without blocking
-          assert powering is {powerlevel > powerthreshold}    // 'assert' the specified constraint with name and type extrusions
+          tell powering is {powerlevel > powerthreshold}    // 'assert' the specified constraint with name and type extrusions
   		  choose{
   			via measuringGate::sense receive data
   			via measuringGate::measure send tuple{coordinate=lps,depth=data::convert()}
