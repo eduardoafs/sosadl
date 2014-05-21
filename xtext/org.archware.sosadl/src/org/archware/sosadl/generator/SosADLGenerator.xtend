@@ -7,7 +7,7 @@ import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.xtext.generator.IGenerator
 import org.eclipse.xtext.generator.IFileSystemAccess
 import org.archware.sosadl.sosADL.*
-import org.archware.sosadl.SosADLStandaloneSetup
+import org.archware.sosadl.SosADLStandaloneSetupGenerated
 import org.eclipse.emf.common.util.URI
 import org.archware.sosadl.SosADLComparator
 import org.eclipse.xtext.parser.IParser
@@ -30,7 +30,7 @@ class SosADLGenerator implements IGenerator {
 	}
 	
 	private def do_parse(CharSequence c) {
-		val injector = new SosADLStandaloneSetup().createInjector
+		val injector = new SosADLStandaloneSetupGenerated().createInjector
 		val parser = injector.getInstance(IParser)
 		val result = parser.parse(new StringReader(c.toString()))
 		if(result.hasSyntaxErrors) {
