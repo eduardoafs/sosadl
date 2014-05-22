@@ -37,7 +37,7 @@
         eType="#//GateDecl" containment="true"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="behavior" eType="#//BehaviorDecl"
         containment="true"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="assertionDecl" eType="#//AssertionDecl"
+    <eStructuralFeatures xsi:type="ecore:EReference" name="assertion" eType="#//AssertionDecl"
         containment="true"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="ArchitectureDecl">
@@ -48,9 +48,9 @@
         eType="#//DataTypeDecl" containment="true"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="gates" upperBound="-1"
         eType="#//GateDecl" containment="true"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="archBehavior" eType="#//ArchBehaviorDecl"
+    <eStructuralFeatures xsi:type="ecore:EReference" name="behavior" eType="#//ArchBehaviorDecl"
         containment="true"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="assertionDecl" eType="#//AssertionDecl"
+    <eStructuralFeatures xsi:type="ecore:EReference" name="assertion" eType="#//AssertionDecl"
         containment="true"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="MediatorDecl">
@@ -68,7 +68,7 @@
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="connections" upperBound="-1"
         eType="#//Connection" containment="true"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="protocolDecl" eType="#//ProtocolDecl"
+    <eStructuralFeatures xsi:type="ecore:EReference" name="protocol" eType="#//ProtocolDecl"
         containment="true"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="DutyDecl">
@@ -77,11 +77,11 @@
         eType="#//Connection" containment="true"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="assertion" eType="#//AssertionDecl"
         containment="true"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="assumedProtocol" eType="#//ProtocolDecl"
+    <eStructuralFeatures xsi:type="ecore:EReference" name="protocol" eType="#//ProtocolDecl"
         containment="true"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="Connection">
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="envConnection" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="environment" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="mode" eType="#//ModeType"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="valueType" eType="#//DataType"
@@ -91,12 +91,12 @@
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="valuing" upperBound="-1"
         eType="#//Valuing" containment="true"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="assertionExpr" eType="#//Assertion"
+    <eStructuralFeatures xsi:type="ecore:EReference" name="assertion" eType="#//Assertion"
         containment="true"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="ProtocolDecl">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="protocolBody" eType="#//Protocol"
+    <eStructuralFeatures xsi:type="ecore:EReference" name="body" eType="#//Protocol"
         containment="true"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="Protocol">
