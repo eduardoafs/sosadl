@@ -4,9 +4,9 @@ with Localization
 // Description of Transmitter as a Mediator Abstraction
 library WsnMediator is {
   datatype Coordinate {
-      function (onecoordinate:Coordinate)::distance(othercoordinate:Coordinate):Distance is {
-        return sqrt(sqr(onecoordinate::x-othercoordinate::x)+sqr(onecoordinate::y-othercoordinate::y))
-      }
+    function (onecoordinate:Coordinate)::distance(othercoordinate:Coordinate):Distance is {
+      return sqrt(sqr(onecoordinate::x-othercoordinate::x)+sqr(onecoordinate::y-othercoordinate::y))
+    }
   }
  
   mediator Transmitter(distancebetweengates:Distance) is {
@@ -38,7 +38,7 @@ library WsnMediator is {
   
   	behavior transmitting(distancebetweengates:Distance) is {
       repeat {
-          via transmit::fromSensors receive measure
+        via transmit::fromSensors receive measure
     	  via transmit::towardsGateway send measure
       }
     }

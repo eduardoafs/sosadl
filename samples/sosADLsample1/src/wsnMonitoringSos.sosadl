@@ -13,7 +13,7 @@ sos WsnMonitoringSos is {
       connection alert is out{MeasureData}  // alert sent to its environment
     } guarantee {
       protocol alertpact is {
-      	repeat {
+        repeat {
           repeat {anyaction}
           repeat {via warning::alert send any}
         }
@@ -25,7 +25,7 @@ sos WsnMonitoringSos is {
       connection depth is out{Depth}
     } guarantee {
       protocol requestpact is {
-      	repeat {  // in the case of one statement '{' '}' are not needed
+        repeat {  // in the case of one statement '{' '}' are not needed
           via request::coordinate receive any
           repeat {anyaction}
           via request::depth send any
@@ -43,7 +43,7 @@ sos WsnMonitoringSos is {
         and relay request::depth to gateway::request::depth
         and forall{itransmitter in transmitters, isensor1 in sensors, isensor2 in sensors, igateway in gateway suchthat
           (isensor1 <> isensor2) implies (
-          	// multiplicities are 'one', 'none', 'lone' (none or one), 'any' (none or more), 'some' (one or more), 'all'
+            // multiplicities are 'one', 'none', 'lone' (none or one), 'any' (none or more), 'some' (one or more), 'all'
             unify one{itransmitter::fromSensors} to one{isensor1::measurement::measure} 
             and unify one{itransmitter::toGateway} to one{isensor2::measurement::pass}
               xor unify one{itransmitter::toGateway} to one{igateway::notification::measure}
@@ -81,8 +81,8 @@ and all{t in transmitters suchthat (one{s in sensors suchthat unify t::toGateway
 */
     }
   } guarantee {
-  	property alerting is {
-  		always {via notification::alert send any}
-  	}
+    property alerting is {
+      always {via notification::alert send any}
+    }
   }
 }

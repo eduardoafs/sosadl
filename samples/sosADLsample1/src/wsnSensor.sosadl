@@ -18,48 +18,49 @@ library WsnSensor is {   // 'sos' is a library providing a runable architecture
     datatype Energy
 
     // 'gate' is the interface of a system -- a system may have several gates
-  	gate measurement is {   // 'gate' is defined by one or several connections
-      	environment connection sense is in{RawData}   // data coming from the electronique part of the sensor device -- to be bound to the 'environment'
-      	connection pass is in{MeasureData}   // measure received by the sensor from its neighbors
-      	connection measure is out{MeasureData}   // measure sent by the sensor to its neighbors
+    gate measurement is {   // 'gate' is defined by one or several connections
+      environment connection sense is in{RawData}   // data coming from the electronic part of the sensor device -- to be bound to the 'environment'
+      connection pass is in{MeasureData}   // measure received by the sensor from its neighbors
+      connection measure is out{MeasureData}   // measure sent by the sensor to its neighbors
   	} guarantee {   // 'guarantee' declares the assertions that are guaranteed by the behaviors through the gate
-  		protocol measurementpact is {  // 'protocol' defines the usage of the gate -- a gate may have several protocols
-  		  repeat{   // the 'protocol' is declared using the same language as behaviors
-  				choose{
-  					via measurement::sense receive data   // the type of the received data is inferred from the connection type
-  					repeat{anyaction}   // 'anyaction' declares a wildcard for actions including unobservable actions
-  					via measurement::measure send tuple{coordinate=any,depth=data::convert()}   // 'any' declares a wildcard for values including any value // '=' binds value to tuple fields
-  				} or {
-  					via measurement::pass receive data   // the prefix measurement:: is optional as the scope is the gate
-  					via measurement::measure send data   // the type of the sent data is inferred from the connection type
-  			    }
-  		  }
+  	  protocol measurementpact is {  // 'protocol' defines the usage of the gate -- a gate may have several protocols
+  	    repeat{   // the 'protocol' is declared using the same language as behaviors
+  	      choose{
+            via measurement::sense receive data   // the type of the received data is inferred from the connection type
+            repeat{anyaction}   // 'anyaction' declares a wildcard for actions including unobservable actions
+            via measurement::measure send tuple{coordinate=any,depth=data::convert()}   // 'any' declares a wildcard for values including any value // '=' binds value to tuple fields
+          } or {
+            via measurement::pass receive data   // the prefix measurement:: is optional as the scope is the gate
+            via measurement::measure send data   // the type of the sent data is inferred from the connection type
+          }
         }
-  	}
+      }
+    }
     
   	gate energy is {
-    	environment connection threshold is in{Energy}
-    	environment connection power is in{Energy}
+      environment connection threshold is in{Energy}
+      environment connection power is in{Energy}
   	} guarantee {
-  		protocol energypact is {
-  			via energy::threshold receive powerthreshold
-  			repeat {via energy::power receive powerlevel}
-        }
+        protocol energypact is {
+        via energy::threshold receive powerthreshold
+        repeat {via energy::power receive powerlevel}
+      }
   	}
   	
-  	behavior sensing(lps: Coordinate) is {   // the argument lps is bound by the system parameter // 'behavior' executes when the system is created
-  	  tell location is {coordinate = lps}  // TODO! valeur coordinate definie nulle part
+    behavior sensing(lps: Coordinate) is {   // the argument lps is bound by the system parameter // 'behavior' executes when the system is created
+  	  value coordinate is Coordinate = lps
+  	  tell location is {coordinate = lps}
   	  via powering::threshold receive powerthreshold
   	  repeat {
-  		via powering::power receive powerlevel
-  		if (powerlevel > powerthreshold) then {   // 'if' only tests the condition without blocking
+  		  via powering::power receive powerlevel
+  		  if (powerlevel > powerthreshold) then {   // 'if' only tests the condition without blocking
           tell powering is {powerlevel > powerthreshold}    // 'assert' the specified constraint with name and type extrusions
-  		  choose{
-  			via measuringGate::sense receive data
-  			via measuringGate::measure send tuple{coordinate=lps,depth=data::convert()}
-  		  } or {
-  			via measuringGate::pass receive data
-  			via measuringGate::measure send data
+  		    choose{
+  			    via measuringGate::sense receive data
+  			    via measuringGate::measure send tuple{coordinate=lps,depth=data::convert()}
+  		    } or {
+  			    via measuringGate::pass receive data
+  			    via measuringGate::measure send data
           }
         }
       }
@@ -67,8 +68,8 @@ library WsnSensor is {   // 'sos' is a library providing a runable architecture
   	
   } guarantee {
   	property measuring is {
-  	  always{energy::power > energy::threshold implies anynext{via measurement::measure send any}
-  	  } // assertion using temporal operators 'always' and 'anynext'
+  	  always{energy::power > energy::threshold implies anynext{via measurement::measure send any}}
+  	  // assertion using temporal operators 'always' and 'anynext'
     }
   }
 }
