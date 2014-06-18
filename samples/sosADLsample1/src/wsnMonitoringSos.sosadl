@@ -41,12 +41,12 @@ sos WsnMonitoringSos is {
         relay warning::alert to gateway::notification::alert
         and relay request::coordinate to gateway::request::coordinate
         and relay request::depth to gateway::request::depth
-        and forall{itransmitter in transmitters, isensor1 in sensors, isensor2 in sensors, igateway in gateway suchthat
+        and forall{itransmitter in transmitters, isensor1 in sensors, isensor2 in sensors suchthat
           (isensor1 <> isensor2) implies (
             // multiplicities are 'one', 'none', 'lone' (none or one), 'any' (none or more), 'some' (one or more), 'all'
-            unify one{itransmitter::fromSensors} to one{isensor1::measurement::measure} 
+            unify one{transmitters::fromSensors} to one{sensors::measurement::measure} 
             and unify one{itransmitter::toGateway} to one{isensor2::measurement::pass}
-              xor unify one{itransmitter::toGateway} to one{igateway::notification::measure}
+              xor unify one{itransmitter::toGateway} to one{gateway::notification::measure}
             )
         }
 /* The binding using 1st order logic (using Alloy quantifiers):
