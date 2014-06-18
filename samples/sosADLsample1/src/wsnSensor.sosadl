@@ -50,9 +50,9 @@ library WsnSensor is {   // 'sos' is a library providing a runable architecture
     behavior sensing(lps: Coordinate) is {   // the argument lps is bound by the system parameter // 'behavior' executes when the system is created
   	  value coordinate is Coordinate = lps
   	  tell location is {coordinate = lps}
-  	  via powering::threshold receive powerthreshold
+  	  via energy::threshold receive powerthreshold
   	  repeat {
-  		  via powering::power receive powerlevel
+  		  via energy::power receive powerlevel
   		  if (powerlevel > powerthreshold) then {   // 'if' only tests the condition without blocking
           tell powering is {powerlevel > powerthreshold}    // 'assert' the specified constraint with name and type extrusions
   		    choose{
