@@ -3755,7 +3755,7 @@
       </children>
       <styles xmi:type="notation:ConnectorStyle" xmi:id="_Brh5wdnoEeOfTbC0v5QQXA" lineColor="4210752"/>
       <styles xmi:type="notation:FontStyle" xmi:id="_Brh5wtnoEeOfTbC0v5QQXA" fontColor="4210752" fontName="Lucida Grande" fontHeight="10"/>
-      <element xmi:type="ecore:EReference" href="SosADL.ecore#//Relay/gate"/>
+      <element xmi:type="ecore:EReference" href="SosADL.ecore#//Relay/connLeft"/>
       <bendpoints xmi:type="notation:RelativeBendpoints" xmi:id="_Brh5w9noEeOfTbC0v5QQXA" points="[-17, -20, 362, 437]$[-378, -456, 1, 1]"/>
       <targetAnchor xmi:type="notation:IdentityAnchor" xmi:id="_hSIUENnoEeOfTbC0v5QQXA" id="(0.09743589743589744,0.0)"/>
     </edges>
@@ -3768,7 +3768,7 @@
       </children>
       <styles xmi:type="notation:ConnectorStyle" xmi:id="_Brh5ydnoEeOfTbC0v5QQXA" lineColor="4210752"/>
       <styles xmi:type="notation:FontStyle" xmi:id="_Brh5ytnoEeOfTbC0v5QQXA" fontColor="4210752" fontName="Lucida Grande" fontHeight="10"/>
-      <element xmi:type="ecore:EReference" href="SosADL.ecore#//Relay/connection"/>
+      <element xmi:type="ecore:EReference" href="SosADL.ecore#//Relay/connRight"/>
       <bendpoints xmi:type="notation:RelativeBendpoints" xmi:id="_Brh5y9noEeOfTbC0v5QQXA" points="[-17, -20, 362, 437]$[-378, -456, 1, 1]"/>
       <sourceAnchor xmi:type="notation:IdentityAnchor" xmi:id="_iUwOsNnoEeOfTbC0v5QQXA" id="(0.8235294117647058,0.9285714285714286)"/>
       <targetAnchor xmi:type="notation:IdentityAnchor" xmi:id="_i0GdINnoEeOfTbC0v5QQXA" id="(0.28205128205128205,0.0)"/>

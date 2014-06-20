@@ -310,9 +310,9 @@
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="variable" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="Relay" eSuperTypes="#//Binding">
-    <eStructuralFeatures xsi:type="ecore:EReference" name="gate" eType="#//ComplexName"
+    <eStructuralFeatures xsi:type="ecore:EReference" name="connLeft" eType="#//ComplexName"
         containment="true"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="connection" eType="#//ComplexName"
+    <eStructuralFeatures xsi:type="ecore:EReference" name="connRight" eType="#//ComplexName"
         containment="true"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="Unify" eSuperTypes="#//Binding">

@@ -141,7 +141,7 @@ Constituent:
 ;
 
 Binding:
-	{Relay} 'relay' gate=ComplexName 'to' connection=ComplexName
+	{Relay} 'relay' connLeft=ComplexName 'to' connRight=ComplexName
 	| {Unify} 'unify' multLeft=Multiplicity '{' connLeft=ComplexName '}' 'to' multRight=Multiplicity '{' connRight=ComplexName '}'
 	| {Quantify} quantifier=Quantifier '{' elements+=ElementInConstituent (',' elements+=ElementInConstituent)* 'suchthat' bindings=Expression '}'
 ;

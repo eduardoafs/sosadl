@@ -375,7 +375,7 @@ class SosADLGenerator implements IGenerator {
     '''
     
     def compile(Relay r)'''
-    relay «r.gate.compile» to «r.connection.compile»
+    relay «r.connLeft.compile» to «r.connRight.compile»
     '''
 
 	def compile(Unify u)'''

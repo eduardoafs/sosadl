@@ -215,7 +215,7 @@ class SosADLComparator {
 	def static dispatch boolean compareExpression(Any l, Any r)								{ true }
 	def static dispatch boolean compareExpression(BinaryExpression l, BinaryExpression r)	{ compareExpression(l.left, r.left) && l.op.equals(r.op) && compareExpression(l.right, r.right) }
 	def static dispatch boolean compareExpression(Quantify l, Quantify r)					{ l.quantifier.equals(r.quantifier) && sameElements(l.elements, r.elements, [p, q | compare(p, q)]) && compareExpression(l.bindings, r.bindings) }
-	def static dispatch boolean compareExpression(Relay l, Relay r)							{ compare(l.gate, r.gate) && compare(l.connection, r.connection) }
+	def static dispatch boolean compareExpression(Relay l, Relay r)							{ compare(l.connLeft, r.connLeft) && compare(l.connRight, r.connRight) }
 	def static dispatch boolean compareExpression(Unify l, Unify r)							{ l.multLeft.equals(r.multLeft) && compare(l.connLeft, r.connLeft) && l.multRight.equals(r.multRight) && compare(l.connRight, r.connRight) }
 	def static dispatch boolean compareExpression(CallExpression l, CallExpression r)		{ l.function.equals(r.function) && sameElements(l.parameters, r.parameters, [p, q | compareExpression(p, q)]) }
 	def static dispatch boolean compareExpression(Sequence l, Sequence r)					{ sameElements(l.elements, r.elements, [p, q | compareExpression(p, q)]) }
