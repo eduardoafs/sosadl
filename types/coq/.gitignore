@@ -1,0 +1,7 @@
+*~
+*.vo
+*.glob
+*.aux
+*.v.d
+Makefile
+all.pdf
