@@ -1,4 +1,6 @@
 AbstractSoSADL.v
 Environment.v
-Utils.v
+Interpretation.v
+SubTyping.v
 TypeSystem.v
+Utils.v
