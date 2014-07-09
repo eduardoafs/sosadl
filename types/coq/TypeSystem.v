@@ -6,6 +6,12 @@ Require Import Utils.
 Require Import SubTyping.
 Require Import Interpretation.
 
+(** printing Delta $\Delta$ %&Delta;% *)
+(** printing Phi $\Phi$ %&Phi;% *)
+(** printing Gamma $\Gamma$ %&Gamma;% *)
+(** printing tau $\tau$ %&tau;% *)
+(** printing empty $\emptyset$ %&empty;% *)
+
 (**
  * Kinds of environments
  *)
@@ -56,7 +62,11 @@ Definition env_of_params (p: list AST.formalParameter): variable_environment :=
 
 (**
  * The type system
+ *)
 
+Local Open Scope list_scope.
+
+(**
 In the below rules, each inductive type gathers the rules for a single
 form of judgment. Rules are built of the following:
 - a rule name, here used as the name of the constructor in the inductive type;
@@ -64,8 +74,6 @@ form of judgment. Rules are built of the following:
 - premises of the rule appear above the [->] operator, connected by the conjunction [/\] operator; and
 - conclusion of the rule appear below the [->] operator.
  *)
-
-Local Open Scope list_scope.
 
 Inductive type_sosADL: AST.sosADL -> Prop :=
 | type_SosADL:
