@@ -6,11 +6,18 @@ Require Import Utils.
 Require Import SubTyping.
 Require Import Interpretation.
 
-(** printing Delta $\Delta$ %&Delta;% *)
-(** printing Phi $\Phi$ %&Phi;% *)
-(** printing Gamma $\Gamma$ %&Gamma;% *)
-(** printing tau $\tau$ %&tau;% *)
-(** printing empty $\emptyset$ %&empty;% *)
+(** printing Delta $\Delta$ #&Delta;# *)
+(** printing Phi $\Phi$ #&Phi;# *)
+(** printing Gamma $\Gamma$ #&Gamma;# *)
+(** printing tau $\tau$ #&tau;# *)
+(** printing empty $\emptyset$ #&empty;# *)
+
+(**
+%
+\newcommand{\todo}[1]{{\color{red}TODO: #1}}
+\newcommand{\note}[1]{{\color{blue}NOTE: #1}}
+%
+*)
 
 (**
  * Kinds of environments
@@ -75,12 +82,24 @@ form of judgment. Rules are built of the following:
 - conclusion of the rule appear below the [->] operator.
  *)
 
+(**
+ ** SoS architecture
+
+%\todo{The import list is currently ignored.}%
+ *)
+
 Inductive type_sosADL: AST.sosADL -> Prop :=
 | type_SosADL:
     forall i d,
       unit d well typed
       ->
       SoSADL (AST.SosADL i d) well typed
+
+(**
+ ** Compilation unit
+
+%\note{These rules are missing in the Word document. The Word document is made as if the compilation unit and the architecture were the same.}%
+ *)
 
 with type_unit: AST.unit -> Prop :=
 | type_SoS:
@@ -95,6 +114,7 @@ with type_unit: AST.unit -> Prop :=
       ->
       unit (AST.Library n e) well typed
 
+(** ** Entity *)
 with type_entityBlock: AST.entityBlock -> Prop :=
 | type_EntityBlock:
     forall datatypes functions systems mediators architectures,
@@ -123,6 +143,7 @@ with type_entityBlock: AST.entityBlock -> Prop :=
       ->
       entity (AST.EntityBlock datatypes functions systems mediators architectures) well typed
 
+(** ** Data type declaration *)
 with type_datatypeDecl: type_environment -> function_environment -> variable_environment -> AST.datatypeDecl -> Prop :=
 | type_DataTypeDecl:
     forall Delta Phi Gamma t functions,
@@ -132,20 +153,36 @@ with type_datatypeDecl: type_environment -> function_environment -> variable_env
       ->
       typedecl (AST.DataTypeDecl t functions) well typed in Delta Phi Gamma
 
+(**
+ ** Function declaration
+
+%\note{In the Word document, the \coqdocconstr{FunctionDecl} constructor is erroneously considered being parametered by the type declaration. In fact, the type is referred to by its name. Hence the \ensuremath{\Delta} environment shall be used to retrieve the named type, and this type need not be checked (again).}%
+ *)
+
 with type_function: type_environment -> function_environment -> AST.functionDecl -> Prop :=
 | type_FunctionDecl:
-    forall Delta Phi name dataName dataTypeName params t vals e tau,
+    forall Delta Phi name dataName dataTypeName params t vals e tau dataType,
       (for each p of params, type (AST.type_of_formalParameter p) well typed in Delta Phi empty)
       /\ (expression e under vals has type tau in Delta Phi (env_of_params params) empty)
-      /\ tau < AST.datatype_of_datatypeDecl Delta[dataTypeName]
+      /\  contains Delta dataTypeName dataType
+      /\ tau < AST.datatype_of_datatypeDecl dataType
       ->
       function (AST.FunctionDecl name dataName dataTypeName params t vals e) well typed in Delta Phi
 
+(** ** System *)
 with type_system: type_environment -> function_environment -> AST.systemDecl -> Prop :=
 
+(** ** Mediator *)
 with type_mediator: type_environment -> function_environment -> AST.mediatorDecl -> Prop :=
 
+(** ** Architecture *)
 with type_architecture: type_environment -> function_environment -> system_environment -> mediator_environment -> AST.architectureDecl -> Prop :=
+
+(**
+ ** Data types
+
+%\note{\coqdocconstr{IntegerType} and \coqdocconstr{ConnectionType} are removed from the abstract language.}%
+ *)
 
 with type_datatype: type_environment -> function_environment -> variable_environment -> AST.datatype -> Prop :=
 | type_NamedType:
@@ -168,6 +205,10 @@ with type_datatype: type_environment -> function_environment -> variable_environ
       ->
       type (AST.SequenceType t) well typed in Delta Phi Gamma
 
+(**
+%\note{In comparison to the Word document, the order condition on the range boundaries is added; boundaries are assumed to be \coqdocconstr{RangeType}.}%
+ *)
+
 | type_RangeType:
     forall Delta Phi Gamma min max min__min min__max max__min max__max,
       (expression min has type (AST.RangeType min__min min__max) in Delta Phi Gamma empty)
@@ -176,8 +217,11 @@ with type_datatype: type_environment -> function_environment -> variable_environ
       ->
       type (AST.RangeType min max) well typed in Delta Phi Gamma
 
+(** ** Expression *)
+
 with type_expression: type_environment -> function_environment -> variable_environment -> constituant_environment -> AST.expression -> AST.datatype -> Prop :=
 
+(** ** Expression in the scope of a list of valuings *)
 with type_expression_where: type_environment -> function_environment -> variable_environment -> constituant_environment -> list AST.valuing -> AST.expression -> AST.datatype -> Prop :=
 | type_expression_where_empty:
     forall Delta Phi Gamma Kappa e tau,
@@ -201,6 +245,7 @@ with type_expression_where: type_environment -> function_environment -> variable
       ->
       expression e under (AST.Valuing x (Some x__t) x__e :: v) has type tau in Delta Phi Gamma Kappa
 
+(** ** Notations *)
 where "'SoSADL' a 'well' 'typed'" := (type_sosADL a)
 and "'unit' u 'well' 'typed'" := (type_unit u)
 and "'entity' e 'well' 'typed'" := (type_entityBlock e)
