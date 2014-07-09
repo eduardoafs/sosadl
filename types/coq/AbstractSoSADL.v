@@ -17,7 +17,7 @@ with unit: Set :=
 with entityBlock: Set :=
 | EntityBlock: list datatypeDecl -> list functionDecl -> list systemDecl -> list mediatorDecl -> list architectureDecl -> entityBlock
 with datatypeDecl: Set :=
-| DataTypeDecl: datatype -> list functionDecl -> datatypeDecl
+| DataTypeDecl: string -> datatype -> list functionDecl -> datatypeDecl
 with datatype: Set :=
 | NamedType: string -> datatype
 | TupleType: list fieldDecl -> datatype
@@ -32,19 +32,28 @@ with formalParameter: Set :=
 with valuing: Set :=
 | Valuing: string -> option datatype -> expression -> valuing
 with systemDecl: Set :=
+| SystemDecl: string -> list formalParameter -> list datatypeDecl -> list gateDecl -> behaviorDecl -> option assertionDecl -> systemDecl
 with mediatorDecl: Set :=
 with architectureDecl: Set :=
 with expression: Set :=
+with gateDecl: Set :=
+with behaviorDecl: Set :=
+with assertionDecl: Set :=
 .
+
+Definition name_of_datatypeDecl d :=
+  match d with
+    | DataTypeDecl n _ _ => n
+  end.
 
 Definition datatype_of_datatypeDecl d :=
   match d with
-    | DataTypeDecl t _ => t
+    | DataTypeDecl _ t _ => t
   end.
 
 Definition functions_of_datatypeDecl d :=
   match d with
-    | DataTypeDecl _ f => f
+    | DataTypeDecl _ _ f => f
   end.
 
 Definition name_of_fieldDecl f :=

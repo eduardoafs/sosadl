@@ -53,19 +53,28 @@ Reserved Notation "'mediator' m 'well' 'typed' 'in' Delta Phi" (at level 200, De
 Reserved Notation "'architecture' a 'well' 'typed' 'in' Delta Phi Sigma Mu" (at level 200, Delta at level 1, Phi at level 1, Sigma at level 1, Mu at level 1, no associativity).
 Reserved Notation "'expression' e 'has' 'type' t 'in' Delta Phi Gamma Kappa" (at level 200, no associativity, Delta at level 1, Phi at level 1, Gamma at level 1, Kappa at level 1).
 Reserved Notation "'expression' e 'under' v 'has' 'type' t 'in' Delta Phi Gamma Kappa" (at level 200, no associativity, Delta at level 1, Phi at level 1, Gamma at level 1, Kappa at level 1).
+Reserved Notation "'gate' g 'well' 'typed' 'in' Delta Phi" (at level 200, Delta at level 1, Phi at level 1, no associativity).
+Reserved Notation "'behavior' b 'well' 'typed' 'in' Delta Phi" (at level 200, Delta at level 1, Phi at level 1, no associativity).
+Reserved Notation "'assertion' a 'well' 'typed' 'in' Delta Phi" (at level 200, Delta at level 1, Phi at level 1, no associativity).
 
 
 (**
  * Functions building environments
  *)
 
-Axiom build_type_env: list AST.datatypeDecl -> type_environment.
 Axiom build_function_env: list AST.functionDecl -> function_environment.
 Axiom build_system_env: list AST.systemDecl -> system_environment.
 Axiom build_mediator_env: list AST.mediatorDecl -> mediator_environment.
 
-Definition env_of_params (p: list AST.formalParameter): variable_environment :=
-  List.fold_left (fun e f => e[AST.name_of_formalParameter f <- AST.type_of_formalParameter f]) p empty.
+Definition env_add_params  :=
+  List.fold_left (fun e f => e[AST.name_of_formalParameter f <- AST.type_of_formalParameter f]).
+
+Definition env_of_params p := env_add_params p empty.
+
+Definition env_add_types :=
+  List.fold_left (fun e d => e[AST.name_of_datatypeDecl d <- d]).
+
+Definition build_type_env p := env_add_types p empty.
 
 (**
  * The type system
@@ -146,12 +155,12 @@ with type_entityBlock: AST.entityBlock -> Prop :=
 (** ** Data type declaration *)
 with type_datatypeDecl: type_environment -> function_environment -> variable_environment -> AST.datatypeDecl -> Prop :=
 | type_DataTypeDecl:
-    forall Delta Phi Gamma t functions,
+    forall Delta Phi Gamma name t functions,
       (type t well typed in Delta Phi Gamma)
       /\ (for each f of functions,
          function f well typed in Delta Phi)
       ->
-      typedecl (AST.DataTypeDecl t functions) well typed in Delta Phi Gamma
+      typedecl (AST.DataTypeDecl name t functions) well typed in Delta Phi Gamma
 
 (**
  ** Function declaration
@@ -169,13 +178,54 @@ with type_function: type_environment -> function_environment -> AST.functionDecl
       ->
       function (AST.FunctionDecl name dataName dataTypeName params t vals e) well typed in Delta Phi
 
-(** ** System *)
-with type_system: type_environment -> function_environment -> AST.systemDecl -> Prop :=
+(**
+ ** System
 
-(** ** Mediator *)
+%\note{The types of formal parameters are independant of preceding parameters. For instance, \lstinline!system S(x: integer, y: integer\{x-1 .. x+1\})! is not allowed.}%
+ *)
+
+with type_system: type_environment -> function_environment -> AST.systemDecl -> Prop :=
+| type_SystemDecl_Some:
+    forall Delta Phi name params datatypes gates b a,
+      (for each p of params, type (AST.type_of_formalParameter p) well typed in Delta Phi empty)
+      /\ (for each d of datatypes,
+         typedecl d well typed in (env_add_types datatypes Delta) Phi (env_of_params params))
+      /\ (for each g of gates,
+         gate g well typed in (env_add_types datatypes Delta) Phi)
+      /\ (behavior b well typed in (env_add_types datatypes Delta) Phi)
+      /\ (assertion a well typed in (env_add_types datatypes Delta) Phi)
+      ->
+      system (AST.SystemDecl name params datatypes gates b (Some a)) well typed in Delta Phi
+
+(**
+%\todo{The Word document lacks the case where no assertion is provided.}%
+*)
+
+| type_SystemDecl_None:
+    forall Delta Phi name params datatypes gates b,
+      (for each p of params, type (AST.type_of_formalParameter p) well typed in Delta Phi empty)
+      /\ (for each d of datatypes,
+         typedecl d well typed in (env_add_types datatypes Delta) Phi (env_of_params params))
+      /\ (for each g of gates,
+         gate g well typed in (env_add_types datatypes Delta) Phi)
+      /\ (behavior b well typed in (env_add_types datatypes Delta) Phi)
+      ->
+      system (AST.SystemDecl name params datatypes gates b None) well typed in Delta Phi
+
+(**
+ ** Mediator
+
+%\todo{}%
+ *)
+
 with type_mediator: type_environment -> function_environment -> AST.mediatorDecl -> Prop :=
 
-(** ** Architecture *)
+(**
+ ** Architecture
+
+%\todo{}%
+ *)
+
 with type_architecture: type_environment -> function_environment -> system_environment -> mediator_environment -> AST.architectureDecl -> Prop :=
 
 (**
@@ -217,7 +267,11 @@ with type_datatype: type_environment -> function_environment -> variable_environ
       ->
       type (AST.RangeType min max) well typed in Delta Phi Gamma
 
-(** ** Expression *)
+(**
+ ** Expression
+
+%\todo{}%
+ *)
 
 with type_expression: type_environment -> function_environment -> variable_environment -> constituant_environment -> AST.expression -> AST.datatype -> Prop :=
 
@@ -245,6 +299,30 @@ with type_expression_where: type_environment -> function_environment -> variable
       ->
       expression e under (AST.Valuing x (Some x__t) x__e :: v) has type tau in Delta Phi Gamma Kappa
 
+(**
+ ** Gate
+
+%\todo{}%
+ *)
+
+with type_gate: type_environment -> function_environment -> AST.gateDecl -> Prop :=
+
+(**
+ ** Behavior
+
+%\todo{}%
+ *)
+
+with type_behavior: type_environment -> function_environment -> AST.behaviorDecl -> Prop :=
+
+(**
+ ** Assertion
+
+%\todo{}%
+ *)
+
+with type_assertion: type_environment -> function_environment -> AST.assertionDecl -> Prop :=
+
 (** ** Notations *)
 where "'SoSADL' a 'well' 'typed'" := (type_sosADL a)
 and "'unit' u 'well' 'typed'" := (type_unit u)
@@ -257,4 +335,7 @@ and "'architecture' a 'well' 'typed' 'in' Delta Phi Sigma Mu" := (type_architect
 and "'type' d 'well' 'typed' 'in' Delta Phi Gamma" := (type_datatype Delta Phi Gamma d)
 and "'expression' e 'has' 'type' t 'in' Delta Phi Gamma Kappa" := (type_expression Delta Phi Gamma Kappa e t)
 and "'expression' e 'under' v 'has' 'type' t 'in' Delta Phi Gamma Kappa" := (type_expression_where Delta Phi Gamma Kappa v e t)
+and "'gate' g 'well' 'typed' 'in' Delta Phi" := (type_gate Delta Phi g)
+and "'behavior' b 'well' 'typed' 'in' Delta Phi" := (type_behavior Delta Phi b)
+and "'assertion' a 'well' 'typed' 'in' Delta Phi" := (type_assertion Delta Phi a)
 .
