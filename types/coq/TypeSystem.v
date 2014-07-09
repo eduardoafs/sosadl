@@ -52,7 +52,7 @@ Axiom build_system_env: list AST.systemDecl -> system_environment.
 Axiom build_mediator_env: list AST.mediatorDecl -> mediator_environment.
 
 Definition env_of_params (p: list AST.formalParameter): variable_environment :=
-  List.fold_left (fun e f => e[[AST.name_of_formalParameter f <- AST.type_of_formalParameter f]]) p empty.
+  List.fold_left (fun e f => e[AST.name_of_formalParameter f <- AST.type_of_formalParameter f]) p empty.
 
 (**
  * The type system
@@ -129,7 +129,7 @@ with type_function: type_environment -> function_environment -> AST.functionDecl
     forall Delta Phi name dataName dataTypeName params t vals e tau,
       (for each p of params, type (AST.type_of_formalParameter p) well typed in Delta Phi empty)
       /\ (expression e under vals has type tau in Delta Phi (env_of_params params) empty)
-      /\ tau < AST.datatype_of_datatypeDecl Delta[[dataTypeName]]
+      /\ tau < AST.datatype_of_datatypeDecl Delta[dataTypeName]
       ->
       function (AST.FunctionDecl name dataName dataTypeName params t vals e) well typed in Delta Phi
 
@@ -180,7 +180,7 @@ with type_expression_where: type_environment -> function_environment -> variable
 | type_expression_where_Valuing_None:
     forall Delta Phi Gamma Kappa e tau x x__e x__tau v,
       (expression x__e has type x__tau in Delta Phi Gamma Kappa)
-      /\ (expression e under v has type tau in Delta Phi (Gamma[[x <- x__tau]]) Kappa)
+      /\ (expression e under v has type tau in Delta Phi (Gamma[x <- x__tau]) Kappa)
       ->
       expression e under (AST.Valuing x None x__e :: v) has type tau in Delta Phi Gamma Kappa
 
@@ -189,7 +189,7 @@ with type_expression_where: type_environment -> function_environment -> variable
     forall Delta Phi Gamma Kappa e tau x x__t x__e x__tau v,
       (expression x__e has type x__t in Delta Phi Gamma Kappa)
       /\ x__t < x__tau
-      /\ (expression e under v has type tau in Delta Phi (Gamma[[x <- x__tau]]) Kappa)
+      /\ (expression e under v has type tau in Delta Phi (Gamma[x <- x__tau]) Kappa)
       ->
       expression e under (AST.Valuing x (Some x__t) x__e :: v) has type tau in Delta Phi Gamma Kappa
 
