@@ -364,7 +364,7 @@ with type_protocol: type_environment -> function_environment -> AST.protocolDecl
 (**
  ** Connection
 
-%\todo{}%
+%\note{The rule is quite different from the one of the Word document, which was actually incorrect.}%
  *)
 
 with type_connection: type_environment -> function_environment -> variable_environment -> AST.connection -> Prop :=
