@@ -7,6 +7,15 @@ Module AST.
 * Abstract syntax tree
 *)
 
+Inductive connKind: Set :=
+| RegularConnection: connKind
+| EnvironmentConnection: connKind.
+
+Inductive modeType: Set :=
+| In: modeType
+| Out: modeType
+| InOut: modeType.
+
 Inductive sosADL: Set :=
 | SosADL: list import -> unit -> sosADL
 with import: Set :=
@@ -34,11 +43,18 @@ with valuing: Set :=
 with systemDecl: Set :=
 | SystemDecl: string -> list formalParameter -> list datatypeDecl -> list gateDecl -> behaviorDecl -> option assertionDecl -> systemDecl
 with mediatorDecl: Set :=
+| MediatorDecl: string -> list formalParameter -> list datatypeDecl -> list dutyDecl -> behaviorDecl -> mediatorDecl
 with architectureDecl: Set :=
-with expression: Set :=
 with gateDecl: Set :=
+| GateDecl: string -> list connection -> protocolDecl -> gateDecl
+with dutyDecl: Set :=
+| DutyDecl: string -> list connection -> assertionDecl -> protocolDecl -> dutyDecl
+with connection:Set :=
+| Connection: string -> connKind -> modeType -> datatype -> connection
 with behaviorDecl: Set :=
+with expression: Set :=
 with assertionDecl: Set :=
+with protocolDecl: Set :=
 .
 
 Definition name_of_datatypeDecl d :=
