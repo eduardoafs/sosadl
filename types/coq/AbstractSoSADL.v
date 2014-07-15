@@ -1,6 +1,13 @@
 Require Import List.
 Require Import String.
 
+(**
+%
+\def\todo#1{{\color{red}TODO: #1}}
+\def\note#1{{\color{blue}NOTE: #1}}
+%
+*)
+
 Module AST.
 
 (**
@@ -54,6 +61,15 @@ with connection:Set :=
 | Connection: string -> connKind -> modeType -> datatype -> connection
 with behaviorDecl: Set :=
 with archBehaviorDecl: Set :=
+(** %\note{I guess that \coqdocinductive{expression} is here a mistake. I guess it's \coqdocinductive{formalParameter} instead.}%
+
+ *)
+| ArchBehaviorDecl: string -> list expression -> list constituent -> expression -> archBehaviorDecl
+with constituent: Set :=
+(** %\note{I guess that \coqdocinductive{expression} is here a mistake. Indeed, mediators and systems are assumed not being referenceable from expressions. Furthermore, the kind of ``expression'' allowed here is really restricted.}%
+
+ *)
+| Constituent: string -> expression -> constituent
 with expression: Set :=
 with assertionDecl: Set :=
 with protocolDecl: Set :=

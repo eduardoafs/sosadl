@@ -14,8 +14,8 @@ Require Import Interpretation.
 
 (**
 %
-\newcommand{\todo}[1]{{\color{red}TODO: #1}}
-\newcommand{\note}[1]{{\color{blue}NOTE: #1}}
+\def\todo#1{{\color{red}TODO: #1}}
+\def\note#1{{\color{blue}NOTE: #1}}
 %
 *)
 
