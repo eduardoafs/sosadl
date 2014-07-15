@@ -57,3 +57,9 @@ Pour l'instant, oui : c'est une des raisons pour lesquelles il y a plusieurs env
 			* soit générer des obligations de preuve auxquelles l'architecte doit répondre
 		* En dernier recours, s'autorise-t-on à produire des tests à l'exécution? ou bien rejette-t-on l'architecture?
 
+
+*
+*Import
+	* autorise-t-on ou interdit-on des cycles dans les imports?
+
+
