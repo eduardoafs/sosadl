@@ -45,6 +45,7 @@ with systemDecl: Set :=
 with mediatorDecl: Set :=
 | MediatorDecl: string -> list formalParameter -> list datatypeDecl -> list dutyDecl -> behaviorDecl -> mediatorDecl
 with architectureDecl: Set :=
+| ArchitectureDecl: string -> list formalParameter -> list datatypeDecl -> list gateDecl -> archBehaviorDecl -> assertionDecl -> architectureDecl
 with gateDecl: Set :=
 | GateDecl: string -> list connection -> protocolDecl -> gateDecl
 with dutyDecl: Set :=
@@ -52,6 +53,7 @@ with dutyDecl: Set :=
 with connection:Set :=
 | Connection: string -> connKind -> modeType -> datatype -> connection
 with behaviorDecl: Set :=
+with archBehaviorDecl: Set :=
 with expression: Set :=
 with assertionDecl: Set :=
 with protocolDecl: Set :=
