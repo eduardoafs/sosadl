@@ -63,3 +63,15 @@ Pour l'instant, oui : c'est une des raisons pour lesquelles il y a plusieurs env
 	* autorise-t-on ou interdit-on des cycles dans les imports?
 
 
+*ArchBehaviorDecl
+	* Les paramètres sont des expressions (selon la grammaire). Est-ce normal qu'il ne s'agisse pas de paramètres formels?
+
+*Constituent
+	* Les constituants sont donnés par des expressions comme les autres (syntaxiquement). Est-ce normal ?
+		* D'une part, les médiateurs et systèmes ne sont pas sensés pouvoir apparaître dans les expressions utilisées pour construire une valeur, mais uniquement dans la clause ArchBehaviorDecl d'une architecture.
+		* D'autre part, seules deux formes sont utilisables pour instancier un constituant:
+			* NomDuConstituant(paramètres effectifs...)
+			* sequence{NomDuConstituant} - quid des éventuels paramètres ?
+			* Y a-t-il d'autres formes d'expression autorisées ?
+*
+
