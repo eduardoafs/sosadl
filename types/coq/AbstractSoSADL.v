@@ -60,6 +60,7 @@ with dutyDecl: Set :=
 with connection:Set :=
 | Connection: string -> connKind -> modeType -> datatype -> connection
 with behaviorDecl: Set :=
+| BehaviorDecl: string -> list formalParameter -> behavior -> behaviorDecl
 with archBehaviorDecl: Set :=
 (** %\note{I guess that \coqdocinductive{expression} is here a mistake. I guess it's \coqdocinductive{formalParameter} instead.}%
 
@@ -73,6 +74,9 @@ with constituent: Set :=
 with expression: Set :=
 with assertionDecl: Set :=
 with protocolDecl: Set :=
+with behavior: Set :=
+| Behavior: list statement -> behavior
+with statement: Set :=
 .
 
 Definition name_of_datatypeDecl d :=
