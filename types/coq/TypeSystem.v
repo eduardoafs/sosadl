@@ -185,7 +185,7 @@ with type_function: type_environment -> function_environment -> AST.functionDecl
 (**
  ** System
 
-%\note{The types of formal parameters are independant of preceding parameters. For instance, \lstinline!system S(x: integer, y: integer\{x-1 .. x+1\})! is not allowed.}%
+%\note{The types of formal parameters are independant of preceding parameters. For instance, {\tt system S(x: integer, y: integer\{x-1 .. x+1\})} is not allowed.}%
 
 %\note{Unlike the Word document, the rule applies in the context of environments $\Delta$ $\Phi$.}%
  *)
@@ -237,7 +237,6 @@ with type_mediator: type_environment -> function_environment -> AST.mediatorDecl
 (**
  ** Architecture
 
-%\todo{}%
  *)
 
 with type_architecture: type_environment -> function_environment -> system_environment -> mediator_environment -> AST.architectureDecl -> Prop :=
@@ -281,7 +280,7 @@ with type_datatype: type_environment -> function_environment -> variable_environ
       type (AST.SequenceType t) well typed in Delta Phi Gamma
 
 (**
-%\note{In comparison to the Word document, the order condition on the range boundaries is added; boundaries are assumed to be \coqdocconstr{RangeType}.}%
+%\note{In comparison to the Word document, the order condition on the range boundaries is added, using some interpretation system (to be defined); boundaries are assumed to be \coqdocconstr{RangeType}.}%
  *)
 
 | type_RangeType:
@@ -384,7 +383,7 @@ with type_protocol: type_environment -> function_environment -> AST.protocolDecl
 (**
  ** Connection
 
-%\note{The rule is quite different from the one of the Word document, which was actually incorrect.}%
+%\note{The rule is quite different from the one of the Word document, which was actually incorrect. Indeed, the name of the connection must not be added to the environment since connection names are not first class names.}%
  *)
 
 with type_connection: type_environment -> function_environment -> variable_environment -> AST.connection -> Prop :=
