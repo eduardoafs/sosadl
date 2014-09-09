@@ -39,6 +39,7 @@ with datatype: Set :=
 | TupleType: list fieldDecl -> datatype
 | SequenceType: datatype -> datatype
 | RangeType: expression -> expression -> datatype
+| BooleanType: datatype
 with fieldDecl: Set :=
 | FieldDecl: string -> datatype -> fieldDecl
 with functionDecl: Set :=
@@ -77,6 +78,19 @@ with protocolDecl: Set :=
 with behavior: Set :=
 | Behavior: list statement -> behavior
 with statement: Set :=
+| ValuingStatement: valuing -> statement
+| AssertStatement: assert -> statement
+| ActionStatement: action -> statement
+| RepeatBehavior: behavior -> statement
+(** %\note{I guess that when the else branch is missing, it is %[None]%, not an empty statement list.}% *)
+| IfThenElseBehavior: expression -> behavior -> option behavior -> statement
+| ChooseBehavior: list behavior -> statement
+| ForEachBehavior: string -> expression -> behavior -> statement
+| DoExpr: expression -> statement
+| Done: statement
+| RecursiveCall: list expression -> statement
+with assert: Set :=
+with action: Set :=
 .
 
 Definition name_of_datatypeDecl d :=
@@ -162,6 +176,11 @@ Definition type_of_valuing v :=
 Definition expression_of_valuing v :=
   match v with
     | Valuing _ _ e => e
+  end.
+
+Definition body_of_behavior b :=
+  match b with
+    | Behavior l => l
   end.
 
 End AST.

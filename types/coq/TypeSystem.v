@@ -408,8 +408,53 @@ with type_connection: type_environment -> function_environment -> variable_envir
 
 %\todo{}%
 
+%\note{According to the Word document, it's not clear whether the type system enforces some rules on the sequence of statements. For instance, {\tt repeat} is enforced as the latest statement of a body; but no check that all the branches terminate with {\tt done} or recursive call.}%
+
 *)
 with type_body: type_environment -> function_environment -> variable_environment -> list AST.statement -> Prop :=
+| type_EmptyBody:
+    forall Delta Phi Gamma,
+      body nil well typed in Delta Phi Gamma
+
+| type_Repeat:
+    forall Delta Phi Gamma b,
+      (body b well typed in Delta Phi Gamma)
+      ->
+      body (AST.RepeatBehavior (AST.Behavior b) :: nil) well typed in Delta Phi Gamma
+
+| type_Choose:
+    forall Delta Phi Gamma branches,
+      (for each b of branches, body (AST.body_of_behavior b) well typed in Delta Phi Gamma)
+      ->
+      body (AST.ChooseBehavior branches :: nil) well typed in Delta Phi Gamma
+
+| type_IfThen:
+    forall Delta Phi Gamma c t l,
+      (expression c has type AST.BooleanType in Delta Phi Gamma empty)
+      /\ (body t well typed in Delta Phi Gamma)
+      /\ (body l well typed in Delta Phi Gamma)
+      ->
+      body (AST.IfThenElseBehavior c (AST.Behavior t) None :: l) well typed in Delta Phi Gamma
+
+(** %\note{unlike the Word document, {\tt IfThenElse} is not enforced as the last statement.}%
+
+ *)
+| type_IfThenElse:
+    forall Delta Phi Gamma c t e l,
+      (expression c has type AST.BooleanType in Delta Phi Gamma empty)
+      /\ (body t well typed in Delta Phi Gamma)
+      /\ (body e well typed in Delta Phi Gamma)
+      /\ (body l well typed in Delta Phi Gamma)
+      ->
+      body (AST.IfThenElseBehavior c (AST.Behavior t) (Some (AST.Behavior e)) :: l) well typed in Delta Phi Gamma
+
+| type_ForEach:
+    forall Delta Phi Gamma x tau vals b l,
+      (expression vals has type (AST.SequenceType tau) in Delta Phi Gamma empty)
+      /\ (body b well typed in Delta Phi Gamma[ x <- tau ])
+      /\ (body l well typed in Delta Phi Gamma)
+      ->
+      body (AST.ForEachBehavior x vals (AST.Behavior b) :: l) well typed in Delta Phi Gamma
 
 (** ** Notations *)
 where "'SoSADL' a 'well' 'typed'" := (type_sosADL a)
