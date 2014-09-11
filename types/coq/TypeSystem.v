@@ -60,7 +60,7 @@ Reserved Notation "'behavior' b 'well' 'typed' 'in' Delta Phi Gamma" (at level 2
 Reserved Notation "'assertion' a 'well' 'typed' 'in' Delta Phi" (at level 200, Delta at level 1, Phi at level 1, no associativity).
 Reserved Notation "'protocol' p 'well' 'typed' 'in' Delta Phi" (at level 200, Delta at level 1, Phi at level 1, no associativity).
 Reserved Notation "'connection' c 'well' 'typed' 'in' Delta Phi Gamma" (at level 200, Delta at level 1, Phi at level 1, Gamma at level 1, no associativity).
-Reserved Notation "'body' b 'well' 'typed' 'in' Delta Phi Gamma" (at level 200, Delta at level 1, Phi at level 1, Gamma at level 1, no associativity).
+Reserved Notation "'body' b 'well' 'typed' 'in' Delta Phi Gamma Rho" (at level 200, Delta at level 1, Phi at level 1, Gamma at level 1, Rho at level 1, no associativity).
 
 
 (**
@@ -370,7 +370,7 @@ with type_behavior: type_environment -> function_environment -> variable_environ
 | type_BehaviorDecl:
     forall Delta Phi Gamma name params b,
       (for each p of params, type (AST.type_of_formalParameter p) well typed in Delta Phi Gamma)
-      /\ (body b well typed in Delta Phi (env_add_params params Gamma))
+      /\ (body b well typed in Delta Phi (env_add_params params Gamma) (List.map AST.type_of_formalParameter params))
       ->
       behavior (AST.BehaviorDecl name params (AST.Behavior b)) well typed in Delta Phi Gamma
 
@@ -411,50 +411,56 @@ with type_connection: type_environment -> function_environment -> variable_envir
 %\note{According to the Word document, it's not clear whether the type system enforces some rules on the sequence of statements. For instance, {\tt repeat} is enforced as the latest statement of a body; but no check that all the branches terminate with {\tt done} or recursive call.}%
 
 *)
-with type_body: type_environment -> function_environment -> variable_environment -> list AST.statement -> Prop :=
+with type_body: type_environment -> function_environment -> variable_environment -> list AST.datatype -> list AST.statement -> Prop :=
 | type_EmptyBody:
-    forall Delta Phi Gamma,
-      body nil well typed in Delta Phi Gamma
+    forall Delta Phi Gamma Rho,
+      body nil well typed in Delta Phi Gamma Rho
 
 | type_Repeat:
-    forall Delta Phi Gamma b,
-      (body b well typed in Delta Phi Gamma)
+    forall Delta Phi Gamma Rho b,
+      (body b well typed in Delta Phi Gamma Rho)
       ->
-      body (AST.RepeatBehavior (AST.Behavior b) :: nil) well typed in Delta Phi Gamma
+      body (AST.RepeatBehavior (AST.Behavior b) :: nil) well typed in Delta Phi Gamma Rho
 
 | type_Choose:
-    forall Delta Phi Gamma branches,
-      (for each b of branches, body (AST.body_of_behavior b) well typed in Delta Phi Gamma)
+    forall Delta Phi Gamma Rho branches,
+      (for each b of branches, body (AST.body_of_behavior b) well typed in Delta Phi Gamma Rho)
       ->
-      body (AST.ChooseBehavior branches :: nil) well typed in Delta Phi Gamma
+      body (AST.ChooseBehavior branches :: nil) well typed in Delta Phi Gamma Rho
 
 | type_IfThen:
-    forall Delta Phi Gamma c t l,
+    forall Delta Phi Gamma Rho c t l,
       (expression c has type AST.BooleanType in Delta Phi Gamma empty)
-      /\ (body t well typed in Delta Phi Gamma)
-      /\ (body l well typed in Delta Phi Gamma)
+      /\ (body t well typed in Delta Phi Gamma Rho)
+      /\ (body l well typed in Delta Phi Gamma Rho)
       ->
-      body (AST.IfThenElseBehavior c (AST.Behavior t) None :: l) well typed in Delta Phi Gamma
+      body (AST.IfThenElseBehavior c (AST.Behavior t) None :: l) well typed in Delta Phi Gamma Rho
 
 (** %\note{unlike the Word document, {\tt IfThenElse} is not enforced as the last statement.}%
 
  *)
 | type_IfThenElse:
-    forall Delta Phi Gamma c t e l,
+    forall Delta Phi Gamma Rho c t e l,
       (expression c has type AST.BooleanType in Delta Phi Gamma empty)
-      /\ (body t well typed in Delta Phi Gamma)
-      /\ (body e well typed in Delta Phi Gamma)
-      /\ (body l well typed in Delta Phi Gamma)
+      /\ (body t well typed in Delta Phi Gamma Rho)
+      /\ (body e well typed in Delta Phi Gamma Rho)
+      /\ (body l well typed in Delta Phi Gamma Rho)
       ->
-      body (AST.IfThenElseBehavior c (AST.Behavior t) (Some (AST.Behavior e)) :: l) well typed in Delta Phi Gamma
+      body (AST.IfThenElseBehavior c (AST.Behavior t) (Some (AST.Behavior e)) :: l) well typed in Delta Phi Gamma Rho
 
 | type_ForEach:
-    forall Delta Phi Gamma x tau vals b l,
+    forall Delta Phi Gamma Rho x tau vals b l,
       (expression vals has type (AST.SequenceType tau) in Delta Phi Gamma empty)
-      /\ (body b well typed in Delta Phi Gamma[ x <- tau ])
-      /\ (body l well typed in Delta Phi Gamma)
+      /\ (body b well typed in Delta Phi Gamma[ x <- tau ] Rho)
+      /\ (body l well typed in Delta Phi Gamma Rho)
       ->
-      body (AST.ForEachBehavior x vals (AST.Behavior b) :: l) well typed in Delta Phi Gamma
+      body (AST.ForEachBehavior x vals (AST.Behavior b) :: l) well typed in Delta Phi Gamma Rho
+
+| type_RecursiveCall:
+    forall Delta Phi Gamma Rho params,
+      (for each tau p of Rho params , expression p has type tau in Delta Phi Gamma empty)
+      ->
+      body (AST.RecursiveCall params :: nil) well typed in Delta Phi Gamma Rho
 
 (** ** Notations *)
 where "'SoSADL' a 'well' 'typed'" := (type_sosADL a)
@@ -475,5 +481,5 @@ and "'behavior' b 'well' 'typed' 'in' Delta Phi Gamma" := (type_behavior Delta P
 and "'assertion' a 'well' 'typed' 'in' Delta Phi" := (type_assertion Delta Phi a)
 and "'protocol' p 'well' 'typed' 'in' Delta Phi" := (type_protocol Delta Phi p)
 and "'connection' c 'well' 'typed' 'in' Delta Phi Gamma" := (type_connection Delta Phi Gamma c)
-and "'body' b 'well' 'typed' 'in' Delta Phi Gamma" := (type_body Delta Phi Gamma b)
+and "'body' b 'well' 'typed' 'in' Delta Phi Gamma Rho" := (type_body Delta Phi Gamma Rho b)
 .
