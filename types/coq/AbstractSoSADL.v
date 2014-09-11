@@ -66,7 +66,7 @@ with archBehaviorDecl: Set :=
 (** %\note{I guess that \coqdocinductive{expression} is here a mistake. I guess it's \coqdocinductive{formalParameter} instead.}%
 
  *)
-| ArchBehaviorDecl: string -> list expression -> list constituent -> expression -> archBehaviorDecl
+| ArchBehaviorDecl: string -> list formalParameter -> list constituent -> expression -> archBehaviorDecl
 with constituent: Set :=
 (** %\note{I guess that \coqdocinductive{expression} is here a mistake. Indeed, mediators and systems are assumed not being referenceable from expressions. Furthermore, the kind of ``expression'' allowed here is really restricted.}%
 
