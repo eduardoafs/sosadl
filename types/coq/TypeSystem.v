@@ -20,6 +20,10 @@ Require Import Interpretation.
 *)
 
 (**
+\todo{Must consider the task of merging environment such that different objects of different kinds (e.g., a variable, a system, a type, etc) cannot share the same name.}
+*)
+
+(**
  * Kinds of environments
  *)
 
