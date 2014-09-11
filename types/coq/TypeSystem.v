@@ -474,9 +474,10 @@ with type_body: type_environment -> function_environment -> variable_environment
       ->
       body (AST.AssertStatement (AST.Tell name e) :: l) well typed in Delta Phi Gamma Rho
 
+(** %\note{The idea here is to assume an environment%[ee]% in which all the (free) names of%[e]% are bound to some type; then to type %[e]% as well as the following statements in %[ee]% merged in %[Gamma]%.}% *)
 | type_AskStatement:
     forall Delta Phi Gamma Rho name e ee l,
-      (forall x, List.In x (AST.names_of_expression e) <-> exists tau, ee[x] = Some tau)
+      (forall x, List.In x (AST.names_of_expression e) <-> exists tau, contains ee x tau)
       /\ (expression e has type AST.BooleanType in Delta Phi (Gamma <++ ee) empty)
       /\ (body l well typed in Delta Phi (Gamma <++ ee) Rho)
       ->
