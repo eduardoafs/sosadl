@@ -90,6 +90,8 @@ with statement: Set :=
 | Done: statement
 | RecursiveCall: list expression -> statement
 with assert: Set :=
+| Tell: string -> expression -> assert
+| Ask: string -> expression -> assert
 with action: Set :=
 .
 
@@ -182,5 +184,7 @@ Definition body_of_behavior b :=
   match b with
     | Behavior l => l
   end.
+
+Axiom names_of_expression e: expression -> list string.
 
 End AST.

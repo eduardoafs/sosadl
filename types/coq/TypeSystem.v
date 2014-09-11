@@ -20,7 +20,7 @@ Require Import Interpretation.
 *)
 
 (**
-\todo{Must consider the task of merging environment such that different objects of different kinds (e.g., a variable, a system, a type, etc) cannot share the same name.}
+%\todo{Must consider the task of merging environment such that different objects of different kinds (e.g., a variable, a system, a type, etc) cannot share the same name.}%
 *)
 
 (**
@@ -465,6 +465,22 @@ with type_body: type_environment -> function_environment -> variable_environment
       (for each tau p of Rho params , expression p has type tau in Delta Phi Gamma empty)
       ->
       body (AST.RecursiveCall params :: nil) well typed in Delta Phi Gamma Rho
+
+(** %\note{I guess that in the Word document, the \verb+Behavior(Assert)+ rule is in fact \verb+Behavior(Tell)+.}% *)
+| type_TellStatement:
+    forall Delta Phi Gamma Rho name e l,
+      (expression e has type AST.BooleanType in Delta Phi Gamma empty)
+      /\ (body l well typed in Delta Phi Gamma Rho)
+      ->
+      body (AST.AssertStatement (AST.Tell name e) :: l) well typed in Delta Phi Gamma Rho
+
+| type_AskStatement:
+    forall Delta Phi Gamma Rho name e ee l,
+      (forall x, List.In x (AST.names_of_expression e) <-> exists tau, ee[x] = Some tau)
+      /\ (expression e has type AST.BooleanType in Delta Phi (Gamma <++ ee) empty)
+      /\ (body l well typed in Delta Phi (Gamma <++ ee) Rho)
+      ->
+      body (AST.AssertStatement (AST.Ask name e) :: l) well typed in Delta Phi Gamma Rho
 
 (** ** Notations *)
 where "'SoSADL' a 'well' 'typed'" := (type_sosADL a)
