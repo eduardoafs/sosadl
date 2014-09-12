@@ -9,10 +9,10 @@ library WsnGateway is {
     datatype Ordinate
     datatype Coordinate is tuple{x:Abscissa,y:Ordinate}
     datatype Depth
-    datatype Measure is tuple{coordinate:Coordinate,depth:Depth}
+    datatype MeasureData is tuple{coordinate:Coordinate,depth:Depth}
     
     gate notification is {
-  	  connection measure is out{MeasureData}  // measure sent by the gateway
+  	  connection measure is inout{MeasureData}  // measure sent by the gateway: or received???
       connection alert is out{MeasureData}  // alert sent by the gateway
     } guarantee {
   		protocol notificationpact is {
@@ -40,7 +40,6 @@ library WsnGateway is {
         }
       }
   	}
-  	
   	behavior serving() is {
     	value localbase is sequence{MeasureData} = sequence{}   // 'sequence{MeasureData}' au lieu de 'sequence(MeasureData)' ?
     	repeat {
@@ -54,6 +53,7 @@ library WsnGateway is {
     	}
     }
 
+    
 	/*
 	  // An attempt to rewrite the behavior without "do expression" implies multiple behaviors: 
     behavior serving() is {

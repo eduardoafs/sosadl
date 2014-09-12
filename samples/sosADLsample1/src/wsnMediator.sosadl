@@ -3,7 +3,13 @@ with Localization
 
 // Description of Transmitter as a Mediator Abstraction
 library WsnMediator is {
-  datatype Coordinate {
+  
+  /* Bug fix: previously, datatype Coordinate was not explicited, which meant implicitly an Integer.
+   * But onecoordinate and othercoordinate in the distance function could not be Integers...
+   * Thus the fix. 
+   * Furthermore, in Transmitter, type Coordinate is redeclared as tuple{x:Abscissa,y:Ordinate}.
+   */ 
+  datatype Coordinate is tuple{x:Abscissa,y:Ordinate} {
     function (onecoordinate:Coordinate)::distance(othercoordinate:Coordinate):Distance is {
       return sqrt(sqr(onecoordinate::x-othercoordinate::x)+sqr(onecoordinate::y-othercoordinate::y))
     }
@@ -30,7 +36,7 @@ library WsnMediator is {
     } assume {
       protocol transmitpact is {
       	repeat {
-          via transmit::fromSensor receive measure
+          via transmit::fromSensors receive measure
           via transmit::towardsGateway send measure
         }
       }

@@ -7,14 +7,15 @@ library WsnSensor is {   // 'sos' is a library providing a runable architecture
   // 'system' declares a user-defined archetype for creating system constituents
   system Sensor(lps: Coordinate) is {
     // Declaration of local types -- the scope is the system declaration
-    datatype RawData {   // 'datatype' declares an abstract datatype that needs to be concretized
+    //FIXME! RawData was declared 'datatype RawData' (i.e. integer? or declared elsewhere?) instead of 'datatype RawData is tuple{}'
+    datatype RawData is tuple{coordinate:Coordinate,depth:Depth} {   // 'datatype' declares an abstract datatype that needs to be concretized
       function (data:Rawdata)::convert():Depth is {
         value magnitude = 10
         return Depth(data/magnitude)   // Depth() converts to type Depth // // the only base type is Integer -- all types are implicitly typed by Integer equipped with the usual operations
       }
     }
     datatype Depth   // an atomic type may be seen when needed as a simple tuple type, e.g. tuple{:Depth}
-    datatype Measure is tuple{coordinate:Coordinate,depth:Depth}   // 'tuple' may have labels or not
+    datatype MeasureData is tuple{coordinate:Coordinate,depth:Depth}   // 'tuple' may have labels or not
     datatype Energy
 
     // 'gate' is the interface of a system -- a system may have several gates
@@ -56,11 +57,11 @@ library WsnSensor is {   // 'sos' is a library providing a runable architecture
   		  if (powerlevel > powerthreshold) then {   // 'if' only tests the condition without blocking
           tell powering is {powerlevel > powerthreshold}    // 'assert' the specified constraint with name and type extrusions
   		    choose{
-  			    via measuringGate::sense receive data
-  			    via measuringGate::measure send tuple{coordinate=lps,depth=data::convert()}
+  			    via measurement::sense receive data
+  			    via measurement::measure send tuple{coordinate=lps,depth=data::convert()}
   		    } or {
-  			    via measuringGate::pass receive data
-  			    via measuringGate::measure send data
+  			    via measurement::pass receive data
+  			    via measurement::measure send data
           }
         }
       }
