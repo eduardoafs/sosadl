@@ -18,7 +18,7 @@ import java.io.StringReader
  * 
  * see http://www.eclipse.org/Xtext/documentation.html#TutorialCodeGeneration
  */
-class SosADLGenerator implements IGenerator {
+class SosADLPrettyPrinterGenerator implements IGenerator {
 
 	override void doGenerate(Resource resource, IFileSystemAccess fsa) {
 
