@@ -57,7 +57,8 @@ Workflow {
     
     		// serializer 2.0
     		fragment = serializer.SerializerFragment auto-inject {
-    			generateStub = false
+    			//generateStub = false
+    			generateStub = true
     		}
     
     		// a custom ResourceFactory for use with EMF
