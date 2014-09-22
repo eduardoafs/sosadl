@@ -132,7 +132,10 @@ class SosADL2IOSTSGenerator implements IGenerator {
         g.compile
       }
       s.behavior.compile
-      systems.add(currentSystem)
+      // do not add empty system
+      if (! currentSystem.empty) {
+        systems.add(currentSystem)
+      }
       currentSystem=null
     }
 
@@ -146,7 +149,10 @@ class SosADL2IOSTSGenerator implements IGenerator {
       for (g : a.gates) {g.compile}
       if (a.assertion != null) {a.assertion.compile}
       a.behavior.compile
-      systems.add(currentSystem)
+      // do not add empty system
+      if (! currentSystem.empty) {
+        systems.add(currentSystem)
+      }
       currentSystem=null
     }
 
@@ -163,7 +169,10 @@ class SosADL2IOSTSGenerator implements IGenerator {
         d.compile
       }
       m.behavior.compile
-      systems.add(currentSystem)
+      // do not add empty system
+      if (! currentSystem.empty) {
+        systems.add(currentSystem)
+      }
       currentSystem=null
     }
 	
@@ -256,13 +265,12 @@ class SosADL2IOSTSGenerator implements IGenerator {
         var boolean first=true
         for (s : b.statements) {
             // in a sequence, one has to add a transition with no action between two statements
-            if ((s instanceof Action) && startState==0 && state==0) {
-                state=currentProcess.newState()
-                var IOstsTransition concatenation = new IOstsTransition(startState,state) //tau
-                concatenation.setComment("Empty transition, because sync is not allowed in first transition")
-                currentProcess.addTransition(concatenation)
-                //System.out.println("Added empty transition, because sync is not allowed in first transition": from="+state+", to="+state)
-            } else if (! first) {
+            if (first && (s instanceof Action) && startState==0 && state==0) {
+                //System.out.println("Preparing empty transition, because sync is not allowed in first transition": from="+state+", to="+state)
+                finalStates = newArrayList(0)
+                first=false
+            }
+            if (! first) {
                 state=currentProcess.newState()
                 var IOstsTransition concatenation = new IOstsTransition(finalStates.get(0),state) //tau
                 concatenation.setComment("Concatenation (sequentiality)")
@@ -286,13 +294,12 @@ class SosADL2IOSTSGenerator implements IGenerator {
         var boolean first=true
         for (s : b.statements) {
             // in a sequence, one has to add a transition with no action between two statements
-            if ((s instanceof ProtocolAction) && startState==0 && state==0) {
-                state=currentProcess.newState()
-                var IOstsTransition concatenation = new IOstsTransition(startState,state) //tau
-                concatenation.setComment("Empty transition, because sync is not allowed in first transition")
-                currentProcess.addTransition(concatenation)
-                //System.out.println("Added empty transition, because sync is not allowed in first transition": from="+state+", to="+state)
-            } else if (! first) {
+            if (first && (s instanceof ProtocolAction) && startState==0 && state==0) {
+                //System.out.println("Preparing empty transition, because sync is not allowed in first transition": from="+state+", to="+state)
+                finalStates = newArrayList(0)
+                first=false
+            }
+            if (! first) {
                 state=currentProcess.newState()
                 var IOstsTransition concatenation = new IOstsTransition(finalStates.get(0),state) //tau
                 concatenation.setComment("Concatenation (sequentiality)")
@@ -391,10 +398,28 @@ class SosADL2IOSTSGenerator implements IGenerator {
                     currentProcess.addOutput(channel, gate.typeName)
                 }
             }
-            action.setGuard(parameter+" = "+(a.suite as SendProtocolAction).expression.compile)
-            action.setAction(channel+"!("+parameter+")")
-            action.setComment("Send action")
-            currentProcess.addParameter(parameter,gate.typeName)
+            if ((a.suite as SendProtocolAction).expression.compile.toString == "any") {
+                /* FIXME: send any:
+                 * - option 1 "pas de if": ANY_typeConnection est une constante qui doit etre definie
+                 *     action.setAction(channel+"!(ANY_typeConnection)")
+                 *     currentProcess.addParameter(parameter,gate.typeName)
+                 * - option 2 "avec if en affectant au parametre une constante ANY_typeConnection" (au hasard?)
+                 *     action.setGuard(parameter+" = "+(a.suite as SendProtocolAction).expression.compile)
+                 *     action.setAction(channel+"!("+parameter+")")
+                 *     currentProcess.addParameter(parameter,gate.typeName)
+                 */
+                // send any: no guard (thus not parameter) and send a random expression compatible with type of connection
+                action.setGuard(parameter+" = 0  //FIXME: 0 should be an expression of parameter's type")
+                action.setAction(channel+"!("+parameter+")")
+                currentProcess.addParameter(parameter,gate.typeName)
+                action.setComment("Send any action")
+            } else {
+                // send some expression
+                action.setGuard(parameter+" = "+(a.suite as SendProtocolAction).expression.compile)
+                action.setAction(channel+"!("+parameter+")")
+                currentProcess.addParameter(parameter,gate.typeName)
+                action.setComment("Send action")
+            }
             //System.out.println("Added send transition: from="+startState+", to="+final)
         } else if (a.suite instanceof ReceiveProtocolAction) { 
             val variable=(a.suite as ReceiveProtocolAction).variable
@@ -892,7 +917,7 @@ class SosADL2IOSTSGenerator implements IGenerator {
 	      val type = computeIOstsType(v.type)
 	      val typeName = nameOfIOstsType(type)
 	      registerIOstsType(typeName, type)
-	      currentProcess.addVariable(v.variable, typeName)  
+	      currentProcess.addVariable(v.variable, finalNameOfIOstsType(typeName))  
 	  }
 	  '''«v.variable» := «v.expression.compile»'''
 	}
@@ -997,7 +1022,7 @@ class SosADL2IOSTSGenerator implements IGenerator {
     }
     
     def String lastIOstsTypeName() {
-        "Type"+this.lastIOstsTypeNum
+        "Type_"+this.lastIOstsTypeNum
     }
 }
 
@@ -1027,6 +1052,7 @@ class IOstsType {
             IOstsRecordType: this.equals(other)
             IOstsArrayType: this.equals(other)
             IOstsNamedType: this.equals(other)
+            default: this.equals(other)
         }
     }
 }
@@ -1439,8 +1465,8 @@ class IOstsProcess{
     «IF !variablesMap.empty»
     
     variables
-      «FOR v:variablesMap.keySet»
-      «v» : «variablesMap.get(v)»;
+      «FOR v:variablesMap.entrySet»
+      «v.key» : «v.value»;
       «ENDFOR»
     «ENDIF»
     
@@ -1473,6 +1499,7 @@ class IOstsSystem{
     val String name
     var String fileName=""
     var String comment=""
+    var String behaviorName="UNDEFINED"
     public var LinkedHashMap<String,String> constantsMap = newLinkedHashMap()     // map of (name -> value as tring)
     public var LinkedHashMap<String,IOstsType> typesMap = newLinkedHashMap()     // map of (name -> iosts type)
     public var LinkedHashMap<String,IOstsGate> gatesMap = newLinkedHashMap()  // map of (gate name -> Gate)
@@ -1499,10 +1526,32 @@ class IOstsSystem{
     }
     
     def addProcess(IOstsProcess process) {
-        this.processesMap.put(process.name, process)
+        // Sometimes, for example when "behavior{done}", the sts is empty.
+        // In those cases, do not add the process, because it is invalid! 
+        if (process.transitions.empty) {
+            System.err.println("Warning! Process '"+process.name+"' is empty! Ignoring...")
+        } else {
+            if (process.name.contains("_behavior")) {
+                behaviorName=process.name
+            }
+            this.processesMap.put(process.name, process)
+        }
     }
     
-    override def String toString() '''
+    /*
+     * empty returns true if no process has been generated.
+     */
+    def empty() {
+        processesMap.empty
+    }
+    
+    override def String toString() {
+        // generate something only if there is at least one process
+        if (empty) {
+            System.err.println("Warning! System '"+name+"' defines no process! Ignoring...")
+            ""
+        } else {     
+    '''
     /*
     Generated by org.archware.sosadl.generator.SosADL2IOSTSGenerator
     
@@ -1512,7 +1561,9 @@ class IOstsSystem{
 
     Run it with:
         «FOR p:processesMap.values»
-        stg «fileName» -test_name «p.name» -test_purpose_name «p.name»
+        «IF p.name.endsWith("_protocol")»
+        stg «fileName» -test_name «behaviorName» -test_purpose_name «p.name»
+        «ENDIF»
         «ENDFOR»
     */
     
@@ -1533,7 +1584,7 @@ class IOstsSystem{
         «IF tv.toString == "int"»
           // «tk» = int;
         «ELSE»
-          «tk» = «tv»;«IF tv.comment() != ""» // «tv.comment()»«ENDIF»
+          «tk» = «tv»;
         «ENDIF»
       «ENDFOR»
     «ENDIF»
@@ -1547,5 +1598,6 @@ class IOstsSystem{
     //--------------------------------------------------
     «p.toString»
     «ENDFOR»
-    '''
+    '''}
+    }
 }
