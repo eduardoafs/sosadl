@@ -26,11 +26,11 @@ import java.lang.System
  */
 class SosADL2IOSTSGenerator implements IGenerator {
     
-    // global variables making the generation much easier
     val DEBUG=false
     val DEBUG2=false
     val DEBUG3=false
     
+    // global variables making the generation much easier
     var String resourceFilename = null          // current SoSADL file name to be transformed
     var LinkedHashMap<String,String> globalConstantsMap = newLinkedHashMap()
     var LinkedHashMap<String,IOstsType> globalTypesMap = newLinkedHashMap()     // map of (types -> typeDecl)
@@ -337,14 +337,16 @@ class SosADL2IOSTSGenerator implements IGenerator {
         if (a.suite instanceof SendAction) {
             val parameter=currentProcess.newParameter()
             val IOstsGate gate=currentSystem.gatesMap.get(channel)
-            if (! currentProcess.outputMap.containsKey(channel) && ! currentProcess.inoutputMap.containsKey(channel)) {
-                if (gate.mode == "out") {
-                    currentProcess.addOutput(channel, gate.typeName)
-                } else { // gate.mode == "inout"
+            if (gate.mode == "inout") {
+                if (! currentProcess.inoutputMap.containsKey(channel)) {
                     currentProcess.addInoutput(channel, gate.typeName)
-                    channel = channel.concat("_out")
-                    currentProcess.addOutput(channel, gate.typeName)
+                    if (DEBUG2) System.out.println("Added channel '"+channel+"' to inoutput gates")
                 }
+                channel = channel.concat("_out")
+            }
+            if (! currentProcess.outputMap.containsKey(channel)) {
+                currentProcess.addOutput(channel, gate.typeName)
+                if (DEBUG2) System.out.println("Added channel '"+channel+"' to output gates")
             }
             action.setGuard(parameter+" = "+(a.suite as SendAction).expression.compile)
             action.setAction(channel+"!("+parameter+")")
@@ -355,14 +357,16 @@ class SosADL2IOSTSGenerator implements IGenerator {
             val variable=(a.suite as ReceiveAction).variable
             val parameter=variable+"_data"
             val IOstsGate gate=currentSystem.gatesMap.get(channel)
-            if (! currentProcess.inputMap.containsKey(channel) && ! currentProcess.inoutputMap.containsKey(channel)) {
-                if (gate.mode == "in") {
-                    currentProcess.addInput(channel, gate.typeName)
-                } else { // gate.mode == "inout"
+            if (gate.mode == "inout") {
+                if (! currentProcess.inoutputMap.containsKey(channel)) {
                     currentProcess.addInoutput(channel, gate.typeName)
-                    channel = channel.concat("_in")
-                    currentProcess.addInput(channel, gate.typeName)
+                    if (DEBUG2) System.out.println("Added channel '"+channel+"' to inoutput gates")
                 }
+                channel = channel.concat("_in")
+            }
+            if (! currentProcess.inputMap.containsKey(channel)) {
+                currentProcess.addInput(channel, gate.typeName)
+                if (DEBUG2) System.out.println("Added channel '"+channel+"' to input gates")
             }
             if (! currentProcess.parametersMap.containsKey(parameter)) {
                 currentProcess.addParameter(parameter, gate.typeName)
@@ -389,14 +393,16 @@ class SosADL2IOSTSGenerator implements IGenerator {
         if (a.suite instanceof SendProtocolAction) {
             val parameter=currentProcess.newParameter()
             val IOstsGate gate=currentSystem.gatesMap.get(channel)
-            if (! currentProcess.outputMap.containsKey(channel) && ! currentProcess.inoutputMap.containsKey(channel)) {
-                if (gate.mode == "out") {
-                    currentProcess.addOutput(channel, gate.typeName)
-                } else { // gate.mode == "inout"
+            if (gate.mode == "inout") {
+                if (! currentProcess.inoutputMap.containsKey(channel)) {
                     currentProcess.addInoutput(channel, gate.typeName)
-                    channel = channel.concat("_out")
-                    currentProcess.addOutput(channel, gate.typeName)
+                    if (DEBUG2) System.out.println("Added channel '"+channel+"' to inoutput gates")
                 }
+                channel = channel.concat("_out")
+            }
+            if (! currentProcess.inputMap.containsKey(channel)) {
+                currentProcess.addOutput(channel, gate.typeName)
+                if (DEBUG2) System.out.println("Added channel '"+channel+"' to output gates")
             }
             if ((a.suite as SendProtocolAction).expression.compile.toString == "any") {
                 /* FIXME: send any:
@@ -425,14 +431,16 @@ class SosADL2IOSTSGenerator implements IGenerator {
             val variable=(a.suite as ReceiveProtocolAction).variable
             val parameter=variable+"_data"
             val IOstsGate gate=currentSystem.gatesMap.get(channel)
-            if (! currentProcess.inputMap.containsKey(channel) && ! currentProcess.inoutputMap.containsKey(channel)) {
-                if (gate.mode == "in") {
-                    currentProcess.addInput(channel, gate.typeName)
-                } else { // gate.mode == "inout"
+            if (gate.mode == "inout") {
+                if (! currentProcess.inoutputMap.containsKey(channel)) {
                     currentProcess.addInoutput(channel, gate.typeName)
-                    channel = channel.concat("_in")
-                    currentProcess.addInput(channel, gate.typeName)
+                    if (DEBUG2) System.out.println("Added channel '"+channel+"' to inoutput gates")
                 }
+                channel = channel.concat("_in")
+            }
+            if (! currentProcess.inputMap.containsKey(channel)) {
+                currentProcess.addInput(channel, gate.typeName)
+                if (DEBUG2) System.out.println("Added channel '"+channel+"' to input gates")
             }
             
             if (! currentProcess.parametersMap.containsKey(parameter)) {
@@ -449,16 +457,17 @@ class SosADL2IOSTSGenerator implements IGenerator {
             val variable="any_s"+startState
             val parameter=variable+"_data"
             val IOstsGate gate=currentSystem.gatesMap.get(channel)
-            if (! currentProcess.inputMap.containsKey(channel) && ! currentProcess.inoutputMap.containsKey(channel)) {
-                if (gate.mode == "in") {
-                    currentProcess.addInput(channel, gate.typeName)
-                } else { // gate.mode == "inout"
+            if (gate.mode == "inout") {
+                if (! currentProcess.inoutputMap.containsKey(channel)) {
                     currentProcess.addInoutput(channel, gate.typeName)
-                    channel = channel.concat("_in")
-                    currentProcess.addInput(channel, gate.typeName)
+                    if (DEBUG2) System.out.println("Added channel '"+channel+"' to inoutput gates")
                 }
+                channel = channel.concat("_in")
             }
-            
+            if (! currentProcess.inputMap.containsKey(channel)) {
+                currentProcess.addInput(channel, gate.typeName)
+                if (DEBUG2) System.out.println("Added channel '"+channel+"' to input gates")
+            }
             if (! currentProcess.parametersMap.containsKey(parameter)) {
                 currentProcess.addParameter(parameter, gate.typeName)
             }
@@ -714,7 +723,7 @@ class SosADL2IOSTSGenerator implements IGenerator {
 	        IOstsBoolType: t.toString
 	        default: name
 	    }
-	    if (DEBUG2) System.err.println("Final type name '"+name+"' = '"+finalName+"'.")
+	    if (DEBUG2) System.out.println("Final type name '"+name+"' = '"+finalName+"'.")
 	    finalName
 	}
 	
@@ -737,12 +746,12 @@ class SosADL2IOSTSGenerator implements IGenerator {
 	    var name=""
 	    if (currentSystem != null) {
             for (t:currentSystem.typesMap.entrySet) {
-                if (DEBUG2) System.err.print("comparing '"+type.toString+"' with '"+t.value.toString+"' : ")
+                if (DEBUG2) System.out.print("comparing '"+type.toString+"' with '"+t.value.toString+"' : ")
                 if (t.value.equals(type)) {
                     name=t.key
-                    if (DEBUG2) System.err.println("ok, name='"+name+"'")
+                    if (DEBUG2) System.out.println("ok, name='"+name+"'")
                 } else {
-                    if (DEBUG2) System.err.println("KO.")
+                    if (DEBUG2) System.out.println("KO.")
                 }
             }
             if (name == "") {
@@ -751,12 +760,12 @@ class SosADL2IOSTSGenerator implements IGenerator {
             }
         } else {
             for (t:globalTypesMap.entrySet) {
-                if (DEBUG2) System.err.print("comparing '"+type.toString+"' with '"+t.value.toString+"' : ")
+                if (DEBUG2) System.out.print("comparing '"+type.toString+"' with '"+t.value.toString+"' : ")
                 if (t.value.equals(type)) {
                     name=t.key
-                    if (DEBUG2) System.err.println("ok, name='"+name+"'")
+                    if (DEBUG2) System.out.println("ok, name='"+name+"'")
                 } else {
-                    if (DEBUG2) System.err.println("KO.")
+                    if (DEBUG2) System.out.println("KO.")
                 }
             }
             if (name == "") {
