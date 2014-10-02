@@ -272,10 +272,14 @@ class SosADL2IOSTSGenerator implements IGenerator {
             }
             if (! first) {
                 state=currentProcess.newState()
-                var IOstsTransition concatenation = new IOstsTransition(finalStates.get(0),state) //tau
-                concatenation.setComment("Concatenation (sequentiality)")
-                currentProcess.addTransition(concatenation)
-                //System.out.println("Added concatenation transition: from="+finalStates.get(0)+", to="+state)
+                var i=0
+                while (i < finalStates.length) {
+                    var IOstsTransition concatenation = new IOstsTransition(finalStates.get(i),state) //tau
+                    concatenation.setComment("Concatenation (sequentiality)")
+                    currentProcess.addTransition(concatenation)
+                    //System.out.println("Added concatenation transition: from="+finalStates.get(i)+", to="+state)
+                    i = i+1
+                }
             }
             // in a sequence of statements, only the last statement can have multiple final states
             // we just assume it's true!
@@ -301,10 +305,14 @@ class SosADL2IOSTSGenerator implements IGenerator {
             }
             if (! first) {
                 state=currentProcess.newState()
-                var IOstsTransition concatenation = new IOstsTransition(finalStates.get(0),state) //tau
-                concatenation.setComment("Concatenation (sequentiality)")
-                currentProcess.addTransition(concatenation)
-                //System.out.println("Added concatenation transition: from="+finalStates.get(0)+", to="+state)
+                var i=0
+                while (i < finalStates.length) {
+                    var IOstsTransition concatenation = new IOstsTransition(finalStates.get(i),state) //tau
+                    concatenation.setComment("Concatenation (sequentiality)")
+                    currentProcess.addTransition(concatenation)
+                    //System.out.println("Added concatenation transition: from="+finalStates.get(i)+", to="+state)
+                    i = i+1
+                }
             }
             // in a sequence of statements, only the last statement can have multiple final states
             // we just assume it's true!
@@ -541,12 +549,7 @@ class SosADL2IOSTSGenerator implements IGenerator {
     def dispatch ArrayList<Integer> computeSTS(int startState, ChooseBehavior c){
         var ArrayList<Integer> finalStates = newArrayList()
         for (b : c.branches) {
-            val final=currentProcess.newState()
-            var IOstsTransition t = new IOstsTransition(startState,final)
-            t.setComment("Choose case")
-            currentProcess.addTransition(t)
-            //System.out.println("Added choose transition: from="+startState+", to="+final)
-            finalStates.addAll(computeSTS(final, b))
+            finalStates.addAll(computeSTS(startState, b))
         }
         finalStates
     }
@@ -557,12 +560,7 @@ class SosADL2IOSTSGenerator implements IGenerator {
     def dispatch ArrayList<Integer> computeSTS(int startState, ChooseProtocol c){
         var ArrayList<Integer> finalStates = newArrayList()
         for (b : c.branches) {
-            val final=currentProcess.newState()
-            var IOstsTransition t = new IOstsTransition(startState,final)
-            t.setComment("Choose case")
-            currentProcess.addTransition(t)
-            //System.out.println("Added choose transition: from="+startState+", to="+final)
-            finalStates.addAll(computeSTS(final, b))
+            finalStates.addAll(computeSTS(startState, b))
         }
         finalStates
     }
