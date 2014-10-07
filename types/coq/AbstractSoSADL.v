@@ -14,6 +14,8 @@ Module AST.
 * Abstract syntax tree
 *)
 
+Definition complexName := list string.
+
 Inductive connKind: Set :=
 | RegularConnection: connKind
 | EnvironmentConnection: connKind.
@@ -93,6 +95,10 @@ with assert: Set :=
 | Tell: string -> expression -> assert
 | Ask: string -> expression -> assert
 with action: Set :=
+| Action: string -> string -> actionSuite -> action
+with actionSuite: Set :=
+| SendAction: expression -> actionSuite
+| ReceiveAction: string -> actionSuite
 .
 
 Definition name_of_datatypeDecl d :=
@@ -183,6 +189,11 @@ Definition expression_of_valuing v :=
 Definition body_of_behavior b :=
   match b with
     | Behavior l => l
+  end.
+
+Definition name_of_gateDecl g :=
+  match g with
+    | GateDecl n _ _ => n
   end.
 
 Axiom names_of_expression e: expression -> list string.
