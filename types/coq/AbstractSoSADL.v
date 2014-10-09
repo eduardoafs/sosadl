@@ -14,6 +14,8 @@ Module AST.
 * Abstract syntax tree
 *)
 
+Definition complexName := list string.
+
 Inductive connKind: Set :=
 | RegularConnection: connKind
 | EnvironmentConnection: connKind.
@@ -66,7 +68,7 @@ with archBehaviorDecl: Set :=
 (** %\note{I guess that \coqdocinductive{expression} is here a mistake. I guess it's \coqdocinductive{formalParameter} instead.}%
 
  *)
-| ArchBehaviorDecl: string -> list expression -> list constituent -> expression -> archBehaviorDecl
+| ArchBehaviorDecl: string -> list formalParameter -> list constituent -> expression -> archBehaviorDecl
 with constituent: Set :=
 (** %\note{I guess that \coqdocinductive{expression} is here a mistake. Indeed, mediators and systems are assumed not being referenceable from expressions. Furthermore, the kind of ``expression'' allowed here is really restricted.}%
 
@@ -90,7 +92,13 @@ with statement: Set :=
 | Done: statement
 | RecursiveCall: list expression -> statement
 with assert: Set :=
+| Tell: string -> expression -> assert
+| Ask: string -> expression -> assert
 with action: Set :=
+| Action: string -> string -> actionSuite -> action
+with actionSuite: Set :=
+| SendAction: expression -> actionSuite
+| ReceiveAction: string -> actionSuite
 .
 
 Definition name_of_datatypeDecl d :=
@@ -182,5 +190,12 @@ Definition body_of_behavior b :=
   match b with
     | Behavior l => l
   end.
+
+Definition name_of_gateDecl g :=
+  match g with
+    | GateDecl n _ _ => n
+  end.
+
+Axiom names_of_expression e: expression -> list string.
 
 End AST.
