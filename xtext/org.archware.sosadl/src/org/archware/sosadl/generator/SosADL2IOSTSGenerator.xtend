@@ -574,10 +574,12 @@ class SosADL2IOSTSGenerator implements IGenerator {
         finalStates.addAll(computeSTS(startState, r.repeated))
         // add a transition from each finalState to initial startState
         for (final : finalStates) {
-            var IOstsTransition t = new IOstsTransition(final,startState)
-            t.setComment("Repeat loop")
-            currentProcess.addTransition(t)
-            //System.out.println("Added repeat transition: from="+final+", to="+startState)
+            if (final != startState) {
+                var IOstsTransition t = new IOstsTransition(final,startState)
+                t.setComment("Repeat loop")
+                currentProcess.addTransition(t)
+                //System.out.println("Added repeat transition: from="+final+", to="+startState)
+            }
         }
         newArrayList(startState) 
     }
@@ -591,10 +593,12 @@ class SosADL2IOSTSGenerator implements IGenerator {
         finalStates.addAll(computeSTS(startState, r.repeated))
         // add a transition from each finalState to initial startState
         for (final : finalStates) {
-            var IOstsTransition t = new IOstsTransition(final,startState)
-            t.setComment("Repeat loop")
-            currentProcess.addTransition(t)
-            //System.out.println("Added repeat transition: from="+final+", to="+startState)
+            if (final != startState) {
+                var IOstsTransition t = new IOstsTransition(final,startState)
+                t.setComment("Repeat loop")
+                currentProcess.addTransition(t)
+                //System.out.println("Added repeat transition: from="+final+", to="+startState)
+            }
         }
         newArrayList(startState) 
     }
@@ -677,10 +681,12 @@ class SosADL2IOSTSGenerator implements IGenerator {
      *   same as Repeat of entire Behavior: loop to initial state
      */
     def dispatch ArrayList<Integer> computeSTS(int startState, RecursiveCall r){
-        var IOstsTransition t = new IOstsTransition(startState,0)
-        t.setComment("Recursive call")
-        currentProcess.addTransition(t)
-        newArrayList(0) 
+        if (startState != 0) {
+            var IOstsTransition t = new IOstsTransition(startState,0)
+            t.setComment("Recursive call")
+            currentProcess.addTransition(t)
+            newArrayList(0) 
+        }
     }
         
 	def compile(ArchBehaviorDecl a)''''''
@@ -1567,11 +1573,15 @@ class IOstsSystem{
                 Otherwise, STG may not compile this IOSTS file. 
 
     Run it with:
+      «IF processesMap.size == 1 && behaviorName != "UNDEFINED"»
+        stg «fileName» -test_name «behaviorName»
+      «ELSE»
         «FOR p:processesMap.values»
         «IF p.name.endsWith("_protocol")»
         stg «fileName» -test_name «behaviorName» -test_purpose_name «p.name»
         «ENDIF»
         «ENDFOR»
+      «ENDIF»
     */
     
     system «name»;
