@@ -1,0 +1,51 @@
+// ok: the iosts translation is ok.
+ 
+library testIfThenElse5 is {
+  
+  system test() is {
+    
+    datatype type1
+    
+    gate gate1 is {
+      connection connection1 is in{type1}
+      connection connection2 is in{type1}
+      connection connection3 is in{type1}
+      connection connection4 is in{type1}
+      connection connection5 is in{type1}
+    } guarantee {
+      protocol gate1protocol is {
+        if (0 > 1) then {
+          if (1 < 2) then {
+            via gate1::connection1 send any
+          } else {
+            via gate1::connection2 send any
+          }
+        } else {
+          if (1 > 2) then {
+            via gate1::connection3 receive any
+          } else {
+            via gate1::connection4 receive any
+          }
+        }
+        via gate1::connection5 send any
+      }
+    }
+    
+    behavior test() is {
+      if (0 > 1) then {
+          if (1 < 2) then {
+            via gate1::connection1 send 1
+          } else {
+            via gate1::connection2 send 2
+          }
+        } else {
+          if (1 > 2) then {
+            via gate1::connection3 receive data3
+          } else {
+            via gate1::connection4 receive data4
+          }
+        }
+        via gate1::connection5 send 5
+    }
+  }
+}

@@ -1,0 +1,37 @@
+// ok
+ 
+library testRepeat6 is {
+  
+  system test() is {
+    
+    datatype type1
+    
+    gate gate1 is {
+      connection connection1 is inout{type1}
+    } guarantee {
+      protocol gate1protocol is {
+        value data = 0
+        repeat{
+          if (true) then {
+            via gate1::connection1 receive any
+          }
+          else{
+            via gate1::connection1 send any
+          }
+        }
+      }
+    }
+    
+    behavior test() is {
+      value data = 0
+      repeat{
+          if (true) then {
+            via gate1::connection1 receive data
+          }
+          else{
+            via gate1::connection1 send 1
+          }
+      }
+    }
+  }
+}

@@ -1,0 +1,43 @@
+// ok: the iosts translation is ok.
+ 
+library testChoose8 is {
+  
+  system test() is {
+    
+    datatype type1
+    
+    gate gate1 is {
+      connection connection1 is inout{type1}
+      connection connection2 is inout{type1}
+      connection connection3 is inout{type1}
+      connection connection4 is inout{type1}
+      connection connection5 is inout{type1}
+    } guarantee {
+      protocol gate1protocol is {
+        choose
+          {via gate1::connection1 receive any}
+        or 
+          {via gate1::connection2 send any}
+        or 
+          {via gate1::connection3 send any}
+        choose
+          {via gate1::connection4 receive any}
+        or 
+          {via gate1::connection5 send any}
+      }
+    }
+    
+    behavior test() is {
+      choose
+          {via gate1::connection1 receive data}
+      or 
+          {via gate1::connection2 send 2}
+      or 
+          {via gate1::connection3 send 3}
+      choose
+          {via gate1::connection4 receive data}
+      or 
+          {via gate1::connection5 send 5}
+    }
+  }
+}

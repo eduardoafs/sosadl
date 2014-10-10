@@ -1,0 +1,21 @@
+// ok: nothing is generated!
+ 
+library testRepeat1 is {
+  
+  system test() is {
+    
+    datatype type1
+    
+    gate gate1 is {
+      connection connection1 is in{type1}
+    } guarantee {
+      protocol gate1protocol is {
+        repeat{done}
+      }
+    }
+    
+    behavior test() is {
+      repeat{done}
+    }
+  }
+}

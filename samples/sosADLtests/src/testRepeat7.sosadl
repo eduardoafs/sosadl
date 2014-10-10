@@ -1,0 +1,39 @@
+// ok
+ 
+library testRepeat7 is {
+  
+  system test() is {
+    
+    datatype type1
+    
+    gate gate1 is {
+      connection connection1 is inout{type1}
+      connection connection2 is inout{type1}
+      connection connection3 is inout{type1}
+    } guarantee {
+      protocol gate1protocol is {
+        value data = 0
+        repeat{
+          choose
+            {via gate1::connection1 receive any}
+          or 
+            {via gate1::connection2 send any}
+          or 
+            {via gate1::connection3 send any}
+        }
+      }
+    }
+    
+    behavior test() is {
+      value data = 0
+      repeat{
+          choose
+            {via gate1::connection1 receive data}
+          or 
+            {via gate1::connection2 send 2}
+          or 
+            {via gate1::connection3 send 3}
+      }
+    }
+  }
+}

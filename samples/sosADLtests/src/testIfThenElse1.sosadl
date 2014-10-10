@@ -1,0 +1,23 @@
+// ok: the iosts translation is ok.
+
+// BUG! An expression in the protocol makes the Pretty printer crash with a null pointer exception...
+ 
+library testIfThenElse1 is {
+  
+  system test() is {
+    
+    datatype type1
+    
+    gate gate1 is {
+      connection connection1 is in{type1}
+    } guarantee {
+      protocol gate1protocol is {
+        if (true) then {done} else {done}
+      }
+    }
+    
+    behavior test() is {
+      if (true) then {done} else {done}
+    }
+  }
+}

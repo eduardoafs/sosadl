@@ -1,0 +1,21 @@
+// ok: nothing is generated!
+ 
+library testChoose1 is {
+  
+  system test() is {
+    
+    datatype type1
+    
+    gate gate1 is {
+      connection connection1 is in{type1}
+    } guarantee {
+      protocol gate1protocol is {
+        choose{done} or {done}
+      }
+    }
+    
+    behavior test() is {
+      choose{done} or {done}
+    }
+  }
+}

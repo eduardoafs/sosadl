@@ -1,0 +1,25 @@
+// KO: the iosts translation fails, while the "if the else" test succeeds.
+// It may be because the "if then" is transformed into an STS with only one transition: "from s0 if true to s1;"
+// If the transformation adds an second transition "from s1 sync tau to s2;", then STG is happy again.
+
+// BUG! An expression in the protocol makes the Pretty printer crash with a null pointer exception...
+ 
+library testfThen1 is {
+  
+  system test() is {
+    
+    datatype type1
+    
+    gate gate1 is {
+      connection connection1 is in{type1}
+    } guarantee {
+      protocol gate1protocol is {
+        if (true) then {done}
+      }
+    }
+    
+    behavior test() is {
+      if (true) then {done}
+    }
+  }
+}

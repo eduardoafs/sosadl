@@ -1,0 +1,38 @@
+// ok: the iosts translation is ok.
+
+// BUG! An expression in the protocol makes the Pretty printer crash with a null pointer exception...
+ 
+library testChoose5 is {
+  
+  system test() is {
+    
+    datatype type1
+    
+    gate gate1 is {
+      connection connection1 is inout{type1}
+      connection connection2 is inout{type1}
+    } guarantee {
+      protocol gate1protocol is {
+        value data = 0
+        choose
+          {value data11 = 1
+           via gate1::connection1 receive any}
+        or 
+          {value data12 = 2
+           via gate1::connection1 send any}
+        via gate1::connection2 send any
+      }
+    }
+    
+    behavior test() is {
+      value data = 0
+      choose
+          {value data11 = 1
+           via gate1::connection1 receive data}
+      or 
+          {value data12 = 2
+           via gate1::connection1 send 1}
+      via gate1::connection2 send 2
+    }
+  }
+}

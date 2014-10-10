@@ -1,0 +1,38 @@
+// ok
+
+/*
+ * Note: this test is incorrect: it should not be possible to embed a repeat in an other repeat
+ *       because once you are in the inner repeat, you are trapped: you cannot exit to loop the outer repeat! 
+ */
+ 
+library testRepeat5 is {
+  
+  system test() is {
+    
+    datatype type1
+    
+    gate gate1 is {
+      connection connection1 is inout{type1}
+    } guarantee {
+      protocol gate1protocol is {
+        value data = 0
+        repeat{
+          via gate1::connection1 receive any
+          repeat{
+            via gate1::connection1 send any
+          }
+        }
+      }
+    }
+    
+    behavior test() is {
+      value data = 0
+      repeat{
+        via gate1::connection1 receive data
+        repeat{
+          via gate1::connection1 send 1
+        }
+      }
+    }
+  }
+}

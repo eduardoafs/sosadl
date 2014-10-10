@@ -1,0 +1,25 @@
+// ok
+ 
+library testRepeat2 is {
+  
+  system test() is {
+    
+    datatype type1
+    
+    gate gate1 is {
+      connection connection1 is in{type1}
+    } guarantee {
+      protocol gate1protocol is {
+        repeat{
+          value data = 0
+        }
+      }
+    }
+    
+    behavior test() is {
+      repeat{
+          value data = 0
+      }
+    }
+  }
+}

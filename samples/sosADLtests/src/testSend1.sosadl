@@ -1,0 +1,23 @@
+// ok
+
+library testSend1 is {
+  
+  system test() is {
+    
+    datatype type1
+    
+    gate gate1 is {
+      connection connection1 is out{type1}
+    } guarantee {
+      protocol gate1protocol is {
+        // send action is first statement
+        via gate1::connection1 send any
+      }
+    }
+  
+    behavior test() is {
+      // send action is first statement
+      via gate1::connection1 send 0
+    }
+  }
+}
