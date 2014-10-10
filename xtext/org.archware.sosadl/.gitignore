@@ -4,3 +4,12 @@
 # exclude patterns (uncomment them if you want to use them):
 # *.[oa]
 # *~
+*.[oa]
+*~
+bin/
+target/
+xtend-gen/**
+src-gen/**
+model/generated/
+*._trace
+*.smap
