@@ -196,6 +196,41 @@ Definition name_of_gateDecl g :=
     | GateDecl n _ _ => n
   end.
 
+Definition name_of_dutyDecl d :=
+  match d with
+    | DutyDecl n _ _ _ => n
+  end.
+
+Definition name_of_systemDecl s :=
+  match s with
+    | SystemDecl name _ _ _ _ _ => name
+  end.
+
+Definition name_of_mediatorDecl s :=
+  match s with
+    | MediatorDecl name _ _ _ _ => name
+  end.
+
+Definition name_of_architectureDecl s :=
+  match s with
+    | ArchitectureDecl name _ _ _ _ _ => name
+  end.
+
+Definition name_of_connection c :=
+  match c with
+    | Connection name _ _ _ => name
+  end.
+
+Definition mode_of_connection c :=
+  match c with
+    | Connection _ _ mode _ => mode
+  end.
+
+Definition datatype_of_connection c :=
+  match c with
+    | Connection _ _ _ t => t
+  end.
+
 Axiom names_of_expression e: expression -> list string.
 
 End AST.

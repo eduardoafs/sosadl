@@ -10,6 +10,7 @@ Require Import Interpretation.
 (** printing Phi $\Phi$ #&Phi;# *)
 (** printing Gamma $\Gamma$ #&Gamma;# *)
 (** printing tau $\tau$ #&tau;# *)
+(** printing Pi $\Pi$ #&Pi;# *)
 (** printing empty $\emptyset$ #&empty;# *)
 
 (**
@@ -49,12 +50,14 @@ Reserved Notation "'unit' u 'well' 'typed'" (at level 200, no associativity).
 Reserved Notation "'entity' u 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
 Reserved Notation "'typedecl' t 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
 Reserved Notation "'functions' 'of' 'typedecl' t 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
-Reserved Notation "'type' t 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
 Reserved Notation "'function' f 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
+Reserved Notation "'type' t 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
 Reserved Notation "'system' s 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
 Reserved Notation "'systemblock' s 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
 Reserved Notation "'mediator' m 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
+Reserved Notation "'mediatorblock' m 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
 Reserved Notation "'architecture' a 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
+Reserved Notation "'architectureblock' a 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
 Reserved Notation "'expression' e 'has' 'type' t 'in' Gamma" (at level 200, no associativity, Gamma at level 1).
 Reserved Notation "'expression' e 'under' v 'has' 'type' t 'in' Gamma" (at level 200, no associativity, Gamma at level 1).
 Reserved Notation "'gate' g 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
@@ -80,6 +83,19 @@ Definition env_add_types :=
   List.fold_left (fun e d => e[AST.name_of_datatypeDecl d <- EType d]).
 
 Definition build_type_env p := env_add_types p empty.
+
+Definition conns_environment l :=
+  List.fold_left (fun e c => e[AST.name_of_connection c <- GDConnection (AST.mode_of_connection c) (AST.datatype_of_connection c)]) l empty.
+
+Definition build_gate_env g :=
+  match g with
+    | AST.GateDecl _ l _ => conns_environment l
+  end.
+
+Definition build_duty_env d :=
+  match d with
+    | AST.DutyDecl _ l _ _ => conns_environment l
+  end.
 
 (**
  * The type system
@@ -138,35 +154,35 @@ with type_entityBlock: env -> AST.entityBlock -> Prop :=
 | type_EntityBlock_datatype:
     forall Gamma d l funs systems mediators architectures,
       (typedecl d well typed in Gamma)
-      /\ (entity (AST.EntityBlock l funs systems mediators architectures) well typed in Gamma[name_of_datatypeDecl d <- EType d])
+      /\ (entity (AST.EntityBlock l funs systems mediators architectures) well typed in Gamma[AST.name_of_datatypeDecl d <- EType d])
       ->
       entity (AST.EntityBlock (d::l) funs systems mediators architectures) well typed in Gamma
 
 | type_EntityBlock_function:
     forall Gamma f l systems mediators architectures,
       (function f well typed in Gamma)
-      /\ (entity (AST.EntityBlock nil l systems mediators architectures) well typed in Gamma[name_of_functionDecl <- EFunction])
+      /\ (entity (AST.EntityBlock nil l systems mediators architectures) well typed in Gamma[AST.name_of_functionDecl f <- EFunction])
       ->
       entity (AST.EntityBlock nil (f::l) systems mediators architectures) well typed in Gamma
 
 | type_EntityBlock_system:
     forall Gamma s l mediators architectures,
       (system s well typed in Gamma)
-      /\ (entity (AST.EntityBlock nil nil l mediators architectures) well typed in Gamma[name_of_systemDecl s <- ESystem])
+      /\ (entity (AST.EntityBlock nil nil l mediators architectures) well typed in Gamma[AST.name_of_systemDecl s <- ESystem])
       ->
       entity (AST.EntityBlock nil nil (s::l) mediators architectures) well typed in Gamma
 
 | type_EntityBlock_mediator:
     forall Gamma m l architectures,
       (mediator m well typed in Gamma)
-      /\ (entity (AST.EntityBlock nil nil nil l architectures) well typed in Gamma[name_of_mediatorDecl m <- EMediator])
+      /\ (entity (AST.EntityBlock nil nil nil l architectures) well typed in Gamma[AST.name_of_mediatorDecl m <- EMediator])
       ->
       entity (AST.EntityBlock nil nil nil (m::l) architectures) well typed in Gamma
 
 | type_EntityBlock_architecture:
     forall Gamma a l,
       (architecture a well typed in Gamma)
-      /\ (entity (AST.EntityBlock nil nil nil nil l) well typed in Gamma[name_of_architectureDecl a <- EArchitecture])
+      /\ (entity (AST.EntityBlock nil nil nil nil l) well typed in Gamma[AST.name_of_architectureDecl a <- EArchitecture])
       ->
       entity (AST.EntityBlock nil nil nil nil (a::l)) well typed in Gamma
 
@@ -186,7 +202,7 @@ with type_datatypeDecl_functions: env -> list AST.functionDecl -> Prop :=
 | type_datatypeDecl_f:
     forall Gamma f l,
       (function f well typed in Gamma)
-      /\ (functions of typedecl l well typed in Gamma[name_of_functionDecl f <- EFunction])
+      /\ (functions of typedecl l well typed in Gamma[AST.name_of_functionDecl f <- EFunction])
       ->
       functions of typedecl (f::l) well typed in Gamma
                                  
@@ -200,7 +216,7 @@ with type_function: env -> AST.functionDecl -> Prop :=
 | type_FunctionDecl:
     forall Gamma name dataName dataTypeName params t vals e tau dataType,
       (for each p of params, type (AST.type_of_formalParameter p) well typed in Gamma)
-      /\ (expression e under vals has type tau in env_add_params params Gamma)
+      /\ (expression e under vals has type tau in (env_add_params params Gamma))
       /\  contains Gamma dataTypeName (EType dataType)
       /\ tau < AST.datatype_of_datatypeDecl dataType
       ->
@@ -212,6 +228,8 @@ with type_function: env -> AST.functionDecl -> Prop :=
 %\note{The types of formal parameters are independant of preceding parameters. For instance, {\tt system S(x: integer, y: integer\{x-1 .. x+1\})} is not allowed.}%
 
 %\note{Unlike the Word document, the rule applies in the context of environments $\Delta$ $\Phi$.}%
+
+%\note{Choice: the elements declared within a system are typed in order, and the environment is enriched incrementally. Cons: prevents no mutually recursive definition.}%
  *)
 
 with type_system: env -> AST.systemDecl -> Prop :=
@@ -226,14 +244,14 @@ with type_systemblock: env -> AST.systemDecl -> Prop :=
 | type_SystemDecl_datatype:
     forall Gamma name d l gates bhv assrt,
       (typedecl d well typed in Gamma)
-      /\ (systemblock (AST.SystemDecl name nil l gates bhv assrt) well typed in Gamma[name_of_datatypeDecl d <- EType d])
+      /\ (systemblock (AST.SystemDecl name nil l gates bhv assrt) well typed in Gamma[AST.name_of_datatypeDecl d <- EType d])
       ->
       systemblock (AST.SystemDecl name nil (d::l) gates bhv assrt) well typed in Gamma
 
 | type_SystemDecl_gate:
     forall Gamma name g l bhv assrt,
       (gate g well typed in Gamma)
-      /\ (systemblock (AST.SystemDecl name nil nil l bhv assrt) well typed in Gamma[name_of_gateDecl g <- EGateOrDuty g])
+      /\ (systemblock (AST.SystemDecl name nil nil l bhv assrt) well typed in Gamma[AST.name_of_gateDecl g <- EGateOrDuty (build_gate_env g)])
       ->
       systemblock (AST.SystemDecl name nil nil (g::l) bhv assrt) well typed in Gamma
 
@@ -255,40 +273,75 @@ with type_systemblock: env -> AST.systemDecl -> Prop :=
       systemblock (AST.SystemDecl name nil nil nil bhv None) well typed in Gamma
 
 
-(* TBD *)
 (**
  ** Mediator
  *)
 
-with type_mediator: type_environment -> function_environment -> variable_environment -> AST.mediatorDecl -> Prop :=
+with type_mediator: env -> AST.mediatorDecl -> Prop :=
 | type_MediatorDecl:
-    forall Delta Phi Gamma name params datatypes duties b,
-      (for each p of params, type (AST.type_of_formalParameter p) well typed in Delta Phi Gamma)
-      /\ (for each d of datatypes,
-         typedecl d well typed in (env_add_types datatypes Delta) Phi (env_add_params params Gamma))
-      /\ (for each d of duties,
-         duty d well typed in (env_add_types datatypes Delta) Phi (env_add_params params Gamma))
-      /\ (behavior b well typed in (env_add_types datatypes Delta) Phi (env_add_params params Gamma))
+    forall Gamma name params datatypes duties b,
+      (for each p of params, type (AST.type_of_formalParameter p) well typed in Gamma)
+        /\ (mediatorblock (AST.MediatorDecl name nil datatypes duties b) well typed in (env_add_params params Gamma))
       ->
-      mediator (AST.MediatorDecl name params datatypes duties b) well typed in Delta Phi Gamma
+      mediator (AST.MediatorDecl name params datatypes duties b) well typed in Gamma
+
+with type_mediatorblock: env -> AST.mediatorDecl -> Prop :=
+| type_MediatorDecl_datatype:
+    forall Gamma name d l duties bhv,
+      (typedecl d well typed in Gamma)
+      /\ (mediatorblock (AST.MediatorDecl name nil l duties bhv) well typed in Gamma[AST.name_of_datatypeDecl d <- EType d])
+      ->
+      mediatorblock (AST.MediatorDecl name nil (d::l) duties bhv) well typed in Gamma
+
+| type_MediatorDecl_duty:
+    forall Gamma name d l bhv,
+      (duty d well typed in Gamma)
+      /\ (mediatorblock (AST.MediatorDecl name nil nil l bhv) well typed in Gamma[AST.name_of_dutyDecl d <- EGateOrDuty (build_duty_env d)])
+      ->
+      mediatorblock (AST.MediatorDecl name nil nil (d::l) bhv) well typed in Gamma
+
+| type_MediatorDecl_Behavior:
+    forall Gamma name bhv,
+      (behavior bhv well typed in Gamma)
+      ->
+      mediatorblock (AST.MediatorDecl name nil nil nil bhv) well typed in Gamma
 
 (**
  ** Architecture
 
  *)
 
-with type_architecture: type_environment -> function_environment -> variable_environment -> system_environment -> mediator_environment -> AST.architectureDecl -> Prop :=
+with type_architecture: env -> AST.architectureDecl -> Prop :=
 | type_ArchitectureDecl:
-    forall Delta Phi Gamma Sigma Mu name params datatypes gates b a,
-      (for each p of params, type (AST.type_of_formalParameter p) well typed in Delta Phi Gamma)
-      /\ (for each d of datatypes,
-         typedecl d well typed in (env_add_types datatypes Delta) Phi (env_add_params params Gamma))
-      /\ (for each g of gates,
-         gate g well typed in (env_add_types datatypes Delta) Phi (env_add_params params Gamma))
-      /\ (archbehavior b well typed in (env_add_types datatypes Delta) Phi)
-      /\ (assertion a well typed in (env_add_types datatypes Delta) Phi)
+    forall Gamma name params datatypes gates b a,
+      (for each p of params, type (AST.type_of_formalParameter p) well typed in Gamma)
+      /\ (architectureblock (AST.ArchitectureDecl name nil datatypes gates b a) well typed in (env_add_params params Gamma))
       ->
-      architecture (AST.ArchitectureDecl name params datatypes gates b a) well typed in Delta Phi Gamma Sigma Mu
+      architecture (AST.ArchitectureDecl name params datatypes gates b a) well typed in Gamma
+
+with type_architectureblock: env -> AST.architectureDecl -> Prop :=
+| type_ArchitectureDecl_datatype:
+    forall Gamma name d l gates bhv a,
+      (typedecl d well typed in Gamma)
+      /\ (architectureblock (AST.ArchitectureDecl name nil l gates bhv a) well typed in Gamma[AST.name_of_datatypeDecl d <- EType d])
+      ->
+      architectureblock (AST.ArchitectureDecl name nil (d::l) gates bhv a) well typed in Gamma
+
+| type_ArchitectureDecl_gate:
+    forall Gamma name g l bhv a,
+      (gate g well typed in Gamma)
+      /\ (architectureblock (AST.ArchitectureDecl name nil nil l bhv a) well typed in Gamma[AST.name_of_gateDecl g <- EGateOrDuty (build_gate_env g)])
+      ->
+      architectureblock (AST.ArchitectureDecl name nil nil (g::l) bhv a) well typed in Gamma
+
+| type_ArchitectureDecl_behavior:
+    forall Gamma name bhv a,
+      (archbehavior bhv well typed in Gamma)
+      /\ (assertion a well typed in Gamma)
+      ->
+      architectureblock (AST.ArchitectureDecl name nil nil nil bhv a) well typed in Gamma
+
+
 
 (**
  ** Data types
@@ -296,38 +349,38 @@ with type_architecture: type_environment -> function_environment -> variable_env
 %\note{\coqdocconstr{IntegerType} and \coqdocconstr{ConnectionType} are removed from the abstract language.}%
  *)
 
-with type_datatype: type_environment -> function_environment -> variable_environment -> AST.datatype -> Prop :=
+with type_datatype: env -> AST.datatype -> Prop :=
 | type_NamedType:
-    forall Delta Phi Gamma n t,
-      contains Delta n t
+    forall Gamma n t,
+      contains Gamma n (EType t)
       ->
-      type (AST.NamedType n) well typed in Delta Phi Gamma
+      type (AST.NamedType n) well typed in Gamma
 
 | type_TupleType:
-    forall Delta Phi Gamma fields,
+    forall Gamma fields,
       (values (AST.name_of_fieldDecl f) for f of fields are distinct)
       /\ (for each f of fields,
-         type (AST.type_of_fieldDecl f) well typed in Delta Phi Gamma)
+         type (AST.type_of_fieldDecl f) well typed in Gamma)
       ->
-      type (AST.TupleType fields) well typed in Delta Phi Gamma
+      type (AST.TupleType fields) well typed in Gamma
 
 | type_SequenceType:
-    forall Delta Phi Gamma t,
-      type t well typed in Delta Phi Gamma
+    forall Gamma t,
+      type t well typed in Gamma
       ->
-      type (AST.SequenceType t) well typed in Delta Phi Gamma
+      type (AST.SequenceType t) well typed in Gamma
 
 (**
 %\note{In comparison to the Word document, the order condition on the range boundaries is added, using some interpretation system (to be defined); boundaries are assumed to be \coqdocconstr{RangeType}.}%
  *)
 
 | type_RangeType:
-    forall Delta Phi Gamma min max min__min min__max max__min max__max,
-      (expression min has type (AST.RangeType min__min min__max) in Delta Phi Gamma empty)
-      /\ (expression max has type (AST.RangeType max__min max__max) in Delta Phi Gamma empty)
+    forall Gamma min max min__min min__max max__min max__max,
+      (expression min has type (AST.RangeType min__min min__max) in Gamma)
+      /\ (expression max has type (AST.RangeType max__min max__max) in Gamma)
       /\ min <= max
       ->
-      type (AST.RangeType min max) well typed in Delta Phi Gamma
+      type (AST.RangeType min max) well typed in Gamma
 
 (**
  ** Expression
@@ -335,56 +388,57 @@ with type_datatype: type_environment -> function_environment -> variable_environ
 %\todo{}%
  *)
 
-with type_expression: type_environment -> function_environment -> variable_environment -> constituant_environment -> AST.expression -> AST.datatype -> Prop :=
+with type_expression: env -> AST.expression -> AST.datatype -> Prop :=
 
 (** ** Expression in the scope of a list of valuings *)
-with type_expression_where: type_environment -> function_environment -> variable_environment -> constituant_environment -> list AST.valuing -> AST.expression -> AST.datatype -> Prop :=
+with type_expression_where: env -> list AST.valuing -> AST.expression -> AST.datatype -> Prop :=
 | type_expression_where_empty:
-    forall Delta Phi Gamma Kappa e tau,
-      (expression e has type tau in Delta Phi Gamma Kappa)
+    forall Gamma e tau,
+      (expression e has type tau in Gamma)
       ->
-      expression e under nil has type tau in Delta Phi Gamma Kappa
+      expression e under nil has type tau in Gamma
 
 | type_expression_where_Valuing_None:
-    forall Delta Phi Gamma Kappa e tau x x__e x__tau v,
-      (expression x__e has type x__tau in Delta Phi Gamma Kappa)
-      /\ (expression e under v has type tau in Delta Phi (Gamma[x <- x__tau]) Kappa)
+    forall Gamma e tau x x__e x__tau v,
+      (expression x__e has type x__tau in Gamma)
+      /\ (expression e under v has type tau in Gamma[x <- EVariable x__tau])
       ->
-      expression e under (AST.Valuing x None x__e :: v) has type tau in Delta Phi Gamma Kappa
-
+      expression e under (AST.Valuing x None x__e :: v) has type tau in Gamma
 
 | type_expression_where_Valuing_Some:
-    forall Delta Phi Gamma Kappa e tau x x__t x__e x__tau v,
-      (expression x__e has type x__t in Delta Phi Gamma Kappa)
-      /\ x__t < x__tau
-      /\ (expression e under v has type tau in Delta Phi (Gamma[x <- x__tau]) Kappa)
+    forall Gamma e tau x x__t x__e x__tau v,
+      (expression x__e has type x__tau in Gamma)
+      /\ x__tau < x__t
+      /\ (expression e under v has type tau in Gamma[x <- EVariable x__t])
       ->
-      expression e under (AST.Valuing x (Some x__t) x__e :: v) has type tau in Delta Phi Gamma Kappa
+      expression e under (AST.Valuing x (Some x__t) x__e :: v) has type tau in Gamma
+
 
 (**
  ** Gate
  *)
 
-with type_gate: type_environment -> function_environment -> variable_environment -> AST.gateDecl -> Prop :=
+with type_gate: env -> AST.gateDecl -> Prop :=
 | type_GateDecl:
-    forall Delta Phi Gamma name conns p,
-      (protocol p well typed in Delta Phi)
-      /\ (for each c of conns, connection c well typed in Delta Phi Gamma)
+    forall Gamma name conns p,
+      (protocol p well typed in Gamma)
+      /\ (for each c of conns, connection c well typed in Gamma)
       ->
-      gate (AST.GateDecl name conns p) well typed in Delta Phi Gamma
+      gate (AST.GateDecl name conns p) well typed in Gamma
+
 
 (**
  ** Duty
  *)
 
-with type_duty: type_environment -> function_environment -> variable_environment -> AST.dutyDecl -> Prop :=
+with type_duty: env -> AST.dutyDecl -> Prop :=
 | type_DutyDecl:
-    forall Delta Phi Gamma name conns a p,
-      (protocol p well typed in Delta Phi)
-      /\ (for each c of conns, connection c well typed in Delta Phi Gamma)
-      /\ (assertion a well typed in Delta Phi)
+    forall Gamma name conns a p,
+      (protocol p well typed in Gamma)
+      /\ (for each c of conns, connection c well typed in Gamma)
+      /\ (assertion a well typed in Gamma)
       ->
-      duty (AST.DutyDecl name conns a p) well typed in Delta Phi Gamma
+      duty (AST.DutyDecl name conns a p) well typed in Gamma
 
 (**
  ** Architecture behavior
@@ -392,7 +446,7 @@ with type_duty: type_environment -> function_environment -> variable_environment
 %\todo{}%
  *)
 
-with type_archbehavior: type_environment -> function_environment ->  AST.archBehaviorDecl -> Prop :=
+with type_archbehavior: env ->  AST.archBehaviorDecl -> Prop :=
 
 (**
  ** Behavior
@@ -400,13 +454,13 @@ with type_archbehavior: type_environment -> function_environment ->  AST.archBeh
 %\todo{}%
  *)
 
-with type_behavior: type_environment -> function_environment -> variable_environment -> AST.behaviorDecl -> Prop :=
+with type_behavior: env -> AST.behaviorDecl -> Prop :=
 | type_BehaviorDecl:
-    forall Delta Phi Gamma name params b,
-      (for each p of params, type (AST.type_of_formalParameter p) well typed in Delta Phi Gamma)
-      /\ (body b well typed in Delta Phi (env_add_params params Gamma) (List.map AST.type_of_formalParameter params))
+    forall Gamma name params b,
+      (for each p of params, type (AST.type_of_formalParameter p) well typed in Gamma)
+      /\ (body b well typed in (env_add_params params Gamma) (List.map AST.type_of_formalParameter params))
       ->
-      behavior (AST.BehaviorDecl name params (AST.Behavior b)) well typed in Delta Phi Gamma
+      behavior (AST.BehaviorDecl name params (AST.Behavior b)) well typed in Gamma
 
 (**
  ** Assertion
@@ -414,7 +468,7 @@ with type_behavior: type_environment -> function_environment -> variable_environ
 %\todo{}%
  *)
 
-with type_assertion: type_environment -> function_environment -> AST.assertionDecl -> Prop :=
+with type_assertion: env -> AST.assertionDecl -> Prop :=
 
 (**
  ** Protocol
@@ -422,7 +476,7 @@ with type_assertion: type_environment -> function_environment -> AST.assertionDe
 %\todo{}%
  *)
 
-with type_protocol: type_environment -> function_environment -> AST.protocolDecl -> Prop :=
+with type_protocol: env -> AST.protocolDecl -> Prop :=
 
 (**
  ** Connection
@@ -430,12 +484,12 @@ with type_protocol: type_environment -> function_environment -> AST.protocolDecl
 %\note{The rule is quite different from the one of the Word document, which was actually incorrect. Indeed, the name of the connection must not be added to the environment since connection names are not first class names.}%
  *)
 
-with type_connection: type_environment -> function_environment -> variable_environment -> AST.connection -> Prop :=
+with type_connection: env -> AST.connection -> Prop :=
 | type_Connection:
-    forall Delta Phi Gamma name k m t,
-      (type t well typed in Delta Phi Gamma)
+    forall Gamma name k m t,
+      (type t well typed in Gamma)
       ->
-      connection (AST.Connection name k m t) well typed in Delta Phi Gamma
+      connection (AST.Connection name k m t) well typed in Gamma
 
 (**
  ** Body
@@ -444,74 +498,76 @@ with type_connection: type_environment -> function_environment -> variable_envir
 
 %\note{According to the Word document, it's not clear whether the type system enforces some rules on the sequence of statements. For instance, {\tt repeat} is enforced as the latest statement of a body; but no check that all the branches terminate with {\tt done} or recursive call.}%
 
+Pi denotes the types of the parameters of the behavior, in order to type recursive calls.
+
 *)
-with type_body: type_environment -> function_environment -> variable_environment -> list AST.datatype -> list AST.statement -> Prop :=
+with type_body: env -> list AST.datatype -> list AST.statement -> Prop :=
 | type_EmptyBody:
-    forall Delta Phi Gamma Rho,
-      body nil well typed in Delta Phi Gamma Rho
+    forall Gamma Pi,
+      body nil well typed in Gamma Pi
 
 | type_Repeat:
-    forall Delta Phi Gamma Rho b,
-      (body b well typed in Delta Phi Gamma Rho)
+    forall Gamma Pi b,
+      (body b well typed in Gamma Pi)
       ->
-      body (AST.RepeatBehavior (AST.Behavior b) :: nil) well typed in Delta Phi Gamma Rho
+      body (AST.RepeatBehavior (AST.Behavior b) :: nil) well typed in Gamma Pi
 
 | type_Choose:
-    forall Delta Phi Gamma Rho branches,
-      (for each b of branches, body (AST.body_of_behavior b) well typed in Delta Phi Gamma Rho)
+    forall Gamma Pi branches,
+      (for each b of branches, body (AST.body_of_behavior b) well typed in Gamma Pi)
       ->
-      body (AST.ChooseBehavior branches :: nil) well typed in Delta Phi Gamma Rho
+      body (AST.ChooseBehavior branches :: nil) well typed in Gamma Pi
 
 | type_IfThen:
-    forall Delta Phi Gamma Rho c t l,
-      (expression c has type AST.BooleanType in Delta Phi Gamma empty)
-      /\ (body t well typed in Delta Phi Gamma Rho)
-      /\ (body l well typed in Delta Phi Gamma Rho)
+    forall Gamma Pi c t l,
+      (expression c has type AST.BooleanType in Gamma)
+      /\ (body t well typed in Gamma Pi)
+      /\ (body l well typed in Gamma Pi)
       ->
-      body (AST.IfThenElseBehavior c (AST.Behavior t) None :: l) well typed in Delta Phi Gamma Rho
+      body (AST.IfThenElseBehavior c (AST.Behavior t) None :: l) well typed in Gamma Pi
 
 (** %\note{unlike the Word document, {\tt IfThenElse} is not enforced as the last statement.}%
 
  *)
 | type_IfThenElse:
-    forall Delta Phi Gamma Rho c t e l,
-      (expression c has type AST.BooleanType in Delta Phi Gamma empty)
-      /\ (body t well typed in Delta Phi Gamma Rho)
-      /\ (body e well typed in Delta Phi Gamma Rho)
-      /\ (body l well typed in Delta Phi Gamma Rho)
+    forall Gamma Pi c t e l,
+      (expression c has type AST.BooleanType in Gamma)
+      /\ (body t well typed in Gamma Pi)
+      /\ (body e well typed in Gamma Pi)
+      /\ (body l well typed in Gamma Pi)
       ->
-      body (AST.IfThenElseBehavior c (AST.Behavior t) (Some (AST.Behavior e)) :: l) well typed in Delta Phi Gamma Rho
+      body (AST.IfThenElseBehavior c (AST.Behavior t) (Some (AST.Behavior e)) :: l) well typed in Gamma Pi
 
 | type_ForEach:
-    forall Delta Phi Gamma Rho x tau vals b l,
-      (expression vals has type (AST.SequenceType tau) in Delta Phi Gamma empty)
-      /\ (body b well typed in Delta Phi Gamma[ x <- tau ] Rho)
-      /\ (body l well typed in Delta Phi Gamma Rho)
+    forall Gamma Pi x tau vals b l,
+      (expression vals has type (AST.SequenceType tau) in Gamma)
+      /\ (body b well typed in Gamma[x <- EVariable tau ] Pi)
+      /\ (body l well typed in Gamma Pi)
       ->
-      body (AST.ForEachBehavior x vals (AST.Behavior b) :: l) well typed in Delta Phi Gamma Rho
+      body (AST.ForEachBehavior x vals (AST.Behavior b) :: l) well typed in Gamma Pi
 
 | type_RecursiveCall:
-    forall Delta Phi Gamma Rho params,
-      (for each tau p of Rho params , expression p has type tau in Delta Phi Gamma empty)
+    forall Gamma Pi params,
+      (for each tau__pi p of Pi params, exists tau, expression p has type tau in Gamma /\ tau < tau__pi)
       ->
-      body (AST.RecursiveCall params :: nil) well typed in Delta Phi Gamma Rho
+      body (AST.RecursiveCall params :: nil) well typed in Gamma Pi
 
 (** %\note{I guess that in the Word document, the {\tt Behavior(Assert)} rule is in fact {\tt Behavior(Tell)}.}% *)
 | type_TellStatement:
-    forall Delta Phi Gamma Rho name e l,
-      (expression e has type AST.BooleanType in Delta Phi Gamma empty)
-      /\ (body l well typed in Delta Phi Gamma Rho)
+    forall Gamma Pi name e l,
+      (expression e has type AST.BooleanType in Gamma)
+      /\ (body l well typed in Gamma Pi)
       ->
-      body (AST.AssertStatement (AST.Tell name e) :: l) well typed in Delta Phi Gamma Rho
+      body (AST.AssertStatement (AST.Tell name e) :: l) well typed in Gamma Pi
 
 (** %\note{The idea here is to assume an environment%[ee]% in which all the (free) names of%[e]% are bound to some type; then to type %[e]% as well as the following statements in %[ee]% merged in %[Gamma]%.}% *)
 | type_AskStatement:
-    forall Delta Phi Gamma Rho name e ee l,
-      (forall x, List.In x (AST.names_of_expression e) <-> exists tau, contains ee x tau)
-      /\ (expression e has type AST.BooleanType in Delta Phi (Gamma <++ ee) empty)
-      /\ (body l well typed in Delta Phi (Gamma <++ ee) Rho)
+    forall Gamma Pi name e ee l,
+      (forall x, List.In x (AST.names_of_expression e) <-> exists tau, contains ee x (EType tau))
+      /\ (expression e has type AST.BooleanType in (Gamma <++ ee))
+      /\ (body l well typed in (Gamma <++ ee) Pi)
       ->
-      body (AST.AssertStatement (AST.Ask name e) :: l) well typed in Delta Phi Gamma Rho
+      body (AST.AssertStatement (AST.Ask name e) :: l) well typed in Gamma Pi
 
 (**
 %\todo{Is is true that the complexnames can only be formed like this: {\tt gate::conn} or {\tt duty::conn}. The following assumes this statement.}%
@@ -524,15 +580,17 @@ with type_body: type_environment -> function_environment -> variable_environment
 (** ** Notations *)
 where "'SoSADL' a 'well' 'typed'" := (type_sosADL a)
 and "'unit' u 'well' 'typed'" := (type_unit u)
-and "'entity' e 'well' 'typed'" := (type_entityBlock Gamma e)
-and "'typedecl' d 'well' 'typed' 'in' Gamma" := (type_datatypeDecl Gamma d)
+and "'entity' u 'well' 'typed' 'in' Gamma" := (type_entityBlock Gamma u)
+and "'typedecl' t 'well' 'typed' 'in' Gamma" := (type_datatypeDecl Gamma t)
 and "'functions' 'of' 'typedecl' t 'well' 'typed' 'in' Gamma" := (type_datatypeDecl_functions Gamma t)
 and "'function' f 'well' 'typed' 'in' Gamma" := (type_function Gamma f)
+and "'type' t 'well' 'typed' 'in' Gamma" := (type_datatype Gamma t)
 and "'system' s 'well' 'typed' 'in' Gamma" := (type_system Gamma s)
-and "'systemblock' s 'well' 'typed' 'in' Gamma" := (type_systemblock Gamma s).
+and "'systemblock' s 'well' 'typed' 'in' Gamma" := (type_systemblock Gamma s)
 and "'mediator' m 'well' 'typed' 'in' Gamma" := (type_mediator Gamma m)
+and "'mediatorblock' m 'well' 'typed' 'in' Gamma" := (type_mediatorblock Gamma m)
 and "'architecture' a 'well' 'typed' 'in' Gamma" := (type_architecture Gamma a)
-and "'type' d 'well' 'typed' 'in' Gamma" := (type_datatype Gamma d)
+and "'architectureblock' a 'well' 'typed' 'in' Gamma" := (type_architectureblock Gamma a)
 and "'expression' e 'has' 'type' t 'in' Gamma" := (type_expression Gamma e t)
 and "'expression' e 'under' v 'has' 'type' t 'in' Gamma" := (type_expression_where Gamma v e t)
 and "'gate' g 'well' 'typed' 'in' Gamma" := (type_gate Gamma g)
