@@ -11,9 +11,11 @@ Require Import BinInt.
 
 Module AST.
 
-(**
-* Abstract syntax tree
-*)
+(** * Abstract syntax tree *)
+
+(** %\note{%The following type for the abstract syntax tree is
+(smartly) extracted from the Xtext grammar / Ecore meta-model,
+by-hand.%}% *)
 
 Definition complexName := list string.
 
@@ -40,53 +42,71 @@ Inductive multiplicity: Set :=
 
 Inductive sosADL: Set :=
 | SosADL: list import -> unit -> sosADL
+
 with import: Set :=
 | Import: string -> import
+
 with unit: Set :=
 | SoS: string -> entityBlock -> unit
 | Library: string -> entityBlock -> unit
+
 with entityBlock: Set :=
 | EntityBlock: list datatypeDecl -> list functionDecl -> list systemDecl -> list mediatorDecl -> list architectureDecl -> entityBlock
+
 with datatypeDecl: Set :=
 | DataTypeDecl: string -> datatype -> list functionDecl -> datatypeDecl
+
+(** %\note{%[IntegerType] and [ConnectionType] are volountarily
+omitted: the former can be represented by [RangeType]; the latter is
+in fact not used. A new [BooleanType] is added for the purpose of
+typing rules.%}% *)
+
 with datatype: Set :=
 | NamedType: string -> datatype
 | TupleType: list fieldDecl -> datatype
 | SequenceType: datatype -> datatype
 | RangeType: expression -> expression -> datatype
 | BooleanType: datatype
+
 with fieldDecl: Set :=
 | FieldDecl: string -> datatype -> fieldDecl
+
 with functionDecl: Set :=
 | FunctionDecl: string -> string -> string -> list formalParameter -> datatype -> list valuing -> expression -> functionDecl
+
 with formalParameter: Set :=
 | FormalParameter: string -> datatype -> formalParameter
+
 with valuing: Set :=
 | Valuing: string -> option datatype -> expression -> valuing
+
 with systemDecl: Set :=
 | SystemDecl: string -> list formalParameter -> list datatypeDecl -> list gateDecl -> behaviorDecl -> option assertionDecl -> systemDecl
+
 with mediatorDecl: Set :=
 | MediatorDecl: string -> list formalParameter -> list datatypeDecl -> list dutyDecl -> behaviorDecl -> mediatorDecl
+
 with architectureDecl: Set :=
 | ArchitectureDecl: string -> list formalParameter -> list datatypeDecl -> list gateDecl -> archBehaviorDecl -> assertionDecl -> architectureDecl
+
 with gateDecl: Set :=
 | GateDecl: string -> list connection -> protocolDecl -> gateDecl
+
 with dutyDecl: Set :=
 | DutyDecl: string -> list connection -> assertionDecl -> protocolDecl -> dutyDecl
+
 with connection:Set :=
 | Connection: string -> connKind -> modeType -> datatype -> connection
+
 with behaviorDecl: Set :=
 | BehaviorDecl: string -> list formalParameter -> behavior -> behaviorDecl
+
 with archBehaviorDecl: Set :=
-(** %\note{I guess that \coqdocinductive{expression} is here a mistake. I guess it's \coqdocinductive{formalParameter} instead.}%
-
- *)
 | ArchBehaviorDecl: string -> list formalParameter -> list constituent -> expression -> archBehaviorDecl
-with constituent: Set :=
-(** %\note{I guess that \coqdocinductive{expression} is here a mistake. Indeed, mediators and systems are assumed not being referenceable from expressions. Furthermore, the kind of ``expression'' allowed here is really restricted.}%
 
- *)
+with constituent: Set :=
 | Constituent: string -> expression -> constituent
+
 with expression: Set :=
 | IntegerValue: Z -> expression
 | Quantify: quantifier -> list elementInConstituent -> expression -> expression
@@ -104,35 +124,49 @@ with expression: Set :=
 | Map: expression -> string -> expression -> expression
 | Select: expression -> string -> expression -> expression
 | Field: expression -> string -> expression
+
 with tupleElement: Set :=
 | TupleElement: string -> expression -> tupleElement
+
 with elementInConstituent: Set :=
 | ElementInConstituent: string -> string -> elementInConstituent
-with assertionDecl: Set :=
-with protocolDecl: Set :=
+
+with assertionDecl: Set := (** %\todo{%TBD%}% *)
+
+with protocolDecl: Set := (** %\todo{%TBD%}% *)
+
 with behavior: Set :=
 | Behavior: list statement -> behavior
+
 with statement: Set :=
 | ValuingStatement: valuing -> statement
 | AssertStatement: assert -> statement
 | ActionStatement: action -> statement
 | RepeatBehavior: behavior -> statement
-(** %\note{I guess that when the else branch is missing, it is %[None]%, not an empty statement list.}% *)
 | IfThenElseBehavior: expression -> behavior -> option behavior -> statement
 | ChooseBehavior: list behavior -> statement
 | ForEachBehavior: string -> expression -> behavior -> statement
 | DoExpr: expression -> statement
 | Done: statement
 | RecursiveCall: list expression -> statement
+
 with assert: Set :=
 | Tell: string -> expression -> assert
 | Ask: string -> expression -> assert
+
 with action: Set :=
 | Action: complexName -> actionSuite -> action
+
 with actionSuite: Set :=
 | SendAction: expression -> actionSuite
 | ReceiveAction: string -> actionSuite
 .
+
+(** * Some utility functions *)
+
+(** %\note{%Most of these functions would have been automatically
+generated if [Record] were used. But Coq does not support mutually
+recursive [Record] definition.%}% *)
 
 Definition name_of_datatypeDecl d :=
   match d with
@@ -274,6 +308,28 @@ Definition expression_of_tupleElement t :=
     | TupleElement _ e => e
   end.
 
-Axiom names_of_expression e: expression -> list string.
+Fixpoint names_of_expression (x: expression) {struct x} :=
+  match x with
+    | IntegerValue _ => nil
+    | Quantify _ _ _ => (** %\todo{%TBD%}% *) nil
+    | Relay _ _ => (** %\todo{%TBD%}% *) nil
+    | Unify _ _ _ _ => (** %\todo{%TBD%}% *) nil
+    | Any => nil
+    | UnaryExpression _ e => names_of_expression e
+    | BinaryExpression e _ f => (names_of_expression) e ++ (names_of_expression) f
+    | IdentExpression a => a :: nil
+    | UnobservableValue => nil
+    | MethodCall t _ l => (names_of_expression t)
+                           ++ (List.flat_map names_of_expression l)
+    | Tuple l => List.flat_map
+                  (fun a => names_of_expression (expression_of_tupleElement a)) l
+    | Sequence l => List.flat_map names_of_expression l
+    | CallExpression _ l => List.flat_map names_of_expression l
+    | Map c n e => (names_of_expression c)
+                    ++ (List.remove string_dec n (names_of_expression e))
+    | Select c n e => (names_of_expression c)
+                       ++ (List.remove string_dec n (names_of_expression e))
+    | Field e _ => names_of_expression e
+  end.
 
 End AST.

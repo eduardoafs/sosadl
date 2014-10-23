@@ -1,6 +1,11 @@
 Require Import List.
 Require Import String.
 
+(**
+ * Some utility notations
+
+ *)
+
 Notation "'for' 'each' e 'of' l , p" :=
   (List.Forall (fun e => p) l)
     (at level 200, e ident, right associativity).
