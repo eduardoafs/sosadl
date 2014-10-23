@@ -570,12 +570,57 @@ with type_body: env -> list AST.datatype -> list AST.statement -> Prop :=
       body (AST.AssertStatement (AST.Ask name e) :: l) well typed in Gamma Pi
 
 (**
-%\todo{Is is true that the complexnames can only be formed like this: {\tt gate::conn} or {\tt duty::conn}. The following assumes this statement.}%
+%\note{Assume that the complexnames can only be formed like this: {\tt gate::conn} or {\tt duty::conn}. The following assumes this statement.}%
 *)
-(*
-| type_ReceiveStatement:
-    forall Delta Phi Gamma Rho GD gd conn x tau,
-      *)
+
+| type_ReceiveStatement_In:
+    forall Gamma Pi gd E conn x conn__tau l,
+      (contains Gamma gd (EGateOrDuty E))
+      /\ (contains E conn (GDConnection AST.In conn__tau))
+      /\ (body l well typed in Gamma[x <- EVariable conn__tau] Pi)
+      ->
+      body (AST.ActionStatement (AST.Action (gd :: conn :: nil) (AST.ReceiveAction x)) :: l) well typed in Gamma Pi
+
+
+| type_ReceiveStatement_InOut:
+    forall Gamma Pi gd E conn x conn__tau l,
+      (contains Gamma gd (EGateOrDuty E))
+      /\ (contains E conn (GDConnection AST.InOut conn__tau))
+      /\ (body l well typed in Gamma[x <- EVariable conn__tau] Pi)
+      ->
+      body (AST.ActionStatement (AST.Action (gd :: conn :: nil) (AST.ReceiveAction x)) :: l) well typed in Gamma Pi
+
+| type_SendStatement_Out:
+    forall Gamma Pi gd E conn conn__tau e tau l,
+      (contains Gamma gd (EGateOrDuty E))
+      /\ (contains E conn (GDConnection AST.Out conn__tau))
+      /\ (expression e has type tau in Gamma)
+      /\ (tau < conn__tau)
+      /\ (body l well typed in Gamma Pi)
+      ->
+      body (AST.ActionStatement (AST.Action (gd :: conn :: nil) (AST.SendAction e)) :: l) well typed in Gamma Pi
+
+| type_SendStatement_InOut:
+    forall Gamma Pi gd E conn conn__tau e tau l,
+      (contains Gamma gd (EGateOrDuty E))
+      /\ (contains E conn (GDConnection AST.InOut conn__tau))
+      /\ (expression e has type tau in Gamma)
+      /\ (tau < conn__tau)
+      /\ (body l well typed in Gamma Pi)
+      ->
+      body (AST.ActionStatement (AST.Action (gd :: conn :: nil) (AST.SendAction e)) :: l) well typed in Gamma Pi
+
+| type_DoExpr:
+    forall Gamma Pi e tau l,
+      (expression e has type tau in Gamma)
+      /\ (body l well typed in Gamma Pi)
+      ->
+      body (AST.DoExpr e :: l) well typed in Gamma Pi
+
+| type_Done:
+    forall Gamma Pi,
+      body (AST.Done :: nil) well typed in Gamma Pi
+
 
 (** ** Notations *)
 where "'SoSADL' a 'well' 'typed'" := (type_sosADL a)

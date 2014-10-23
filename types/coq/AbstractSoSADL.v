@@ -95,7 +95,7 @@ with assert: Set :=
 | Tell: string -> expression -> assert
 | Ask: string -> expression -> assert
 with action: Set :=
-| Action: string -> string -> actionSuite -> action
+| Action: complexName -> actionSuite -> action
 with actionSuite: Set :=
 | SendAction: expression -> actionSuite
 | ReceiveAction: string -> actionSuite
