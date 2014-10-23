@@ -32,7 +32,7 @@ Inductive gd_env_content: Set :=
 
 Inductive env_content: Set :=
 | EType: AST.datatypeDecl -> env_content
-| EFunction: env_content
+| EFunction: AST.functionDecl -> env_content
 | ESystem: env_content
 | EMediator: env_content
 | EArchitecture: env_content
@@ -98,6 +98,21 @@ Definition build_duty_env d :=
   end.
 
 (**
+ * Few additional utilities
+ *)
+
+Notation "'method' m 'defined' 'in' d 'with' 'parameters' f 'returns' r" :=
+  (List.Exists (fun fd => AST.name_of_functionDecl fd = m
+                         /\ AST.parameters_of_functionDecl fd = f
+                         /\ AST.type_of_functionDecl fd = r)
+               (AST.functions_of_datatypeDecl d))
+    (at level 200, no associativity).
+
+Inductive field_has_type: list AST.fieldDecl -> string -> AST.datatype -> Prop :=
+| First_Field: forall n t r, field_has_type (AST.FieldDecl n t :: r) n t
+| Next_Field: forall n t h r, field_has_type r n t -> field_has_type (h :: r) n t.
+
+(**
  * The type system
  *)
 
@@ -161,7 +176,7 @@ with type_entityBlock: env -> AST.entityBlock -> Prop :=
 | type_EntityBlock_function:
     forall Gamma f l systems mediators architectures,
       (function f well typed in Gamma)
-      /\ (entity (AST.EntityBlock nil l systems mediators architectures) well typed in Gamma[AST.name_of_functionDecl f <- EFunction])
+      /\ (entity (AST.EntityBlock nil l systems mediators architectures) well typed in Gamma[AST.name_of_functionDecl f <- EFunction f])
       ->
       entity (AST.EntityBlock nil (f::l) systems mediators architectures) well typed in Gamma
 
@@ -202,7 +217,7 @@ with type_datatypeDecl_functions: env -> list AST.functionDecl -> Prop :=
 | type_datatypeDecl_f:
     forall Gamma f l,
       (function f well typed in Gamma)
-      /\ (functions of typedecl l well typed in Gamma[AST.name_of_functionDecl f <- EFunction])
+      /\ (functions of typedecl l well typed in Gamma)
       ->
       functions of typedecl (f::l) well typed in Gamma
                                  
@@ -389,6 +404,176 @@ with type_datatype: env -> AST.datatype -> Prop :=
  *)
 
 with type_expression: env -> AST.expression -> AST.datatype -> Prop :=
+| type_expression_IntegerValue:
+    forall Gamma v,
+      expression (AST.IntegerValue v) has type (AST.RangeType (AST.IntegerValue v) (AST.IntegerValue v)) in Gamma
+
+| type_expression_Any:
+    forall Gamma tau,
+      expression AST.Any has type tau in Gamma
+
+| type_expression_Opposite:
+    forall Gamma e v__min v__max,
+      (expression e has type (AST.RangeType v__min v__max) in Gamma)
+      ->
+      expression (AST.UnaryExpression "-" e) has type (AST.RangeType (AST.UnaryExpression "-" v__max) (AST.UnaryExpression "-" v__min)) in Gamma
+
+| type_expression_Same:
+    forall Gamma e v__min v__max,
+      (expression e has type (AST.RangeType v__min v__max) in Gamma)
+      ->
+      expression (AST.UnaryExpression "+" e) has type (AST.RangeType v__min v__max) in Gamma
+
+| type_expression_Not:
+    forall Gamma e,
+      (expression e has type AST.BooleanType in Gamma)
+      ->
+      expression (AST.UnaryExpression "not" e) has type AST.BooleanType in Gamma
+
+| type_expression_Add:
+    forall Gamma l l__min l__max r r__min r__max,
+      (expression l has type (AST.RangeType l__min l__max) in Gamma)
+      /\ (expression r has type (AST.RangeType r__min r__max) in Gamma)
+      ->
+      expression (AST.BinaryExpression l "+" r) has type (AST.RangeType (AST.BinaryExpression l__min "+" r__min) (AST.BinaryExpression l__max "+" r__max)) in Gamma
+
+| type_expression_Sub:
+    forall Gamma l l__min l__max r r__min r__max,
+      (expression l has type (AST.RangeType l__min l__max) in Gamma)
+      /\ (expression r has type (AST.RangeType r__min r__max) in Gamma)
+      ->
+      expression (AST.BinaryExpression l "-" r) has type (AST.RangeType (AST.BinaryExpression l__min "-" r__max) (AST.BinaryExpression l__max "-" r__min)) in Gamma
+
+(** %\todo{mul, div and mod}% *)
+
+| type_expression_Implies:
+   forall Gamma l r,
+     (expression l has type AST.BooleanType in Gamma)
+     /\ (expression r has type AST.BooleanType in Gamma)
+     ->
+     expression (AST.BinaryExpression l "implies" r) has type AST.BooleanType in Gamma
+
+| type_expression_Or:
+   forall Gamma l r,
+     (expression l has type AST.BooleanType in Gamma)
+     /\ (expression r has type AST.BooleanType in Gamma)
+     ->
+     expression (AST.BinaryExpression l "or" r) has type AST.BooleanType in Gamma
+
+| type_expression_Xor:
+   forall Gamma l r,
+     (expression l has type AST.BooleanType in Gamma)
+     /\ (expression r has type AST.BooleanType in Gamma)
+     ->
+     expression (AST.BinaryExpression l "xor" r) has type AST.BooleanType in Gamma
+
+| type_expression_And:
+   forall Gamma l r,
+     (expression l has type AST.BooleanType in Gamma)
+     /\ (expression r has type AST.BooleanType in Gamma)
+     ->
+     expression (AST.BinaryExpression l "and" r) has type AST.BooleanType in Gamma
+
+| type_expression_Equal:
+    forall Gamma l l__min l__max r r__min r__max,
+      (expression l has type (AST.RangeType l__min l__max) in Gamma)
+      /\ (expression r has type (AST.RangeType r__min r__max) in Gamma)
+      ->
+      expression (AST.BinaryExpression l "=" r) has type AST.BooleanType in Gamma
+
+| type_expression_Diff:
+    forall Gamma l l__min l__max r r__min r__max,
+      (expression l has type (AST.RangeType l__min l__max) in Gamma)
+      /\ (expression r has type (AST.RangeType r__min r__max) in Gamma)
+      ->
+      expression (AST.BinaryExpression l "<>" r) has type AST.BooleanType in Gamma
+
+| type_expression_Lt:
+    forall Gamma l l__min l__max r r__min r__max,
+      (expression l has type (AST.RangeType l__min l__max) in Gamma)
+      /\ (expression r has type (AST.RangeType r__min r__max) in Gamma)
+      ->
+      expression (AST.BinaryExpression l "<" r) has type AST.BooleanType in Gamma
+
+| type_expression_Le:
+    forall Gamma l l__min l__max r r__min r__max,
+      (expression l has type (AST.RangeType l__min l__max) in Gamma)
+      /\ (expression r has type (AST.RangeType r__min r__max) in Gamma)
+      ->
+      expression (AST.BinaryExpression l "<=" r) has type AST.BooleanType in Gamma
+
+| type_expression_Gt:
+    forall Gamma l l__min l__max r r__min r__max,
+      (expression l has type (AST.RangeType l__min l__max) in Gamma)
+      /\ (expression r has type (AST.RangeType r__min r__max) in Gamma)
+      ->
+      expression (AST.BinaryExpression l ">" r) has type AST.BooleanType in Gamma
+
+| type_expression_Ge:
+    forall Gamma l l__min l__max r r__min r__max,
+      (expression l has type (AST.RangeType l__min l__max) in Gamma)
+      /\ (expression r has type (AST.RangeType r__min r__max) in Gamma)
+      ->
+      expression (AST.BinaryExpression l ">=" r) has type AST.BooleanType in Gamma
+
+| type_expression_Ident:
+    forall Gamma x tau,
+      (contains Gamma x (EVariable tau))
+      ->
+      expression (AST.IdentExpression x) has type tau in Gamma
+
+(** %\note{Assume that the type of this is a named type}% *)
+| type_expression_MethodCall:
+    forall Gamma this tau tauDecl name formalparams params ret,
+      (expression this has type (AST.NamedType tau) in Gamma)
+      /\ (contains Gamma tau (EType tauDecl))
+      /\ (method name defined in tauDecl with parameters formalparams returns ret)
+      /\ (for each fp p of formalparams params,
+         expression p has type (AST.type_of_formalParameter fp) in Gamma)
+      ->
+      expression (AST.MethodCall this name params) has type ret in Gamma
+
+| type_expression_Tuple:
+    forall Gamma elts typ,
+      (values (AST.name_of_tupleElement x) for x of elts are distinct)
+      /\ (for each e tau of elts typ, AST.name_of_tupleElement e = AST.name_of_fieldDecl tau)
+      /\ (for each e tau of elts typ,
+         expression (AST.expression_of_tupleElement e) has type (AST.type_of_fieldDecl tau) in Gamma)
+      ->
+      expression (AST.Tuple elts) has type (AST.TupleType typ) in Gamma
+
+| type_expression_Sequence:
+    forall Gamma elts tau,
+      (for each e of elts, expression e has type tau in Gamma)
+      ->
+      expression (AST.Sequence elts) has type (AST.SequenceType tau) in Gamma
+
+| type_expression_Map:
+    forall Gamma coll tau x e tau__e,
+      (expression coll has type (AST.SequenceType tau) in Gamma)
+      /\ (expression e has type tau__e in Gamma[x <- EVariable tau])
+      ->
+      expression (AST.Map coll x e) has type (AST.SequenceType tau__e) in Gamma
+
+| type_expression_Select:
+    forall Gamma coll tau x e,
+      (expression coll has type (AST.SequenceType tau) in Gamma)
+      /\ (expression e has type AST.BooleanType in Gamma[x <- EVariable tau])
+      ->
+      expression (AST.Select coll x e) has type (AST.SequenceType tau) in Gamma
+
+| type_expression_Field:
+    forall Gamma this tau name tau__f,
+      (expression this has type (AST.TupleType tau) in Gamma)
+      /\ field_has_type tau name tau__f
+      ->
+      expression (AST.Field this name) has type tau__f in Gamma
+
+(** %\todo{CallExpression}% *)
+
+(** %\todo{What is the type of unobservable?}% *)
+
+(** %\todo{Relay, Unify and Quantify}% *)
 
 (** ** Expression in the scope of a list of valuings *)
 with type_expression_where: env -> list AST.valuing -> AST.expression -> AST.datatype -> Prop :=

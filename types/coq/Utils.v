@@ -6,7 +6,7 @@ Notation "'for' 'each' e 'of' l , p" :=
     (at level 200, e ident, right associativity).
 
 Notation "'values' e 'for' x 'of' f 'are' 'distinct'" :=
-  (forall x, List.count_occ string_dec (List.map (fun x => e) f) x <= 1)
+  (List.NoDup (List.map (fun x => e) f))
     (at level 200, x ident).
 
 Notation "'for' 'each' e f 'of' l m , p" :=

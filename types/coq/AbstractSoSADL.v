@@ -1,5 +1,6 @@
 Require Import List.
 Require Import String.
+Require Import BinInt.
 
 (**
 %
@@ -24,6 +25,18 @@ Inductive modeType: Set :=
 | In: modeType
 | Out: modeType
 | InOut: modeType.
+
+Inductive quantifier: Set :=
+| QuantifierForall: quantifier
+| QuantifierExists: quantifier.
+
+Inductive multiplicity: Set :=
+| MultiplicityOne: multiplicity
+| MultiplicityNone: multiplicity
+| MultiplicityLone: multiplicity
+| MultiplicityAny: multiplicity
+| MultiplicitySome: multiplicity
+| MultiplicityAll: multiplicity.
 
 Inductive sosADL: Set :=
 | SosADL: list import -> unit -> sosADL
@@ -75,6 +88,26 @@ with constituent: Set :=
  *)
 | Constituent: string -> expression -> constituent
 with expression: Set :=
+| IntegerValue: Z -> expression
+| Quantify: quantifier -> list elementInConstituent -> expression -> expression
+| Relay: complexName -> complexName -> expression
+| Unify: multiplicity -> complexName -> multiplicity -> complexName -> expression
+| Any: expression
+| UnaryExpression: string -> expression -> expression
+| BinaryExpression: expression -> string -> expression -> expression
+| IdentExpression: string -> expression
+| UnobservableValue: expression
+| MethodCall: expression -> string -> list expression -> expression
+| Tuple: list tupleElement -> expression
+| Sequence: list expression -> expression
+| CallExpression: string -> list expression -> expression
+| Map: expression -> string -> expression -> expression
+| Select: expression -> string -> expression -> expression
+| Field: expression -> string -> expression
+with tupleElement: Set :=
+| TupleElement: string -> expression -> tupleElement
+with elementInConstituent: Set :=
+| ElementInConstituent: string -> string -> elementInConstituent
 with assertionDecl: Set :=
 with protocolDecl: Set :=
 with behavior: Set :=
@@ -229,6 +262,16 @@ Definition mode_of_connection c :=
 Definition datatype_of_connection c :=
   match c with
     | Connection _ _ _ t => t
+  end.
+
+Definition name_of_tupleElement t :=
+  match t with
+    | TupleElement n _ => n
+  end.
+
+Definition expression_of_tupleElement t :=
+  match t with
+    | TupleElement _ e => e
   end.
 
 Axiom names_of_expression e: expression -> list string.
