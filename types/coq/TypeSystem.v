@@ -399,8 +399,6 @@ with type_datatype: env -> AST.datatype -> Prop :=
 
 (**
  ** Expression
-
-%\todo{}%
  *)
 
 with type_expression: env -> AST.expression -> AST.datatype -> Prop :=
@@ -635,8 +633,6 @@ with type_archbehavior: env ->  AST.archBehaviorDecl -> Prop :=
 
 (**
  ** Behavior
-
-%\todo{}%
  *)
 
 with type_behavior: env -> AST.behaviorDecl -> Prop :=
@@ -678,8 +674,6 @@ with type_connection: env -> AST.connection -> Prop :=
 
 (**
  ** Body
-
-%\todo{}%
 
 %\note{According to the Word document, it's not clear whether the type system enforces some rules on the sequence of statements. For instance, {\tt repeat} is enforced as the latest statement of a body; but no check that all the branches terminate with {\tt done} or recursive call.}%
 
