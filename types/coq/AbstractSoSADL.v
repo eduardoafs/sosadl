@@ -54,7 +54,7 @@ with entityBlock: Set :=
 | EntityBlock: list datatypeDecl -> list functionDecl -> list systemDecl -> list mediatorDecl -> list architectureDecl -> entityBlock
 
 with datatypeDecl: Set :=
-| DataTypeDecl: string -> datatype -> list functionDecl -> datatypeDecl
+| DataTypeDecl: string -> option datatype -> list functionDecl -> datatypeDecl
 
 (** %\note{%[IntegerType] and [ConnectionType] are volountarily
 omitted: the former can be represented by [RangeType]; the latter is

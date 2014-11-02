@@ -270,6 +270,10 @@ abstract syntax nor the concrete syntax.%}% *)
       entity (AST.EntityBlock nil nil nil nil (a::l))
              well typed in Gamma
 
+| type_EntityBlock:
+    forall Gamma,
+      entity (AST.EntityBlock nil nil nil nil nil) well typed in Gamma
+
 (** ** Data type declaration *)
 
 (** %\note{%The functions (methods) of the data type declaration can
@@ -278,14 +282,18 @@ binds the data type declaration, including the list of functions
 (methods).%}% *)
 
 with type_datatypeDecl: env -> AST.datatypeDecl -> Prop :=
-| type_DataTypeDecl:
+| type_DataTypeDecl_Some:
     forall Gamma name t funs,
       (type t well typed in Gamma)
       /\ (values (AST.name_of_functionDecl x) for x of funs are distinct)
       /\ (functions of typedecl funs
-                   well typed in Gamma[name <- EType (AST.DataTypeDecl name t funs)])
+                   well typed in Gamma[name <- EType (AST.DataTypeDecl name (Some t) funs)])
       ->
-      typedecl (AST.DataTypeDecl name t funs) well typed in Gamma
+      typedecl (AST.DataTypeDecl name (Some t) funs) well typed in Gamma
+
+| type_DataTypeDecl_None:
+    forall Gamma name,
+      typedecl (AST.DataTypeDecl name None nil) well typed in Gamma
 
 (** %\note{%The functions (methods) of the data type declaration are
 typed in order. In fact, this is not mandatory since the environment
@@ -307,11 +315,11 @@ with type_datatypeDecl_functions: env -> list AST.functionDecl -> Prop :=
 
 with type_function: env -> AST.functionDecl -> Prop :=
 | type_FunctionDecl:
-    forall Gamma name dataName dataTypeName params t vals e tau dataType,
+    forall Gamma name dataName dataTypeName params t vals e tau dtname dttype dtfuns,
       (for each p of params, type (AST.type_of_formalParameter p) well typed in Gamma)
       /\ (expression e under vals has type tau in (env_add_params params Gamma))
-      /\  contains Gamma dataTypeName (EType dataType)
-      /\ tau < AST.datatype_of_datatypeDecl dataType
+      /\  contains Gamma dataTypeName (EType (AST.DataTypeDecl dtname (Some dttype) dtfuns))
+      /\ tau < dttype
       ->
       function (AST.FunctionDecl name dataName dataTypeName params t vals e)
                well typed in Gamma
