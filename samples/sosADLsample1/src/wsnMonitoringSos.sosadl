@@ -7,15 +7,16 @@ with WsnMediator
 
 // Description of WsnMonitoring as an Architecture Abstraction
 sos WsnMonitoringSos is {
+	
   architecture WnsMonitoringSosArchitecture() is {
-  
-    gate warning is {
-      connection alert is out{MeasureData}  // alert sent to its environment
+    
+	  gate warning is {
+		  connection alert is out{MeasureData}  
     } guarantee {
       protocol alertpact is {
         repeat {
           repeat {anyaction}
-          repeat {via warning::alert send any}
+          via warning::alert send any
         }
       }
     }
@@ -25,7 +26,7 @@ sos WsnMonitoringSos is {
       connection depth is out{Depth}
     } guarantee {
       protocol requestpact is {
-        repeat {  // in the case of one statement '{' '}' are not needed
+        repeat {  
           via request::coordinate receive any
           repeat {anyaction}
           via request::depth send any
@@ -33,56 +34,38 @@ sos WsnMonitoringSos is {
       }
     }
     
-    behavior coalition() is compose {
-        sensors is sequence{Sensor}
-  	    gateway is Gateway
-        transmitters is sequence{Transmitter}
-    } binding {
-        relay warning::alert to gateway::notification::alert
-        and relay request::coordinate to gateway::request::coordinate
-        and relay request::depth to gateway::request::depth
-        and forall{itransmitter in transmitters, isensor1 in sensors, isensor2 in sensors suchthat
-          (isensor1 <> isensor2) implies (
-            // multiplicities are 'one', 'none', 'lone' (none or one), 'any' (none or more), 'some' (one or more), 'all'
-            unify one{transmitters::fromSensors} to one{sensors::measurement::measure} 
-            and unify one{itransmitter::toGateway} to one{isensor2::measurement::pass}
-              xor unify one{itransmitter::toGateway} to one{gateway::notification::measure}
-            )
-        }
-/* The binding using 1st order logic (using Alloy quantifiers):
-     - all = forall
-     - one = exists unique
-
-    relay warning::alert to gateway::notification::alert
-    and relay request::coordinate to gateway::request::coordinate
-    and relay request::depth to gateway::request::depth
-    all{s1 in sensors
-      suchthat one{t in transmitters
-                 suchthat all{s2 in sensors suchthat unify t::fromSensors to s2::measurement::measure implies s1=s2}
-                      and unify t::fromSensors to s1::measurement::measure
-	              and (unify t::toGateway to gateway::notification::measure
-	                   xor one{s2 in sensors
-                                 suchthat s1<>s2
-                                      and unify t::toGateway to s2::measurement::pass})}
-
-
-   Alternative 1st order logic:
-
-    all{s in sensors suchthat one{t in transmitters suchthat unify t::fromSensors to s::measurement::measure}}
-and all{t in transmitters suchthat one{s in sensors suchthat unify t::fromSensors to s::measurement::measure}}
-and all{t in transmitters suchthat (one{s in sensors suchthat unify t::toGateway to s::measurement::pass} xor unify t::toGateway to gateway::notification::measure)}
-
-
-
-   Attempt with multiplicities:
-
-    unify one{sensors::measurement::measure} to one{transmitters::fromSensors}
-    and unify all{transmitters::toGateway} to (one{sensors::measurement::pass} xor {gateway::notification::measure})
-*/
-    }
+	  behavior coalition is compose {
+		  sensors is sequence{Sensor}
+		  gateway is Gateway
+		  transmitters is sequence{Transmitter}
+	  } binding {
+	    relay gateway::notification::alert to warning::alert
+	    and relay gateway::request to request
+	    and forall{
+	 	    isensor1 in sensors, isensor2 in sensors 
+		    suchthat 
+			  exists {itransmitter in transmitters
+				  suchthat
+					(isensor1 <> isensor2) implies
+						unify one{itransmitter::fromSensors} 
+							 to one{isensor1::measurement::measure} 
+      		  and unify one{itransmitter::towardsGateway} 
+      						 to one{isensor2::measurement::pass}
+      			xor unify one{itransmitter::towardsGateway}
+ 						    	   to one{gateway::notification::measure}
+			  }
+		    // multiplicities are 'one', 'none', 
+		    // 'lone' (none or one), 
+		    // 'any' (none or more), 
+		    // 'some' (one or more), 'all'
+		  }
+	  }
   } guarantee {
-    property alerting is {
-      always {via notification::alert send any}
-    }
+	  property alerting is {
+		  repeat {
+			  repeat {anyaction}
+			  via notification::alert send any
+		  }
+	  }
   }
 }

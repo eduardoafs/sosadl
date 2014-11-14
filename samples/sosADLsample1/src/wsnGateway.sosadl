@@ -3,6 +3,7 @@ with Localization
 
 // Description of Gateway as a System Abstraction
 library WsnGateway is {
+  
   system Gateway(lps: Coordinate) is {
   	
   	datatype Abscissa
@@ -12,67 +13,66 @@ library WsnGateway is {
     datatype MeasureData is tuple{coordinate:Coordinate,depth:Depth}
     
     gate notification is {
-  	  connection measure is inout{MeasureData}  // measure sent by the gateway: or received???
-      connection alert is out{MeasureData}  // alert sent by the gateway
-    } guarantee {
-  		protocol notificationpact is {
-  			repeat {
-  				repeat {
-  					via notification::measure receive any
-  					repeat {anyaction}
-  				}
-  				repeat {
-  					via notification::alert send any
-  				}
-  			}
-  		}
-  	}
-  	
-  	gate request is {
-    	connection coordinate is in{Coordinate}
-    	connection depth is out{Depth}
-  	} guarantee {
-  		protocol requestpact is {
+		  connection measure is in{MeasureData}  
+		  connection alert is out{MeasureData}  
+			// alert sent by the gateway
+	  } guarantee {
+		  protocol notificationpact is {
   		  repeat {
-  			  via request::coordinate receive any
-  			  repeat {anyaction}
-  			  via request::depth send any
+  			  repeat {
+  				  via notification::measure receive any
+  				  repeat {anyaction}
+  			  }
+			    via notification::alert send any
+		    }
+		  }
+    }
+  
+   	gate request is {
+  		connection coordinate is in{Coordinate}
+      connection depth is out{Depth}
+    } guarantee {
+    	protocol requestpact is {
+    		repeat {
+    			via request::coordinate receive any
+    			repeat {anyaction}
+    			via request::depth send any
+        }
+      }
+    }
+    
+    gate location is {
+   		connection coordinate is out{Coordinate}
+  	} guarantee {
+  		protocol coordinatepact is {
+  			via location::coordinate send lps
+  		}
+    }
+  
+    behavior serving is {
+  		value depththreshold is Depth = 10
+  		value localbase is sequence{MeasureData} = sequence{}
+  	  value gatewaycoordinate is Coordinate = lps    
+  		tell gatewaylocation is {gatewaycoordinate = lps}    
+  		via location::coordinate send gatewaycoordinate
+  		repeat {
+  			choose {
+  				via notification::measure receive measure
+  				do localbase::append(measure)   
+  					// 'append' adds an element to the sequence
+  					// '::' applies operations to collections 
+  				if measure::depth > depththreshold then { 
+  					via notification::alert send measure
+  				}
+  			} or {
+  				via request::coordinate receive query
+        	via request::depth send 
+  					localbase::select{measure suchthat measure::coordinate=query}::
+  							collect{measure suchthat measure::depth}   
+  						// 'select' returns the selected elements
+  						// 'collect' returns the result of an expression 
         }
       }
   	}
-  	behavior serving() is {
-    	value localbase is sequence{MeasureData} = sequence{}   // 'sequence{MeasureData}' au lieu de 'sequence(MeasureData)' ?
-    	repeat {
-      	choose {
-      		via notification::measure receive measure
-      		do localbase::append(measure)   // 'append' adds an element to the sequence at the end, 'prepend' at the beginning // '::' applies operations to collection values
-        } or {
-      	 	via request::coordinate receive query
-      		via request::depth send localbase::select{measure suchthat measure::coordinate=query}::map{x to x::depth}   // 'select' returns a element of type MeasureData that has field depth
-        }
-    	}
-    }
-
-    
-	/*
-	  // An attempt to rewrite the behavior without "do expression" implies multiple behaviors: 
-    behavior serving() is {
-    	value localbase is sequence{MeasureData} = sequence{}   // 'sequence{MeasureData}' au lieu de 'sequence(MeasureData)' ?
-    	boucle(localbase)
-    }
-
-  	behavior boucle(localbase: sequence{MesureData}) is {
-      	  choose {
-      			via notification::measure receive measure
-      			behavior(localbase::append(measure))
-      	  } or {
-      	   	via request::coordinate receive query
-      			via request::depth send localbase::select{measure suchthat measure::coordinate=query}::map{x to x::depth}   // 'select' returns a element of type MeasureData that has field depth
-      			behavior(localbase)
-      	  }
-    }
-    * 
-    */
-
   }
 }
