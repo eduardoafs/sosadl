@@ -15,7 +15,7 @@ library testSendReceive2 is {
       }
     }
   
-    behavior test() is {
+    behavior test is {
       via gate1::connection1 send 0
       via gate1::connection1 receive data
     }

@@ -14,7 +14,7 @@ library testRecursiveCall1 is {
       }
     }
     
-    behavior test() is {
+    behavior test is {
       behavior()
     }
   }

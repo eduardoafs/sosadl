@@ -27,7 +27,7 @@ library testChoose8 is {
       }
     }
     
-    behavior test() is {
+    behavior test is {
       choose
           {via gate1::connection1 receive data}
       or 

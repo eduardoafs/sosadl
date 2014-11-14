@@ -17,7 +17,7 @@ library testReceiveSend3 is {
       }
     }
   
-    behavior test() is {
+    behavior test is {
       // send action is not first statement
       value data1 is integer = 0
       via gate1::connection1 receive data2

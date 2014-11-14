@@ -15,7 +15,7 @@ library testReceive1 is {
       }
     }
   
-    behavior test() is {
+    behavior test is {
       // receive action is first statement
       via gate1::connection1 receive data
     }

@@ -16,7 +16,7 @@ library testRepeat3 is {
       }
     }
     
-    behavior test() is {
+    behavior test is {
       repeat{
           via gate1::connection1 receive data
       }

@@ -16,7 +16,7 @@ library testIfThenElse1 is {
       }
     }
     
-    behavior test() is {
+    behavior test is {
       if (true) then {done} else {done}
     }
   }

@@ -35,7 +35,7 @@ library testIfThenElse6 is {
       }
     }
     
-    behavior test() is {
+    behavior test is {
         if (0 > 1) then {
           if (1 < 2) then {
             via gate1::connection1 send 1

@@ -18,7 +18,7 @@ library testfThen1 is {
       }
     }
     
-    behavior test() is {
+    behavior test is {
       if (true) then {done}
     }
   }

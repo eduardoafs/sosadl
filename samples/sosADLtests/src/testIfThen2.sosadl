@@ -19,7 +19,7 @@ library testfThen2 is {
       }
     }
     
-    behavior test() is {
+    behavior test is {
       // what is the semantic of this?
       if (false) then {done}
     }

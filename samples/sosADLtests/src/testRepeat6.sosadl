@@ -22,7 +22,7 @@ library testRepeat6 is {
       }
     }
     
-    behavior test() is {
+    behavior test is {
       value data = 0
       repeat{
           if (true) then {

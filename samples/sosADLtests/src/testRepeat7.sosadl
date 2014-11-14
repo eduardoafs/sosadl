@@ -24,7 +24,7 @@ library testRepeat7 is {
       }
     }
     
-    behavior test() is {
+    behavior test is {
       value data = 0
       repeat{
           choose

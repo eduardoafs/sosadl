@@ -22,7 +22,7 @@ library testChoose4 is {
       }
     }
     
-    behavior test() is {
+    behavior test is {
       value data = 0
       choose
           {value data11 = 1

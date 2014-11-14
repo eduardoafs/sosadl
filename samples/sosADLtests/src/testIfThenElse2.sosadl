@@ -18,7 +18,7 @@ library testIfThenElse2 is {
       }
     }
     
-    behavior test() is {
+    behavior test is {
       if (true) then {
         via gate1::connection1 receive data1
       } else {

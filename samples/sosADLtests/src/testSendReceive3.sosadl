@@ -16,7 +16,7 @@ library testSendReceive3 is {
       }
     }
   
-    behavior test() is {
+    behavior test is {
       value data = 42
       via gate1::connection1 send data
       via gate1::connection1 receive data

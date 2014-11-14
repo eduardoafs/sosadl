@@ -14,7 +14,7 @@ library testRepeat1 is {
       }
     }
     
-    behavior test() is {
+    behavior test is {
       repeat{done}
     }
   }

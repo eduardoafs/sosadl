@@ -18,7 +18,7 @@ library testDone is {
       }
     }
     
-    behavior test() is {
+    behavior test is {
       // empty behavior: will not generate any iosts process.
       done
     }

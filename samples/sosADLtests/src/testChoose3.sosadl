@@ -20,7 +20,7 @@ library testChoose3 is {
       }
     }
     
-    behavior test() is {
+    behavior test is {
       value data = 0
       choose
           {via gate1::connection1 receive data}
