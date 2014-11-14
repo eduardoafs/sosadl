@@ -2,15 +2,19 @@ grammar org.archware.sosadl.SosADL with org.eclipse.xtext.common.Terminals
 
 generate sosADL 'http://www-archware.irisa.fr/sosadl/SosADL'
 
-SosADL: (imports+=Import)* content=(NewNamedLibrary | NewSoS);
+SosADL: (imports+=Import)* content=(NewNamedLibrary | NewSoS)
+;
 
-Import: 'with' importedLibrary=Name;
+Import: 'with' importedLibrary=Name
+;
 
-NewNamedLibrary returns Unit: {Library} 'library' name=Name 'is' '{' decls=EntityBlock '}';
+NewNamedLibrary returns Unit: {Library} 'library' name=Name 'is' '{' decls=EntityBlock '}'
+;
 
 NewSoS returns Unit: {SoS} 'sos' name=Name 'is' '{'
   (decls=EntityBlock)
-  '}';
+  '}'
+;
 
 EntityBlock: {EntityBlock}
 	(datatypes+=DataTypeDecl)*
@@ -25,21 +29,31 @@ SystemDecl: 'system' name=Name '(' (parameters+=FormalParameter (',' parameters+
 	(gates+=GateDecl)+
 	behavior=BehaviorDecl
 	'}' ('guarantee' '{' assertion=AssertionDecl '}')?
-	;
+;
 
 ArchitectureDecl: 'architecture' name=Name '(' (parameters+=FormalParameter (',' parameters+=FormalParameter)*)? ')' 'is' '{'
 	(datatypes+=DataTypeDecl)*
 	(gates+=GateDecl)+
     behavior=ArchBehaviorDecl
 	'}' ('guarantee' '{' assertion=AssertionDecl '}')?
-	;
+;
 
 MediatorDecl: 'mediator' name=Name '(' (parameters+=FormalParameter (',' parameters+=FormalParameter)*)? ')' 'is' '{'
 	(datatypes+=DataTypeDecl)*
 	(duties+=DutyDecl)+
 	behavior=BehaviorDecl
 	'}'
-	;
+	('assume' '{' assumption=AssertionDecl '}')?
+	('guarantee' '{' assertion=AssertionDecl '}')?
+;
+/* WAS:
+MediatorDecl: 'mediator' name=Name '(' (parameters+=FormalParameter (',' parameters+=FormalParameter)*)? ')' 'is' '{'
+    (datatypes+=DataTypeDecl)*
+    (duties+=DutyDecl)+
+    behavior=BehaviorDecl
+    '}'
+    ;
+*/
 
 GateDecl:
 	'gate' name=Name 'is' '{'
@@ -51,18 +65,24 @@ DutyDecl:
 	'duty' name=Name 'is' '{'
 	  (connections+=Connection)+
 	'}'
-	'require' '{' assertion=AssertionDecl '}'
-	'assume' '{' protocol=ProtocolDecl '}'
+	'assume' '{' assertion=AssertionDecl '}'    // WAS: 'require' '{' assertion=AssertionDecl '}'
+	'guarantee' '{' protocol=ProtocolDecl '}'   // WAS: 'assume' '{' protocol=ProtocolDecl '}'
 ;
 
 Connection:
-	(environment?='environment')? 'connection' name=Name 'is' mode=ModeType '{' valueType=DataType '}';
+	(environment?='environment')? 'connection' name=Name 'is' mode=ModeType '{' valueType=DataType '}'
+;
 
 AssertionDecl:
-	'property' name=Name 'is' '{'
+	'property' name=Name 'is' body=Protocol
+;
+/* WAS:
+AssertionDecl:
+    'property' name=Name 'is' '{'
     (valuing+=Valuing+ 'within')?
     assertion=Assertion '}'
 ;
+*/
 
 ProtocolDecl:
     'protocol' name=Name 'is' body=Protocol
@@ -79,7 +99,7 @@ ProtocolStatement:
 	| {AnyAction} 'anyaction'
 	| {RepeatProtocol} 'repeat' repeated=Protocol
 	| {IfThenElseProtocol} 'if' condition=Expression 'then' ifTrue=Protocol ('else' ifFalse=Protocol)?
-	| {ChooseProtocol} 'choose' branches+=Protocol  ('or' branches+=Protocol)+  // au lieu de 'choose { b1 or ... or bn }' car 'or' apparait dans Expression et Behavior
+	| {ChooseProtocol} 'choose' branches+=Protocol  ('or' branches+=Protocol)+
 	| {ForEachProtocol} 'foreach' variable=Name 'in' setOfValues=Expression repeated=Protocol
 	| {DoExpr} 'do' expression=Expression
 	| {Done} 'done'
@@ -96,7 +116,8 @@ ProtocolActionSuite:
 ;
 
 BehaviorDecl:
-	'behavior' name=Name '(' (parameters+=FormalParameter (',' parameters+=FormalParameter)*)? ')' 'is' body=Behavior
+	'behavior' name=Name 'is' body=Behavior
+	// WAS: 'behavior' name=Name '(' (parameters+=FormalParameter (',' parameters+=FormalParameter)*)? ')' 'is' body=Behavior
 ;
 
 Behavior:
@@ -109,7 +130,7 @@ BehaviorStatement:
 	| Action
 	| {RepeatBehavior} 'repeat' repeated=Behavior
 	| {IfThenElseBehavior} 'if' condition=Expression 'then' ifTrue=Behavior ('else' ifFalse=Behavior)?
-	| {ChooseBehavior} 'choose' branches+=Behavior  ('or' branches+=Behavior )+  // au lieu de 'choose { b1 or ... or bn }' car 'or' apparait dans Expression et Behavior
+	| {ChooseBehavior} 'choose' branches+=Behavior  ('or' branches+=Behavior )+
 	| {ForEachBehavior} 'foreach' variable=Name 'in' setOfValues=Expression repeated=Behavior
 	| {DoExpr} 'do' expression=Expression
 	| {Done} 'done'
@@ -131,7 +152,8 @@ ActionSuite:
 ;
 
 ArchBehaviorDecl:
-	'behavior' name=Name '(' (parameters+=Expression (',' parameters+=Expression)*)? ')'
+    // WAS: 'behavior' name=Name '(' (parameters+=Expression (',' parameters+=Expression)*)? ')'
+	'behavior' name=Name
 	'is' 'compose' '{' (constituents+=Constituent)+ '}'
 	'binding' '{' bindings=Expression '}' 
 ;
@@ -293,7 +315,8 @@ CallExpression returns Expression:
 		(
 			{Field.object=current} field=Name
 			| {Select.object=current} 'select' '{' variable=Name 'suchthat' condition=Expression '}'
-			| {Map.object=current} 'map' '{' variable=Name 'to' expression=Expression '}'
+			// WAS: {Map.object=current} 'map' '{' variable=Name 'to' expression=Expression '}'
+			| {Map.object=current} 'collect' '{' variable=Name 'suchthat' expression=Expression '}'
 			| {MethodCall.object=current} method=Name '(' (parameters+=Expression (',' parameters+=Expression)*)? ')'
 		)
 	)*
@@ -304,7 +327,7 @@ LitteralExpression returns Expression:
 	Value
 ;
 
-BinaryOp0:	'implies' ; 
+BinaryOp0:	'implies' ;
 
 BinaryOp1:	'or' ; 
 
@@ -323,7 +346,7 @@ BinaryOp7:  '*' | '/' | 'mod' | 'div' ;
 UnaryOp:
 	BooleanUnaryOp
 	| ArithmeticUnaryOp
-	;
+;
 
 BooleanUnaryOp: 'not';
 

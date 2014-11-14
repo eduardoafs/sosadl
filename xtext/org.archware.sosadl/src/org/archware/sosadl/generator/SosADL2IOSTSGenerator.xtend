@@ -994,7 +994,7 @@ class SosADL2IOSTSGenerator implements IGenerator {
 	e.object.compile».select(«e.variable» suchthat «e.condition.compile»)'''
 
 	def compile(Map e)'''«
-	e.object.compile».map(«e.variable» to «e.expression.compile»)'''
+	e.object.compile».collect(«e.variable» suchthat «e.expression.compile»)'''
 
 	def compile(MethodCall e)'''«
 	e.object.compile».«e.method»(«e.parameters.map[compile].join(", ")»)'''

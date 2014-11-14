@@ -28,7 +28,7 @@ class SosADLGenerator implements IGenerator {
   @Inject SosADL2IOSTSGenerator gen2
 
   override void doGenerate(Resource resource, IFileSystemAccess fsa) {
-    //gen1.doGenerate(resource, fsa)
+    gen1.doGenerate(resource, fsa)
     gen2.doGenerate(resource, fsa)
   }
 }

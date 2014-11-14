@@ -149,11 +149,21 @@ class SosADLComparator {
 	}
 	
 	def static compare(MediatorDecl l, MediatorDecl r) {
+        l.name.equals(r.name) && sameElements(l.parameters, r.parameters, [p, q | compare(p, q)])
+        && sameElements(l.datatypes, r.datatypes, [p, q | compare(p, q)])
+        && sameElements(l.duties, r.duties, [p, q | compare(p, q)])
+        && compare(l.behavior, r.behavior)
+        && compareOpt(l.assumption, r.assumption, [p, q | compare(p, q)])
+        && compareOpt(l.assertion, r.assertion, [p, q | compare(p, q)])
+    }
+	/* WAS:
+	def static compare(MediatorDecl l, MediatorDecl r) {
 		l.name.equals(r.name) && sameElements(l.parameters, r.parameters, [p, q | compare(p, q)])
 		&& sameElements(l.datatypes, r.datatypes, [p, q | compare(p, q)])
 		&& sameElements(l.duties, r.duties, [p, q | compare(p, q)])
 		&& compare(l.behavior, r.behavior)
 	}
+	*/
 	
 	def static compare(ArchitectureDecl l, ArchitectureDecl r) {
 		l.name.equals(r.name) && sameElements(l.parameters, r.parameters, [p, q | compare(p, q)])
@@ -189,22 +199,40 @@ class SosADLComparator {
 	
 	def static compare(BehaviorDecl l, BehaviorDecl r) {
 		l.name.equals(r.name)
-		&& sameElements(l.parameters, r.parameters, [p, q | compare(p, q)])
 		&& compare(l.body, r.body)
 	}
+	/* WAS:
+	def static compare(BehaviorDecl l, BehaviorDecl r) {
+        l.name.equals(r.name)
+        && sameElements(l.parameters, r.parameters, [p, q | compare(p, q)])
+        && compare(l.body, r.body)
+    }
+	*/
 
 	def static compare(ArchBehaviorDecl l, ArchBehaviorDecl r) {
 		l.name.equals(r.name)
-		&& sameElements(l.parameters, r.parameters, [p, q | compareExpression(p, q)])
 		&& sameElements(l.constituents, r.constituents, [p, q | compare(p, q)])
 		&& compareExpression(l.bindings, r.bindings)
 	}
+	/* WAS:
+	def static compare(ArchBehaviorDecl l, ArchBehaviorDecl r) {
+        l.name.equals(r.name)
+        && sameElements(l.parameters, r.parameters, [p, q | compareExpression(p, q)])
+        && sameElements(l.constituents, r.constituents, [p, q | compare(p, q)])
+        && compareExpression(l.bindings, r.bindings)
+    }
+	*/
 	
 	def static compare(AssertionDecl l, AssertionDecl r) {
-		l.name.equals(r.name)
-		&& sameElements(l.valuing, r.valuing, [p, q | compare(p, q)])
-		&& compareAssertion(l.assertion, r.assertion)
+		l.name.equals(r.name) && compare(l.body, r.body)
 	}
+	/* WAS:
+	def static compare(AssertionDecl l, AssertionDecl r) {
+        l.name.equals(r.name)
+        && sameElements(l.valuing, r.valuing, [p, q | compare(p, q)])
+        && compareAssertion(l.assertion, r.assertion)
+    }
+	*/
 	
 	def static compare(Protocol l, Protocol r) { sameElements(l.statements, r.statements, [p, q | compareProtocolStatement(p, q)]) }
 	

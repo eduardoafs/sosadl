@@ -57,7 +57,7 @@ class SosADLFormatter extends AbstractDeclarativeFormatter {
 		}
 		
 		for (Keyword keyword : f.findKeywords("with","library","datatype","function","sos",
-				"system","architecture","mediator","gate","guarantee","duty","require","assume",
+				"system","architecture","mediator","gate","guarantee","duty","assume",
 				"connection","protocol","repeat","if","choose","foreach","do","via","behavior","value")) {
 			c.setLinewrap(0,1,2).before(keyword);
 		}

@@ -144,7 +144,11 @@ class SosADLPrettyPrinterGenerator implements IGenerator {
         «ENDFOR»
         
         «m.behavior.compile»
-      }
+      }«IF m.assumption != null» assume {
+        «m.assumption.compile»
+      }«ENDIF»«IF m.assertion != null» guarantee {
+        «m.assertion.compile»
+      }«ENDIF»
 	'''
 	
 	def compile(GateDecl g)'''
@@ -164,9 +168,9 @@ class SosADLPrettyPrinterGenerator implements IGenerator {
         «FOR c : d.connections»
         «c.compile»
         «ENDFOR»
-      } require {
-        «d.assertion.compile»
       } assume {
+        «d.assertion.compile»
+      } guarantee {
         «d.protocol.compile»
       }
       '''
@@ -174,15 +178,7 @@ class SosADLPrettyPrinterGenerator implements IGenerator {
 	def compile(Connection c)'''«IF c.environment»environment «ENDIF»connection «c.name» is «c.mode»{«c.valueType.compile»}'''
 	
 	def compile(AssertionDecl a)'''
-      property «a.name» is {
-        «IF ! a.valuing.isEmpty»
-        «FOR v:a.valuing»
-        «v.compile»
-        «ENDFOR»
-        within
-        «ENDIF»
-        «a.assertion.compile»
-      }
+      property «a.name» is «a.body.compile»
     '''
     
     def compile(ProtocolDecl p)'''
@@ -268,7 +264,7 @@ class SosADLPrettyPrinterGenerator implements IGenerator {
     def compile(AnyAction a)'''anyaction'''
     
     def compile(BehaviorDecl b)'''
-    behavior «b.name» («b.parameters.map[compile].join(", ")») is «b.body.compile»
+    behavior «b.name» is «b.body.compile»
     '''
 
 	def CharSequence compile(Behavior b)'''
@@ -353,7 +349,7 @@ class SosADLPrettyPrinterGenerator implements IGenerator {
     def compile(ReceiveAction r)''' receive «r.variable»'''
         
 	def compile(ArchBehaviorDecl a)'''
-    behavior «a.name» («a.parameters.map[compile].join(", ")») is compose {
+    behavior «a.name» is compose {
       «FOR c:a.constituents»
         «c.compile»
       «ENDFOR»
@@ -499,7 +495,7 @@ class SosADLPrettyPrinterGenerator implements IGenerator {
 	e.object.compile»::select{«e.variable» suchthat «e.condition.compile»}'''
 
 	def compile(Map e)'''«
-	e.object.compile»::map{«e.variable» to «e.expression.compile»}'''
+	e.object.compile»::collect{«e.variable» suchthat «e.expression.compile»}'''
 
 	def compile(MethodCall e)'''«
 	e.object.compile»::«e.method»(«e.parameters.map[compile].join(", ")»)'''
