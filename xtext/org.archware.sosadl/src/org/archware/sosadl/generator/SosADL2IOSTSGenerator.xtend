@@ -131,8 +131,9 @@ class SosADL2IOSTSGenerator implements IGenerator {
       for (g : s.gates) {
         g.compile
       }
+      //if (s.assertion != null) {s.assertion.compile}  // not a protocol?
       s.behavior.compile
-      // do not add empty system
+      // add system if it's not empty
       if (! currentSystem.empty) {
         systems.add(currentSystem)
       }
@@ -147,9 +148,9 @@ class SosADL2IOSTSGenerator implements IGenerator {
       a.parameters.map[compile]
       for (d : a.datatypes) {d.compile}
       for (g : a.gates) {g.compile}
-      if (a.assertion != null) {a.assertion.compile}
       a.behavior.compile
-      // do not add empty system
+      //if (a.assertion != null) {a.assertion.compile} // not a protocol?
+      // add system if it's not empty
       if (! currentSystem.empty) {
         systems.add(currentSystem)
       }
@@ -168,8 +169,9 @@ class SosADL2IOSTSGenerator implements IGenerator {
       for (d : m.duties) {
         d.compile
       }
+      //if (m.assertion != null) {m.assertion.compile}  // not a protocol?
       m.behavior.compile
-      // do not add empty system
+      // add system if it's not empty
       if (! currentSystem.empty) {
         systems.add(currentSystem)
       }
