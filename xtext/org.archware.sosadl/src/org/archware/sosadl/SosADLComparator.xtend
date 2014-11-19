@@ -34,7 +34,7 @@ import org.archware.sosadl.sosADL.Connection
 import org.archware.sosadl.sosADL.ProtocolDecl
 import org.archware.sosadl.sosADL.Protocol
 import org.archware.sosadl.sosADL.Behavior
-import org.archware.sosadl.sosADL.Assertion
+//import org.archware.sosadl.sosADL.Assertion
 import org.archware.sosadl.sosADL.ProtocolStatement
 import org.archware.sosadl.sosADL.BehaviorStatement
 import org.archware.sosadl.sosADL.Constituent
@@ -58,10 +58,10 @@ import org.archware.sosadl.sosADL.Sequence
 import org.archware.sosadl.sosADL.Field
 import org.archware.sosadl.sosADL.TupleElement
 import org.archware.sosadl.sosADL.Action
-import org.archware.sosadl.sosADL.Always
-import org.archware.sosadl.sosADL.Anynext
-import org.archware.sosadl.sosADL.BinaryAssertion
-import org.archware.sosadl.sosADL.UnaryAssertion
+//import org.archware.sosadl.sosADL.Always
+//import org.archware.sosadl.sosADL.Anynext
+//import org.archware.sosadl.sosADL.BinaryAssertion
+//import org.archware.sosadl.sosADL.UnaryAssertion
 import org.archware.sosadl.sosADL.ActionSuite
 import org.archware.sosadl.sosADL.ReceiveAction
 import org.archware.sosadl.sosADL.SendAction
@@ -268,13 +268,13 @@ class SosADLComparator {
 	
 	def static compare(TupleElement l, TupleElement r) { l.label.equals(r.label) && compareExpression(l.value, r.value) }
 
-	def static dispatch boolean compareAssertion(Action l, Action r)					{ compare(l.complexName, r.complexName) && compareActionSuite(l.suite, r.suite) }
-	def static dispatch boolean compareAssertion(Always l, Always r)					{ compareAssertion(l.expression, r.expression) }
-	def static dispatch boolean compareAssertion(Anynext l, Anynext r)					{ compareAssertion(l.expression, r.expression) }
-	def static dispatch boolean compareAssertion(BinaryAssertion l, BinaryAssertion r)	{ compareAssertion(l.left, r.left) && l.op.equals(r.op) && compareAssertion(l.right, r.right) }
-	def static dispatch boolean compareAssertion(Expression l, Expression r)			{ compareExpression(l, r) }
-	def static dispatch boolean compareAssertion(UnaryAssertion l, UnaryAssertion r)	{ l.op.equals(r.op) && compareAssertion(l.right, r.right) }
-	def static dispatch boolean compareAssertion(Assertion l, Assertion r)				{ false }
+	//def static dispatch boolean compareAssertion(Action l, Action r)					{ compare(l.complexName, r.complexName) && compareActionSuite(l.suite, r.suite) }
+	//def static dispatch boolean compareAssertion(Always l, Always r)					{ compareAssertion(l.expression, r.expression) }
+	//def static dispatch boolean compareAssertion(Anynext l, Anynext r)					{ compareAssertion(l.expression, r.expression) }
+	//def static dispatch boolean compareAssertion(BinaryAssertion l, BinaryAssertion r)	{ compareAssertion(l.left, r.left) && l.op.equals(r.op) && compareAssertion(l.right, r.right) }
+	//def static dispatch boolean compareAssertion(Expression l, Expression r)			{ compareExpression(l, r) }
+	//def static dispatch boolean compareAssertion(UnaryAssertion l, UnaryAssertion r)	{ l.op.equals(r.op) && compareAssertion(l.right, r.right) }
+	//def static dispatch boolean compareAssertion(Assertion l, Assertion r)				{ false }
 
 	def static dispatch boolean compareActionSuite(ReceiveAction l, ReceiveAction r)	{ l.variable.equals(r.variable) }
 	def static dispatch boolean compareActionSuite(SendAction l, SendAction r)			{ compareExpression(l.expression, r.expression) }
