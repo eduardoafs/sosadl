@@ -352,7 +352,8 @@ BooleanUnaryOp: 'not';
 
 ArithmeticUnaryOp:	'+' | '-';
 
-// Assertions
+/*
+// Assertions are not used anymore
 
 Assertion:
 	BinaryAssertion0
@@ -402,5 +403,6 @@ FinalAssertion returns Assertion:
 	| {Always} 'always' '{' expression=Assertion '}'
 	| {Anynext} 'anynext' '{' expression=Assertion '}'
 ;
+*/
 
 // the end.
