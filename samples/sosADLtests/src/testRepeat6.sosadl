@@ -1,4 +1,5 @@
-// ok
+// KO: the iosts translation is ok.
+// but STG doesn't accept the syntax "if 1=1" ("Compilation Error: line 129 Binop typing error")
  
 library testRepeat6 is {
   
@@ -12,7 +13,7 @@ library testRepeat6 is {
       protocol gate1protocol is {
         value data = 0
         repeat{
-          if (true) then {
+          if (1 = 1) then {
             via gate1::connection1 receive any
           }
           else{
@@ -25,7 +26,7 @@ library testRepeat6 is {
     behavior test is {
       value data = 0
       repeat{
-          if (true) then {
+          if (1 = 1) then {
             via gate1::connection1 receive data
           }
           else{

@@ -10,7 +10,7 @@ library testIfThenElse3 is {
       connection connection1 is in{type1}
     } guarantee {
       protocol gate1protocol is {
-        if (true) then {
+        if (1 = 1) then {
           via gate1::connection1 receive any
         } else {
           via gate1::connection1 receive any
@@ -20,7 +20,7 @@ library testIfThenElse3 is {
     }
     
     behavior test is {
-      if (true) then {
+      if (1 = 1) then {
         via gate1::connection1 receive data1
       } else {
         via gate1::connection1 receive data2
