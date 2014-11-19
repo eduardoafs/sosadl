@@ -1,6 +1,4 @@
 // ok: the iosts translation is ok.
-
-// BUG! An expression in the protocol makes the Pretty printer crash with a null pointer exception...
  
 library testChoose3 is {
   
