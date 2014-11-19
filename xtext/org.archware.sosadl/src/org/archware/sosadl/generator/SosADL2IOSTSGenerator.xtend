@@ -344,9 +344,11 @@ class SosADL2IOSTSGenerator implements IGenerator {
         val int final=currentProcess.newState()
         var IOstsTransition action = new IOstsTransition(startState,final)
         var String channel=a.complexName.compile.toString
-        if (a.suite instanceof SendAction) {
+        val IOstsGate gate=currentSystem.gatesMap.get(channel)
+        if (gate == null) {
+            System.err.println("Warning! Channel '"+channel+"' not declared! Ignoring statement...")
+        } else if (a.suite instanceof SendAction) {
             val parameter=currentProcess.newParameter()
-            val IOstsGate gate=currentSystem.gatesMap.get(channel)
             if (gate.mode == "inout") {
                 if (! currentProcess.inoutputMap.containsKey(channel)) {
                     currentProcess.addInoutput(channel, gate.typeName)
@@ -366,7 +368,6 @@ class SosADL2IOSTSGenerator implements IGenerator {
         } else if (a.suite instanceof ReceiveAction) {
             val variable=(a.suite as ReceiveAction).variable
             val parameter=variable+"_data"
-            val IOstsGate gate=currentSystem.gatesMap.get(channel)
             if (gate.mode == "inout") {
                 if (! currentProcess.inoutputMap.containsKey(channel)) {
                     currentProcess.addInoutput(channel, gate.typeName)
@@ -400,9 +401,11 @@ class SosADL2IOSTSGenerator implements IGenerator {
         val int final=currentProcess.newState()
         var IOstsTransition action = new IOstsTransition(startState,final)
         var String channel=a.complexName.compile.toString
-        if (a.suite instanceof SendProtocolAction) {
+        val IOstsGate gate=currentSystem.gatesMap.get(channel)
+        if (gate == null) {
+            System.err.println("Warning! Channel '"+channel+"' not declared! Ignoring statement...")
+        } else if (a.suite instanceof SendProtocolAction) {
             val parameter=currentProcess.newParameter()
-            val IOstsGate gate=currentSystem.gatesMap.get(channel)
             if (gate.mode == "inout") {
                 if (! currentProcess.inoutputMap.containsKey(channel)) {
                     currentProcess.addInoutput(channel, gate.typeName)
@@ -440,7 +443,6 @@ class SosADL2IOSTSGenerator implements IGenerator {
         } else if (a.suite instanceof ReceiveProtocolAction) { 
             val variable=(a.suite as ReceiveProtocolAction).variable
             val parameter=variable+"_data"
-            val IOstsGate gate=currentSystem.gatesMap.get(channel)
             if (gate.mode == "inout") {
                 if (! currentProcess.inoutputMap.containsKey(channel)) {
                     currentProcess.addInoutput(channel, gate.typeName)
@@ -466,7 +468,6 @@ class SosADL2IOSTSGenerator implements IGenerator {
         } else if (a.suite instanceof ReceiveAnyProtocolAction) {
             val variable="any_s"+startState
             val parameter=variable+"_data"
-            val IOstsGate gate=currentSystem.gatesMap.get(channel)
             if (gate.mode == "inout") {
                 if (! currentProcess.inoutputMap.containsKey(channel)) {
                     currentProcess.addInoutput(channel, gate.typeName)
@@ -954,18 +955,18 @@ class SosADL2IOSTSGenerator implements IGenerator {
 	
 	def compile(Sequence s)'''sequence{«s.elements.map[compile].join(", ")»}'''
 
-    def CharSequence compile(Expression e)'''«
+    def compile(Expression e)'''«
 	IF e instanceof BinaryExpression»«(e as BinaryExpression).compile»«
-	ELSEIF e instanceof UnaryExpression» «(e as UnaryExpression).op» «(e as UnaryExpression).right.compile»«
+	ELSEIF e instanceof UnaryExpression»«(e as UnaryExpression).compile»«
 	ELSEIF e instanceof Binding»«(e as Binding).compile»«
 	ELSEIF e instanceof CallExpression»«(e as CallExpression).compile»«
-	ELSEIF e instanceof IdentExpression»«(e as IdentExpression).ident»«
-	ELSEIF e instanceof UnobservableValue»unobservable«
-	ELSEIF e instanceof Any»any«
+	ELSEIF e instanceof IdentExpression»«(e as IdentExpression).compile»«
+	ELSEIF e instanceof UnobservableValue»«(e as UnobservableValue).compile»«
+	ELSEIF e instanceof Any»«(e as Any).compile»«
     ELSEIF e instanceof Tuple»«(e as Tuple).compile»«
     ELSEIF e instanceof Sequence»«(e as Sequence).compile»«
     ELSEIF e instanceof IntegerValue»«(e as IntegerValue).compile»«
-    ELSEIF e instanceof Field»«(e as Field).object.compile».«(e as Field).field»«
+    ELSEIF e instanceof Field»«(e as Field).compile»«
     ELSEIF e instanceof Select»«(e as Select).compile»«
     ELSEIF e instanceof Map»«(e as Map).compile»«
     ELSEIF e instanceof MethodCall»«(e as MethodCall).compile»«
@@ -988,6 +989,12 @@ class SosADL2IOSTSGenerator implements IGenerator {
             default: e.compile
         }
     }
+    
+    def compile(IdentExpression e)'''«e.ident»'''
+    
+    def compile(UnobservableValue u)'''unobservable'''
+    
+    def compile(Field e)'''«e.object.compile».«(e as Field).field»'''
 	
 	def compile(CallExpression e)'''«
 	e.function»(«e.parameters.map[compile].join(", ")»)'''
@@ -1001,8 +1008,9 @@ class SosADL2IOSTSGenerator implements IGenerator {
 	def compile(MethodCall e)'''«
 	e.object.compile».«e.method»(«e.parameters.map[compile].join(", ")»)'''
 	
-    def compile(UnaryExpression u)'''«u.op» «u.right.compile»'''
+    def compile(UnaryExpression u)''' «u.op» «u.right.compile»'''
     
+    /*
     def CharSequence compile(Assertion a)'''«
 	IF a instanceof BinaryAssertion»«(a as BinaryAssertion).compile»«
 	ELSEIF a instanceof UnaryAssertion» «(a as UnaryAssertion).op» «(a as UnaryAssertion).right.compile»«
@@ -1027,6 +1035,7 @@ class SosADL2IOSTSGenerator implements IGenerator {
     def compile(Always a)'''always(«a.expression.compile»)'''
     
     def compile(Anynext a)'''anynext(«a.expression.compile»)'''
+    */
     
     /*
      * TypeName generator: returns a new unused type id
