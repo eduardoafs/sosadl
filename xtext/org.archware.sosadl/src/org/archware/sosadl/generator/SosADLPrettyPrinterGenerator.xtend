@@ -218,13 +218,11 @@ class SosADLPrettyPrinterGenerator implements IGenerator {
 	'''
 	
 	def compile(IfThenElseProtocol i)'''
-    if «i.condition.compile» then {
-      «i.ifTrue.compile»
-    }«IF i.ifFalse != null» else {
-      «i.ifFalse.compile»
-    }
+    if «i.condition.compile» then «i.ifTrue.compile»«
+    IF i.ifFalse != null»
+    else «i.ifFalse.compile»
     «ENDIF»
-	'''
+    '''
 	
 	def compile(ChooseProtocol c)'''
     choose «c.branches.map[compile].join("or ")»
@@ -470,23 +468,32 @@ class SosADLPrettyPrinterGenerator implements IGenerator {
 	
 	def compile(Sequence s)'''sequence{«s.elements.map[compile].join(", ")»}'''
 
-    def CharSequence compile(Expression e)'''«
-	IF e instanceof BinaryExpression»(«(e as BinaryExpression).left.compile») «(e as BinaryExpression).op» («(e as BinaryExpression).right.compile»)«
-	ELSEIF e instanceof UnaryExpression» «(e as UnaryExpression).op» («(e as UnaryExpression).right.compile»)«
+    def compile(Expression e)'''«
+	//IF e instanceof BinaryExpression»(«(e as BinaryExpression).left.compile») «(e as BinaryExpression).op» («(e as BinaryExpression).right.compile»)«
+	IF e instanceof BinaryExpression»(«(e as BinaryExpression).compile»)«
+    ELSEIF e instanceof UnaryExpression»«(e as UnaryExpression).compile»«
 	ELSEIF e instanceof Binding»«(e as Binding).compile»«
 	ELSEIF e instanceof CallExpression»«(e as CallExpression).compile»«
-	ELSEIF e instanceof IdentExpression»«(e as IdentExpression).ident»«
-	ELSEIF e instanceof UnobservableValue»unobservable«
-	ELSEIF e instanceof Any»any«
+	ELSEIF e instanceof IdentExpression»«(e as IdentExpression).compile»«
+	ELSEIF e instanceof UnobservableValue»«(e as UnobservableValue).compile»«
+	ELSEIF e instanceof Any»«(e as Any).compile»«
     ELSEIF e instanceof Tuple»«(e as Tuple).compile»«
     ELSEIF e instanceof Sequence»«(e as Sequence).compile»«
     ELSEIF e instanceof IntegerValue»«(e as IntegerValue).compile»«
     ELSEIF e instanceof CallExpression»«(e as CallExpression).compile»«
-    ELSEIF e instanceof Field»«(e as Field).object.compile»::«(e as Field).field»«
+    ELSEIF e instanceof Field»«(e as Field).compile»«
     ELSEIF e instanceof Select»«(e as Select).compile»«
     ELSEIF e instanceof Map»«(e as Map).compile»«
     ELSEIF e instanceof MethodCall»«(e as MethodCall).compile»«
 	ENDIF»'''
+	
+	def compile(BinaryExpression e)'''(«e.left.compile») «e.op» («e.right.compile»)'''
+	
+	def compile(UnaryExpression e)''' «e.op» («e.right.compile»)'''
+	
+	def compile(IdentExpression e)'''«e.ident»'''
+	
+	def compile(Field e)'''«e.object.compile»::«e.field»'''
 	
 	def compile(CallExpression e)'''«
 	e.function»(«e.parameters.map[compile].join(", ")»)'''
@@ -500,9 +507,10 @@ class SosADLPrettyPrinterGenerator implements IGenerator {
 	def compile(MethodCall e)'''«
 	e.object.compile»::«e.method»(«e.parameters.map[compile].join(", ")»)'''
 	
-    def compile(UnaryExpression u)'''«u.op» «u.right.compile»'''
-    
-    def CharSequence compile(Assertion a)'''«
+	def compile(UnobservableValue u)'''unobservable'''
+	
+    /* Assertion rules are not used anymore
+    def compile(Assertion a)'''«
 	IF a instanceof BinaryAssertion»(«(a as BinaryAssertion).left.compile») «(a as BinaryAssertion).op» («(a as BinaryAssertion).right.compile»)«
 	ELSEIF a instanceof UnaryAssertion» «(a as UnaryAssertion).op» («(a as UnaryAssertion).right.compile»)«
 	ELSEIF a instanceof Expression»«(a as Expression).compile»«
@@ -516,4 +524,5 @@ class SosADLPrettyPrinterGenerator implements IGenerator {
     def compile(Always a)'''always {«a.expression.compile»}'''
     
     def compile(Anynext a)'''anynext {«a.expression.compile»}'''
+    */
 }
