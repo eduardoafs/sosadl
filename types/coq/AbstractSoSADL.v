@@ -84,7 +84,7 @@ with systemDecl: Set :=
 | SystemDecl: string -> list formalParameter -> list datatypeDecl -> list gateDecl -> behaviorDecl -> option assertionDecl -> systemDecl
 
 with mediatorDecl: Set :=
-| MediatorDecl: string -> list formalParameter -> list datatypeDecl -> list dutyDecl -> behaviorDecl -> mediatorDecl
+| MediatorDecl: string -> list formalParameter -> list datatypeDecl -> list dutyDecl -> behaviorDecl -> option assumptionDecl -> option assertionDecl -> mediatorDecl
 
 with architectureDecl: Set :=
 | ArchitectureDecl: string -> list formalParameter -> list datatypeDecl -> list gateDecl -> archBehaviorDecl -> assertionDecl -> architectureDecl
@@ -132,6 +132,8 @@ with elementInConstituent: Set :=
 | ElementInConstituent: string -> string -> elementInConstituent
 
 with assertionDecl: Set := (** %\todo{%TBD%}% *)
+
+with assumptionDecl: Set := (** %\todo{%TBD%}% *)
 
 with protocolDecl: Set := (** %\todo{%TBD%}% *)
 
@@ -275,7 +277,7 @@ Definition name_of_systemDecl s :=
 
 Definition name_of_mediatorDecl s :=
   match s with
-    | MediatorDecl name _ _ _ _ => name
+    | MediatorDecl name _ _ _ _ _ _ => name
   end.
 
 Definition name_of_architectureDecl s :=

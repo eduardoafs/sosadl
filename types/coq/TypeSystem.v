@@ -379,36 +379,36 @@ in order by the set rules for [type_mediatorblock].%}% *)
 
 with type_mediator: env -> AST.mediatorDecl -> Prop :=
 | type_MediatorDecl:
-    forall Gamma name params datatypes duties b,
+    forall Gamma name params datatypes duties b assump assert,
       (for each p of params, type (AST.type_of_formalParameter p) well typed in Gamma)
-        /\ (mediatorblock (AST.MediatorDecl name nil datatypes duties b)
+        /\ (mediatorblock (AST.MediatorDecl name nil datatypes duties b assump assert)
                          well typed in (env_add_params params Gamma))
       ->
-      mediator (AST.MediatorDecl name params datatypes duties b) well typed in Gamma
+      mediator (AST.MediatorDecl name params datatypes duties b assump assert) well typed in Gamma
 
 with type_mediatorblock: env -> AST.mediatorDecl -> Prop :=
 | type_MediatorDecl_datatype:
-    forall Gamma name d l duties bhv,
+    forall Gamma name d l duties bhv assump assert,
       (typedecl d well typed in Gamma)
-      /\ (mediatorblock (AST.MediatorDecl name nil l duties bhv)
+      /\ (mediatorblock (AST.MediatorDecl name nil l duties bhv assump assert)
                        well typed in Gamma[AST.name_of_datatypeDecl d <- EType d])
       ->
-      mediatorblock (AST.MediatorDecl name nil (d::l) duties bhv) well typed in Gamma
+      mediatorblock (AST.MediatorDecl name nil (d::l) duties bhv assump assert) well typed in Gamma
 
 | type_MediatorDecl_duty:
-    forall Gamma name d l bhv,
+    forall Gamma name d l bhv assump assert,
       (duty d well typed in Gamma)
-      /\ (mediatorblock (AST.MediatorDecl name nil nil l bhv)
+      /\ (mediatorblock (AST.MediatorDecl name nil nil l bhv assump assert)
                        well typed in Gamma[AST.name_of_dutyDecl d
                                        <- EGateOrDuty (build_duty_env d)])
       ->
-      mediatorblock (AST.MediatorDecl name nil nil (d::l) bhv) well typed in Gamma
+      mediatorblock (AST.MediatorDecl name nil nil (d::l) bhv assump assert) well typed in Gamma
 
 | type_MediatorDecl_Behavior:
-    forall Gamma name bhv,
+    forall Gamma name bhv assump assert,
       (behavior bhv well typed in Gamma)
       ->
-      mediatorblock (AST.MediatorDecl name nil nil nil bhv) well typed in Gamma
+      mediatorblock (AST.MediatorDecl name nil nil nil bhv assump assert) well typed in Gamma
 
 (** ** Architecture *)
 
