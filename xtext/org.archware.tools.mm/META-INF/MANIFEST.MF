@@ -1,0 +1,13 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Mm
+Bundle-SymbolicName: org.archware.tools.mm;singleton:=true
+Bundle-Version: 1.0.0.alpha
+Bundle-Activator: org.archware.tools.mm.Activator
+Require-Bundle: org.eclipse.ui,
+ org.eclipse.core.runtime,
+ org.eclipse.emf.ecore.xmi,
+ org.eclipse.core.resources,
+ org.eclipse.xtend.lib;bundle-version="2.7.2"
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Bundle-ActivationPolicy: lazy
