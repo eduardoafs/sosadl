@@ -1,4 +1,4 @@
-AbstractSoSADL.v
+SosADL.v
 Environment.v
 Interpretation.v
 SubTyping.v

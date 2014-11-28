@@ -1,4 +1,6 @@
-Require Import AbstractSoSADL.
+Require SosADL.
+
+Module AST := SosADL.
 
 (**
 %
@@ -9,7 +11,7 @@ Require Import AbstractSoSADL.
 
 (** * Subtyping relation *)
 
-Inductive subtype: AST.datatype -> AST.datatype -> Prop :=
+Inductive subtype: AST.t_DataType -> AST.t_DataType -> Prop :=
 | subtype_refl: forall t, t < t
 
 (** %\todo{%TBD%}% *)

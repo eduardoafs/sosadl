@@ -1,12 +1,14 @@
-Require Import AbstractSoSADL.
+Require SosADL.
 Require Import BinInt.
 Require Import String.
+
+Module AST := SosADL.
 
 (** * General interpretation outcome *)
 
 Inductive interpretation {A: Set}: Set :=
 | Interpreted: A -> interpretation
-| Failed: AST.expression -> AST.expression -> interpretation.
+| Failed: AST.t_Expression -> AST.t_Expression -> interpretation.
 
 (** * An interpretation function in [Z] *)
 
@@ -15,10 +17,10 @@ interger values and arithmetic operations. *)
 
 Local Open Scope string_scope.
 
-Fixpoint interp_in_Z (e: AST.expression) {struct e} :=
+Fixpoint interp_in_Z (e: AST.t_Expression) {struct e} :=
   match e with
-    | AST.IntegerValue x => Interpreted x
-    | AST.UnaryExpression op x =>
+    | AST.IntegerValue (Some x) => Interpreted x
+    | AST.UnaryExpression (Some op) (Some x) =>
       match match op with
               | "-" => Some Z.opp
               | "+" => Some id
@@ -31,7 +33,7 @@ Fixpoint interp_in_Z (e: AST.expression) {struct e} :=
           end
         | None => Failed e e
       end
-    | AST.BinaryExpression l op r =>
+    | AST.BinaryExpression (Some l) (Some op) (Some r) =>
       match match op with
               | "+" => Some Z.add
               | "-" => Some Z.sub
@@ -60,7 +62,7 @@ Fixpoint interp_in_Z (e: AST.expression) {struct e} :=
 translating the SoSADL expression to [Z], then use the evaluation and
 decision tools of this Coq library. *)
 
-Inductive expression_le: AST.expression -> AST.expression -> Prop :=
+Inductive expression_le: AST.t_Expression -> AST.t_Expression -> Prop :=
 | In_Z: forall l zl r zr,
           interp_in_Z l = Interpreted zl
           -> interp_in_Z r = Interpreted zr
