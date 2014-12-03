@@ -49,9 +49,9 @@ class XtendGeneratorGenerator extends MyAbstractGenerator {
 					return «"'''"»(Some «"«"»gen.apply(t)»)«"'''"»
 				}
 			}
-			
-			def <T> _generateL(List<T> t, Function1<? super T, ? extends CharSequence> gen) «"'''"»[l.map[gen].join("; ")]«"'''"»
-			
+
+			def <T> _generateL(List<T> l, Function1<? super T, ? extends CharSequence> gen) «"'''"»[«"«"»l.map(gen).join("; ")»]«"'''"»
+
 			def generatebool(boolean b) {
 				if (b) {
 					return "true"
