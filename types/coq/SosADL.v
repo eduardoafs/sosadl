@@ -542,3 +542,9 @@ Definition Valuing_Valuing_expression x :=
 	| Valuing_Valuing _ _ y => y
 	end.
 
+(*
+Local Variables:
+mode: coq
+coding: utf-8
+End:
+ *)

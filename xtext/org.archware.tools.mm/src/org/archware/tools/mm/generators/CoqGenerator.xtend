@@ -32,6 +32,12 @@ class CoqGenerator extends MyAbstractGenerator {
 		
 		«cases.filter[t, ctors | ctors.size == 1].entrySet.map[generateAccessors].join(lineSeparator)»
 		
+		(*
+		Local Variables:
+		mode: coq
+		coding: utf-8
+		End:
+		 *)
 	'''
 
 	def generateEnum(EEnum e) '''
