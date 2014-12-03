@@ -405,4 +405,8 @@ FinalAssertion returns Assertion:
 ;
 */
 
+HiddenBooleanType returns DataType:
+	{BooleanType}
+;
+
 // the end.
