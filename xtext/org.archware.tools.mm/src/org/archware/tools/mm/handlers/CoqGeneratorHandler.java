@@ -10,8 +10,10 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.archware.tools.mm.generators.CoqGenerator;
+import org.archware.tools.mm.generators.XtendGeneratorGenerator;
 import org.archware.tools.mm.tools.Loader;
 import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
@@ -21,13 +23,16 @@ import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.Path;
+import org.eclipse.emf.codegen.ecore.genmodel.GenPackage;
 import org.eclipse.emf.common.util.EList;
+import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EClassifier;
 import org.eclipse.emf.ecore.EEnum;
 import org.eclipse.emf.ecore.EPackage;
 import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.emf.ecore.EcorePackage;
+import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
@@ -58,98 +63,22 @@ public class CoqGeneratorHandler extends AbstractHandler {
 
 		if (firstElement instanceof IFile) {
 			IFile file = (IFile) firstElement;
-			EPackage pkg = Loader.load(file.getLocationURI().toString());
-			EList<EClassifier> classifiers = pkg.getEClassifiers();
-
-			// Only classes and enumeration types
-			if (classifiers
-					.stream()
-					.filter((i) -> !(i instanceof EEnum || i instanceof EClass))
-					.count() == 0l) {
-				// Collect enumeration types
-				List<EEnum> enums = classifiers.stream()
-						.filter((i) -> i instanceof EEnum)
-						.map((i) -> (EEnum) i).collect(Collectors.toList());
-
-				// Collect the classes
-				Collection<EClass> classes = classifiers.stream()
-						.filter((i) -> i instanceof EClass)
-						.map((i) -> (EClass) i).collect(Collectors.toList());
-
-				Map<String, EClass> namedClasses = new TreeMap<>();
-				Map<String, Set<String>> subclasses = new TreeMap<>();
-				Map<String, Set<String>> cases = new TreeMap<>();
-
-				// Build a map from class name to class
-				classes.forEach((i) -> {
-					namedClasses.put(i.getName(), i);
-					subclasses.put(i.getName(), new TreeSet<>());
-					cases.put(i.getName(), new TreeSet<>());
-				});
-				// Collect all the subclasses of each class
-				classes.forEach((i) -> i.getEAllSuperTypes().forEach(
-						(j) -> subclasses.get(j.getName()).add(i.getName())));
-				// Constructors are classes with no subclass
-				Set<String> constructors = subclasses.entrySet().stream()
-						.filter((i) -> i.getValue().isEmpty())
-						.map(Map.Entry<String, Set<String>>::getKey)
-						.collect(Collectors.toSet());
-				// Collect case classes:
-				// 1) for each class with subclasses, the case classes are
-				// subclasses that are constructors
-				constructors
-						.stream()
-						.map(namedClasses::get)
-						.forEach(
-								(i) -> i.getEAllSuperTypes()
-										.stream()
-										.forEach(
-												(j) -> cases.get(j.getName())
-														.add(i.getName())));
-				// 2) constructors with no super class are single-case case
-				// classes
-				constructors.stream().map(namedClasses::get)
-						.filter((i) -> i.getEAllSuperTypes().isEmpty())
-						.map(EClass::getName)
-						.forEach((i) -> cases.get(i).add(i));
-				// 3) constructors that appear as the type of a structural
-				// feature of a constructor are single-case classes
-				constructors.stream().map(namedClasses::get)
-						.map(EClass::getEAllStructuralFeatures)
-						.flatMap(Collection<EStructuralFeature>::stream)
-						.map(EStructuralFeature::getEType)
-						.map(EClassifier::getName)
-						.filter(constructors::contains)
-						.forEach((i) -> cases.get(i).add(i));
-
-				cases.entrySet().stream().filter((i) -> i.getValue().isEmpty())
-						.map(Map.Entry<String, Set<String>>::getKey)
-						.collect(Collectors.toList()).forEach(cases::remove);
-
-				if (checkForLiteralOrClassifier(enums, namedClasses, cases,
-						constructors)) {
-					// Everything is OK, all the types involved in structural
-					// features are either:
-					// - one of enums
-					// - one of case classes
-					// - one literal, either EBoolean, EInt or EString
-					writeCoqFile(event, file, classifiers, enums, namedClasses,
-							cases);
-				} else {
-					IWorkbenchWindow window = HandlerUtil
-							.getActiveWorkbenchWindowChecked(event);
-					MessageDialog
-							.openError(
-									window.getShell(),
-									"Mm",
-									"Some structural features are neither EString, EInt, EBoolean, nor any of the meta-model classifiers");
-				}
-			} else {
+			try {
+				handleOneFile(event, file);
+			} catch (NonEnumNonClassClassifierException e) {
 				IWorkbenchWindow window = HandlerUtil
 						.getActiveWorkbenchWindowChecked(event);
 				MessageDialog
 						.openError(window.getShell(), "Mm",
 								"The meta-model contains some non-enum non-class classifiers");
+			} catch (MmTypeNotSupported e) {
+				IWorkbenchWindow window = HandlerUtil
+						.getActiveWorkbenchWindowChecked(event);
+				MessageDialog
+						.openError(
+								window.getShell(),
+								"Mm",
+								"Some structural features are neither EString, EInt, EBoolean, nor any of the meta-model classifiers");
 			}
 		} else {
 			IWorkbenchWindow window = HandlerUtil
@@ -159,6 +88,127 @@ public class CoqGeneratorHandler extends AbstractHandler {
 		}
 
 		return null;
+	}
+
+	private void handleOneFile(ExecutionEvent event, IFile file)
+			throws ExecutionException, MmTypeNotSupported,
+			NonEnumNonClassClassifierException {
+		GenPackage genPackage = Loader.loadGenPackage(new ResourceSetImpl(),
+				URI.createURI(file.getLocationURI().toString()));
+		EPackage pkg = genPackage.getEcorePackage();
+		EList<EClassifier> classifiers = pkg.getEClassifiers();
+
+		// Only classes and enumeration types
+		if (classifiers.stream()
+				.filter((i) -> !(i instanceof EEnum || i instanceof EClass))
+				.count() == 0l) {
+			// Collect enumeration types
+			List<EEnum> enums = classifiers.stream()
+					.filter((i) -> i instanceof EEnum).map((i) -> (EEnum) i)
+					.collect(Collectors.toList());
+
+			// Collect the classes
+			Collection<EClass> classes = classifiers.stream()
+					.filter((i) -> i instanceof EClass).map((i) -> (EClass) i)
+					.collect(Collectors.toList());
+
+			Map<String, EClass> namedClasses = new TreeMap<>();
+			Map<String, Set<String>> subclasses = new TreeMap<>();
+			Map<String, Set<String>> cases = new TreeMap<>();
+
+			// Build a map from class name to class
+			classes.forEach((i) -> {
+				namedClasses.put(i.getName(), i);
+				subclasses.put(i.getName(), new TreeSet<>());
+				cases.put(i.getName(), new TreeSet<>());
+			});
+			// Collect all the subclasses of each class
+			classes.forEach((i) -> i.getEAllSuperTypes().forEach(
+					(j) -> subclasses.get(j.getName()).add(i.getName())));
+			// Constructors are classes with no subclass
+			Set<String> constructors = subclasses.entrySet().stream()
+					.filter((i) -> i.getValue().isEmpty())
+					.map(Map.Entry<String, Set<String>>::getKey)
+					.collect(Collectors.toSet());
+			// Collect case classes:
+			// 1) for each class with subclasses, the case classes are
+			// subclasses that are constructors
+			constructors
+					.stream()
+					.map(namedClasses::get)
+					.forEach(
+							(i) -> i.getEAllSuperTypes()
+									.stream()
+									.forEach(
+											(j) -> cases.get(j.getName()).add(
+													i.getName())));
+			// 2) constructors with no super class are single-case case
+			// classes
+			constructors.stream().map(namedClasses::get)
+					.filter((i) -> i.getEAllSuperTypes().isEmpty())
+					.map(EClass::getName).forEach((i) -> cases.get(i).add(i));
+			// 3) constructors that appear as the type of a structural
+			// feature of a constructor are single-case classes
+			constructors.stream().map(namedClasses::get)
+					.map(EClass::getEAllStructuralFeatures)
+					.flatMap(Collection<EStructuralFeature>::stream)
+					.map(EStructuralFeature::getEType)
+					.map(EClassifier::getName).filter(constructors::contains)
+					.forEach((i) -> cases.get(i).add(i));
+
+			cases.entrySet().stream().filter((i) -> i.getValue().isEmpty())
+					.map(Map.Entry<String, Set<String>>::getKey)
+					.collect(Collectors.toList()).forEach(cases::remove);
+
+			if (checkForLiteralOrClassifier(enums, namedClasses, cases,
+					constructors)) {
+				// Everything is OK, all the types involved in
+				// structural
+				// features are either:
+				// - one of enums
+				// - one of case classes
+				// - one literal, either EBoolean, EInt or EString
+				writeCoqFile(event, file, classifiers, enums, namedClasses,
+						cases);
+				writeXtendFile(event, file, classifiers, enums, namedClasses,
+						cases, genPackage);
+			} else {
+				throw new MmTypeNotSupported(getBadTypes(enums, namedClasses,
+						cases, constructors));
+			}
+		} else {
+			throw new NonEnumNonClassClassifierException();
+		}
+	}
+
+	private void writeXtendFile(ExecutionEvent event, IFile file,
+			EList<EClassifier> classifiers, List<EEnum> enums,
+			Map<String, EClass> namedClasses, Map<String, Set<String>> cases,
+			GenPackage genPackage) throws ExecutionException {
+		IPath path = new Path(file.getRawLocation().lastSegment())
+				.removeFileExtension().addFileExtension("xtend");
+		IFile out = file.getParent().getFile(path);
+		IWorkbenchWindow window = HandlerUtil
+				.getActiveWorkbenchWindowChecked(event);
+		boolean exists = out.exists();
+		boolean doWriteCoq = !exists
+				|| MessageDialog.openConfirm(window.getShell(), "Mm",
+						"Do you want to overwrite "
+								+ out.getLocationURI().toString() + "?");
+		if (doWriteCoq) {
+			XtendGeneratorGenerator xtendGenerator = new XtendGeneratorGenerator(
+					classifiers, enums, namedClasses, cases, genPackage);
+			try (InputStream in = new ByteArrayInputStream(xtendGenerator
+					.generate().toString().getBytes("UTF-8"))) {
+				if (exists) {
+					out.setContents(in, IResource.FORCE, null);
+				} else {
+					out.create(in, IResource.FORCE | IResource.DERIVED, null);
+				}
+			} catch (IOException | CoreException e) {
+				throw new ExecutionException("Writing output", e);
+			}
+		}
 	}
 
 	private void writeCoqFile(ExecutionEvent event, IFile file,
@@ -202,6 +252,14 @@ public class CoqGeneratorHandler extends AbstractHandler {
 								cases, i));
 	}
 
+	private Collection<EClassifier> getBadTypes(List<EEnum> enums,
+			Map<String, EClass> namedClasses, Map<String, Set<String>> cases,
+			Set<String> constructors) {
+		return constructors.stream().map(namedClasses::get)
+				.flatMap((i) -> getBadTypes(enums, namedClasses, cases, i))
+				.collect(Collectors.toList());
+	}
+
 	@SuppressWarnings("unused")
 	private static void dumpBad(Collection<EEnum> enums,
 			Map<String, EClass> namedClasses, Map<String, Set<String>> cases,
@@ -222,6 +280,16 @@ public class CoqGeneratorHandler extends AbstractHandler {
 				.allMatch(
 						(j) -> isLiteralOrClassifier(enums, namedClasses,
 								cases, j));
+	}
+
+	private static Stream<EClassifier> getBadTypes(Collection<EEnum> enums,
+			Map<String, EClass> namedClasses, Map<String, Set<String>> cases,
+			EClass i) {
+		return i.getEAllStructuralFeatures()
+				.stream()
+				.map(EStructuralFeature::getEType)
+				.filter((j) -> !isLiteralOrClassifier(enums, namedClasses,
+						cases, j));
 	}
 
 	private static void dumpBad(Collection<EEnum> enums,

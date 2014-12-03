@@ -1,39 +1,42 @@
 package org.archware.tools.mm.tools;
 
+import org.eclipse.emf.codegen.ecore.genmodel.GenModel;
+import org.eclipse.emf.codegen.ecore.genmodel.GenPackage;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EPackage;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
-import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
-import org.eclipse.emf.ecore.util.BasicExtendedMetaData;
-import org.eclipse.emf.ecore.util.ExtendedMetaData;
-import org.eclipse.emf.ecore.xmi.XMLResource;
-import org.eclipse.emf.ecore.xmi.impl.EcoreResourceFactoryImpl;
 
 public class Loader {
-	public static EPackage load(URI uri) {
-		Resource.Factory.Registry.INSTANCE.getExtensionToFactoryMap().put(
-				"ecore", new EcoreResourceFactoryImpl());
-
-		ResourceSet rs = new ResourceSetImpl();
-		final ExtendedMetaData extendedMetaData = new BasicExtendedMetaData(
-				rs.getPackageRegistry());
-		rs.getLoadOptions().put(XMLResource.OPTION_EXTENDED_META_DATA,
-				extendedMetaData);
-		Resource r = rs.getResource(uri, true);
-		EObject eObject = r.getContents().get(0);
-		if (eObject instanceof EPackage) {
-			EPackage p = (EPackage) eObject;
-			rs.getPackageRegistry().put(p.getNsURI(), p);
-			return p;
-		} else {
-			// TODO class cast exception
-			return (EPackage) eObject;
+	private static GenModel loadGenModel(ResourceSet resourceset,
+			URI genModelUri) {
+		Resource genModel = resourceset.getResource(genModelUri, true);
+		for (EObject eo : genModel.getContents()) {
+			if (eo instanceof GenModel) {
+				return (GenModel) eo;
+			}
 		}
+		return null;
 	}
 
-	public static EPackage load(String uri) {
-		return load(URI.createURI(uri));
+	public static GenPackage loadGenPackage(ResourceSet resourceset,
+			URI genModelUri) {
+		GenModel genModel = loadGenModel(resourceset, genModelUri);
+		if (genModel != null) {
+			for (GenPackage genpack : genModel
+					.getAllGenPackagesWithClassifiers()) {
+				return genpack;
+			}
+		}
+		return null;
+	}
+
+	public static EPackage loadPackage(ResourceSet resourceset, URI genModelUri) {
+		GenPackage genPack = loadGenPackage(resourceset, genModelUri);
+		if (genPack != null) {
+			return genPack.getEcorePackage();
+		}
+		return null;
 	}
 }

@@ -5,7 +5,7 @@
    <extension
          point="org.eclipse.ui.commands">
       <category
-            name="Sample Category"
+            name="Coq"
             id="org.archware.tools.mm.commands.category">
       </category>
       <command
@@ -28,7 +28,7 @@
             <command
                   commandId="org.archware.tools.mm.commands.coqGenerator"
                   id="org.archware.tools.mm.menus.coqGenerator"
-                  label="Generate Coq from Ecore" style="push">
+                  label="Generate Coq and Coq generator" style="push">
             </command>
       </menuContribution>
    </extension>
