@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+
+   <extension
+         point="org.eclipse.ui.commands">
+      <category
+            name="Coq"
+            id="org.archware.sosadl.coq.commands.category">
+      </category>
+      <command
+            name="Coq translator"
+            categoryId="org.archware.sosadl.coq.commands.category"
+            id="org.archware.sosadl.coq.commands.coqTranslator">
+      </command>
+   </extension>
+   <extension
+         point="org.eclipse.ui.handlers">
+      <handler
+            commandId="org.archware.sosadl.coq.commands.coqTranslator"
+            class="org.archware.sosadl.coq.handlers.CoqTranslatorHandler">
+      </handler>
+   </extension>
+   <extension
+         point="org.eclipse.ui.menus">
+      <menuContribution
+            locationURI="popup:org.eclipse.jdt.ui.PackageExplorer">
+            <command
+                  commandId="org.archware.sosadl.coq.commands.coqTranslator"
+                  id="org.archware.sosadl.coq.menus.coqTranslator"
+                  label="Translate to Coq"
+                  style="push">
+            </command>
+      </menuContribution>
+   </extension>
+   <extension
+         point="org.eclipse.ui.menus">
+      <menuContribution
+            locationURI="popup:org.eclipse.ui.navigator.ProjectExplorer#PopupMenu?after=additions">
+            <command
+                  commandId="org.archware.sosadl.coq.commands.coqTranslator"
+                  id="org.archware.sosadl.coq.menus.coqTranslatorInProjectExplorer"
+                  label="Translate to Coq"
+                  style="push">
+            </command>
+      </menuContribution>
+   </extension>
+</plugin>
