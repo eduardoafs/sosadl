@@ -1,6 +1,5 @@
 SosADL.v
 Environment.v
 Interpretation.v
-SubTyping.v
 TypeSystem.v
 Utils.v
