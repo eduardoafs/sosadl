@@ -1,3 +1,5 @@
 #!/bin/sh
 
-coq_makefile -f _CoqProject > Makefile
+( echo '-R tests tests'; find . -name '*.v' -print ) | xargs coq_makefile > Makefile
+
+# coq_makefile -f _CoqProject > Makefile

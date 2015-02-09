@@ -1,3 +1,3 @@
 #!/bin/sh
 
-make && make 'COQDOCLIBS=-p "\usepackage{listings}"' all.pdf
+make -j2 && make 'COQDOCLIBS=-p "\usepackage{listings}"' all.pdf

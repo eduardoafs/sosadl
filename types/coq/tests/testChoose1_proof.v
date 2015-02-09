@@ -1,5 +1,5 @@
 Require Import TypeSystem.
-Require Import testChoose1.
+Require Import tests.testChoose1.
 
 Import List.
 Import AST.

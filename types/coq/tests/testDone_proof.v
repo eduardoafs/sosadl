@@ -1,5 +1,5 @@
 Require Import TypeSystem.
-Require Import testDone.
+Require Import tests.testDone.
 
 Import List.
 Import AST.
