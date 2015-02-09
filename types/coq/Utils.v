@@ -75,6 +75,7 @@ Section Decs.
   Defined.
 End Decs.
 
+(*
 Ltac decide_nodup dec :=
   match goal with
     | |- NoDup ?l =>
@@ -86,3 +87,17 @@ Ltac decide_nodup dec :=
           | H: (x = left ?P) |- _ => exact P
         end
   end.
+*)
+
+Ltac decide_nodup dec :=
+  match goal with
+    | |- NoDup ?l =>
+      match eval vm_compute in (NoDup_dec _ dec l) with
+        | left ?P => exact P
+      end
+  end.
+
+Ltac mysplit :=
+  try match goal with
+        | |- _ /\ _ => apply conj; mysplit
+      end.
