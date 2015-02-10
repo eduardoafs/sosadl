@@ -71,3 +71,10 @@ Inductive expression_le: AST.t_Expression -> AST.t_Expression -> Prop :=
 
 where "e1 <= e2" := (expression_le e1 e2)
 .
+
+Ltac decide_in_Z :=
+  match goal with
+    | |- Interpretation.expression_le ?l ?r =>
+      eapply Interpretation.In_Z;
+        [ reflexivity | reflexivity | discriminate ]
+  end.
