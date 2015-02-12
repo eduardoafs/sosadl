@@ -1,0 +1,285 @@
+with Base
+with Localization
+
+// Description of Gateway as a System Abstraction
+library WsnGateway is {
+  
+  system Gateway(lps: Coordinate) is {
+  	
+  	datatype Abscissa
+    datatype Ordinate
+    datatype Coordinate is tuple{x:Abscissa,y:Ordinate}
+    datatype Depth
+    datatype MeasureData is tuple{coordinate:Coordinate,depth:Depth}
+    
+    gate notification is {
+		  connection measure is in{MeasureData}  
+		  connection alert is out{MeasureData}  
+			// alert sent by the gateway
+	  } guarantee {
+		  protocol notificationpact is {
+			messages {
+				any_s1_data is MeasureData
+				notificationpact_p1 is MeasureData
+				}
+			variables {
+				any_s1 is MeasureData
+				}
+			states {
+				init {s0} s1 s3 s4 s6
+				}
+			transitions {
+				from s0
+					guard {lps::x > 100}
+				to s1
+
+  				from s1 // Receive any action
+    				action{via notification::measure receive any_s1_data}
+    				assignments { any_s1 := any_s1_data }
+  				to s3
+
+  				/*
+  				from s2 // Concatenation (sequentiality)
+    				action{unobservable}
+  				to s3
+  				*/
+
+				from s3 // TODO! AnyAction
+    				action{unobservable}
+  				to s4
+
+  				from s4 // Repeat loop
+    				action{unobservable}
+  				to s3
+
+  				from s3 // Repeat loop
+    				action{unobservable}
+  				to s0
+
+  				/*
+  				from s0 // Concatenation (sequentiality)
+    				action{unobservable}
+  				to s5
+  				*/
+
+  				from s0 // Send any action
+    				guard{ notificationpact_p1 = 0}  //FIXME: 0 should be an expression of parameter's type
+    				action{ via notification::alert send notificationpact_p1}
+  				to s6
+
+  				from s6 // Repeat loop
+    				action{unobservable}
+  				to s0
+		  }
+		}
+    }
+  
+   	gate request is {
+  		connection coordinate is in{Coordinate}
+      connection depth is out{Depth}
+    } guarantee {
+    	protocol requestpact is {
+    		messages {
+				any_s1_data is Coordinate
+				requestpact_p1 is integer } 
+			variables { any_s1 is Coordinate }
+			states {
+				init {s0} s1 s3 s4 s5 s6
+				}
+			transitions {
+  				from s0 // Concatenation (sequentiality)
+    				guard{true}
+  				to s1
+  				
+  				from s1 // Receive any action
+   					action{via request::coordinate receive any_s1_data}
+    				assignments { any_s1 := any_s1_data }
+  				to s3
+
+  				/*
+  				from s2 // Concatenation (sequentiality)
+    				action{unobservable}
+  				to s3
+  				*/
+
+				from s3 // TODO! AnyAction
+    				action{unobservable}
+  				to s4
+
+  				from s4 // Repeat loop
+    				action{unobservable}
+  				to s3
+
+  				from s3 // Concatenation (sequentiality)
+    				action{unobservable}
+  				to s5
+
+				from s5 // Send any action
+    				guard{ requestpact_p1 = 0 } //FIXME: 0 should be an expression of parameter's type
+    				action{via request::depth send requestpact_p1}
+  				to s6
+
+  				from s6 // Repeat loop
+    				action{unobservable}
+  				to s0
+  				}
+      
+      }
+    }
+    
+    gate location is {
+   		connection coordinate is out{Coordinate}
+  	} guarantee {
+  		protocol coordinatepact is {
+  			messages { coordinatepact_p1 is Coordinate } 
+			states { init{s0} s1 s2 }
+			transitions {
+ 				from s0 // Concatenation (sequentiality)
+			    	guard{true}
+  				to s1
+
+	  			from s1 // Send action
+    				guard{ coordinatepact_p1 = lps}
+    				action{via location::coordinate send coordinatepact_p1}
+  				to s2
+  			}
+  		}
+    }
+  
+    behavior serving is {
+		messages {
+  			serving_p1 is Coordinate
+  			measure_data is MeasureData 
+  			serving_p2 is MeasureData 
+  			query_data is Coordinate 
+  			serving_p3 is integer
+  			} 
+		variables {
+  			depththreshold is integer
+  			localbase is sequence{MeasureData}
+  			gatewaycoordinate is Coordinate
+  			measure is MeasureData
+  			query is Coordinate
+  			}
+		states {
+  			init{s0} s1 s2 s8 s10 s12 s13 s14 s15 s16 s18 s19
+  			}
+  		transitions {
+  			from s0 // Valuing
+			    guard{true}
+  			to s1
+  			
+  			from s1 // Concatenation (sequentiality)
+  				action{unobservable}
+    			assignments {depththreshold := 10,
+    				localbase := sequence{},
+    				gatewaycoordinate := lps}
+    		to s2
+  			
+  			from s2 // Assert
+    			action{unobservable}
+    			assignments {gatewaycoordinate := lps} // tell
+  			to s8
+
+/*
+  			from s1 // Concatenation (sequentiality)
+  				action{unobservable}
+    			assignments {depththreshold := 10}
+  			to s2
+
+  			from s2 // Valuing
+    			action{unobservable}
+    			assignments {localbase := sequence{}}
+  			to s3
+
+  			from s3 // Concatenation (sequentiality) 
+    			action{unobservable}
+  			to s4
+
+  			from s4 // Valuing
+    			action{unobservable}
+    			assignments {gatewaycoordinate := lps}
+  			to s5
+
+  			from s5 // Concatenation (sequentiality)
+    			action{unobservable}
+  			to s6
+
+  			from s6 // TODO! Assert
+    			action{unobservable}
+  			to s7
+
+  			from s7 // Concatenation (sequentiality)
+    			action{unobservable}
+  			to s8
+  			*/
+
+  			from s8 // Send action
+    			guard{serving_p1 = gatewaycoordinate}
+    			action{ via location::coordinate send serving_p1 }
+    		to s10
+
+/* 
+  			from s9 // Concatenation (sequentiality)
+    			action{unobservable}
+  			to s10
+*/
+  			from s10 // Receive action
+    			action{via notification::measure receive measure_data}
+    			assignments {measure := measure_data}
+  			to s12
+
+  			/*
+  			from s11 // Concatenation (sequentiality)
+    			action{unobservable}
+  			to s12
+  			
+  			*/
+
+  			from s12 // TODO! DoExpr
+    			action{unobservable}
+    			assignments{localbase := localbase::append(measure)}
+  			to s14
+/*
+  			from s13 // Concatenation (sequentiality)
+    			action{unobservable}
+  			to s14
+  			* 
+  			*/
+  			from s14 // IfThenElse (true case)
+    			guard{ measure::depth > depththreshold}
+    			action{unobservable}
+  			to s15
+
+  			from s15 // Send action
+    			guard{ serving_p2 = measure}
+    			action{via notification::alert send serving_p2}
+  			to s16
+
+  			from s10 // Receive action
+    			action{via request::coordinate receive query_data}
+    			assignments {query := query_data}
+  			to s18
+  			
+			/*
+  			from s17 // Concatenation (sequentiality)
+    			action{unobservable}
+  			to s18
+  			*/
+
+  			from s18 // Send action
+    			guard{ serving_p3 = localbase::select{measure suchthat ((measure::coordinate) = (query))}::collect{measure suchthat measure::depth}}
+    			action{via request::depth send serving_p3}
+  			to s19
+
+  			from s16 // Repeat loop
+    			action{unobservable}
+  			to s10
+
+  			from s19 // Repeat loop
+    			action{unobservable}
+  			to s10
+  			}
+  	}
+  }
+}

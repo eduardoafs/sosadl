@@ -1,0 +1,209 @@
+with Base
+with Localization
+
+// Description of Transmitter as a Mediator Abstraction
+library WsnMediator is {
+
+  mediator Transmitter(distancebetweengates:Distance) is {
+    // 'datatypes' declared in 'mediator'
+	  datatype Abscissa
+	  datatype Ordinate
+	  datatype Coordinate is tuple{x:Abscissa,y:Ordinate} {
+    	function (onecoordinate:Coordinate)::distance(othercoordinate:Coordinate):Distance is {
+      		return sqrt(sqr(onecoordinate::x-othercoordinate::x)+sqr(onecoordinate::y-othercoordinate::y))
+    	}
+  	}
+	datatype Depth
+	datatype MeasureData is tuple{coordinate:Coordinate,depth:Depth}
+	  
+	duty transmit is {
+		connection fromSensors is in{MeasureData}  
+		// measure received from a sensor
+		connection towardsGateway is out{MeasureData}  
+		// measure sent towards the gateway
+    }
+    /*
+    assume {
+      property inrange is {
+			  via location::fromCoordinate receive sendercoordinate 
+			  via location::toCoordinate receive receivercoordinate
+        ask distanceofsensors is {			
+				  sendercoordinate::distance(receivercoordinate) < distancebetweengates
+        		// the distance between the sender and 
+				    // the receiver must be smaller than 
+				    // the parameter of the mediator
+			  }
+		  }
+    }
+	*/
+    guarantee { 
+		  protocol transmitpact is {
+			messages {
+				measure_data is MeasureData 
+  				transmitpact_protocol_p1 is MeasureData
+  				}
+			variables {
+  				measure is MeasureData
+  				}
+			states { init{s0} s1 s3 s4}
+			transitions {
+  				from s0 // init
+    				guard{true}
+  				to s1
+
+  				from s1 // Receive action
+    				action{ via transmit::fromSensors receive measure_data}  // measure_data en parametre
+    				assignments{ measure := measure_data }
+  				to s3
+
+ 				/*from s2 // Concatenation (sequentiality)
+    				sync tau
+  				to s3
+  				*/
+
+  				from s3 // Send action
+    				guard {transmitpact_protocol_p1 = measure}
+    				action{via transmit::towardsGateway send transmitpact_protocol_p1}
+  				to s4
+
+  				from s4 // Repeat loop
+    				action{unobservable}
+  				to s0
+		  }
+	  }
+	}
+	  
+	// GM: added location duty, because these connections are used in the behavior, but were not declared!
+	//     Will this one fit?
+	duty location is {
+      connection fromCoordinate is in{Coordinate}
+      connection toCoordinate is in{Coordinate}
+    }
+    /*
+    assume {
+      property coordinatepact is {
+        via location::fromCoordinate receive sendercoordinate
+        via location::toCoordinate receive receivercoordinate
+      }
+    }
+    */
+    guarantee {
+      protocol coordinatepact is {
+        messages {
+        	sendercoordinate_data is Coordinate
+        	receivercoordinate_data is Coordinate
+        	} 
+		variables {
+  			sendercoordinate is Coordinate
+  			receivercoordinate is Coordinate
+  			}
+		states {
+  			init{s0} s1 s3 s4
+  			}
+		transitions {
+  			from s0 // Concatenation (sequentiality)
+    			guard{true}
+  			to s1
+
+  			from s1 // Receive action
+    			action {via location::fromCoordinate receive sendercoordinate_data}
+    			assignments{ sendercoordinate := sendercoordinate_data}
+  			to s3
+
+  			/*
+  			from s2 // Concatenation (sequentiality)
+    			sync tau
+  				to s3;
+  			*/
+
+  			from s3 // Receive action
+    			action{ via location::toCoordinate receive receivercoordinate_data}
+    			assignments{ receivercoordinate := receivercoordinate_data }
+  			to s4
+      }
+    } 
+    }
+	  
+	behavior transmitting is {
+		messages {
+  			sendercoordinate_data is Coordinate 
+  			receivercoordinate_data is Coordinate 
+  			measure_data is MeasureData
+  			transmitting_behavior_p1 is MeasureData
+  			} 
+
+		variables {
+  			sendercoordinate is Coordinate
+  			receivercoordinate is Coordinate
+  			measure is MeasureData
+  			}
+
+		states {
+  			init{s0} s1 s3 s5 s7 s9 s10
+  			}
+
+		transitions {
+			from s0
+    			guard {true}
+  			to s1
+
+  			from s1 // Receive action
+    			action {via location::fromCoordinate receive sendercoordinate_data}
+    			assignments{ sendercoordinate := sendercoordinate_data}
+  			to s3
+
+		  	/*
+		  	from s2 // Concatenation (sequentiality)
+    			sync tau
+  			to s3
+  			*/
+
+  			from s3 // Receive action
+    			action { via location::toCoordinate receive receivercoordinate_data }
+			    assignments{receivercoordinate := receivercoordinate_data}
+			to s5
+			
+			/*
+			from s4 // Concatenation (sequentiality)
+			    sync tau
+			to s5
+			*/
+			
+			from s5 // TODO! Assert
+				// A VERIFIER !!! 
+			    //ask rangeoftransmission is {sendercoordinate::distance(receivercoordinate) < distancebetweengates}
+			    guard {sendercoordinate::distance(receivercoordinate) < distancebetweengates}
+			    action {unobservable}
+			    assignments {rangeoftransmission := XXX}
+			to s7
+			
+			/*
+			from s6 // Concatenation (sequentiality)
+			    sync tau
+			to s7
+			*/
+			
+			from s7 // Receive action
+			    action { via  transmit::fromSensors receive measure_data }
+			    assignments{ measure := measure_data }
+			to s9
+			
+			/*
+			from s8 // Concatenation (sequentiality)
+			    sync tau
+			to s9
+			*/
+			
+			from s9 // Send action
+			    guard{ transmitting_behavior_p1 = measure}
+			    action { via transmit::towardsGateway send transmitting_behavior_p1}
+			to s10
+			
+			from s10 // Repeat loop
+			    action {unobservable}
+			to s7
+		}
+		}
+  }
+}
+

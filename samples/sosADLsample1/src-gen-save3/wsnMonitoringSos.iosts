@@ -1,0 +1,122 @@
+with Base
+with Localization
+
+with WsnSensor
+with WsnGateway
+with WsnMediator
+
+// Description of WsnMonitoring as an Architecture Abstraction
+sos WsnMonitoringSos is {
+	
+  architecture WnsMonitoringSosArchitecture() is {
+    
+	gate warning is {
+		  connection alert is out{MeasureData}  
+    } guarantee {
+      protocol alertpact is {
+        messages {
+  			alertpact_protocol_p1 is integer
+  			}
+		states {  init{s0} s1 s2 s3 s4}
+		transitions {
+		  from s0
+		  	guard {true}
+		  to s1
+		  
+		  from s1 // TODO! AnyAction
+		    action{unobservable}
+		  to s2
+		
+		  from s2 // Repeat loop
+		    action{unobservable}
+		  to s3
+		
+		  /*
+		  from s1 // Concatenation (sequentiality)
+		    sync tau
+		  to s3
+		  */
+		
+		  from s3 // Send any action
+		    guard {alertpact_protocol_p1 = any}  //FIXME: 0 should be an expression of parameter's type
+		    action {via warning::alert send alertpact_protocol_p1}
+		  to s4
+		
+		  from s4 // Repeat loop
+		    action{unobservable}
+		  to s1
+		  }
+      }
+    }
+    
+    gate request is {
+      connection coordinate is in{Coordinate}
+      connection depth is out{Depth}
+    } guarantee {
+      protocol requestpact is {
+		messages{
+  			any_s1_data is integer 
+  			requestpact_protocol_p1 is integer
+  			} 
+		variables {
+			any_s1 is integer
+			}
+		states { init{s0} s1 s3 s4 s5 s6 }
+		transitions {
+		  from s0
+		    guard{true}
+		  to s1
+		
+		  from s1 // Receive any action
+		    action { via request::coordinate receive any_s1_data}
+		    assignments{ any_s1 := any_s1_data }
+		  to s3
+		
+		  /*
+		  from s2 // Concatenation (sequentiality)
+		    sync tau
+		  to s3
+		  */
+		
+		  from s3 // TODO! AnyAction
+		    action {unobservable}
+		  to s4
+		
+		  from s4 // Repeat loop
+		    action {unobservable}
+		  to s3
+		
+		  from s3 // Concatenation (sequentiality)
+		    action {unobservable}
+		  to s5
+		
+		  from s5 // Send any action
+		    guard {requestpact_protocol_p1 = any}
+		    action { via request::depth send requestpact_protocol_p1}
+		  to s6
+		
+		  from s6 // Repeat loop
+		    action {unobservable}
+		  to s0
+      }
+    }
+    
+	behavior coalition is compose {
+		  sensors is sequence{Sensor}
+		  gateway is Gateway
+		  transmitters is sequence{Transmitter}
+	} binding {
+	    // TODO
+	}
+  }
+  /*
+  guarantee {
+	  property alerting is {
+		  repeat {
+			  repeat {anyaction}
+			  via notification::alert send any
+		  }
+	  }
+  }
+  */
+}

@@ -1,0 +1,335 @@
+with Base
+with Localization   // 'with' imports declarations from an already defined library
+
+// Description of Sensor as a System Abstraction
+library WsnSensor is {   
+	
+  // 'system' declares a user-defined archetype 
+  // for creating system constituents
+  system Sensor(lps: Coordinate) is {
+    
+	  // Declaration of local types – 
+	  // the scope is the system declaration
+	  // The only base type is Integer 
+	  // All types are implicitly typed by Integer 
+	  // equipped with the usual operations
+	  datatype Depth   
+		// An atomic type may be seen when needed as a 
+		// simple tuple type, e.g. tuple{:Depth}
+	  datatype RawData is 
+		  // 'datatype' declares an abstract datatype 
+		  tuple{coordinate:Coordinate,depth:Depth} {   
+		  // 'tuple' may have labels or not
+			  function (data:Rawdata)::convert():Depth is {
+				  value magnitude = 10
+				  return Depth(data/magnitude)   
+					// Depth() converts to type Depth 
+			  }
+      }
+	  datatype MeasureData is tuple{coordinate:Coordinate,depth:Depth}   
+	  datatype Energy
+	  
+ 	  // 'gate' is the interface of a system – 
+ 	  // a system may have several gates
+	  gate measurement is {   
+		// 'gate' is defined by one or several connections
+      	environment connection sense is in{RawData}   
+		// data coming from the electronic part of the 
+		// sensor device – 
+		// to be bound to the 'environment'
+      	connection pass is in{MeasureData}   
+		// measure received by the sensor from 
+		// its neighbors
+      	connection measure is out{MeasureData}   
+		// measure sent by the sensor to its neighbors
+	  } guarantee {   
+	    // 'guarantee' declares the assertions that are 
+	    // guaranteed by the behaviors through the gate
+		protocol measurementpact is {  
+			// 'protocol' defines the usage of the gate – 
+			// a gate may have several protocols
+			messages {
+  				data_data is MeasureData
+  				measurementpact_protocol_p1 is MeasureData 
+  				measurementpact_protocol_p2 is MeasureData
+  				} 
+			variables {
+  				data is MeasureData
+  				}
+			states {
+  				init{s0} s1 s2 s3 s4 s5 s6 s7 s8 s9 s10
+  				}
+			transitions {
+				  from s0 // Concatenation (sequentiality)
+    				guard{true}
+  				  to s1
+
+				  from s1 // Receive action
+				    action{ via measurement::sense receive data_data }
+				    assignments{data := data_data}
+				  to s2
+				
+				  /*
+				  from s2 // Concatenation (sequentiality)
+				    sync tau
+				  to s3
+				  */
+				
+				  from s3 // TODO! AnyAction
+				    action{ unobservable }
+				  to s4
+				
+				  from s4 // Repeat loop
+				    action{ unobservable }
+				  to s5
+				
+				  /*
+				  from s3 // Concatenation (sequentiality)
+				    sync tau
+				  to s5
+				  */
+				
+				  from s5 // Send action
+				    guard {measurementpact_protocol_p1 = tuple{coordinate=lps, depth=data::convert()}}
+				    action{ via measurement::measure send measurementpact_protocol_p1}
+				  to s7
+				
+				  /*
+				  from s0 // Concatenation (sequentiality)
+				    sync tau
+				  to s7
+				  */
+				
+				  from s7 // Receive action
+				    action{ via measurement::pass receive data_data}
+				    assignments{data := data_data}
+				  to s9
+				
+				  /*
+				  from s8 // Concatenation (sequentiality)
+				    sync tau
+				  to s9
+				  */
+				
+				  from s9 // Send action
+				    guard {measurementpact_protocol_p2 = data}
+				    action{ via measurement::measure send measurementpact_protocol_p2}
+				  to s10
+				
+				  from s6 // Repeat loop
+				    action{ unobservable }
+				  to s0
+				
+				  from s10 // Repeat loop
+				    action{ unobservable }
+				  to s0
+ 		  }
+ 	  }
+ 	}
+ 	  
+	gate energy is {
+      environment connection threshold is in{Energy}
+      environment connection power is in{Energy}
+  	} guarantee {
+			protocol energypact is {
+				messages {
+  					powerthreshold_data is integer 
+  					powerlevel_data is integer
+  					}
+				variables {
+  					powerthreshold is integer
+  					powerlevel is integer
+  					}
+				states { init{s0} s1 s3 s4}
+				transitions {
+				
+				  from s0 // Concatenation (sequentiality)
+				    guard{true}
+				  to s1
+				
+				  from s1 // Receive action
+				    action {via energy::threshold receive powerthreshold_data}
+				    assignments{ powerthreshold := powerthreshold_data }
+				  to s3
+				
+				  /*from s2 // Concatenation (sequentiality)
+				    sync tau
+				  to s3
+				  */
+				
+				  from s3 // Receive action
+				    action { via energy::power receive powerlevel_data }
+				    assignments{ powerlevel := powerlevel_data}
+				  to s4
+				
+				  from s4 // Repeat loop
+				    action {unobservable}
+				  to s3
+				  }
+ 		  }
+ 	  }
+ 	  
+	  gate location is {
+ 		  connection coordinate is out{Coordinate}
+	  } guarantee {
+			protocol coordinatepact is	{
+				messages {
+					coordinatepact_protocol_p1 is integer
+					}
+				states { init{s0} s1 s2}
+				transitions{
+				
+				  from s0 // Concatenation (sequentiality)
+				    guard {true}
+				  to s1
+				
+				  from s1 // Send action
+				    guard{ coordinatepact_protocol_p1 = lps}
+				    action { via location::coordinate send coordinatepact_protocol_p1}
+				  to s2
+				}
+			}
+ 	  }
+ 	  
+	  behavior sensing is {   
+		messages{
+  			sensing_behavior_p1 is integer 
+  			powerthreshold_data is integer 
+  			powerlevel_data is integer
+  			data_data is MeasureData 
+  			sensing_behavior_p2 is MeasureData 
+  			sensing_behavior_p3 is MeasureData
+  			} 
+		variables {
+			sensorcoordinate is integer
+			powerthreshold is integer
+			powerlevel is integer
+			data is MeasureData
+			}
+		states {
+			init{s0} s1 s2 s3 s4 s5 s6 s7 s8 s9 s10 s11 s12 s13 s14 s15 s16 s17 s18 s19
+		}
+		transitions {
+		  from s0 // Valuing
+		    guard {true}
+		  to s1
+		  
+		  from s1
+		    action {unobservable}
+		    assignments{ sensorcoordinate := lps}
+		  to s2
+		
+		  from s2 // TODO! Assert
+		    action {unobservable}
+		  to s4
+		
+		  /*
+		  from s3 // Concatenation (sequentiality)
+		    sync tau
+		  to s4
+		  */
+		
+		  from s4 // Send action
+		    guard{ sensing_behavior_p1 = sensorcoordinate}
+		    action { via location::coordinate send sensing_behavior_p1}
+		  to s5
+		
+		  /*
+		  from s5 // Concatenation (sequentiality)
+		    sync tau
+		  to s6
+		  */
+		
+		  from s6 // Receive action
+		    action { via energy::threshold receive powerthreshold_data }
+		    assignments{ powerthreshold := powerthreshold_data}
+		  to s7
+		
+		  /*
+		  from s7 // Concatenation (sequentiality)
+		    sync tau
+		  to s8
+		  */
+		
+		  from s8 // Receive action
+		    action { via energy::power receive powerlevel_data }
+		    assignments { powerlevel := powerlevel_data}
+		  to s10
+		
+		  /*
+		  from s9 // Concatenation (sequentiality)
+		    sync tau
+		  to s10
+		  */
+		
+		  from s10 // IfThenElse (true case)
+		    guard {powerlevel>powerthreshold}
+		    action{ unobservable }
+		  to s11
+		
+		  from s11 // TODO! Assert
+		    action{ unobservable }
+		  to s13
+		
+		  /*
+		  from s12 // Concatenation (sequentiality)
+		    sync tau
+		  to s13
+		  */
+		
+		  from s13 // Receive action
+		    action { via measurement::sense receive data_data}
+		    assignments {data := data_data}
+		  to s15
+		
+		  /*
+		  from s14 // Concatenation (sequentiality)
+		    sync tau
+		  to s15
+		  */
+		
+		  from s15 // Send action
+		    guard{ sensing_behavior_p2 = tuple{coordinate=lps, depth=data::convert()}}
+		    action {via measurement::measure send sensing_behavior_p2}
+		  to s16
+		
+		  from s13 // Receive action
+		    action {via measurement::pass receive data_data}
+		    assignments {data := data_data}
+		  to s18
+		
+		  /*
+		  from s17 // Concatenation (sequentiality)
+		    sync tau
+		  to s18
+		  */
+		
+		  from s18 // Send action
+		    guard {sensing_behavior_p3 = data}
+		    action {via measurement::measure send sensing_behavior_p3}
+		  to s19
+		
+		  from s16 // Repeat loop
+		    action {unobservable}
+		  to s8
+		
+		  from s19 // Repeat loop
+		    action {unobservable}
+		  to s8
+		  }
+	  }
+  }
+  /*
+  guarantee {
+	  property measuring is {
+		  // assertion using the same SosADL subset 
+		  // as properties in gates
+		  repeat{ 
+			  repeat{anyaction}
+			  via measurement::measure send any
+		  }
+	  }
+  }
+  */
+}
+
