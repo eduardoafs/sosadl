@@ -21,9 +21,7 @@ library WsnMediator is {
 		// measure received from a sensor
 		connection towardsGateway is out{MeasureData}  
 		// measure sent towards the gateway
-    }
-    /*
-    assume {
+    } assume {
       property inrange is {
 			  via location::fromCoordinate receive sendercoordinate 
 			  via location::toCoordinate receive receivercoordinate
@@ -34,9 +32,7 @@ library WsnMediator is {
 				    // the parameter of the mediator
 			  }
 		  }
-    }
-	*/
-    guarantee { 
+    } guarantee { 
 		  protocol transmitpact is {
 			messages {
 				measure_data is MeasureData 
@@ -78,16 +74,12 @@ library WsnMediator is {
 	duty location is {
       connection fromCoordinate is in{Coordinate}
       connection toCoordinate is in{Coordinate}
-    }
-    /*
-    assume {
+    } assume {
       property coordinatepact is {
         via location::fromCoordinate receive sendercoordinate
         via location::toCoordinate receive receivercoordinate
       }
-    }
-    */
-    guarantee {
+    } guarantee {
       protocol coordinatepact is {
         messages {
         	sendercoordinate_data is Coordinate

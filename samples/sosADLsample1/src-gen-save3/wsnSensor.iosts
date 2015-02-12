@@ -318,9 +318,7 @@ library WsnSensor is {
 		  to s8
 		  }
 	  }
-  }
-  /*
-  guarantee {
+  } guarantee {
 	  property measuring is {
 		  // assertion using the same SosADL subset 
 		  // as properties in gates
@@ -330,6 +328,5 @@ library WsnSensor is {
 		  }
 	  }
   }
-  */
 }
 
