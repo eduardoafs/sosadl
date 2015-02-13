@@ -887,9 +887,9 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
             first=false
         }
         comment=comment.concat("}")
-        var record=new IOstsTupleType(fieldsMap)
-        record.setComment(comment)
-        record
+        var tuple=new IOstsTupleType(fieldsMap)
+        tuple.setComment(comment)
+        tuple
     }
     
     def dispatch IOstsType computeIOstsType(RangeType t) {
@@ -1019,7 +1019,7 @@ class IOstsTupleType extends IOstsType {
     
     public val LinkedHashMap<String,IOstsType> fieldsMap   // map of (name -> type)
     
-    // private thus inaccessible, because one cannot create record without fields
+    // private thus inaccessible, because one cannot create tuple without fields
     private new() {
         fieldsMap = newLinkedHashMap() 
     }
