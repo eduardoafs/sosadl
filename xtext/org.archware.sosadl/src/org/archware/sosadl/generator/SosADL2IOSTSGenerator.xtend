@@ -887,7 +887,7 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
             first=false
         }
         comment=comment.concat("}")
-        var record=new IOstsRecordType(fieldsMap)
+        var record=new IOstsTupleType(fieldsMap)
         record.setComment(comment)
         record
     }
@@ -943,7 +943,7 @@ class IOstsType {
             IOstsIntType: this.equals(other)
             IOstsBoolType: this.equals(other)
             IOstsRangeType: this.equals(other)
-            IOstsRecordType: this.equals(other)
+            IOstsTupleType: this.equals(other)
             IOstsSequenceType: this.equals(other)
             IOstsNamedType: this.equals(other)
             default: this.equals(other)
@@ -1015,7 +1015,7 @@ class IOstsRangeType extends IOstsType {
     }
 }
 
-class IOstsRecordType extends IOstsType {
+class IOstsTupleType extends IOstsType {
     
     public val LinkedHashMap<String,IOstsType> fieldsMap   // map of (name -> type)
     
@@ -1037,7 +1037,7 @@ class IOstsRecordType extends IOstsType {
     }
     
     override def equals(IOstsType other) {
-        if (other instanceof IOstsRecordType) {
+        if (other instanceof IOstsTupleType) {
             if (other.fieldsMap.size != fieldsMap.size)
                 false
             else {
