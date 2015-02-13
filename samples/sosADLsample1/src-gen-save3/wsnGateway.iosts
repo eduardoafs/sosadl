@@ -81,7 +81,8 @@ library WsnGateway is {
     	protocol requestpact is {
     		messages {
 				any_s1_data is Coordinate
-				requestpact_p1 is integer } 
+				requestpact_p1 is integer
+				} 
 			variables { any_s1 is Coordinate }
 			states {
 				init {s0} s1 s3 s4 s5 s6
@@ -115,7 +116,7 @@ library WsnGateway is {
   				to s5
 
 				from s5 // Send any action
-    				guard{ requestpact_p1 = 0 } //FIXME: 0 should be an expression of parameter's type
+    				guard{ requestpact_p1 = 0 } /*FIXME: 0 should be an expression of parameter's type*/
     				action{via request::depth send requestpact_p1}
   				to s6
 
@@ -171,7 +172,8 @@ library WsnGateway is {
   			
   			from s1 // Concatenation (sequentiality)
   				action{unobservable}
-    			assignments {depththreshold := 10,
+    			assignments {
+    				depththreshold := 10,
     				localbase := sequence{},
     				gatewaycoordinate := lps}
     		to s2

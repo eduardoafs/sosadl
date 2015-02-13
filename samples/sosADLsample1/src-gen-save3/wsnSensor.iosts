@@ -50,8 +50,8 @@ library WsnSensor is {
 			// a gate may have several protocols
 			messages {
   				data_data is MeasureData
-  				measurementpact_protocol_p1 is MeasureData 
-  				measurementpact_protocol_p2 is MeasureData
+  				measurementpact_p1 is MeasureData 
+  				measurementpact_p2 is MeasureData
   				} 
 			variables {
   				data is MeasureData
@@ -90,8 +90,8 @@ library WsnSensor is {
 				  */
 				
 				  from s5 // Send action
-				    guard {measurementpact_protocol_p1 = tuple{coordinate=lps, depth=data::convert()}}
-				    action{ via measurement::measure send measurementpact_protocol_p1}
+				    guard {measurementpact_p1 = tuple{coordinate=lps, depth=data::convert()}}
+				    action{ via measurement::measure send measurementpact_p1}
 				  to s7
 				
 				  /*
@@ -112,8 +112,8 @@ library WsnSensor is {
 				  */
 				
 				  from s9 // Send action
-				    guard {measurementpact_protocol_p2 = data}
-				    action{ via measurement::measure send measurementpact_protocol_p2}
+				    guard {measurementpact_p2 = data}
+				    action{ via measurement::measure send measurementpact_p2}
 				  to s10
 				
 				  from s6 // Repeat loop
@@ -193,12 +193,12 @@ library WsnSensor is {
  	  
 	  behavior sensing is {   
 		messages{
-  			sensing_behavior_p1 is integer 
+  			sensing_p1 is integer 
   			powerthreshold_data is integer 
   			powerlevel_data is integer
   			data_data is MeasureData 
-  			sensing_behavior_p2 is MeasureData 
-  			sensing_behavior_p3 is MeasureData
+  			sensing_p2 is MeasureData 
+  			sensing_p3 is MeasureData
   			} 
 		variables {
 			sensorcoordinate is integer
@@ -230,8 +230,8 @@ library WsnSensor is {
 		  */
 		
 		  from s4 // Send action
-		    guard{ sensing_behavior_p1 = sensorcoordinate}
-		    action { via location::coordinate send sensing_behavior_p1}
+		    guard{ sensing_p1 = sensorcoordinate}
+		    action { via location::coordinate send sensing_p1}
 		  to s5
 		
 		  /*
@@ -289,8 +289,8 @@ library WsnSensor is {
 		  */
 		
 		  from s15 // Send action
-		    guard{ sensing_behavior_p2 = tuple{coordinate=lps, depth=data::convert()}}
-		    action {via measurement::measure send sensing_behavior_p2}
+		    guard{ sensing_p2 = tuple{coordinate=lps, depth=data::convert()}}
+		    action {via measurement::measure send sensing_p2}
 		  to s16
 		
 		  from s13 // Receive action
@@ -305,8 +305,8 @@ library WsnSensor is {
 		  */
 		
 		  from s18 // Send action
-		    guard {sensing_behavior_p3 = data}
-		    action {via measurement::measure send sensing_behavior_p3}
+		    guard {sensing_p3 = data}
+		    action {via measurement::measure send sensing_p3}
 		  to s19
 		
 		  from s16 // Repeat loop

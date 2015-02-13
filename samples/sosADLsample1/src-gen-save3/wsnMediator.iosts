@@ -36,7 +36,7 @@ library WsnMediator is {
 		  protocol transmitpact is {
 			messages {
 				measure_data is MeasureData 
-  				transmitpact_protocol_p1 is MeasureData
+  				transmitpact_p1 is MeasureData
   				}
 			variables {
   				measure is MeasureData
@@ -58,8 +58,8 @@ library WsnMediator is {
   				*/
 
   				from s3 // Send action
-    				guard {transmitpact_protocol_p1 = measure}
-    				action{via transmit::towardsGateway send transmitpact_protocol_p1}
+    				guard {transmitpact_p1 = measure}
+    				action{via transmit::towardsGateway send transmitpact_p1}
   				to s4
 
   				from s4 // Repeat loop
@@ -121,7 +121,7 @@ library WsnMediator is {
   			sendercoordinate_data is Coordinate 
   			receivercoordinate_data is Coordinate 
   			measure_data is MeasureData
-  			transmitting_behavior_p1 is MeasureData
+  			transmitting_p1 is MeasureData
   			} 
 
 		variables {
@@ -187,8 +187,8 @@ library WsnMediator is {
 			*/
 			
 			from s9 // Send action
-			    guard{ transmitting_behavior_p1 = measure}
-			    action { via transmit::towardsGateway send transmitting_behavior_p1}
+			    guard{ transmitting_p1 = measure}
+			    action { via transmit::towardsGateway send transmitting_p1}
 			to s10
 			
 			from s10 // Repeat loop
