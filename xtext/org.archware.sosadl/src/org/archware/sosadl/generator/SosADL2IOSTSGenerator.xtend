@@ -815,7 +815,7 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
                 }
             }
             if (name == "") {
-                name=newIOstsTypeName()
+                name=type.toString
                 currentSystem.typesMap.put(name,type)
             }
         } else {
@@ -829,7 +829,7 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
                 }
             }
             if (name == "") {
-                name=newIOstsTypeName()
+                name=type.toString
                 globalTypesMap.put(name,type)
             }
         }
@@ -868,15 +868,10 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
     
 	def dispatch IOstsType computeIOstsType(SequenceType t) {
         // TODO: a relire et a tester !!!
-        var LinkedHashMap<String,IOstsType> fieldsMap=newLinkedHashMap()
         var String typeName = nameOfIOstsType(computeIOstsType(t.type))
-        var String arrayName="Array_Of_"+typeName
-        fieldsMap.put("length", new IOstsIntType())
-        registerIOstsType(arrayName, new IOstsArrayType(1000, new IOstsNamedType(typeName)))
-        fieldsMap.put("content", new IOstsNamedType(arrayName))
-        var IOstsType record = new IOstsRecordType(fieldsMap)
-        record.setComment("sequence{"+typeName+"}")
-        record
+        var IOstsType sequence = new IOstsSequenceType(new IOstsNamedType(typeName))
+        sequence.setComment("sequence{"+typeName+"}")
+        sequence
     }
 	
 	def dispatch IOstsType computeIOstsType(TupleType t) {
@@ -914,16 +909,17 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
         tt
     }
     /*
-     * TypeName generator: returns a new unused type id
-     */
+     * TypeName generator: returns a new unused type id: BAD IDEA!
+     *
     def String newIOstsTypeName() {
         this.lastIOstsTypeNum = this.lastIOstsTypeNum+1
         lastIOstsTypeName()
     }
     
     def String lastIOstsTypeName() {
-        "Type_"+this.lastIOstsTypeNum
+        "$Type_"+this.lastIOstsTypeNum
     }
+    */
 }
 
 //-------------- Types
@@ -948,7 +944,7 @@ class IOstsType {
             IOstsBoolType: this.equals(other)
             IOstsRangeType: this.equals(other)
             IOstsRecordType: this.equals(other)
-            IOstsArrayType: this.equals(other)
+            IOstsSequenceType: this.equals(other)
             IOstsNamedType: this.equals(other)
             default: this.equals(other)
         }
@@ -1007,7 +1003,7 @@ class IOstsRangeType extends IOstsType {
     }
     
     override def String toString() {
-        "range "+min+".."+max
+        "range{"+min+".."+max+"}"
     }
     
     override def equals(IOstsType other) {
@@ -1018,7 +1014,6 @@ class IOstsRangeType extends IOstsType {
         }
     }
 }
-
 
 class IOstsRecordType extends IOstsType {
     
@@ -1036,9 +1031,9 @@ class IOstsRecordType extends IOstsType {
     override def String toString() {
         var String inner=""
         for (f:fieldsMap.entrySet) {
-            inner = inner.concat(f.key+":"+f.value.toString+"; ")
+            inner = inner.concat(f.key+":"+f.value.toString+",")
         }
-        "record "+inner+" end"
+        "tuple{"+inner+"}"
     }
     
     override def equals(IOstsType other) {
@@ -1062,6 +1057,34 @@ class IOstsRecordType extends IOstsType {
     }
 }
 
+class IOstsSequenceType extends IOstsType {
+    
+    val IOstsType type
+    
+    // private thus inaccessible, because one cannot create array without size
+    private new() {
+        type = new IOstsIntType()
+    }
+    
+    new(IOstsType type) {
+        this.type = type
+    }
+    
+    override def String toString() {
+        "sequence{"+type.toString+"}"
+    }
+    
+    override def equals(IOstsType other) {
+        if (other instanceof IOstsSequenceType) {
+            other.type.equals(type)
+        } else {
+            false
+        }
+    }
+}
+
+
+/*
 class IOstsArrayType extends IOstsType {
     
     val int size
@@ -1094,6 +1117,7 @@ class IOstsArrayType extends IOstsType {
         }
     }
 }
+*/
 
 class IOstsNamedType extends IOstsType {
     
@@ -1399,8 +1423,8 @@ class IOstsProcess{
     	«IF !parametersMap.empty»
     	messages {
     		«FOR p:parametersMap.keySet»
-            «p» is «parametersMap.get(p)» 
-            «ENDFOR»
+    		«p» is «parametersMap.get(p)» 
+    		«ENDFOR»
     	}
     	«ENDIF»
     	«IF !variablesMap.empty»
@@ -1485,6 +1509,7 @@ class IOstsSystem{
         processesMap.empty
     }
     
+    // OLD syntax!!!
     override def String toString() {
         // generate something only if there is at least one process
         if (empty) {
