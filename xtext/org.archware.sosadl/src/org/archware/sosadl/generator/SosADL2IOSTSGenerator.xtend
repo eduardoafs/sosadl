@@ -67,7 +67,7 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 	  for (d : s.datatypes) {
         d.compile
       }
-      for (g : s.gates) {
+      for (g : s.connections) {
         g.compile
       }
       //if (s.assertion != null) {s.assertion.compile}  // not a protocol?
@@ -86,7 +86,7 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
       currentSystem.setFileName(resourceFilename+"_"+a.name+".iosts")
       a.parameters.map[compile]
       for (d : a.datatypes) {d.compile}
-      for (g : a.gates) {g.compile}
+      for (g : a.connections) {g.compile}
       a.behavior.compile
       //if (a.assertion != null) {a.assertion.compile} // not a protocol?
       // add system if it's not empty
@@ -124,8 +124,8 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 	        val typeName = nameOfIOstsType(type)
 	        registerIOstsType(typeName, type)
 	        val finalTypeName = finalNameOfIOstsType(typeName)
-	        //currentSystem.addGate(new IOstsGate(name, computeIOstsType(c.valueType), c.mode.toString))
-	        currentSystem.addGate(new IOstsGate(name, finalTypeName, c.mode.toString))
+	        //currentSystem.addConnection(new IOstsConnection(name, computeIOstsType(c.valueType), c.mode.toString))
+	        currentSystem.addConnection(new IOstsConnection(name, finalTypeName, c.mode.toString))
 	    }
 	    '''«g.protocol.compile»'''
 	}
@@ -138,8 +138,8 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
             val typeName = nameOfIOstsType(type)
             registerIOstsType(typeName, type)
             val finalTypeName = finalNameOfIOstsType(typeName)
-            //currentSystem.addGate(new IOstsGate(name, computeIOstsType(c.valueType), c.mode.toString))
-            currentSystem.addGate(new IOstsGate(name, finalTypeName, c.mode.toString))
+            //currentSystem.addConnection(new IOstsConnection(name, computeIOstsType(c.valueType), c.mode.toString))
+            currentSystem.addConnection(new IOstsConnection(name, finalTypeName, c.mode.toString))
         }
         '''«d.protocol.compile»'''
     }
@@ -157,7 +157,7 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 	  	for (d : s.datatypes) {
         	d.compile
       	}
-      	for (g : s.gates) {
+      	for (g : s.connections) {
         	g.compile
       	}
 	    //if (s.assertion != null) {s.assertion.compile}  // not a protocol?
@@ -209,7 +209,7 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 		/*
       	a.parameters.map[compile]
       	for (d : a.datatypes) {d.compile}
-      	for (g : a.gates) {g.compile}
+      	for (g : a.connections) {g.compile}
       	a.behavior.compile
       	//if (a.assertion != null) {a.assertion.compile} // not a protocol?
       	*/
@@ -230,8 +230,8 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 	        val typeName = nameOfIOstsType(type)
 	        registerIOstsType(typeName, type)
 	        val finalTypeName = finalNameOfIOstsType(typeName)
-	        //currentSystem.addGate(new IOstsGate(name, computeIOstsType(c.valueType), c.mode.toString))
-	        currentSystem.addGate(new IOstsGate(name, finalTypeName, c.mode.toString))
+	        //currentSystem.addConnection(new IOstsConnection(name, computeIOstsType(c.valueType), c.mode.toString))
+	        currentSystem.addConnection(new IOstsConnection(name, finalTypeName, c.mode.toString))
 	    }
 	    super.compile(g)
 	}
@@ -244,8 +244,8 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
             val typeName = nameOfIOstsType(type)
             registerIOstsType(typeName, type)
             val finalTypeName = finalNameOfIOstsType(typeName)
-            //currentSystem.addGate(new IOstsGate(name, computeIOstsType(c.valueType), c.mode.toString))
-            currentSystem.addGate(new IOstsGate(name, finalTypeName, c.mode.toString))
+            //currentSystem.addConnection(new IOstsConnection(name, computeIOstsType(c.valueType), c.mode.toString))
+            currentSystem.addConnection(new IOstsConnection(name, finalTypeName, c.mode.toString))
         }
         super.compile(d)
     }
@@ -409,50 +409,50 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
         val int final=currentProcess.newState()
         var IOstsTransition action = new IOstsTransition(startState,final)
         var String channel=a.complexName.compile.toString
-        val IOstsGate gate=currentSystem.gatesMap.get(channel)
-        if (gate == null) {
+        val IOstsConnection connection=currentSystem.connectionsMap.get(channel)
+        if (connection == null) {
             System.err.println("Warning! Channel '"+channel+"' not declared! Ignoring statement...")
         } else if (a.suite instanceof SendAction) {
             val parameter=currentProcess.newParameter()
-            if (gate.mode == "inout") {
+            if (connection.mode == "inout") {
                 if (! currentProcess.inoutputMap.containsKey(channel)) {
-                    currentProcess.addInoutput(channel, gate.typeName)
-                    if (DEBUG2) System.out.println("Added channel '"+channel+"' to inoutput gates")
+                    currentProcess.addInoutput(channel, connection.typeName)
+                    if (DEBUG2) System.out.println("Added channel '"+channel+"' to inoutput connections")
                 }
                 //OLD version: channel = channel.concat("_out")
             }
-            else if (gate.mode == "out") {
+            else if (connection.mode == "out") {
             	if (! currentProcess.outputMap.containsKey(channel)) {
-                	currentProcess.addOutput(channel, gate.typeName)
-                	if (DEBUG2) System.out.println("Added channel '"+channel+"' to output gates")
+                	currentProcess.addOutput(channel, connection.typeName)
+                	if (DEBUG2) System.out.println("Added channel '"+channel+"' to output connections")
             	}           
             }
             action.setGuard(parameter+" = "+(a.suite as SendAction).expression.compile)
             action.setAction("via "+channel+" send "+parameter)
             action.setComment("Send action")
-            currentProcess.addParameter(parameter,gate.typeName)
+            currentProcess.addParameter(parameter,connection.typeName)
             //System.out.println("Added send transition: from="+startState+", to="+final)
         } else if (a.suite instanceof ReceiveAction) {
             val variable=(a.suite as ReceiveAction).variable
             val parameter=variable+"_data"
-            if (gate.mode == "inout") {
+            if (connection.mode == "inout") {
                 if (! currentProcess.inoutputMap.containsKey(channel)) {
-                    currentProcess.addInoutput(channel, gate.typeName)
-                    if (DEBUG2) System.out.println("Added channel '"+channel+"' to inoutput gates")
+                    currentProcess.addInoutput(channel, connection.typeName)
+                    if (DEBUG2) System.out.println("Added channel '"+channel+"' to inoutput connections")
                 }
                 //OLD version: channel = channel.concat("_in")
             }
-            else if (gate.mode == "in") {
+            else if (connection.mode == "in") {
 	            if (! currentProcess.inputMap.containsKey(channel)) {
-	                currentProcess.addInput(channel, gate.typeName)
-	                if (DEBUG2) System.out.println("Added channel '"+channel+"' to input gates")
+	                currentProcess.addInput(channel, connection.typeName)
+	                if (DEBUG2) System.out.println("Added channel '"+channel+"' to input connections")
 	            }
             }
             if (! currentProcess.parametersMap.containsKey(parameter)) {
-                currentProcess.addParameter(parameter, gate.typeName)
+                currentProcess.addParameter(parameter, connection.typeName)
             }
             if (! currentProcess.variablesMap.containsKey(variable)) {
-                currentProcess.addVariable(variable, gate.typeName)
+                currentProcess.addVariable(variable, connection.typeName)
             }
             action.setAction("via "+channel+" receive "+parameter)
             action.addStatement(variable+" := "+parameter)
@@ -470,68 +470,68 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
         val int final=currentProcess.newState()
         var IOstsTransition action = new IOstsTransition(startState,final)
         var String channel=a.complexName.compile.toString
-        val IOstsGate gate=currentSystem.gatesMap.get(channel)
-        if (gate == null) {
+        val IOstsConnection connection=currentSystem.connectionsMap.get(channel)
+        if (connection == null) {
             System.err.println("Warning! Channel '"+channel+"' not declared! Ignoring statement...")
         } else if (a.suite instanceof SendProtocolAction) {
             val parameter=currentProcess.newParameter()
-            if (gate.mode == "inout") {
+            if (connection.mode == "inout") {
                 if (! currentProcess.inoutputMap.containsKey(channel)) {
-                    currentProcess.addInoutput(channel, gate.typeName)
-                    if (DEBUG2) System.out.println("Added channel '"+channel+"' to inoutput gates")
+                    currentProcess.addInoutput(channel, connection.typeName)
+                    if (DEBUG2) System.out.println("Added channel '"+channel+"' to inoutput connections")
                 }
                 //OLD version: channel = channel.concat("_out")
             }
-            else if (gate.mode == "out") {
+            else if (connection.mode == "out") {
 	            if (! currentProcess.outputMap.containsKey(channel)) {
-	                currentProcess.addOutput(channel, gate.typeName)
-	                if (DEBUG2) System.out.println("Added channel '"+channel+"' to output gates")
+	                currentProcess.addOutput(channel, connection.typeName)
+	                if (DEBUG2) System.out.println("Added channel '"+channel+"' to output connections")
 	            }
             }
             if ((a.suite as SendProtocolAction).expression.compile.toString == "any") {
                 /* FIXME: send any:
                  * - option 1 "pas de if": ANY_typeConnection est une constante qui doit etre definie
                  *     action.setAction(channel+"!(ANY_typeConnection)")
-                 *     currentProcess.addParameter(parameter,gate.typeName)
+                 *     currentProcess.addParameter(parameter,connection.typeName)
                  * - option 2 "avec if en affectant au parametre une constante ANY_typeConnection" (au hasard?)
                  *     action.setGuard(parameter+" = "+(a.suite as SendProtocolAction).expression.compile)
                  *     action.setAction(channel+"!("+parameter+")")
-                 *     currentProcess.addParameter(parameter,gate.typeName)
+                 *     currentProcess.addParameter(parameter,connection.typeName)
                  */
                 // send any: no guard (thus not parameter) and send a random expression compatible with type of connection
                 action.setGuard(parameter+" = 0  /*FIXME: 0 should be an expression of parameter's type*/")
                 action.setAction("via "+channel+" send "+parameter)
-                currentProcess.addParameter(parameter,gate.typeName)
+                currentProcess.addParameter(parameter,connection.typeName)
                 action.setComment("Send any action")
             } else {
                 // send some expression
                 action.setGuard(parameter+" = "+(a.suite as SendProtocolAction).expression.compile)
                 action.setAction("via "+channel+" send "+parameter)
-                currentProcess.addParameter(parameter,gate.typeName)
+                currentProcess.addParameter(parameter,connection.typeName)
                 action.setComment("Send action")
             }
             //System.out.println("Added send transition: from="+startState+", to="+final)
         } else if (a.suite instanceof ReceiveProtocolAction) { 
             val variable=(a.suite as ReceiveProtocolAction).variable
             val parameter=variable+"_data"
-            if (gate.mode == "inout") {
+            if (connection.mode == "inout") {
                 if (! currentProcess.inoutputMap.containsKey(channel)) {
-                    currentProcess.addInoutput(channel, gate.typeName)
-                    if (DEBUG2) System.out.println("Added channel '"+channel+"' to inoutput gates")
+                    currentProcess.addInoutput(channel, connection.typeName)
+                    if (DEBUG2) System.out.println("Added channel '"+channel+"' to inoutput connections")
                 }
                 //OLD version: channel = channel.concat("_in")
             }
-            else if (gate.mode == "in") {
+            else if (connection.mode == "in") {
 	            if (! currentProcess.inputMap.containsKey(channel)) {
-	                currentProcess.addInput(channel, gate.typeName)
-	                if (DEBUG2) System.out.println("Added channel '"+channel+"' to input gates")
+	                currentProcess.addInput(channel, connection.typeName)
+	                if (DEBUG2) System.out.println("Added channel '"+channel+"' to input connections")
 	            }
             }
             if (! currentProcess.parametersMap.containsKey(parameter)) {
-                currentProcess.addParameter(parameter, gate.typeName)
+                currentProcess.addParameter(parameter, connection.typeName)
             }
             if (! currentProcess.variablesMap.containsKey(variable)) {
-                currentProcess.addVariable(variable, gate.typeName)
+                currentProcess.addVariable(variable, connection.typeName)
             }
             action.setAction("via "+channel+" receive "+parameter)
             action.addStatement(variable+" := "+parameter)
@@ -540,24 +540,24 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
         } else if (a.suite instanceof ReceiveAnyProtocolAction) {
             val variable="any_s"+startState
             val parameter=variable+"_data"
-            if (gate.mode == "inout") {
+            if (connection.mode == "inout") {
                 if (! currentProcess.inoutputMap.containsKey(channel)) {
-                    currentProcess.addInoutput(channel, gate.typeName)
-                    if (DEBUG2) System.out.println("Added channel '"+channel+"' to inoutput gates")
+                    currentProcess.addInoutput(channel, connection.typeName)
+                    if (DEBUG2) System.out.println("Added channel '"+channel+"' to inoutput connections")
                 }
                 //OLD version: channel = channel.concat("_in")
             }
-            else if (gate.mode == "in") {
+            else if (connection.mode == "in") {
 	            if (! currentProcess.inputMap.containsKey(channel)) {
-	                currentProcess.addInput(channel, gate.typeName)
-	                if (DEBUG2) System.out.println("Added channel '"+channel+"' to input gates")
+	                currentProcess.addInput(channel, connection.typeName)
+	                if (DEBUG2) System.out.println("Added channel '"+channel+"' to input connections")
 	            }
             }
             if (! currentProcess.parametersMap.containsKey(parameter)) {
-                currentProcess.addParameter(parameter, gate.typeName)
+                currentProcess.addParameter(parameter, connection.typeName)
             }
             if (! currentProcess.variablesMap.containsKey(variable)) {
-                currentProcess.addVariable(variable, gate.typeName)
+                currentProcess.addVariable(variable, connection.typeName)
             }
             action.setAction("via "+channel+" receive "+parameter)
             action.addStatement(variable+" := "+parameter)
@@ -1149,19 +1149,17 @@ class IOstsNamedType extends IOstsType {
     }
 }
 
-//-------------- Gate, Transition, Process and IOstsSystem
+//-------------- Connection, Transition, Process and IOstsSystem
 
 /*
- * Gate
+ * Connection
  * 
  * Notes:
  * - name, type, and mode are required at creation time, and immutable.
- * - a gate in IOSTS is a connection (not a *gate*) in SoS-ADL.
- * - the mode's gate in IOSTS can be 'in' or 'out'.
- * - if an SOS-ADL connection is 'inout', one has to implement two gates in IOSTS:
- *   one 'in', and one 'out'. 
+ * - connections in IOSTS and in SoS-ADL are identical.
+ * - now, the mode of IoSTS's connection are the same as in SoSADL: 'in', 'out', 'inout'.
  */
-class IOstsGate {
+class IOstsConnection {
     val String name
     val String typeName
     val String mode // FIXME! enum au lieu de string!
@@ -1464,7 +1462,7 @@ class IOstsProcess{
  * - fileName is the name of the file to be sqved.
  * - constantSection is not used at this time.
  * - typesMap is a mutable map containing the declaration of all types used in this system.
- * - gatesMap is the mutable map of gates (called connections in SoS-ADL).
+ * - connectionsMap is the mutable map of connections.
  * - processesMap is the map of processes of this system.
  * - a comment helps to understand the transformation from SoDADL to IOSTS.
  */
@@ -1475,7 +1473,7 @@ class IOstsSystem{
     var String behaviorName="UNDEFINED"
     public var LinkedHashMap<String,String> constantsMap = newLinkedHashMap()     // map of (name -> value as tring)
     public var LinkedHashMap<String,IOstsType> typesMap = newLinkedHashMap()     // map of (name -> iosts type)
-    public var LinkedHashMap<String,IOstsGate> gatesMap = newLinkedHashMap()  // map of (gate name -> Gate)
+    public var LinkedHashMap<String,IOstsConnection> connectionsMap = newLinkedHashMap()  // map of (connection name -> Connection)
     public var LinkedHashMap<String,IOstsProcess> processesMap = newLinkedHashMap()  // map of (process name -> Process)
     
     new(String name) {
@@ -1494,8 +1492,8 @@ class IOstsSystem{
        this.comment = comment
     }
     
-    def addGate(IOstsGate gate) {
-        this.gatesMap.put(gate.name, gate)
+    def addConnection(IOstsConnection connection) {
+        this.connectionsMap.put(connection.name, connection)
     }
     
     def addProcess(IOstsProcess process) {
@@ -1568,7 +1566,7 @@ class IOstsSystem{
     «ENDIF»
     
     gate
-    «FOR g:gatesMap.values»
+    «FOR g:connectionsMap.values»
     «g.toString»
     «ENDFOR»
     «FOR p:processesMap.values»
