@@ -29,8 +29,8 @@ import java.lang.System
  */
 class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGenerator {
     
-    val DEBUG=false
-    val DEBUG2=false
+    val DEBUG=true
+    val DEBUG2=true
     val DEBUG3=false
     
     // global variables making the generation much easier
@@ -419,11 +419,13 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
                     currentProcess.addInoutput(channel, gate.typeName)
                     if (DEBUG2) System.out.println("Added channel '"+channel+"' to inoutput gates")
                 }
-                channel = channel.concat("_out")
+                //OLD version: channel = channel.concat("_out")
             }
-            if (! currentProcess.outputMap.containsKey(channel)) {
-                currentProcess.addOutput(channel, gate.typeName)
-                if (DEBUG2) System.out.println("Added channel '"+channel+"' to output gates")
+            else if (gate.mode == "out") {
+            	if (! currentProcess.outputMap.containsKey(channel)) {
+                	currentProcess.addOutput(channel, gate.typeName)
+                	if (DEBUG2) System.out.println("Added channel '"+channel+"' to output gates")
+            	}           
             }
             action.setGuard(parameter+" = "+(a.suite as SendAction).expression.compile)
             action.setAction("via "+channel+" send "+parameter)
@@ -438,11 +440,13 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
                     currentProcess.addInoutput(channel, gate.typeName)
                     if (DEBUG2) System.out.println("Added channel '"+channel+"' to inoutput gates")
                 }
-                channel = channel.concat("_in")
+                //OLD version: channel = channel.concat("_in")
             }
-            if (! currentProcess.inputMap.containsKey(channel)) {
-                currentProcess.addInput(channel, gate.typeName)
-                if (DEBUG2) System.out.println("Added channel '"+channel+"' to input gates")
+            else if (gate.mode == "in") {
+	            if (! currentProcess.inputMap.containsKey(channel)) {
+	                currentProcess.addInput(channel, gate.typeName)
+	                if (DEBUG2) System.out.println("Added channel '"+channel+"' to input gates")
+	            }
             }
             if (! currentProcess.parametersMap.containsKey(parameter)) {
                 currentProcess.addParameter(parameter, gate.typeName)
@@ -476,11 +480,13 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
                     currentProcess.addInoutput(channel, gate.typeName)
                     if (DEBUG2) System.out.println("Added channel '"+channel+"' to inoutput gates")
                 }
-                channel = channel.concat("_out")
+                //OLD version: channel = channel.concat("_out")
             }
-            if (! currentProcess.inputMap.containsKey(channel)) {
-                currentProcess.addOutput(channel, gate.typeName)
-                if (DEBUG2) System.out.println("Added channel '"+channel+"' to output gates")
+            else if (gate.mode == "out") {
+	            if (! currentProcess.outputMap.containsKey(channel)) {
+	                currentProcess.addOutput(channel, gate.typeName)
+	                if (DEBUG2) System.out.println("Added channel '"+channel+"' to output gates")
+	            }
             }
             if ((a.suite as SendProtocolAction).expression.compile.toString == "any") {
                 /* FIXME: send any:
@@ -513,13 +519,14 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
                     currentProcess.addInoutput(channel, gate.typeName)
                     if (DEBUG2) System.out.println("Added channel '"+channel+"' to inoutput gates")
                 }
-                channel = channel.concat("_in")
+                //OLD version: channel = channel.concat("_in")
             }
-            if (! currentProcess.inputMap.containsKey(channel)) {
-                currentProcess.addInput(channel, gate.typeName)
-                if (DEBUG2) System.out.println("Added channel '"+channel+"' to input gates")
+            else if (gate.mode == "in") {
+	            if (! currentProcess.inputMap.containsKey(channel)) {
+	                currentProcess.addInput(channel, gate.typeName)
+	                if (DEBUG2) System.out.println("Added channel '"+channel+"' to input gates")
+	            }
             }
-            
             if (! currentProcess.parametersMap.containsKey(parameter)) {
                 currentProcess.addParameter(parameter, gate.typeName)
             }
@@ -538,11 +545,13 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
                     currentProcess.addInoutput(channel, gate.typeName)
                     if (DEBUG2) System.out.println("Added channel '"+channel+"' to inoutput gates")
                 }
-                channel = channel.concat("_in")
+                //OLD version: channel = channel.concat("_in")
             }
-            if (! currentProcess.inputMap.containsKey(channel)) {
-                currentProcess.addInput(channel, gate.typeName)
-                if (DEBUG2) System.out.println("Added channel '"+channel+"' to input gates")
+            else if (gate.mode == "in") {
+	            if (! currentProcess.inputMap.containsKey(channel)) {
+	                currentProcess.addInput(channel, gate.typeName)
+	                if (DEBUG2) System.out.println("Added channel '"+channel+"' to input gates")
+	            }
             }
             if (! currentProcess.parametersMap.containsKey(parameter)) {
                 currentProcess.addParameter(parameter, gate.typeName)
@@ -1178,12 +1187,12 @@ class IOstsGate {
     override def String toString() {
         switch mode {
             case "in":
-                "  "+name+"("+typeName+"); // "+mode+"\n"
+                "  "+name+"("+typeName+");\n"
             case "out":
-                "  "+name+"("+typeName+"); // "+mode+"\n"
+                "  "+name+"("+typeName+");\n"
             case "inout":
-                "  "+name+"_in("+typeName+");  // "+mode+"\n"+
-                "  "+name+"_out("+typeName+"); // "+mode+"\n"
+                "  "+name+"("+typeName+");\n"+
+                "  "+name+"("+typeName+");\n"
         } 
     }
     
