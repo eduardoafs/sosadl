@@ -1,0 +1,29 @@
+// ok
+
+library testValuing4 is {
+  
+  system test() is {
+    
+    datatype type1
+    
+    gate gate1 is {
+      connection connection1 is out{type1}
+    } guarantee {
+      protocol gate1protocol is {
+        // 2 valuings
+        value data1 is integer = 1
+        value data2 is integer = 2
+        value data3 is integer = 3
+        via gate1::connection1 receive any
+      }
+    }
+  
+    behavior test is {
+      // 2 valuings
+      value data1 is integer = 1
+      value data2 is integer = 2
+      value data3 is integer = 3
+      via gate1::connection1 receive data
+    }
+  }
+}
