@@ -426,9 +426,9 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
     def dispatch ArrayList<Integer> computeSTS(int startState, Valuing v){
         val int final=currentProcess.newState()
         var IOstsTransition valuing = new IOstsTransition(startState,final)
-        //valuing.addStatement(v.compile.toString) // v.compile.toString hields SosADL syntax
+        //valuing.addAssignment(v.compile.toString) // v.compile.toString hields SosADL syntax
         registerValuing(v)
-        valuing.addStatement(v.variable+" := "+v.expression.compile)
+        valuing.addAssignment(v.variable+" := "+v.expression.compile)
         valuing.setComment("Valuing")
         currentProcess.addTransition(valuing)
         //System.out.println("Added valuing transition: from="+startState+", to="+final)
@@ -488,7 +488,7 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
                 currentProcess.addVariable(variable, connection.typeName)
             }
             action.setAction("via "+channel+" receive "+parameter)
-            action.addStatement(variable+" := "+parameter)
+            action.addAssignment(variable+" := "+parameter)
             action.setComment("Receive action")
             //System.out.println("Added receive transition: from="+startState+", to="+final)
         }
@@ -567,7 +567,7 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
                 currentProcess.addVariable(variable, connection.typeName)
             }
             action.setAction("via "+channel+" receive "+parameter)
-            action.addStatement(variable+" := "+parameter)
+            action.addAssignment(variable+" := "+parameter)
             action.setComment("Receive action")
             //System.out.println("Added receive transition: from="+startState+", to="+final)
         } else if (a.suite instanceof ReceiveAnyProtocolAction) {
@@ -593,7 +593,7 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
                 currentProcess.addVariable(variable, connection.typeName)
             }
             action.setAction("via "+channel+" receive "+parameter)
-            action.addStatement(variable+" := "+parameter)
+            action.addAssignment(variable+" := "+parameter)
             action.setComment("Receive any action")
             //System.out.println("Added receive any transition: from="+startState+", to="+final)
         }
@@ -1235,7 +1235,7 @@ class IOstsConnection {
  * 
  * Note:
  * - fromState and toState are immutable and must be set at creation time.
- * - guard and statements are optional, thus mutable.
+ * - guard and assignments are optional, thus mutable.
  * - action is mutable thought it is required (tau by default):
  *   this is because it can be initialized after creation.
  *   Note: in the first transition, no sync is allowed.
@@ -1248,7 +1248,7 @@ class IOstsTransition {
 	String comment=""
 	String guard = "" // optional
 	String action = "unobservable" // default action is unobservable
-	List<String> statements = newArrayList // optional
+	List<String> assignments = newArrayList // optional
 
 	/* never used!
 	new(int fromState, int toState, String action) {
@@ -1296,11 +1296,11 @@ class IOstsTransition {
 		}
 	}
 
-	def addStatement(String statement) {
+	def addAssignment(String statement) {
 		if (init) {
 			System.err.println("Warning! Init transition does not admit statement! Ignoring action...")
 		} else {
-			statements.add(statement)
+			assignments.add(statement)
 		}
 		
 	}
@@ -1325,9 +1325,9 @@ class IOstsTransition {
 			  	action {
 			  		«action»
 			  	}
-			  	«IF statements.length > 0»
+			  	«IF assignments.length > 0»
 			  	assignments {
-			  	    «statements.join(", ")»
+			  	    «assignments.join(", ")»
 			  	}
 			  	«ENDIF»
 			to s«toState»
