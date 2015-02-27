@@ -1,0 +1,43 @@
+// ok
+ 
+library testRepeat8 is {
+  
+  system test() is {
+    
+    datatype type1
+    
+    gate gate1 is {
+      connection connection1 is inout{type1}
+      connection connection2 is inout{type1}
+      connection connection3 is inout{type1}
+    } guarantee {
+      protocol gate1protocol is {
+        value data1 = 1
+        value data2 = 2
+        value data3 = 3
+        repeat{
+          value data4 = 4
+          value data5 = 5
+          value data6 = 6
+        }
+        value data7 = 7
+        value data8 = 8
+        value data9 = 9
+      }
+    }
+    
+    behavior test is {
+      value data1 = 1
+        value data2 = 2
+        value data3 = 3
+        repeat{
+          value data4 = 4
+          value data5 = 5
+          value data6 = 6
+        }
+        value data7 = 7
+        value data8 = 8
+        value data9 = 9
+    }
+  }
+}
