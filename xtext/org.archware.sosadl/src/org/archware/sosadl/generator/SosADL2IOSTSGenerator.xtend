@@ -347,6 +347,8 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
         var int state=startState
         var ArrayList<Integer> finalStates = newArrayList()
         var boolean first=true
+        var boolean previousIsValuing=false
+        var int previousStartState=0
         for (s : b.statements) {
             /* OLD version: obsolete since initTransition()
             if (first && (s instanceof Action) && startState==0 && state==0) {
@@ -374,8 +376,38 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
             }
             // in a sequence of statements, only the last statement can have multiple final states
             // we just assume it's true!
-            finalStates = computeSTS(state, s)
+            if (s instanceof Valuing) {
+            	if (previousIsValuing) {
+            		// adding a assignment to transition from state to finalStates.get(0)
+            		// instead of creating a new transition
+            		state = previousStartState
+            		if (DEBUG3) {
+            			System.err.println("CALLING computeSTS(state="+state+", s, final(0)="+finalStates.get(0)+")")
+            			
+            		}
+            		finalStates = computeSTS(state, s, finalStates.get(0))
+            		if (DEBUG3) {
+	            		System.err.println("RESULT final(0)="+finalStates.get(0))
+	            	}
+            	} else {
+               		if (DEBUG3) {
+    	        		System.err.println("CALLING computeSTS(state="+state+", s, 0)")
+    	       		}
+            		finalStates = computeSTS(state, s, 0)
+               		if (DEBUG3) {
+           		 		System.err.println("RESULT final(0)="+finalStates.get(0))
+           		 	}
+            	}
+            	previousIsValuing = true
+            } else {
+            	finalStates = computeSTS(state, s)
+            	previousIsValuing = false
+           	}
             first=false
+            previousStartState=state
+            if (DEBUG3) {
+            	System.err.println("END LOOP: state="+state+", previousStartState="+previousStartState+", final(0)="+finalStates.get(0))
+            }
         }
         finalStates
     }
@@ -387,6 +419,8 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
         var int state=startState
         var ArrayList<Integer> finalStates = newArrayList()
         var boolean first=true
+        var boolean previousIsValuing=false
+        var int previousStartState=0
         for (s : b.statements) {
         	/* OLD version: obsolete since initTransition()
             if (first && (s instanceof ProtocolAction) && startState==0 && state==0) {
@@ -414,18 +448,99 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
             }
             // in a sequence of statements, only the last statement can have multiple final states
             // we just assume it's true!
-            finalStates = computeSTS(state, s)
+            if (s instanceof Valuing) {
+            	if (previousIsValuing) {
+            		// adding a assignment to transition from state to finalStates.get(0)
+            		// instead of creating a new transition
+            		state = previousStartState
+            		if (DEBUG3) {
+            			System.err.println("CALLING computeSTS(state="+state+", s, final(0)="+finalStates.get(0)+")")
+            		}
+            		finalStates = computeSTS(state, s, finalStates.get(0))
+            		if (DEBUG3) {
+            			System.err.println("RESULT final(0)="+finalStates.get(0))
+            		}
+            	} else {
+            		if (DEBUG3) {
+            			System.err.println("CALLING computeSTS(state="+state+", s, 0)")
+            		}
+            		finalStates = computeSTS(state, s, 0)
+            		if (DEBUG3) {
+            			System.err.println("RESULT final(0)="+finalStates.get(0))
+            		}
+            	}
+            	previousIsValuing = true
+            } else {
+            	finalStates = computeSTS(state, s)
+            	previousIsValuing = false
+           	}
             first=false
+            previousStartState=state
+            if (DEBUG3) {
+            	System.err.println("END LOOP: state="+state+", previousStartState="+previousStartState+", final(0)="+finalStates.get(0))
+            }
         }
         finalStates
     }
     
     /*
-     * - computeSTS for a Valuing statement.
+     * - computeSTS for a first Valuing statement.
      */
+    /*
     def dispatch ArrayList<Integer> computeSTS(int startState, Valuing v){
         val int final=currentProcess.newState()
         var IOstsTransition valuing = new IOstsTransition(startState,final)
+        //valuing.addAssignment(v.compile.toString) // v.compile.toString hields SosADL syntax
+        registerValuing(v)
+        valuing.addAssignment(v.variable+" := "+v.expression.compile)
+        valuing.setComment("Valuing")
+        currentProcess.addTransition(valuing)
+        //System.out.println("Added valuing transition: from="+startState+", to="+final)
+        newArrayList(final)
+    }
+    */
+    
+    /*
+     * - computeSTS for a Valuing statement following a Valuing statement.
+     */
+    /*
+    def dispatch ArrayList<Integer> computeSTS(int startState, Valuing v, int finalState){
+        var IOstsTransition valuing = currentProcess.getTransition(startState,finalState)
+        //valuing.addAssignment(v.compile.toString) // v.compile.toString hields SosADL syntax
+        registerValuing(v)
+        valuing.addAssignment(v.variable+" := "+v.expression.compile)
+        valuing.setComment("Valuing")
+        currentProcess.addTransition(valuing)
+        //System.out.println("Added valuing transition: from="+startState+", to="+final)
+        newArrayList(finalState)
+    }
+    */
+    
+    /*
+     * - computeSTS for a Valuing statement following a Valuing statement.
+     */
+    /*
+    def dispatch ArrayList<Integer> computeSTS(int startState, Valuing v){
+    	computeSTS(startState, v, 0)
+    }
+    */
+    
+    def ArrayList<Integer> computeSTS(int startState, Valuing v, int finalState){
+    	var int final
+    	var IOstsTransition valuing
+    	if (finalState == 0) {
+    		final=currentProcess.newState()
+        	valuing = new IOstsTransition(startState,final)
+        } else {
+        	final=finalState
+        	if (DEBUG3) {
+        		System.err.println("CALLING getTransition(startState="+startState+", final="+final+")")
+        	}
+        	valuing = currentProcess.getTransition(startState,final)
+        	if (valuing == null) {
+        		System.err.println("ERROR! Transition from="+startState+" to="+final+" not found!")
+        	}
+        }
         //valuing.addAssignment(v.compile.toString) // v.compile.toString hields SosADL syntax
         registerValuing(v)
         valuing.addAssignment(v.variable+" := "+v.expression.compile)
@@ -1399,17 +1514,31 @@ class IOstsProcess{
         addVariable(name, new IOstsIntType().toString)
     }
     
+    /*
+     * addTransition(transition):
+     * - if a transition with same fromState and toState exists, then remove it from the transitions.
+     * - adds transition to the list of transitions.
+     * - updates lastState with fromState (resp. finalState) in case lastState < fromState (resp. finalState)
+     */
     def addTransition(IOstsTransition transition) {
     	if (this.transitions.empty) {
     		transition.setInit(true)
     	}
-    	this.transitions.add(transition)
+    	if (this.transitions.exists[fromState() == transition.fromState() && toState() == transition.toState()]) {
+    		val t = this.transitions.findFirst[fromState() == transition.fromState() && toState() == transition.toState()]
+    		this.transitions.remove(t)
+    	}
+    	this.transitions.add(transition)	
     	if (this.lastState < transition.fromState()) {
     		this.lastState = transition.fromState()
     	}
     	if (this.lastState < transition.toState()) {
     		this.lastState = transition.toState()
     	}
+    }
+    
+    def getTransition(int startState, int finalState) {
+    	this.transitions.findFirst[fromState() == startState && toState() == finalState]
     }
     
     /*
