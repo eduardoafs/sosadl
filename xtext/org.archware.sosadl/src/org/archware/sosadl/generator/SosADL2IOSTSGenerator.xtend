@@ -270,16 +270,22 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
     //---------------- Compilation of Protocol and Behavior is special
     
     override def compile(ProtocolDecl p) {
+        var IOstsTransition firstTransition = initTransition("true")
+        firstTransition.setComment("FIXME: system/mediator/architecture parameters may change this guard!")
         currentProcess = new IOstsProcess(p.name)
-        computeSTS(0,p.body)
+        currentProcess.addTransition(firstTransition)
+        computeSTS(firstTransition.toState(),p.body)
         currentSystem.addProcess(currentProcess)
         '''protocol «p.name» is «currentProcess»'''
     }
     
     override def compile(BehaviorDecl b){
         //if (currentProcess != null) currentSystem.addProcess(currentProcess)
+        var IOstsTransition firstTransition = initTransition("true")
+        firstTransition.setComment("FIXME: system/mediator/architecture parameters may change this guard!")
         currentProcess = new IOstsProcess(b.name)
-        computeSTS(0,b.body)
+        currentProcess.addTransition(firstTransition)
+        computeSTS(firstTransition.toState(),b.body)
         currentSystem.addProcess(currentProcess)
         '''behavior «b.name» is «currentProcess»'''
     }
@@ -316,6 +322,19 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
     
     //---------------- Generation of the STS
     
+    /*
+     * Returns an init transition: from 0 to 1, with given guard.
+     * Shall be added before any other in a Behavior or Protocol.
+     * The first transition has no action, not assignments.
+     * A default comment is added, but can be changed. 
+     */
+    def IOstsTransition initTransition(String guard) {
+    	var IOstsTransition firstTransition = new IOstsTransition(0,1)
+    	firstTransition.setInit(true)
+    	firstTransition.setGuard(guard)
+    	firstTransition.setComment("first transition") // default comment, can be changed later
+	    firstTransition
+    }
     
     /*
      * All computeSTS() functions return the final states of the STS
@@ -329,12 +348,13 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
         var ArrayList<Integer> finalStates = newArrayList()
         var boolean first=true
         for (s : b.statements) {
-            // in a sequence, one has to add a transition with no action between two statements
+            /* OLD version: obsolete since initTransition()
             if (first && (s instanceof Action) && startState==0 && state==0) {
                 //System.out.println("Preparing empty transition, because sync is not allowed in first transition": from="+state+", to="+state)
                 finalStates = newArrayList(0)
                 first=false
             }
+            */
             if (! first) { // && finalStates.length >= 2) {
             	// NEW version: concatenation for sequentiality is generated between two statements
             	// ONLY when the first statement ends with at least 2 final states.
@@ -368,12 +388,13 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
         var ArrayList<Integer> finalStates = newArrayList()
         var boolean first=true
         for (s : b.statements) {
-            // in a sequence, one has to add a transition with no action between two statements
+        	/* OLD version: obsolete since initTransition()
             if (first && (s instanceof ProtocolAction) && startState==0 && state==0) {
                 //System.out.println("Preparing empty transition, because sync is not allowed in first transition": from="+state+", to="+state)
                 finalStates = newArrayList(0)
                 first=false
             }
+            */
             if (! first) {
             	// NEW version: concatenation for sequentiality is generated between two statements
             	// ONLY when the first statement ends with at least 2 final states.
@@ -1229,12 +1250,14 @@ class IOstsTransition {
 	String action = "unobservable" // default action is unobservable
 	List<String> statements = newArrayList // optional
 
+	/* never used!
 	new(int fromState, int toState, String action) {
 		this.fromState = fromState
 		this.toState = toState
 		this.action = action
 		this.init = false
 	}
+	*/
 
 	new(int fromState, int toState) {
 		this.fromState = fromState
@@ -1248,6 +1271,14 @@ class IOstsTransition {
 			guard = "true" // default value for the init transition
 		}
 	}
+	
+	def fromState() {
+		fromState
+	}
+	
+	def toState() {
+		toState
+	}
 
 	def setComment(String comment) {
 		this.comment = comment
@@ -1258,11 +1289,20 @@ class IOstsTransition {
 	}
 
 	def setAction(String action) {
-		this.action = action
+		if (init) {
+			System.err.println("Warning! Init transition does not admit action! Ignoring action...")
+		} else {
+			this.action = action
+		}
 	}
 
 	def addStatement(String statement) {
-		statements.add(statement)
+		if (init) {
+			System.err.println("Warning! Init transition does not admit statement! Ignoring action...")
+		} else {
+			statements.add(statement)
+		}
+		
 	}
 
 	override def String toString() {
@@ -1364,6 +1404,12 @@ class IOstsProcess{
     		transition.setInit(true)
     	}
     	this.transitions.add(transition)
+    	if (this.lastState < transition.fromState()) {
+    		this.lastState = transition.fromState()
+    	}
+    	if (this.lastState < transition.toState()) {
+    		this.lastState = transition.toState()
+    	}
     }
     
     /*
