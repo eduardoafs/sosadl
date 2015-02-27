@@ -1442,7 +1442,7 @@ class IOstsTransition {
 			  	}
 			  	«IF assignments.length > 0»
 			  	assignments {
-			  	    «assignments.join(", ")»
+			  	    «assignments.join(",\n")»
 			  	}
 			  	«ENDIF»
 			to s«toState»
