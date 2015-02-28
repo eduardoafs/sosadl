@@ -7,16 +7,25 @@ import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.xtext.generator.IGenerator
 import org.eclipse.xtext.generator.IFileSystemAccess
 import org.archware.sosadl.sosADL.*
-import org.archware.sosadl.SosADLStandaloneSetupGenerated
-import org.eclipse.emf.common.util.URI
-import org.archware.sosadl.SosADLComparator
-import org.eclipse.xtext.parser.IParser
-import java.io.StringReader
+//import org.archware.sosadl.SosADLStandaloneSetupGenerated
+//import org.eclipse.emf.common.util.URI
+//import org.archware.sosadl.SosADLComparator
+//import org.eclipse.xtext.parser.IParser
+//import java.io.StringReader
 import java.util.LinkedHashMap
 import java.util.Map.Entry
 import java.util.ArrayList
 import java.util.List
 import java.lang.System
+//import org.archware.sosadl.services.SosADLGrammarAccess.ValuingElements
+//import org.archware.sosadl.sosADL.impl.ValuingImpl
+import org.archware.sosadl.sosADL.SosADLFactory
+import org.archware.sosadl.sosADL.impl.SosADLFactoryImpl
+import com.google.inject.Guice
+import org.eclipse.emf.ecore.resource.ResourceSet
+import org.eclipse.emf.common.util.URI
+import org.archware.sosadl.SosADLRuntimeModule
+import org.archware.sosadl.sosADL.impl.ValuingImpl
 
 //import org.archware.iosts.ui.contentassist.AbstractIoSTSProposalProvider
 
@@ -53,6 +62,43 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
             systems = newLinkedList()
             fsa.generateFile(iostsFileName, e.compile)
 		}
+	}
+	
+	/*
+	 * Transform a DoExpr into a Valuing EObject.
+	 * From the AST of 'do Expression', we generate the AST for 'value _doExprResult# is dataType = Expression'
+	 * where:
+	 * - _doExprResult# is a unique variable name
+	 * - dataType is the type of Expression
+	 */
+	var lastDumbVariableNumber=0
+	
+	def Valuing newValuingFromDoExpr(DoExpr doExpr) {
+		// generate a new dumb variable
+		lastDumbVariableNumber++
+		val String dumbVarName="_doExprResult"+lastDumbVariableNumber
+		// retrieve the type of Expression
+		val DataType datatype = newNamedType("integer")
+		// create a Valuing
+		val factory = SosADLFactory.eINSTANCE
+		var result = factory.createValuing()  // will create a ValuingImpl!
+		result.setType(datatype)
+		result.setVariable(dumbVarName)
+		result.setExpression(doExpr.expression)
+		// since result is really a ValuingImpl, cast to a Valuing!
+		(result as Valuing)
+	}
+	
+	/*
+	 * Create a new NamedType EObject with given name
+	 */
+	def NamedType newNamedType(String name) {
+		//val SosADLFactory factory = SosADLFactoryImpl.init()
+		val factory = SosADLFactory.eINSTANCE
+		var result = factory.createNamedType()  // will create a NamedTypeImpl!
+		result.setName(name)
+		// since result is really a NamedTypeImpl, cast to a NamedType!
+		(result as NamedType)
 	}
     
     /* Pour memoire 
@@ -381,22 +427,13 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
             		// adding a assignment to transition from state to finalStates.get(0)
             		// instead of creating a new transition
             		state = previousStartState
-            		if (DEBUG3) {
-            			System.err.println("CALLING computeSTS(state="+state+", s, final(0)="+finalStates.get(0)+")")
-            			
-            		}
-            		finalStates = computeSTS(state, s, finalStates.get(0))
-            		if (DEBUG3) {
-	            		System.err.println("RESULT final(0)="+finalStates.get(0))
-	            	}
+            		if (DEBUG3) {System.err.println("CALLING computeSTS(state="+state+", s, final(0)="+finalStates.get(0)+")")}
+            		finalStates = computeSTS(state, s, finalStates.get(0), "Valuing")
+            		if (DEBUG3) {System.err.println("RESULT final(0)="+finalStates.get(0))}
             	} else {
-               		if (DEBUG3) {
-    	        		System.err.println("CALLING computeSTS(state="+state+", s, 0)")
-    	       		}
-            		finalStates = computeSTS(state, s, 0)
-               		if (DEBUG3) {
-           		 		System.err.println("RESULT final(0)="+finalStates.get(0))
-           		 	}
+               		if (DEBUG3) {System.err.println("CALLING computeSTS(state="+state+", s, 0)")}
+            		finalStates = computeSTS(state, s, 0, "Valuing")
+               		if (DEBUG3) {System.err.println("RESULT final(0)="+finalStates.get(0))}
             	}
             	previousIsValuing = true
             } else {
@@ -405,9 +442,7 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
            	}
             first=false
             previousStartState=state
-            if (DEBUG3) {
-            	System.err.println("END LOOP: state="+state+", previousStartState="+previousStartState+", final(0)="+finalStates.get(0))
-            }
+            if (DEBUG3) {System.err.println("END LOOP: state="+state+", previousStartState="+previousStartState+", final(0)="+finalStates.get(0))}
         }
         finalStates
     }
@@ -453,21 +488,13 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
             		// adding a assignment to transition from state to finalStates.get(0)
             		// instead of creating a new transition
             		state = previousStartState
-            		if (DEBUG3) {
-            			System.err.println("CALLING computeSTS(state="+state+", s, final(0)="+finalStates.get(0)+")")
-            		}
-            		finalStates = computeSTS(state, s, finalStates.get(0))
-            		if (DEBUG3) {
-            			System.err.println("RESULT final(0)="+finalStates.get(0))
-            		}
+            		if (DEBUG3) {System.err.println("CALLING computeSTS(state="+state+", s, final(0)="+finalStates.get(0)+")")}
+            		finalStates = computeSTS(state, s, finalStates.get(0), "Valuing")
+            		if (DEBUG3) {System.err.println("RESULT final(0)="+finalStates.get(0))}
             	} else {
-            		if (DEBUG3) {
-            			System.err.println("CALLING computeSTS(state="+state+", s, 0)")
-            		}
-            		finalStates = computeSTS(state, s, 0)
-            		if (DEBUG3) {
-            			System.err.println("RESULT final(0)="+finalStates.get(0))
-            		}
+            		if (DEBUG3) {System.err.println("CALLING computeSTS(state="+state+", s, 0)")}
+            		finalStates = computeSTS(state, s, "Valuing")
+            		if (DEBUG3) {System.err.println("RESULT final(0)="+finalStates.get(0))}
             	}
             	previousIsValuing = true
             } else {
@@ -476,56 +503,30 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
            	}
             first=false
             previousStartState=state
-            if (DEBUG3) {
-            	System.err.println("END LOOP: state="+state+", previousStartState="+previousStartState+", final(0)="+finalStates.get(0))
-            }
+            if (DEBUG3) {System.err.println("END LOOP: state="+state+", previousStartState="+previousStartState+", final(0)="+finalStates.get(0))}
         }
         finalStates
     }
     
     /*
-     * - computeSTS for a first Valuing statement.
+     * - computeSTS for a DoExpr statement: transform to a Valuing!
      */
-    /*
-    def dispatch ArrayList<Integer> computeSTS(int startState, Valuing v){
-        val int final=currentProcess.newState()
-        var IOstsTransition valuing = new IOstsTransition(startState,final)
-        //valuing.addAssignment(v.compile.toString) // v.compile.toString hields SosADL syntax
-        registerValuing(v)
-        valuing.addAssignment(v.variable+" := "+v.expression.compile)
-        valuing.setComment("Valuing")
-        currentProcess.addTransition(valuing)
-        //System.out.println("Added valuing transition: from="+startState+", to="+final)
-        newArrayList(final)
+    def dispatch ArrayList<Integer> computeSTS(int startState, DoExpr r){
+    	val Valuing v = newValuingFromDoExpr(r)
+    	computeSTS(startState, v, "DoExpr")
     }
-    */
     
     /*
-     * - computeSTS for a Valuing statement following a Valuing statement.
+     * - computeSTS for a Valuing statement, not following a previous Valuing
      */
-    /*
-    def dispatch ArrayList<Integer> computeSTS(int startState, Valuing v, int finalState){
-        var IOstsTransition valuing = currentProcess.getTransition(startState,finalState)
-        //valuing.addAssignment(v.compile.toString) // v.compile.toString hields SosADL syntax
-        registerValuing(v)
-        valuing.addAssignment(v.variable+" := "+v.expression.compile)
-        valuing.setComment("Valuing")
-        currentProcess.addTransition(valuing)
-        //System.out.println("Added valuing transition: from="+startState+", to="+final)
-        newArrayList(finalState)
+    def ArrayList<Integer> computeSTS(int startState, Valuing v, String comment){
+    	computeSTS(startState, v, 0, comment)
     }
-    */
     
     /*
-     * - computeSTS for a Valuing statement following a Valuing statement.
+     * - computeSTS for a Valuing statement, may be following a Valuing statement.
      */
-    /*
-    def dispatch ArrayList<Integer> computeSTS(int startState, Valuing v){
-    	computeSTS(startState, v, 0)
-    }
-    */
-    
-    def ArrayList<Integer> computeSTS(int startState, Valuing v, int finalState){
+    def ArrayList<Integer> computeSTS(int startState, Valuing v, int finalState, String comment){
     	var int final
     	var IOstsTransition valuing
     	if (finalState == 0) {
@@ -544,7 +545,7 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
         //valuing.addAssignment(v.compile.toString) // v.compile.toString hields SosADL syntax
         registerValuing(v)
         valuing.addAssignment(v.variable+" := "+v.expression.compile)
-        valuing.setComment("Valuing")
+        valuing.setComment(comment)
         currentProcess.addTransition(valuing)
         //System.out.println("Added valuing transition: from="+startState+", to="+final)
         newArrayList(final)
@@ -864,19 +865,6 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
         foreach.setComment("TODO! ForEachProtocol")
         currentProcess.addTransition(foreach)
         //System.out.println("Added fake foreach transition: from="+startState+", to="+final)
-        newArrayList(final)
-    }
-    
-    /*
-     * - computeSTS for a DoExpr statement.
-     */
-    def dispatch ArrayList<Integer> computeSTS(int startState, DoExpr r){
-        // TODO!
-        val int final=currentProcess.newState()
-        var IOstsTransition doExpr = new IOstsTransition(startState,final)
-        doExpr.setComment("TODO! DoExpr")
-        currentProcess.addTransition(doExpr)
-        //System.out.println("Added fake DoExpr transition: from="+startState+", to="+final)
         newArrayList(final)
     }
     
