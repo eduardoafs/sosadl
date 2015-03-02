@@ -51,7 +51,8 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
     var IOstsSystem currentSystem = null       // system currently generated
     var IOstsProcess currentProcess = null           // process currently generated
     var lastIOstsTypeNum = 0
-    
+    var lastDumbVariableNumber=0
+	
 	override void doGenerate(Resource resource, IFileSystemAccess fsa) {
 
 		for (e : resource.allContents.toIterable.filter(SosADL)) {
@@ -71,8 +72,6 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 	 * - _doExprResult# is a unique variable name
 	 * - dataType is the type of Expression
 	 */
-	var lastDumbVariableNumber=0
-	
 	def Valuing newValuingFromDoExpr(DoExpr doExpr) {
 		// generate a new dumb variable
 		lastDumbVariableNumber++
@@ -807,7 +806,15 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
                 //System.out.println("Added repeat transition: from="+final+", to="+startState)
             }
         }
-        newArrayList(startState) 
+        // add a transition with guard "false" and action "tau" from startState
+        // to avoid bypassing or exiting the repeat loop.
+        val int ifFalseAfterRepeat=currentProcess.newState()
+        var IOstsTransition ifFalse = new IOstsTransition(startState,ifFalseAfterRepeat)
+        ifFalse.setGuard("false")
+        ifFalse.setComment("IfFalse avoids exit from Repeat")
+        currentProcess.addTransition(ifFalse)
+        //System.out.println("Added ifFalse transition after Repeat: from="+startState+", to="+ifFalseAfterRepeat)
+        newArrayList(ifFalseAfterRepeat)
     }
 
     /*
