@@ -51,7 +51,7 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
     var IOstsSystem currentSystem = null       // system currently generated
     var IOstsProcess currentProcess = null           // process currently generated
     var lastIOstsTypeNum = 0
-    var lastDumbVariableNumber=0
+    var lastDoExprResultNumber=0
 	
 	override void doGenerate(Resource resource, IFileSystemAccess fsa) {
 
@@ -74,8 +74,8 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 	 */
 	def Valuing newValuingFromDoExpr(DoExpr doExpr) {
 		// generate a new dumb variable
-		lastDumbVariableNumber++
-		val String dumbVarName="_doExprResult"+lastDumbVariableNumber
+		lastDoExprResultNumber++
+		val String dumbVarName="_doExprResult"+lastDoExprResultNumber
 		// retrieve the type of Expression
 		val DataType datatype = newNamedType("integer")
 		// create a Valuing
