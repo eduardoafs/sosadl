@@ -52,6 +52,7 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
     var IOstsProcess currentProcess = null           // process currently generated
     var lastIOstsTypeNum = 0
     var lastDoExprResultNumber=0
+    var lastForEachVarNumber=0
 	
 	override void doGenerate(Resource resource, IFileSystemAccess fsa) {
 
@@ -853,26 +854,82 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
      * - computeSTS for a ForEachBehavior statement.
      */
     def dispatch ArrayList<Integer> computeSTS(int startState, ForEachBehavior r){
-        // TODO!
-        val int final=currentProcess.newState()
-        var IOstsTransition foreach = new IOstsTransition(startState,final)
-        foreach.setComment("TODO! ForEachBehavior")
-        currentProcess.addTransition(foreach)
-        //System.out.println("Added fake foreach transition: from="+startState+", to="+final)
-        newArrayList(final)
+        lastForEachVarNumber++
+        val String iName = "i"+lastForEachVarNumber+"_"
+        val String setOfValues = r.setOfValues.compile.toString
+        val String variable = r.variable
+        currentProcess.addVariable(iName)
+        // transition: initialize i
+        val finalInit=currentProcess.newState()
+        var IOstsTransition init = new IOstsTransition(startState,finalInit)
+        init.setComment("ForEachBehavior: init "+iName)
+        init.addAssignment(iName+" := "+0)
+        currentProcess.addTransition(init)
+        // transition: if (i < sizeof(setOfValues))
+        val finalIfInf=currentProcess.newState()
+        var IOstsTransition ifInf = new IOstsTransition(finalInit, finalIfInf)
+        ifInf.setComment("ForEachBehavior: begin loop")
+        ifInf.setGuard(iName+" <= "+setOfValues+"::size()")
+        ifInf.addAssignment(variable+" := "+setOfValues+"::element("+iName+")")
+        currentProcess.addTransition(ifInf)
+        // transitions of the Behavior inside the ForEachBehavior
+        var ArrayList<Integer> endOfLoop = newArrayList()
+        endOfLoop.addAll(computeSTS(finalIfInf, r.repeated))
+        // transition(s) from end(s) of Behavior inside the ForEachBehavior to init
+        for (e : endOfLoop) {
+        	var IOstsTransition increment = new IOstsTransition(e,finalInit)
+        	increment.addAssignment(iName+" := "+iName+"+1")
+        	increment.setComment("ForEachBehavior: end loop with increment")
+        	currentProcess.addTransition(increment)
+        }
+        // transition: if (i > sizeof(setOfValues))
+        val finalIfSup=currentProcess.newState()
+        var IOstsTransition ifSup = new IOstsTransition(finalInit, finalIfSup)
+        ifSup.setComment("ForEachBehavior: after foreach loop")
+        ifSup.setGuard(iName+" > "+setOfValues+"::size()")
+        currentProcess.addTransition(ifSup)
+    	newArrayList(finalIfSup)
     }
     
     /*
      * - computeSTS for a ForEachProtocol statement.
      */
     def dispatch ArrayList<Integer> computeSTS(int startState, ForEachProtocol r){
-        // TODO!
-        val int final=currentProcess.newState()
-        var IOstsTransition foreach = new IOstsTransition(startState,final)
-        foreach.setComment("TODO! ForEachProtocol")
-        currentProcess.addTransition(foreach)
-        //System.out.println("Added fake foreach transition: from="+startState+", to="+final)
-        newArrayList(final)
+		lastForEachVarNumber++
+        val String iName = "i"+lastForEachVarNumber+"_"
+        val String setOfValues = r.setOfValues.compile.toString
+        val String variable = r.variable
+        currentProcess.addVariable(iName)
+        // transition: initialize i
+        val finalInit=currentProcess.newState()
+        var IOstsTransition init = new IOstsTransition(startState,finalInit)
+        init.setComment("ForEachBehavior: init "+iName)
+        init.addAssignment(iName+" := "+0)
+        currentProcess.addTransition(init)
+        // transition: if (i < sizeof(setOfValues))
+        val finalIfInf=currentProcess.newState()
+        var IOstsTransition ifInf = new IOstsTransition(finalInit, finalIfInf)
+        ifInf.setComment("ForEachBehavior: begin loop")
+        ifInf.setGuard(iName+" <= "+setOfValues+"::size()")
+        ifInf.addAssignment(variable+" := "+setOfValues+"::element("+iName+")")
+        currentProcess.addTransition(ifInf)
+        // transitions of the Behavior inside the ForEachBehavior
+        var ArrayList<Integer> endOfLoop = newArrayList()
+        endOfLoop.addAll(computeSTS(finalIfInf, r.repeated))
+        // transition(s) from end(s) of Behavior inside the ForEachBehavior to init
+        for (e : endOfLoop) {
+        	var IOstsTransition increment = new IOstsTransition(e,finalInit)
+        	increment.addAssignment(iName+" := "+iName+"+1")
+        	increment.setComment("ForEachBehavior: end loop with increment")
+        	currentProcess.addTransition(increment)
+        }
+        // transition: if (i > sizeof(setOfValues))
+        val finalIfSup=currentProcess.newState()
+        var IOstsTransition ifSup = new IOstsTransition(finalInit, finalIfSup)
+        ifSup.setComment("ForEachBehavior: after foreach loop")
+        ifSup.setGuard(iName+" > "+setOfValues+"::size()")
+        currentProcess.addTransition(ifSup)
+    	newArrayList(finalIfSup)
     }
     
     /*
