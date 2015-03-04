@@ -876,12 +876,35 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
         var ArrayList<Integer> endOfLoop = newArrayList()
         endOfLoop.addAll(computeSTS(finalIfInf, r.repeated))
         // transition(s) from end(s) of Behavior inside the ForEachBehavior to init
+        /* alt1 */
         for (e : endOfLoop) {
         	var IOstsTransition increment = new IOstsTransition(e,finalInit)
         	increment.addAssignment(iName+" := "+iName+"+1")
         	increment.setComment("ForEachBehavior: end loop with increment")
         	currentProcess.addTransition(increment)
         }
+        // end of alt1
+        /* alt2
+ 		// add a concatenation if body ends with multiple states
+        var int finalEndOfLoop
+        if (endOfLoop.length > 1) {
+        	finalEndOfLoop = currentProcess.newState()
+        	// adding concatenations to get a unique final state for the body of ForEach
+        	for (e : endOfLoop) {
+	        	var IOstsTransition concatenation = new IOstsTransition(e,finalEndOfLoop)
+	        	concatenation.setComment("ForEachBehavior: concatenation before increment")
+	        	currentProcess.addTransition(concatenation)
+	        }
+        } else {
+        	finalEndOfLoop = endOfLoop.get(0)
+        }
+        // increment
+        var IOstsTransition increment = new IOstsTransition(finalEndOfLoop,finalInit)
+        increment.addAssignment(iName+" := "+iName+"+1")
+        increment.setComment("ForEachBehavior: end loop increment")
+        currentProcess.addTransition(increment)
+        // end of alt2
+        */
         // transition: if (i > sizeof(setOfValues))
         val finalIfSup=currentProcess.newState()
         var IOstsTransition ifSup = new IOstsTransition(finalInit, finalIfSup)
@@ -903,30 +926,53 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
         // transition: initialize i
         val finalInit=currentProcess.newState()
         var IOstsTransition init = new IOstsTransition(startState,finalInit)
-        init.setComment("ForEachBehavior: init "+iName)
+        init.setComment("ForEachProtocol: init "+iName)
         init.addAssignment(iName+" := "+0)
         currentProcess.addTransition(init)
         // transition: if (i < sizeof(setOfValues))
         val finalIfInf=currentProcess.newState()
         var IOstsTransition ifInf = new IOstsTransition(finalInit, finalIfInf)
-        ifInf.setComment("ForEachBehavior: begin loop")
+        ifInf.setComment("ForEachProtocol: begin loop")
         ifInf.setGuard(iName+" <= "+setOfValues+"::size()")
         ifInf.addAssignment(variable+" := "+setOfValues+"::element("+iName+")")
         currentProcess.addTransition(ifInf)
-        // transitions of the Behavior inside the ForEachBehavior
+        // transitions of the Behavior inside the ForEachProtocol
         var ArrayList<Integer> endOfLoop = newArrayList()
         endOfLoop.addAll(computeSTS(finalIfInf, r.repeated))
         // transition(s) from end(s) of Behavior inside the ForEachBehavior to init
+        /* alt1 */
         for (e : endOfLoop) {
         	var IOstsTransition increment = new IOstsTransition(e,finalInit)
         	increment.addAssignment(iName+" := "+iName+"+1")
-        	increment.setComment("ForEachBehavior: end loop with increment")
+        	increment.setComment("ForEachProtocol: end loop with increment")
         	currentProcess.addTransition(increment)
         }
+        // end of alt1
+        /* alt2
+ 		// add a concatenation if body ends with multiple states
+        var int finalEndOfLoop
+        if (endOfLoop.length > 1) {
+        	finalEndOfLoop = currentProcess.newState()
+        	// adding concatenations to get a unique final state for the body of ForEach
+        	for (e : endOfLoop) {
+	        	var IOstsTransition concatenation = new IOstsTransition(e,finalEndOfLoop)
+	        	concatenation.setComment("ForEachProtocol: concatenation before increment")
+	        	currentProcess.addTransition(concatenation)
+	        }
+        } else {
+        	finalEndOfLoop = endOfLoop.get(0)
+        }
+        // increment
+        var IOstsTransition increment = new IOstsTransition(finalEndOfLoop,finalInit)
+        increment.addAssignment(iName+" := "+iName+"+1")
+        increment.setComment("ForEachProtocol: end loop increment")
+        currentProcess.addTransition(increment)
+        // end of alt2
+        */
         // transition: if (i > sizeof(setOfValues))
         val finalIfSup=currentProcess.newState()
         var IOstsTransition ifSup = new IOstsTransition(finalInit, finalIfSup)
-        ifSup.setComment("ForEachBehavior: after foreach loop")
+        ifSup.setComment("ForEachProtocol: after foreach loop")
         ifSup.setGuard(iName+" > "+setOfValues+"::size()")
         currentProcess.addTransition(ifSup)
     	newArrayList(finalIfSup)
