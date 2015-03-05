@@ -1,0 +1,22 @@
+// ok
+ 
+library testAnyAction1 is {
+  
+  system test() is {
+    
+    datatype type1
+    
+    gate gate1 is {
+      connection connection1 is in{type1}
+    } guarantee {
+      protocol gate1protocol is {
+        anyaction
+      }
+    }
+    
+    behavior test is {
+      // anyaction exists in protocol only
+      done
+    }
+  }
+}
