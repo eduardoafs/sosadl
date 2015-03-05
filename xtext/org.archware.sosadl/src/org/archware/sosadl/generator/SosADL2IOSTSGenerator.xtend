@@ -67,6 +67,20 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 		}
 	}
 	
+	//=========================== model transformations
+	
+	/*
+	 * Create a new NamedType EObject with given name
+	 */
+	def NamedType newNamedType(String name) {
+		//val SosADLFactory factory = SosADLFactoryImpl.init()
+		val factory = SosADLFactory.eINSTANCE
+		var result = factory.createNamedType()  // will create a NamedTypeImpl!
+		result.setName(name)
+		// since result is really a NamedTypeImpl, cast to a NamedType!
+		(result as NamedType)
+	}
+	
 	/*
 	 * Transform a DoExpr into a Valuing EObject.
 	 * From the AST of 'do Expression', we generate the AST for 'value _doExprResult# is dataType = Expression'
@@ -89,19 +103,9 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 		// since result is really a ValuingImpl, cast to a Valuing!
 		(result as Valuing)
 	}
-	
-	/*
-	 * Create a new NamedType EObject with given name
-	 */
-	def NamedType newNamedType(String name) {
-		//val SosADLFactory factory = SosADLFactoryImpl.init()
-		val factory = SosADLFactory.eINSTANCE
-		var result = factory.createNamedType()  // will create a NamedTypeImpl!
-		result.setName(name)
-		// since result is really a NamedTypeImpl, cast to a NamedType!
-		(result as NamedType)
-	}
     
+    //=========================== compilation
+	
     /* Pour memoire 
 	
 	//---------------- parts of SosADL2IOSTSv1Generator : pour memoire
@@ -371,7 +375,7 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 		}
 	}
     
-    //---------------- Generation of the STS
+    //=========================== Generation of the STS
     
     /*
      * Returns an init transition: from 0 to 1, with given guard.
@@ -1018,7 +1022,8 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
     }    
 
     
-    //---------------- Utility functions for handling IoSTS types
+    //=========================== Utility functions for handling IoSTS types
+    
     def getIOstsType(String name) {
 	    if (currentSystem != null) {
             if (currentSystem.typesMap.containsKey(name)) {
@@ -1182,7 +1187,11 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
     */
 }
 
-//-------------- Types
+//-------------- 
+// IoSTS classes
+//-------------- 
+
+//-------------- IoSTS types
 
 /*
  * Type: is the superclass of all types.
