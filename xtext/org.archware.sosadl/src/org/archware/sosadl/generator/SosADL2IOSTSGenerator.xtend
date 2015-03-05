@@ -1651,6 +1651,7 @@ class IOstsTransition {
  * - inoutputMap is a map that lives only during the translation from SoS-ADL to IOSTS
  *   because SOS-ADL has inout connections.
  * - parametersMap, and variablesMap are mutable maps containing parameters and variables of the process.
+ * - globalsMap is a mutable map containing global variables used in the process.
  * - transitions is the mutable list of the transitions.
  * - lastState is an int used internally to assign names to states.
  * - lastParameterNumber is an int used internally to assign names to parameters.
@@ -1665,6 +1666,7 @@ class IOstsProcess{
     public var outputMap = newLinkedHashMap()   // map of (out connection -> type name)
     public var inoutputMap = newLinkedHashMap() // map of (inout connection -> type name)
     public var parametersMap = newLinkedHashMap()  // map of (received variable -> type name)
+    public var globalsMap = newLinkedHashMap()  // map of (global variable -> type name) 
     public var variablesMap = newLinkedHashMap()  // map of (variable -> type name) 
     public var List<IOstsTransition> transitions = newArrayList()
     var int lastState = 0 // number of the last state, starting at 0.
@@ -1710,6 +1712,14 @@ class IOstsProcess{
     
     def addParameter(String name, String typeName) {
         this.parametersMap.put(name, typeName)
+    }
+    
+    def addGlobal(String name, String typeName) {
+        this.globalsMap.put(name, typeName)
+    }
+    
+    def addGlobal(String name) {
+        addGlobal(name, new IOstsIntType().toString)
     }
     
     def addVariable(String name, String typeName) {
@@ -1824,6 +1834,13 @@ class IOstsProcess{
     	messages {
     		«FOR p:parametersMap.keySet»
     		«p» is «parametersMap.get(p)» 
+    		«ENDFOR»
+    	}
+    	«ENDIF»
+    	«IF !globalsMap.empty»
+    	globals {
+    		«FOR g:globalsMap.entrySet»
+    		«g.key» is «g.value»
     		«ENDFOR»
     	}
     	«ENDIF»
