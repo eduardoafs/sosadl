@@ -103,6 +103,80 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 		// since result is really a ValuingImpl, cast to a Valuing!
 		(result as Valuing)
 	}
+	
+	/*
+	 * Create a ComplexName out of the name of a IOstsConnection
+	 * Since the name of a connection is already the concatenation of the elements of the ComplexName,
+	 * one has to split this name and remove the added '::' to get each element of the ComplexName.
+	 * Example: gate::connection has to be splitted in ComplexName(Name('gate'),Name('connection')) 
+	 */
+	def ComplexName newComplexNameFromString(String name) {
+		val factory = SosADLFactory.eINSTANCE
+		var result = factory.createComplexName()  // will create a ComplexNameImpl?
+		var complexname = name.split("::")
+		for (n : complexname) {
+			result.getName().add(n)
+		}
+		result
+	}
+	
+	/*
+	 * Create an ChooseProtocol (choose {action1} or {action2} ...)
+	 * out of the given list of connections.
+	 * From the list of declared connections in the current gate/duty, 
+	 * we generate the AST for 'choose {action1} or {action2}'
+	 * where:
+	 * - each declared connection <c> gives one or two actions.
+	 * - if one connection <c.name> has mode 'in', the generated action is 'via <c.name> receive any'. 
+	 * - if one connection <c.name> has mode 'out', the generated action is 'via <c.name> send any'. 
+	 * - if one connection <c.name> has mode 'inout', two actions are gerenated:
+	 *   'via <c.name> receive any' and 'via <c.name> send any'. 
+	 */
+	def ChooseProtocol newChooseProtocolActionFromConnections(LinkedHashMap<String,IOstsConnection> connectionsMap) {
+		// create a Valuing
+		val factory = SosADLFactory.eINSTANCE
+		var result = factory.createChooseProtocol()  // will create a ChooseProtocolImpl!
+		for (c : connectionsMap.values) {
+			// create the appropriate(s) action(s) and make it a new branch
+			if (c.mode == 'in' || c.mode == 'inout') {
+				// connection mode is 'in' or 'inout': create a branch with 'via <c.name> receive any'
+				// make a ComplexName out of the name of the connection
+				var ComplexName conectionName=newComplexNameFromString(c.name)
+				// create a new ReceiveAnyProtocolAction which is a ProtocolActionSuite
+				var actionSuite = factory.createReceiveAnyProtocolAction()
+				// create a new ProtocolAction
+				var action = factory.createProtocolAction()
+				action.setComplexName(conectionName)
+				action.setSuite(actionSuite)
+				// create a new Branch of the ChooseProtocol, and add the action to it
+			    var branch = factory.createProtocol()
+			    branch.getStatements().add(action)
+			    // add the branch to the ChooseProtocol
+			    result.getBranches().add(branch)
+			}
+			if (c.mode == 'out' || c.mode == 'inout') {
+				// connection mode is 'out' or 'inout': create a branch with 'via <c.name> send any'
+				// make a ComplexName out of the name of the connection
+				var ComplexName conectionName=newComplexNameFromString(c.name)
+				// create a FinalExpression Any ('any')
+				var anyExpression = factory.createAny()
+				// create a new ReceiveAnyProtocolAction which is a ProtocolActionSuite
+				var actionSuite = factory.createSendProtocolAction()
+				actionSuite.setExpression(anyExpression)
+				// create a new ProtocolAction
+				var action = factory.createProtocolAction()
+				action.setComplexName(conectionName)
+				action.setSuite(actionSuite)
+			    // create a new Branch of the ChooseProtocol, and add the action to it
+			    var branch = factory.createProtocol()
+			    branch.getStatements().add(action)
+			    // add the branch to the ChooseProtocol
+			    result.getBranches().add(branch)
+			}
+		}
+		result
+	}
+	
     
     //=========================== compilation
 	
@@ -991,6 +1065,7 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
      * - computeSTS for an AnyAction statement.
      */
     def dispatch ArrayList<Integer> computeSTS(int startState, AnyAction a){
+        /*
         // TODO!
         val int final=currentProcess.newState()
         var IOstsTransition anyAction = new IOstsTransition(startState,final)
@@ -998,6 +1073,9 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
         currentProcess.addTransition(anyAction)
         //System.out.println("Added fake anyAction transition: from="+startState+", to="+final)
         newArrayList(final)
+        */
+        val choose = newChooseProtocolActionFromConnections(currentProcess.connectionsMap)
+        computeSTS(startState, choose)
     }
     
     /*
