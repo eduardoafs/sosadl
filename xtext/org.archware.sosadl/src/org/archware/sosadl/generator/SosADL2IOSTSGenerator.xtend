@@ -204,7 +204,7 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 	 * out of the given list of ProtocolStatements where:
 	 * - the ask statement which is the AskAssertion, containing the condition=Expression of if(condition)
 	 * - the next statements, if any, are the ProtocolStatement to be put inside 'then{}' 
-	 * The SoSADL grammar does not allow a Behavior without statements.
+	 * The SoSADL grammar does not allow a Protocol without statements.
 	 * Thus, in case the ifThenStatements is empty, a Done statement is added to it.
 	 */
 	def IfThenElseProtocol newIfThenElseProtocolFromAskAssertionAndProtocolStatements(AskAssertion ask, ArrayList<ProtocolStatement> ifThenStatements) {
