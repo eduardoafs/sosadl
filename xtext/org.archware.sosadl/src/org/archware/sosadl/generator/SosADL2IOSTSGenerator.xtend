@@ -731,10 +731,11 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
                  *     currentProcess.addParameter(parameter,connection.typeName)
                  */
                 // send any: no guard (thus not parameter) and send a random expression compatible with type of connection
-                action.setGuard(parameter+" = 0  /*FIXME: 0 should be an expression of parameter's type*/")
+                //action.setGuard(parameter+" = 0  /*FIXME: 0 should be an expression of parameter's type*/")
+                action.setGuard(parameter+" = "+(a.suite as SendProtocolAction).expression.compile)
                 action.setAction("via "+channel+" send "+parameter)
                 currentProcess.addParameter(parameter,connection.typeName)
-                action.setComment("Send any action")
+                action.setComment("Send any action. Note: any is a random value")
             } else {
                 // send some expression
                 action.setGuard(parameter+" = "+(a.suite as SendProtocolAction).expression.compile)
