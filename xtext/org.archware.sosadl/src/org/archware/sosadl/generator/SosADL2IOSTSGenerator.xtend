@@ -2166,9 +2166,9 @@ class IOstsSystem{
  * Notes:
  * - has an immutable name, which is required at creation time.
  * - fileName is the name of the file to be saved.
- * - importedMap is a mutable map is the list of imported libraries
- * - typesMap is a mutable map is the locally declared types
- * - systemsMap is a mutable map is the locally declared systems
+ * - importedMap is a mutable map containing the list of imported libraries
+ * - typesMap is a mutable map containing the locally declared types
+ * - systemsMap is a mutable map containing the locally declared systems
  */
 class IOstsLibrary{
     val String name
