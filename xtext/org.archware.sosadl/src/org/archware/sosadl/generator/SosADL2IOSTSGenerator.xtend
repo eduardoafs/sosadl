@@ -181,12 +181,17 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 	 * out of the given list of BehaviorStatements where:
 	 * - the ask statement which is the AskAssertion, containing the condition=Expression of if(condition)
 	 * - the next statements, if any, are the BehaviorStatement to be put inside 'then{}' 
-	 * 
+	 * The SoSADL grammar does not allow a Behavior without statements.
+	 * Thus, in case the ifThenStatements is empty, a Done statement is added to it.
 	 */
 	def IfThenElseBehavior newIfThenElseBehaviorFromAskAssertionAndBehaviorStatements(AskAssertion ask, ArrayList<BehaviorStatement> ifThenStatements) {
 		// create a Behavior which will contain the ifThenStatements
 		val factory = SosADLFactory.eINSTANCE
 		var ifTrueBehavior = factory.createBehavior()
+		if (ifThenStatements.empty) {
+			val done = factory.createDone()
+			ifThenStatements.add(done)
+		}
 		ifTrueBehavior.getStatements().addAll(ifThenStatements)
 		// create an IfThenElseBehavior
 		var result = factory.createIfThenElseBehavior() // will create a IfThenElseBehaviorImpl!
@@ -199,12 +204,17 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 	 * out of the given list of ProtocolStatements where:
 	 * - the ask statement which is the AskAssertion, containing the condition=Expression of if(condition)
 	 * - the next statements, if any, are the ProtocolStatement to be put inside 'then{}' 
-	 * 
+	 * The SoSADL grammar does not allow a Behavior without statements.
+	 * Thus, in case the ifThenStatements is empty, a Done statement is added to it.
 	 */
 	def IfThenElseProtocol newIfThenElseProtocolFromAskAssertionAndProtocolStatements(AskAssertion ask, ArrayList<ProtocolStatement> ifThenStatements) {
 		// create a Protocol which will contain the ifThenStatements
 		val factory = SosADLFactory.eINSTANCE
 		var ifTrueProtocol = factory.createProtocol()
+		if (ifThenStatements.empty) {
+			val done = factory.createDone()
+			ifThenStatements.add(done)
+		}
 		ifTrueProtocol.getStatements().addAll(ifThenStatements)
 		// create an IfThenElseProtocol
 		var result = factory.createIfThenElseProtocol() // will create a IfThenElseProtocolImpl!
