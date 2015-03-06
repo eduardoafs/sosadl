@@ -478,14 +478,10 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
         var boolean first=true
         var boolean previousIsValuing=false
         var int previousStartState=0
-        for (s : b.statements) {
-            /* OLD version: obsolete since initTransition()
-            if (first && (s instanceof Action) && startState==0 && state==0) {
-                //System.out.println("Preparing empty transition, because sync is not allowed in first transition": from="+state+", to="+state)
-                finalStates = newArrayList(0)
-                first=false
-            }
-            */
+        var int istatement=0
+        var int nstatements=b.statements.length
+        while(istatement < nstatements) {
+        	var s=b.statements.get(istatement)
             if (! first) { // && finalStates.length >= 2) {
             	// NEW version: concatenation for sequentiality is generated between two statements
             	// ONLY when the first statement ends with at least 2 final states.
@@ -526,6 +522,7 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
             first=false
             previousStartState=state
             if (DEBUG3) {System.err.println("END LOOP: state="+state+", previousStartState="+previousStartState+", final(0)="+finalStates.get(0))}
+            istatement++
         }
         finalStates
     }
@@ -539,15 +536,11 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
         var boolean first=true
         var boolean previousIsValuing=false
         var int previousStartState=0
-        for (s : b.statements) {
-        	/* OLD version: obsolete since initTransition()
-            if (first && (s instanceof ProtocolAction) && startState==0 && state==0) {
-                //System.out.println("Preparing empty transition, because sync is not allowed in first transition": from="+state+", to="+state)
-                finalStates = newArrayList(0)
-                first=false
-            }
-            */
-            if (! first) {
+        var int istatement=0
+        var int nstatements=b.statements.length
+        while(istatement < nstatements) {
+        	var s=b.statements.get(istatement)
+        	if (! first) {
             	// NEW version: concatenation for sequentiality is generated between two statements
             	// ONLY when the first statement ends with at least 2 final states.
             	if (finalStates.length == 1) {
@@ -587,6 +580,7 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
             first=false
             previousStartState=state
             if (DEBUG3) {System.err.println("END LOOP: state="+state+", previousStartState="+previousStartState+", final(0)="+finalStates.get(0))}
+            istatement++
         }
         finalStates
     }
