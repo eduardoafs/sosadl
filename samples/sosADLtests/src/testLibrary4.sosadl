@@ -1,0 +1,14 @@
+// ok
+with Base
+
+library testLibrary4 is {
+  datatype type1 is integer {
+  	function (i:type1)::add(j:integer):integer is {
+  	  return (i+j)
+  	}
+  }
+
+  function (i:type1)::mult(j:integer):integer is {
+  	return (i*j)
+  }
+}

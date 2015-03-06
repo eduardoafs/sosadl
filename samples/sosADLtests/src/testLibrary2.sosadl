@@ -1,0 +1,6 @@
+// ok
+with Base
+
+library testLibrary2 is {
+	// nothing!
+}
