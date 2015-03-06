@@ -1,0 +1,6 @@
+// ok
+with Base
+
+sos testSoS2 is {
+	// nothing!
+}
