@@ -1006,8 +1006,12 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
     }
         
     /*
-     * - computeSTS for a Assert statement.
-     */
+     * - computeSTS for a Assert statement:
+     *   useless and never called, because the case Assert is handled differently:
+     *   -- if Assert is an AskAssertion,
+     *      it is directly handled in computeSTS(int,Behavior) or computeSTS(int,Protocol)
+     *   -- if Assert is a TellAssertion, see computeSTS(int,TellAssertion)
+     *
     def dispatch ArrayList<Integer> computeSTS(int startState, Assert r){
         // TODO!
         val int final=currentProcess.newState()
@@ -1017,6 +1021,45 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
         //System.out.println("Added fake assert transition: from="+startState+", to="+final)
         newArrayList(final)
     }
+    */
+    
+    /*
+     * - computeSTS for a AskAssertion statement: never called!
+     *   because it is directly handled in computeSTS(int,Behavior) or computeSTS(int,Protocol).
+     *
+    def dispatch ArrayList<Integer> computeSTS(int startState, AskAssertion r){
+     */
+    
+    /*
+     * - computeSTS for a TellAssertion statement
+     * 
+     *   FIXME: For the moment, we only allow expression in the form "var = expr"
+     */
+    def dispatch ArrayList<Integer> computeSTS(int startState, TellAssertion r){
+    	val final=currentProcess.newState()
+        var IOstsTransition tell = new IOstsTransition(startState,final)
+        tell.setGuard(r.expression.compile.toString)
+        tell.setComment("TellAssertion")
+        // Now the tricky part! At the moment, we only recognize and handle this case:
+        // - case1: the expression is "envvar = expr"
+        // else, the assignment is left empty!
+        if (r.expression instanceof BinaryExpression) {
+        	val BinaryExpression e = (r.expression as BinaryExpression)
+        	if (e.getLeft instanceof IdentExpression) {
+        		val String varName = e.getLeft.compile.toString
+        	    if (e.op == '=') {
+        	    	// case 1
+        			tell.addAssignment(varName+" := "+e.getRight().compile)
+        			// register the varName as a global variable
+        			var String typeName = "integer /* FIXME! should be type of assigned expression! */"
+        			currentProcess.addGlobal(varName, typeName)
+        		}
+        	}
+        }
+        currentProcess.addTransition(tell)
+        newArrayList(final)
+    }
+    
     
     /*
      * - computeSTS for a ForEachBehavior statement.
@@ -1800,7 +1843,16 @@ class IOstsProcess{
     }
     
     def addGlobal(String name, String typeName) {
-        this.globalsMap.put(name, typeName)
+    	if (this.variablesMap.containsKey(name)) {
+    		System.err.println("Warning! Global var '"+name+"' is already declared as local variable! Ignoring...")
+        }
+        else if (this.globalsMap.containsKey(name)) {
+    		if (! this.globalsMap.get(name).equals(typeName)) {
+    			System.err.println("Warning! Global var '"+name+"' is already declared with type '"+this.globalsMap.get(name)+"'! Ignoring...")
+    		} // else: global variable 'name' is already declared with same type: ok.
+    	} else {
+    		this.globalsMap.put(name, typeName)	
+    	}
     }
     
     def addGlobal(String name) {
