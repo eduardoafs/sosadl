@@ -45,9 +45,10 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
     // global variables making the generation much easier
     var String resourceFilename = null          // current SoSADL file name to be transformed
     var String iostsFileName = null             // current IoSTS file name to generate
+    var LinkedHashMap<String,IOstsLibrary> librariesMap = newLinkedHashMap()  // map of (name -> library)
     var LinkedHashMap<String,String> globalConstantsMap = newLinkedHashMap()
     var LinkedHashMap<String,IOstsType> globalTypesMap = newLinkedHashMap()     // map of (types -> typeDecl)
-    var List<IOstsSystem> systems = null       // list of generated systems from one SoSADL file
+    var IOstsLibrary currentLibrary = null     // library currently generated
     var IOstsSystem currentSystem = null       // system currently generated
     var IOstsProcess currentProcess = null     // process currently generated
     var LinkedHashMap<String,IOstsConnection> currentConnectionsMap = newLinkedHashMap()  // current connection map
@@ -62,7 +63,7 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 		    resourceFilename = e.eResource.URI.trimFileExtension.lastSegment
 		    iostsFileName = resourceFilename+".iosts"
             System.out.print("Transforming '"+e.eResource.URI.lastSegment+"' into '"+iostsFileName+"'")
-            systems = newLinkedList()
+            librariesMap = newLinkedHashMap()
             fsa.generateFile(iostsFileName, e.compile)
 		}
 	}
@@ -322,6 +323,26 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
     }
     
     */
+    
+	override def compile(Library l) {
+		currentLibrary = new IOstsLibrary(l.name)
+		val result = super.compile(l)
+		if (currentLibrary != null) {
+			librariesMap.put(l.name, currentLibrary)
+		}
+		currentLibrary = null
+		result
+	}
+	
+	override def compile(SoS s) {
+		currentLibrary = new IOstsLibrary(s.name)
+		val result = super.compile(s)
+		if (currentLibrary != null) {
+			librariesMap.put(s.name, currentLibrary)
+		}
+		currentLibrary = null
+		result
+	}
 	
 	override def compile(SystemDecl s) {
 		currentSystem = new IOstsSystem(s.name)
@@ -344,7 +365,7 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 
 		// add system if it's not empty
 		if (! currentSystem.empty) {
-			systems.add(currentSystem)
+			currentLibrary.addSystem(currentSystem)
 		}
 		currentSystem = null
 		result
@@ -371,7 +392,7 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 
 		// add system if it's not empty
 		if (! currentSystem.empty) {
-			systems.add(currentSystem)
+			currentLibrary.addSystem(currentSystem)
 		}
 		currentSystem = null
 		result
@@ -394,7 +415,7 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 
 		// add system if it's not empty
 		if (! currentSystem.empty) {
-			systems.add(currentSystem)
+			currentLibrary.addSystem(currentSystem)
 		}
 		currentSystem = null
 		result
@@ -2169,6 +2190,10 @@ class IOstsSystem{
  * - importedMap is a mutable map containing the list of imported libraries
  * - typesMap is a mutable map containing the locally declared types
  * - systemsMap is a mutable map containing the locally declared systems
+ * 
+ * In SoSADL, SoS and Library declare the same elements (an EntityBlock).
+ * Thus, after translated in IoSTS, we use an IOstsLibrary instance to store
+ * all iosts types and systems coming from either an SoS or a Library.
  */
 class IOstsLibrary{
     val String name
