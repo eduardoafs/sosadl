@@ -183,6 +183,9 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 	 * - the next statements, if any, are the BehaviorStatement to be put inside 'then{}' 
 	 * The SoSADL grammar does not allow a Behavior without statements.
 	 * Thus, in case the ifThenStatements is empty, a Done statement is added to it.
+	 * 
+	 * Note: unused since we do not use anymore this model transformation to translate AskAssertion
+	 *       into an IoSTS transition.
 	 */
 	def IfThenElseBehavior newIfThenElseBehaviorFromAskAssertionAndBehaviorStatements(AskAssertion ask, ArrayList<BehaviorStatement> ifThenStatements) {
 		// create a Behavior which will contain the ifThenStatements
@@ -206,6 +209,9 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 	 * - the next statements, if any, are the ProtocolStatement to be put inside 'then{}' 
 	 * The SoSADL grammar does not allow a Protocol without statements.
 	 * Thus, in case the ifThenStatements is empty, a Done statement is added to it.
+	 * 
+	 * Note: unused since we do not use anymore this model transformation to translate AskAssertion
+	 *       into an IoSTS transition.
 	 */
 	def IfThenElseProtocol newIfThenElseProtocolFromAskAssertionAndProtocolStatements(AskAssertion ask, ArrayList<ProtocolStatement> ifThenStatements) {
 		// create a Protocol which will contain the ifThenStatements
@@ -563,6 +569,7 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
             	previousIsValuing = true
             } else {
             	previousIsValuing = false
+            	/* OLD version with model transformation of AskAssertion into IfThenElseBehavior
             	if (s instanceof AskAssertion) {
             		// an AskAssertion is transformed into an IfThenElseBehavior statement
             		// where:
@@ -579,6 +586,8 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
             	} else {
             		finalStates = computeSTS(state, s)	
             	}
+            	*/
+            	finalStates = computeSTS(state, s)
            	}
             first=false
             previousStartState=state
@@ -636,6 +645,7 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
             	previousIsValuing = true
             } else {
             	previousIsValuing = false
+            	/* OLD version with model transformation of AskAssertion into IfThenElseProtocol
             	if (s instanceof AskAssertion) {
             		// an AskAssertion is transformed into an IfThenElseProtocol statement
             		// where:
@@ -652,6 +662,8 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
             	} else {
             		finalStates = computeSTS(state, s)	
             	}
+            	*/
+            	finalStates = computeSTS(state, s)
            	}
             first=false
             previousStartState=state
@@ -1008,9 +1020,8 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
     /*
      * - computeSTS for a Assert statement:
      *   useless and never called, because the case Assert is handled differently:
-     *   -- if Assert is an AskAssertion,
-     *      it is directly handled in computeSTS(int,Behavior) or computeSTS(int,Protocol)
-     *   -- if Assert is a TellAssertion, see computeSTS(int,TellAssertion)
+     *   -- if Assert is an AskAssertion, see computeSTS(int,AskAssertion)
+     *   -- if Assert is a  TellAssertion, see computeSTS(int,TellAssertion)
      *
     def dispatch ArrayList<Integer> computeSTS(int startState, Assert r){
         // TODO!
@@ -1024,11 +1035,17 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
     */
     
     /*
-     * - computeSTS for a AskAssertion statement: never called!
-     *   because it is directly handled in computeSTS(int,Behavior) or computeSTS(int,Protocol).
-     *
-    def dispatch ArrayList<Integer> computeSTS(int startState, AskAssertion r){
+     * - computeSTS for a AskAssertion statement:
      */
+    def dispatch ArrayList<Integer> computeSTS(int startState, AskAssertion r){
+    	val final=currentProcess.newState()
+        var IOstsTransition ask = new IOstsTransition(startState,final)
+        ask.setGuard(r.expression.compile.toString)
+        ask.setComment("AskAssertion")
+        currentProcess.addTransition(ask)
+        newArrayList(final)
+    }
+    
     
     /*
      * - computeSTS for a TellAssertion statement
