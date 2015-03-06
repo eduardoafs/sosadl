@@ -177,6 +177,42 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 		result
 	}
 	
+	/* Create an IfThenElseBehavior 'if (Expression) then {BehaviorStatement*}'
+	 * out of the given list of BehaviorStatements where:
+	 * - the ask statement which is the AskAssertion, containing the condition=Expression of if(condition)
+	 * - the next statements, if any, are the BehaviorStatement to be put inside 'then{}' 
+	 * 
+	 */
+	def IfThenElseBehavior newIfThenElseBehaviorFromAskAssertionAndBehaviorStatements(AskAssertion ask, ArrayList<BehaviorStatement> ifThenStatements) {
+		// create a Behavior which will contain the ifThenStatements
+		val factory = SosADLFactory.eINSTANCE
+		var ifTrueBehavior = factory.createBehavior()
+		ifTrueBehavior.getStatements().addAll(ifThenStatements)
+		// create an IfThenElseBehavior
+		var result = factory.createIfThenElseBehavior() // will create a IfThenElseBehaviorImpl!
+		result.setCondition(ask.expression)
+		result.setIfTrue(ifTrueBehavior)
+		result
+	}
+	
+	/* Create an IfThenElseProtocol 'if (Expression) then {ProtocolStatement*}'
+	 * out of the given list of ProtocolStatements where:
+	 * - the ask statement which is the AskAssertion, containing the condition=Expression of if(condition)
+	 * - the next statements, if any, are the ProtocolStatement to be put inside 'then{}' 
+	 * 
+	 */
+	def IfThenElseProtocol newIfThenElseProtocolFromAskAssertionAndProtocolStatements(AskAssertion ask, ArrayList<ProtocolStatement> ifThenStatements) {
+		// create a Protocol which will contain the ifThenStatements
+		val factory = SosADLFactory.eINSTANCE
+		var ifTrueProtocol = factory.createProtocol()
+		ifTrueProtocol.getStatements().addAll(ifThenStatements)
+		// create an IfThenElseProtocol
+		var result = factory.createIfThenElseProtocol() // will create a IfThenElseProtocolImpl!
+		result.setCondition(ask.expression)
+		result.setIfTrue(ifTrueProtocol)
+		result
+	}
+	
     
     //=========================== compilation
 	
@@ -516,8 +552,23 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
             	}
             	previousIsValuing = true
             } else {
-            	finalStates = computeSTS(state, s)
             	previousIsValuing = false
+            	if (s instanceof AskAssertion) {
+            		// an AskAssertion is transformed into an IfThenElseBehavior statement
+            		// where:
+            		// - the AskAssertion expression becomes the condition of the IfThenElseBehavior
+            		// - all remaining statements following the AskAssertion become the IfThen statements
+            		var ArrayList<BehaviorStatement> remaining=newArrayList()
+            		istatement++
+            		while (istatement < nstatements) {
+            			remaining.add(b.statements.get(istatement))
+            			istatement++
+            		}
+            		var ifthen=newIfThenElseBehaviorFromAskAssertionAndBehaviorStatements(s, remaining)
+            		finalStates = computeSTS(state, ifthen, "AskAssertion transformed into IfThenElseBehavior")
+            	} else {
+            		finalStates = computeSTS(state, s)	
+            	}
            	}
             first=false
             previousStartState=state
@@ -574,8 +625,23 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
             	}
             	previousIsValuing = true
             } else {
-            	finalStates = computeSTS(state, s)
             	previousIsValuing = false
+            	if (s instanceof AskAssertion) {
+            		// an AskAssertion is transformed into an IfThenElseProtocol statement
+            		// where:
+            		// - the AskAssertion expression becomes the condition of the IfThenElseProtocol
+            		// - all remaining statements following the AskAssertion become the IfThen statements
+            		var ArrayList<ProtocolStatement> remaining=newArrayList()
+            		istatement++
+            		while (istatement < nstatements) {
+            			remaining.add(b.statements.get(istatement))
+            			istatement++
+            		}
+            		var ifthen=newIfThenElseProtocolFromAskAssertionAndProtocolStatements(s, remaining)
+            		finalStates = computeSTS(state, ifthen, "AskAssertion transformed into IfThenElseProtocol")
+            	} else {
+            		finalStates = computeSTS(state, s)	
+            	}
            	}
             first=false
             previousStartState=state
@@ -794,17 +860,24 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
         currentProcess.addTransition(action)
         newArrayList(final)
     }
-    
+
     /*
-     * - computeSTS for a IfThenElseBehavior statement.
+     * - computeSTS for a IfThenElseBehavior statement, without comment
      */
     def dispatch ArrayList<Integer> computeSTS(int startState, IfThenElseBehavior i){
+    	computeSTS(startState, i, "IfThenElseBehavior")
+    }
+    
+    /*
+     * - computeSTS for a IfThenElseBehavior statement, with comment
+     */
+    def dispatch ArrayList<Integer> computeSTS(int startState, IfThenElseBehavior i, String comment){
         var ArrayList<Integer> finalStates = newArrayList()
         // then required
         val int finalIfTrue=currentProcess.newState()
         var IOstsTransition ifTrue = new IOstsTransition(startState,finalIfTrue)
         ifTrue.setGuard(i.condition.compile.toString)
-        ifTrue.setComment("IfThenElse (true case)")
+        ifTrue.setComment(comment+" (true case)")
         currentProcess.addTransition(ifTrue)
         //System.out.println("Added ifTrue transition: from="+startState+", to="+finalIfTrue)
         finalStates.addAll(computeSTS(finalIfTrue, i.ifTrue))
@@ -813,24 +886,31 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
             val int finalIfFalse=currentProcess.newState()
             var IOstsTransition ifFalse = new IOstsTransition(startState,finalIfFalse)
             ifFalse.setGuard("not "+i.condition.compile.toString)
-            ifFalse.setComment("IfThenElse (false case)")
+            ifFalse.setComment(comment+" (false case)")
             currentProcess.addTransition(ifFalse)
             //System.out.println("Added ifFalse transition: from="+startState+", to="+finalIfFalse)
             finalStates.addAll(computeSTS(finalIfFalse, i.ifFalse))
         }
         finalStates
     }
+    
+    /*
+     * - computeSTS for a IfThenElseBehavior statement, without comment
+     */
+    def dispatch ArrayList<Integer> computeSTS(int startState, IfThenElseProtocol i){
+    	computeSTS(startState, i, "IfThenElseProtocol")
+    }
 
     /*
      * - computeSTS for a IfThenElseProtocol statement.
      */
-    def dispatch ArrayList<Integer> computeSTS(int startState, IfThenElseProtocol i){
+    def dispatch ArrayList<Integer> computeSTS(int startState, IfThenElseProtocol i, String comment){
         var ArrayList<Integer> finalStates = newArrayList()
         // then required
         val int finalIfTrue=currentProcess.newState()
         var IOstsTransition ifTrue = new IOstsTransition(startState,finalIfTrue)
         ifTrue.setGuard(i.condition.compile.toString)
-        ifTrue.setComment("IfThenElse (true case)")
+        ifTrue.setComment(comment+" (true case)")
         currentProcess.addTransition(ifTrue)
         //System.out.println("Added ifTrue transition: from="+startState+", to="+finalIfTrue)
         finalStates.addAll(computeSTS(finalIfTrue, i.ifTrue))
@@ -839,7 +919,7 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
             val int finalIfFalse=currentProcess.newState()
             var IOstsTransition ifFalse = new IOstsTransition(startState,finalIfFalse)
             ifFalse.setGuard("not "+i.condition.compile.toString)
-            ifFalse.setComment("IfThenElse (false case)")
+            ifFalse.setComment(comment+" (false case)")
             currentProcess.addTransition(ifFalse)
             //System.out.println("Added ifFalse transition: from="+startState+", to="+finalIfFalse)
             finalStates.addAll(computeSTS(finalIfFalse, i.ifFalse))
