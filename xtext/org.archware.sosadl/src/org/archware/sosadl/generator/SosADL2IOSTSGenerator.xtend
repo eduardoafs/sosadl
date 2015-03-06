@@ -2023,12 +2023,12 @@ class IOstsProcess{
  * 
  * Notes:
  * - has an immutable name, which is required at creation time.
- * - fileName is the name of the file to be sqved.
- * - constantSection is not used at this time.
+ * - fileName is the name of the file to be saved.
+ * - constantsMap is not used at this time.
  * - typesMap is a mutable map containing the declaration of all types used in this system.
- * - connectionsMap is the mutable map of connections, declared inside local gate/duty
  * - processesMap is the map of processes of this system.
  * - a comment helps to understand the transformation from SoDADL to IOSTS.
+ * It is possible to get allConnections declared inside gate/duty of this system. 
  */
 class IOstsSystem{
     val String name
@@ -2041,6 +2041,10 @@ class IOstsSystem{
     
     new(String name) {
        this.name=name
+    }
+    
+    def getName() {
+    	this.name
     }
     
     def setFileName(String fileName) {
@@ -2154,4 +2158,77 @@ class IOstsSystem{
     '''}
     }
     */
+}
+
+/*
+ * IOstsLibrary
+ * 
+ * Notes:
+ * - has an immutable name, which is required at creation time.
+ * - fileName is the name of the file to be saved.
+ * - importedMap is a mutable map is the list of imported libraries
+ * - typesMap is a mutable map is the locally declared types
+ * - systemsMap is a mutable map is the locally declared systems
+ */
+class IOstsLibrary{
+    val String name
+    var String fileName=""
+	public var LinkedHashMap<String,IOstsLibrary> importedMap = newLinkedHashMap()  // map of (name -> imported iosts library)
+    public var LinkedHashMap<String,IOstsType> typesMap = newLinkedHashMap()     // map of (name -> iosts type)
+    public var LinkedHashMap<String,IOstsSystem> systemsMap = newLinkedHashMap()  // map of (name -> iosts system)
+    
+    new(String name) {
+       this.name=name
+    }
+    
+    def getName() {
+    	this.name
+    }
+    
+    def setFileName(String fileName) {
+       this.fileName = fileName
+    }
+    
+    def fileName() {
+        fileName
+    }
+    
+    // Returns all iosts imported library
+    def LinkedHashMap<String,IOstsLibrary> getImportedLibraries() {
+    	this.importedMap
+    }
+    
+    def getImportedLibrary(String name) {
+    	this.importedMap.get(name)
+    }
+    
+    def addImportedLibrary(IOstsLibrary library) {
+        this.importedMap.put(library.name, library)
+    }
+    
+    // Returns all locally declared types
+    def LinkedHashMap<String,IOstsType> getTypes() {
+    	this.typesMap
+    }
+    
+    def getType(String name) {
+    	this.typesMap.get(name)
+    }
+    
+    def addType(String name, IOstsType type) {
+        this.typesMap.put(name, type)
+    }
+    
+    // Returns all iosts systems declared in this library
+    def LinkedHashMap<String,IOstsSystem> getSystems() {
+    	this.systemsMap
+    }
+    
+    def getSystem(String name) {
+    	this.systemsMap.get(name)
+    }
+    
+    def addSystem(IOstsSystem system) {
+        this.systemsMap.put(system.name, system)
+    }
 }
