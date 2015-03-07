@@ -46,8 +46,9 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
     var String resourceFilename = null          // current SoSADL file name to be transformed
     var String iostsFileName = null             // current IoSTS file name to generate
     var LinkedHashMap<String,IOstsLibrary> librariesMap = newLinkedHashMap()  // map of (name -> library)
-    var LinkedHashMap<String,String> globalConstantsMap = newLinkedHashMap()
-    var LinkedHashMap<String,IOstsType> globalTypesMap = newLinkedHashMap()     // map of (types -> typeDecl)
+    var IOstsType currentType = null           // type currently generated
+    var LinkedHashMap<String,IOstsType> currentTypesMap = null // map of (types -> typeDecl) currently generated
+    var IOstsListOfFunctions currentListOfFunctions = null // list of functions currently generated
     var IOstsLibrary currentLibrary = null     // library currently generated
     var IOstsSystem currentSystem = null       // system currently generated
     var IOstsProcess currentProcess = null     // process currently generated
@@ -344,10 +345,89 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 		result
 	}
 	
+	override def compile(EntityBlock e) {
+		currentSystem = null
+		
+		currentTypesMap = new LinkedHashMap()
+		var String datatypes =
+		'''
+		«IF !e.datatypes.empty»
+		«FOR d : e.datatypes»
+      		«d.compile»
+    	«ENDFOR»
+    	
+    	«ENDIF»
+    	'''
+    	currentLibrary.typesMap.putAll(currentTypesMap)
+    	
+		currentListOfFunctions = new IOstsListOfFunctions()
+		var String functions =
+		'''
+		«IF !e.functions.empty»
+      	«FOR f : e.functions»
+      		«f.compile»
+    	«ENDFOR»
+    	
+    	«ENDIF»
+    	'''
+	    currentLibrary.functions.addAll(currentListOfFunctions)
+	    
+        currentListOfFunctions = null
+        currentTypesMap=null
+        
+    	'''
+		«datatypes»
+		«functions»
+		
+        «FOR s : e.systems»
+      		«s.compile»
+    	«ENDFOR»
+    	«FOR m : e.mediators»
+      		«m.compile»
+    	«ENDFOR»
+    	«FOR a : e.architectures»
+      		«a.compile»
+    	«ENDFOR»
+    	'''
+	}
+	
+	override def compile(DataTypeDecl d) {
+		var IOstsType t
+		if (d.datatype == null) {
+			if(DEBUG2) System.err.println("Warning! type definition of '" + d.name + "' null! Assuming 'integer'...")
+			t = new IOstsIntType()
+		} else {
+			t = computeIOstsType(d.datatype)
+		}
+		// put this type in currentTypesMap allow function declarations to get it  
+		currentTypesMap.put(d.name, t)
+		// get list of functions
+		currentListOfFunctions = new IOstsListOfFunctions()
+		var result = super.compile(d)
+		t.functions.addAll(currentListOfFunctions)
+		currentListOfFunctions = null
+		// now that the type is completed with functions, put the type again in currentTypesMap
+		currentTypesMap.put(d.name, t)
+		result
+	}
+    
+    override def compile(FunctionDecl f) {
+    	var iof = new IOstsFunction(f.name.toString)
+    	iof.setData(f.dataName, computeIOstsType(f.dataTypeName))
+    	for (p : f.parameters) {
+    		iof.addFormalParameter(p.name, computeIOstsType(p.type))
+    	}
+    	iof.returnType = computeIOstsType(f.type)
+    	for (v : f.valuing) {
+    		iof.addValuing(v)
+    	}
+    	iof.returnExpression = f.expression
+    	currentListOfFunctions.add(iof)
+    	super.compile(f)
+    }
+	
 	override def compile(SystemDecl s) {
 		currentSystem = new IOstsSystem(s.name)
-		currentSystem.constantsMap.putAll(globalConstantsMap)
-		currentSystem.typesMap.putAll(globalTypesMap)
 		currentSystem.setFileName(resourceFilename + ".iosts")
 
 		/*
@@ -361,7 +441,10 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 	    //if (s.assertion != null) {s.assertion.compile}  // not a protocol?
       	s.behavior.compile
       	*/
+      	currentTypesMap = new LinkedHashMap()
 		val result = super.compile(s)
+		currentSystem.typesMap.putAll(currentTypesMap)
+		currentTypesMap = null
 
 		// add system if it's not empty
 		if (! currentSystem.empty) {
@@ -373,8 +456,6 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
     
     override def compile(MediatorDecl m) {
 		currentSystem = new IOstsSystem(m.name)
-		currentSystem.constantsMap.putAll(globalConstantsMap)
-		currentSystem.typesMap.putAll(globalTypesMap)
 		currentSystem.setFileName(resourceFilename + "_" + m.name + ".iosts")
 
 		/*
@@ -388,7 +469,10 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
       	//if (m.assertion != null) {m.assertion.compile}  // not a protocol?
       	m.behavior.compile
       	*/
+      	currentTypesMap = new LinkedHashMap()
 		val result = super.compile(m)
+		currentSystem.typesMap.putAll(currentTypesMap)
+		currentTypesMap = null
 
 		// add system if it's not empty
 		if (! currentSystem.empty) {
@@ -400,8 +484,6 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
     
     override def compile(ArchitectureDecl a) {
 		currentSystem = new IOstsSystem(a.name)
-		currentSystem.constantsMap.putAll(globalConstantsMap)
-		currentSystem.typesMap.putAll(globalTypesMap)
 		currentSystem.setFileName(resourceFilename + "_" + a.name + ".iosts")
 
 		/*
@@ -411,7 +493,10 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
       	a.behavior.compile
       	//if (a.assertion != null) {a.assertion.compile} // not a protocol?
       	*/
+		currentTypesMap = new LinkedHashMap()
 		val result = super.compile(a)
+		currentSystem.typesMap.putAll(currentTypesMap)
+		currentTypesMap = null
 
 		// add system if it's not empty
 		if (! currentSystem.empty) {
@@ -427,9 +512,7 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 	        val name=g.name+"::"+c.name
 	        val IOstsType type = computeIOstsType(c.valueType)
 	        val typeName = nameOfIOstsType(type)
-	        registerIOstsType(typeName, type)
 	        val finalTypeName = finalNameOfIOstsType(typeName)
-	        //currentSystem.addConnection(new IOstsConnection(name, computeIOstsType(c.valueType), c.mode.toString))
 	        currentConnectionsMap.put(name, new IOstsConnection(name, finalTypeName, c.mode.toString))
 	    }
 	    super.compile(g)
@@ -442,30 +525,11 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
             val name=d.name+"::"+c.name
             val IOstsType type = computeIOstsType(c.valueType)
             val typeName = nameOfIOstsType(type)
-            registerIOstsType(typeName, type)
             val finalTypeName = finalNameOfIOstsType(typeName)
-            //currentSystem.addConnection(new IOstsConnection(name, computeIOstsType(c.valueType), c.mode.toString))
             currentConnectionsMap.put(name, new IOstsConnection(name, finalTypeName, c.mode.toString))
         }
         super.compile(d)
     }
-    
-    override def compile(DataTypeDecl d) {
-		var IOstsType t
-		if (d.datatype == null) {
-			if(DEBUG2) System.err.println("Warning! type definition of '" + d.name + "' null! Assuming 'integer'...")
-			t = new IOstsIntType()
-		} else {
-			t = computeIOstsType(d.datatype)
-		}
-		if (currentSystem != null) {
-			currentSystem.typesMap.put(d.name, t)
-		} else {
-			// this datatype declaration occurs before the system/mediator/architecture declaration
-			globalTypesMap.put(d.name, t)
-		}
-		super.compile(d)
-	}
     
     //---------------- Compilation of Protocol and Behavior is special
     
@@ -481,7 +545,6 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
     }
     
     override def compile(BehaviorDecl b){
-        //if (currentProcess != null) currentSystem.addProcess(currentProcess)
         var IOstsTransition firstTransition = initTransition("true")
         firstTransition.setComment("FIXME: system/mediator/architecture parameters may change this guard!")
         currentProcess = new IOstsProcess(b.name)
@@ -517,10 +580,10 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 		else {
 			val type = computeIOstsType(v.type)
 			val typeName = nameOfIOstsType(type)
-			registerIOstsType(typeName, type)
 			currentProcess.addVariable(v.variable, finalNameOfIOstsType(typeName))
 		}
 	}
+	
     
     //=========================== Generation of the STS
     
@@ -1231,15 +1294,6 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
      * - computeSTS for an AnyAction statement.
      */
     def dispatch ArrayList<Integer> computeSTS(int startState, AnyAction a){
-        /*
-        // TODO!
-        val int final=currentProcess.newState()
-        var IOstsTransition anyAction = new IOstsTransition(startState,final)
-        anyAction.setComment("TODO! AnyAction")
-        currentProcess.addTransition(anyAction)
-        //System.out.println("Added fake anyAction transition: from="+startState+", to="+final)
-        newArrayList(final)
-        */
         val choose = newChooseProtocolActionFromConnections(currentProcess.connectionsMap)
         computeSTS(startState, choose)
     }
@@ -1269,17 +1323,28 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
     //=========================== Utility functions for handling IoSTS types
     
     def getIOstsType(String name) {
-	    if (currentSystem != null) {
+    	var IOstsType result = null
+    	if (name == 'integer') {
+    		result = new IOstsIntType()
+    	}
+    	if (result == null && currentTypesMap != null) {
+    		result = currentTypesMap.get(name)
+    	}
+	    if (result == null && currentSystem != null) {
             if (currentSystem.typesMap.containsKey(name)) {
-                currentSystem.typesMap.get(name)
-            } else {
-                null
+                result = currentSystem.typesMap.get(name)
             }
-        } else if (globalTypesMap.containsKey(name)) {
-            globalTypesMap.get(name)
-        } else {
-            null
         }
+        if (result == null && currentLibrary.typesMap.containsKey(name)) {
+            currentLibrary.typesMap.get(name)
+        } else {
+        	for (lib : currentLibrary.importedMap.values) {
+        		if (lib.typesMap.containsKey(name)) {
+        			result = lib.typesMap.get(name)
+        		}
+        	}
+        }
+        result
 	}
 	
 	def finalNameOfIOstsType(String name) {
@@ -1296,21 +1361,7 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 	    finalName
 	}
 	
-	def registerIOstsType(String name, IOstsType type) {
-	    if (currentSystem != null) {
-            if (currentSystem.typesMap.containsKey(name)) {
-                if (DEBUG2) System.err.println("Warning: system type '"+name+"' already declared! Overriding...")
-            }
-            currentSystem.typesMap.put(name,type)
-        } else {
-            if (globalTypesMap.containsKey(name)) {
-                if (DEBUG2) System.err.println("Warning: global type '"+name+"' already declared! Overriding...")
-            }
-            // the datatype declaration here occurs before the system/mediator/architecture declaration
-            globalTypesMap.put(name,type)
-        }
-	}
-	
+	/* OLD version
 	def nameOfIOstsType(IOstsType type) {
 	    var name=""
 	    if (currentSystem != null) {
@@ -1344,17 +1395,61 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
         }
         name
 	}
+	*/
 	
-	def dispatch IOstsType computeIOstsType(DataTypeDecl d) {
-	    var IOstsType t = null
-	    if (d.datatype == null)
-	       t=new IOstsIntType()
-        else
-           t=computeIOstsType(d.datatype)
-	    registerIOstsType(d.name, t)
-	    t
+	def nameOfIOstsType(IOstsType type) {
+		var name=""
+		if (currentTypesMap != null) {
+			for (t : currentTypesMap.entrySet) {
+                if (DEBUG2) System.out.print("comparing '"+type.toString+"' with '"+t.value.toString+"' : ")
+                if (t.value.equals(type)) {
+                    name=t.key
+                    if (DEBUG2) System.out.println("ok, name='"+name+"'")
+                } else {
+                    if (DEBUG2) System.out.println("KO.")
+                }
+            }
+    	}
+	    if (name == "" && currentSystem != null) {
+            for (t : currentSystem.typesMap.entrySet) {
+                if (DEBUG2) System.out.print("comparing '"+type.toString+"' with '"+t.value.toString+"' : ")
+                if (t.value.equals(type)) {
+                    name=t.key
+                    if (DEBUG2) System.out.println("ok, name='"+name+"'")
+                } else {
+                    if (DEBUG2) System.out.println("KO.")
+                }
+            }
+        }
+        if (name == "") {
+        	for (t : currentLibrary.typesMap.entrySet) {
+                if (DEBUG2) System.out.print("comparing '"+type.toString+"' with '"+t.value.toString+"' : ")
+                if (t.value.equals(type)) {
+                    name=t.key
+                    if (DEBUG2) System.out.println("ok, name='"+name+"'")
+                } else {
+                    if (DEBUG2) System.out.println("KO.")
+                }
+            } 
+        }
+        if (name == "") {
+        	for (lib : currentLibrary.importedMap.values) {
+        		for (t : lib.typesMap.entrySet) {
+	                if (DEBUG2) System.out.print("comparing '"+type.toString+"' with '"+t.value.toString+"' : ")
+	                if (t.value.equals(type)) {
+	                    name=t.key
+	                    if (DEBUG2) System.out.println("ok, name='"+name+"'")
+	                } else {
+	                    if (DEBUG2) System.out.println("KO.")
+	                }
+            	}	
+        	}
+        }
+        if (name == "") {
+            name=type.toString()    
+        }
+        name
 	}
-	
 	
 	def dispatch IOstsType computeIOstsType(DataType t) {
 	    switch t {
@@ -1409,14 +1504,18 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
     }
     
     def dispatch IOstsType computeIOstsType(NamedType t) {
-        var IOstsType tt = if (currentSystem != null) currentSystem.typesMap.get(t.name)
-                           else globalTypesMap.get(t.name)
-        if (tt == null) {
-            System.err.println("Warning! type '"+t.name+"' is not declared! Assuming 'integer'...")
-            tt=new IOstsIntType()
-        }
-        tt
+    	computeIOstsType(t.name as String)
     }
+    
+    def dispatch IOstsType computeIOstsType(String t) {
+    	var result = getIOstsType(t)
+    	if (result == null) {
+    		System.err.println("Warning! type '"+t+"' is not declared! Assuming 'integer'...")
+            result=new IOstsIntType()
+    	}
+    	result
+    }
+    
     /*
      * TypeName generator: returns a new unused type id: BAD IDEA!
      *
@@ -1435,13 +1534,127 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 // IoSTS classes
 //-------------- 
 
-//-------------- IoSTS types
+//-------------- IoSTS types and functions
+
+/*
+ * Function, has:
+ * 
+ * - name
+ * - type: the return type
+ * - dataName: name of data to which the function applies
+ * - dataTypeName: name's type of data to which the function applies
+ * - list of formal parameters
+ * - a list of Valuing
+ * - a return expression
+ */
+class IOstsFunction {
+	val String name
+	var String dataName = ""
+	var IOstsType dataType = null
+	var LinkedHashMap<String,IOstsType> formalParameters = newLinkedHashMap()
+	var ArrayList<Valuing> valuings = newArrayList()
+	var Expression returnExpression = null
+	var IOstsType returnType = null
+	
+	// private thus inaccessible, because one cannot create function without name
+    private new() {
+    	name = ""
+    }
+    
+	// constructor and name
+	new(String name) {
+		this.name = name
+	}
+
+	def name() {
+		this.name
+	}
+	
+	// data on which the function applies
+	def setData(String name, IOstsType type) {
+		this.dataName = name
+		this.dataType = type
+	}
+	
+	def getDataName() {
+		this.dataName
+	}
+	
+	def getDataType() {
+		this.dataType
+	}
+	
+	// formal parameters
+	def addFormalParameter(String name, IOstsType type) {
+		this.formalParameters.put(name, type)
+	}
+	
+	def formalParameter() {
+		this.formalParameters
+	}
+	
+	def getFormalParameterType(String name) {
+		this.formalParameters.get(name)
+	}
+	
+	// list of valuings
+	def addValuing(Valuing v) {
+		this.valuings.add(v)
+	}
+	
+	def valuings() {
+		this.valuings
+	}
+	
+	// return type and expression
+	def setReturnType(IOstsType type) {
+		this.returnType = type
+	}
+	
+	def returnType() {
+		this.returnType
+	}
+	
+	def setReturnExpression(Expression e) {
+		this.returnExpression = e
+	}
+	
+	def returnExpression() {
+		this.returnExpression
+	}
+}
+
+/*
+ * List of IOstsFunctions
+ */
+class IOstsListOfFunctions extends ArrayList<IOstsFunction> {
+	
+	new() {
+		super()
+	}
+	
+	def addFunction(IOstsFunction f) {
+    	this.add(f)
+    }
+    
+    def getFunction(String name) {
+    	var IOstsFunction result=null
+    	var i=0
+    	while (i < this.length && result==null) {
+    		if (this.get(i).name.equals(name)) {
+    			result = this.get(i)
+    		}
+    	}
+    	result
+    }
+}
 
 /*
  * Type: is the superclass of all types.
  */
 class IOstsType {
     var String comment=""
+    var IOstsListOfFunctions functions = new IOstsListOfFunctions()
     
     def setComment(String comment) {
         this.comment = comment
@@ -1449,6 +1662,10 @@ class IOstsType {
    
     def comment() {
         this.comment
+    }
+    
+    def functions() {
+    	this.functions
     }
     
     def boolean equals (IOstsType other) {
@@ -1475,7 +1692,6 @@ class IOstsIntType extends IOstsType {
     override def equals(IOstsType other) {
         (other instanceof IOstsIntType)
     }
-
 }
 
 class IOstsBoolType extends IOstsType {
@@ -2200,13 +2416,14 @@ class IOstsLibrary{
     var String fileName=""
 	public var LinkedHashMap<String,IOstsLibrary> importedMap = newLinkedHashMap()  // map of (name -> imported iosts library)
     public var LinkedHashMap<String,IOstsType> typesMap = newLinkedHashMap()     // map of (name -> iosts type)
+    public var IOstsListOfFunctions functions = new IOstsListOfFunctions()       // list of declared functions
     public var LinkedHashMap<String,IOstsSystem> systemsMap = newLinkedHashMap()  // map of (name -> iosts system)
     
     new(String name) {
        this.name=name
     }
     
-    def getName() {
+    def name() {
     	this.name
     }
     
@@ -2219,7 +2436,7 @@ class IOstsLibrary{
     }
     
     // Returns all iosts imported library
-    def LinkedHashMap<String,IOstsLibrary> getImportedLibraries() {
+    def LinkedHashMap<String,IOstsLibrary> importedLibraries() {
     	this.importedMap
     }
     
@@ -2232,7 +2449,7 @@ class IOstsLibrary{
     }
     
     // Returns all locally declared types
-    def LinkedHashMap<String,IOstsType> getTypes() {
+    def LinkedHashMap<String,IOstsType> types() {
     	this.typesMap
     }
     
@@ -2244,8 +2461,13 @@ class IOstsLibrary{
         this.typesMap.put(name, type)
     }
     
+    // Returns all locally declared functions
+    def functions() {
+    	this.functions
+    }
+    
     // Returns all iosts systems declared in this library
-    def LinkedHashMap<String,IOstsSystem> getSystems() {
+    def LinkedHashMap<String,IOstsSystem> systems() {
     	this.systemsMap
     }
     
