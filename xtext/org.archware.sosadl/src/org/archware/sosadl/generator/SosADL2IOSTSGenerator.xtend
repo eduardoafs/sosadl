@@ -1057,7 +1057,9 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
         
     /*
      * - computeSTS for a RepeatBehavior statement.
-     */
+     * 
+     * OBSOLETE: RepeatBehavior is not allowed anymore!
+     *
     def dispatch ArrayList<Integer> computeSTS(int startState, RepeatBehavior r){
         var ArrayList<Integer> finalStates = newArrayList()
         // compute STS of repeated behavior, then get its final states
@@ -1081,6 +1083,7 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
         //System.out.println("Added ifFalse transition after Repeat: from="+startState+", to="+ifFalseAfterRepeat)
         newArrayList(ifFalseAfterRepeat)
     }
+    */
 
     /*
      * - computeSTS for a RepeatProtocol statement.
