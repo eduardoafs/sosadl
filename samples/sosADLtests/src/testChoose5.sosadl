@@ -1,4 +1,4 @@
-// ok: the iosts translation is ok.
+// Fail test: shall fail because choose is a terminal statement!
 
 library testChoose5 is {
   
