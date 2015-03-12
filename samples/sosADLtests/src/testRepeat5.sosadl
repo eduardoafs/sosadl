@@ -26,13 +26,7 @@ library testRepeat5 is {
     }
     
     behavior test is {
-      value data = 0
-      repeat{
-        via gate1::connection1 receive data
-        repeat{
-          via gate1::connection1 send 1
-        }
-      }
+      done
     }
   }
 }

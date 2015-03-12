@@ -25,15 +25,7 @@ library testRepeat7 is {
     }
     
     behavior test is {
-      value data = 0
-      repeat{
-          choose
-            {via gate1::connection1 receive data}
-          or 
-            {via gate1::connection2 send 2}
-          or 
-            {via gate1::connection3 send 3}
-      }
+      done
     }
   }
 }
