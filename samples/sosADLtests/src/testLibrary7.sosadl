@@ -1,4 +1,4 @@
-// ok
+// ok: will require testLibrary6
 with Base
 with testLibrary6  // declares Complex datatype
 
