@@ -4,10 +4,17 @@
 package org.archware.sosadl.generator
 
 import org.eclipse.emf.ecore.resource.Resource
+/* 
+import org.eclipse.core.resources.IFolder
+import org.eclipse.core.resources.IFile
+import org.eclipse.core.resources.IProject
+import org.eclipse.core.resources.ResourcesPlugin
+import org.eclipse.core.resources.IContainer
+*/
 import org.eclipse.xtext.generator.IGenerator
 import org.eclipse.xtext.generator.IFileSystemAccess
 import org.archware.sosadl.sosADL.*
-//import org.archware.sosadl.SosADLStandaloneSetupGenerated
+import org.archware.sosadl.SosADLStandaloneSetupGenerated
 //import org.eclipse.emf.common.util.URI
 //import org.archware.sosadl.SosADLComparator
 //import org.eclipse.xtext.parser.IParser
@@ -26,7 +33,19 @@ import org.eclipse.emf.ecore.resource.ResourceSet
 import org.eclipse.emf.common.util.URI
 import org.archware.sosadl.SosADLRuntimeModule
 import org.archware.sosadl.sosADL.impl.ValuingImpl
-
+import com.google.inject.Injector
+import org.eclipse.xtext.resource.XtextResourceSet
+import org.eclipse.xtext.resource.XtextResource
+/* 
+import org.eclipse.core.resources.IResource
+import org.eclipse.core.resources.IFolder
+import org.eclipse.xtext.resource.IResourceServiceProvider
+import org.eclipse.xtext.resource.IResourceDescription
+import org.eclipse.xtext.resource.IResourceDescription.Manager
+import org.eclipse.xtext.resource.IEObjectDescription
+import org.eclipse.xtext.parser.IEncodingProvider
+import org.eclipse.xtext.naming.IQualifiedNameConverter
+*/
 //import org.archware.iosts.ui.contentassist.AbstractIoSTSProposalProvider
 
 /**
@@ -43,9 +62,10 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
     val DEBUG3=false
     
     // global variables making the generation much easier
-    var String resourceFilename = null          // current SoSADL file name to be transformed
-    var String iostsFileName = null             // current IoSTS file name to generate
+    // librariesMap contains all known libraries
     var LinkedHashMap<String,IOstsLibrary> librariesMap = newLinkedHashMap()  // map of (name -> library)
+    // importedMap contains all libraries to import in the current file
+    var LinkedHashMap<String,IOstsLibrary> importedMap = newLinkedHashMap()  // map of (name -> library)
     var IOstsType currentType = null           // type currently generated
     var LinkedHashMap<String,IOstsType> currentTypesMap = null // map of (types -> typeDecl) currently generated
     var IOstsListOfFunctions currentListOfFunctions = null // list of functions currently generated
@@ -56,17 +76,132 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
     var lastIOstsTypeNum = 0
     var lastDoExprResultNumber=0
     var lastForEachVarNumber=0
-	
+    
+    //FIXME: these two global variables should be avoided!
+    var String globalFolderName = null 
+    var IFileSystemAccess globalFsa = null
+    var Resource globalResource = null
+    
 	override void doGenerate(Resource resource, IFileSystemAccess fsa) {
 
+		librariesMap = newLinkedHashMap()
+		
+		globalFolderName = resource.URI.path.substring(0,resource.URI.path.lastIndexOf('/'))
+		globalResource = resource
+		globalFsa = fsa
+		
 		for (e : resource.allContents.toIterable.filter(SosADL)) {
-		    var first=true
-		    resourceFilename = e.eResource.URI.trimFileExtension.lastSegment
-		    iostsFileName = resourceFilename+".iosts"
-            System.out.print("Transforming '"+e.eResource.URI.lastSegment+"' into '"+iostsFileName+"'")
-            librariesMap = newLinkedHashMap()
-            fsa.generateFile(iostsFileName, e.compile)
+			doGenerateOne(e)
 		}
+	}
+	
+	def void doGenerateOne(SosADL sfile) {
+		// save the context of the previous compilation
+		val LinkedHashMap<String,IOstsLibrary> _saved_importedMap = importedMap
+		val IOstsType _saved_currentType = currentType
+		val LinkedHashMap<String,IOstsType> _saved_currentTypesMap = currentTypesMap
+		val IOstsSystem _saved_currentSystem = currentSystem
+    	val IOstsProcess _saved_currentProcess = currentProcess
+   	 	val LinkedHashMap<String,IOstsConnection> _saved_currentConnectionsMap = currentConnectionsMap
+		// ok: generate the iosts!
+        var String resourceFilename = sfile.eResource.URI.trimFileExtension.lastSegment
+        var String iostsFileName = resourceFilename+".iosts"
+        System.out.print("Transforming '"+sfile.eResource.URI.lastSegment+"' into '"+iostsFileName+"'")
+        importedMap = newLinkedHashMap()
+        globalFsa.generateFile(iostsFileName, sfile.compile)
+        // restore the context of the previous compilation
+        importedMap = _saved_importedMap
+        currentType = _saved_currentType
+        currentTypesMap = _saved_currentTypesMap
+        currentSystem = _saved_currentSystem
+        currentProcess = _saved_currentProcess
+        currentConnectionsMap = _saved_currentConnectionsMap
+	}
+	 
+	/* A REVOIR !!!! Comment recuperer la resource SosADL a partir d'un IFile ?
+	//cet import pose probleme : import org.eclipse.core.resources.IProject 
+	def SosADL loadSosADLLibrary(String resourceName) {
+		var SosADL result = null
+		/ * 
+		var Injector injector = new SosADLStandaloneSetupGenerated().createInjector//AndDoEMFRegistration()
+		var XtextResourceSet resourceSet = injector.getInstance(XtextResourceSet) as XtextResourceSet
+		//var URI uri = URI.createURI("platform:"+globalFolderName+'/'+resourceName+".sosadl")
+    	resourceSet.addLoadOption(XtextResource.RESOURCE__URI, uri)
+    	//var String platformString = resourceSet.getURI().toPlatformString(true)
+    	var java.net.URI uri = new java.net.URI(globalResource.URI.toString)
+    	var IFile myFile = new IFile(uri)//.toPlatformString(true); getProject() .getFile(new Path(platformString))
+		var IProject proj = myFile.getProject()
+		var IFile linkedFile = proj.getFile(value)
+		* /
+		//var String platformString = globalResource.getURI().toPlatformString(true)
+		var IProject project = ResourcesPlugin.getWorkspace().getRoot().getProject(globalFolderName)//.getFile(resourceName+".sosadl")
+		var IFolder folder = project.getFolder("src")
+		var IFile zefile = folder.getFile(resourceName+".sosadl")
+		result
+		result
+		//
+		/ *
+		var IFolder folder = IProject.getFolder("src")
+		var IResource[]	members = folder.members()
+		for (IResource member : members) {
+			if (member instanceof IFile && member.getFileExtension().equalsIgnoreCase("sosadl"){
+				var file = member as IFile
+			}
+		}
+		* /
+	}
+	*/
+  
+   	def SosADL loadSosADLResource1(String resourceName) {
+		var SosADL result
+		var Injector injector = new SosADLStandaloneSetupGenerated().createInjector//AndDoEMFRegistration()
+		var XtextResourceSet resourceSet = injector.getInstance(XtextResourceSet) as XtextResourceSet
+		//var URI uri = URI.createURI("platform:/resource/${project-name}/src/")
+		var URI uri = URI.createURI("platform:"+globalFolderName+'/'+resourceName+".sosadl")
+    	//resourceSet.addLoadOption(XtextResource.RESOURCE__URI, uri)
+    	resourceSet.addLoadOption(XtextResource.OPTION_RESOLVE_ALL, Boolean.TRUE)
+    	//var Resource resource = resourceSet.getResource(uri,true)
+    	var results = resourceSet.allContents.toIterable.filter(SosADL)//.filter([eResource.URI.trimFileExtension.lastSegment.equals(resourceName)])
+    	System.err.println("List of resource(s) found at URI='"+uri+"':")
+		for (e : results) {
+			System.err.println("- '"+e.eResource.URI+"'")
+		}
+		System.err.println("End of list.")
+		if (results.empty) {
+			System.err.println("Warning! Library '"+resourceName+"' not found!")
+		} else {
+			result = results.head as SosADL
+			if (result.eResource.URI.trimFileExtension.lastSegment.equals(resourceName)) {
+				System.err.println("Found library '"+resourceName+"'. ok.")
+			} else {
+				System.err.println("Found library '"+resourceName+"'? resource = '"+result.eResource.URI.trimFileExtension.lastSegment+"'")
+			}
+		}
+		result
+	}
+	
+	def SosADL loadSosADLResource(String resourceName) {
+		var SosADL result
+		var Injector injector = new SosADLStandaloneSetupGenerated().createInjector//AndDoEMFRegistration()
+		var XtextResourceSet resourceSet = injector.getInstance(XtextResourceSet) as XtextResourceSet
+		// We don't want all resources! we just one the resource for resourceName!
+		//resourceSet.addLoadOption(XtextResource.OPTION_RESOLVE_ALL, Boolean.TRUE)
+		var URI uri = URI.createURI("platform:"+globalFolderName+'/'+resourceName+".sosadl")
+    	resourceSet.addLoadOption(XtextResource.RESOURCE__URI, uri.toString)
+		try {
+			var Resource resource = resourceSet.getResource(uri, true) // FIXME! bizarre!
+			if (resource.getContents().empty) {
+				if(DEBUG) System.err.println("Library '"+resourceName+"' at URI='"+resource.URI+"' is empty!")
+    			result = null
+    		} else {
+    			if(DEBUG) System.err.println("Found library '"+resourceName+"' at URI='"+resource.URI+"'. ok.")
+    			result = (resource.getContents().get(0) as SosADL)
+    		}  		
+    	} catch (Exception e) {
+    		System.err.println("Warning! Library '"+resourceName+"' not found at uri '"+uri.path()+"'!")
+    		result = null
+    	}
+		result
 	}
 	
 	//=========================== model transformations
@@ -325,8 +460,39 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
     
     */
     
+    override def compile(Import i) {
+    	var IOstsLibrary library = null
+    	if (librariesMap.containsKey(i.importedLibrary)) {
+    		if(DEBUG) System.err.println("Library '"+i.importedLibrary+"' already compiled, and imported. ok.")
+    		library = librariesMap.get(i.importedLibrary)
+     	} else if (i.importedLibrary.toLowerCase.equals("base")) {
+			// FIXME!
+			if(DEBUG) System.err.println("TODO: Define 'predefined' library '"+i.importedLibrary+"'!")
+	    	library = null
+    	} else {
+    		val SosADL sresource=loadSosADLResource(i.importedLibrary)
+    		if (sresource == null) {
+    			System.err.println("Warning! Cannot import '"+i.importedLibrary+"': source file not found!")
+    		} else {
+    			if(DEBUG) System.err.println("Importing library '"+i.importedLibrary+"'...")
+    			doGenerateOne(sresource)
+    			if (librariesMap.containsKey(i.importedLibrary)) {
+    				if(DEBUG) System.err.println("Library '"+i.importedLibrary+"' compiled, and imported. ok.")
+    			} else {
+    				System.err.println("Warning! Library '"+i.importedLibrary+"' compiled, but not imported!")
+    			}
+    			library = librariesMap.get(i.importedLibrary)
+    		}
+    	}
+    	if (library != null) {
+    		importedMap.put(i.importedLibrary, library)
+    	}
+    	super.compile(i)
+    }
+	
 	override def compile(Library l) {
 		currentLibrary = new IOstsLibrary(l.name)
+		currentLibrary.importedMap.putAll(importedMap)
 		val result = super.compile(l)
 		if (currentLibrary != null) {
 			librariesMap.put(l.name, currentLibrary)
@@ -339,7 +505,7 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 		currentLibrary = new IOstsLibrary(s.name)
 		val result = super.compile(s)
 		if (currentLibrary != null) {
-			librariesMap.put(s.name, currentLibrary)
+			importedMap.put(s.name, currentLibrary)
 		}
 		currentLibrary = null
 		result
@@ -428,7 +594,7 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 	
 	override def compile(SystemDecl s) {
 		currentSystem = new IOstsSystem(s.name)
-		currentSystem.setFileName(resourceFilename + ".iosts")
+		//currentSystem.setFileName(resourceFilename + ".iosts")
 
 		/*
 	  	s.parameters.map[compile]
@@ -456,7 +622,7 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
     
     override def compile(MediatorDecl m) {
 		currentSystem = new IOstsSystem(m.name)
-		currentSystem.setFileName(resourceFilename + "_" + m.name + ".iosts")
+		//currentSystem.setFileName(resourceFilename + "_" + m.name + ".iosts")
 
 		/*
       	m.parameters.map[compile]
@@ -484,7 +650,7 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
     
     override def compile(ArchitectureDecl a) {
 		currentSystem = new IOstsSystem(a.name)
-		currentSystem.setFileName(resourceFilename + "_" + a.name + ".iosts")
+		//currentSystem.setFileName(resourceFilename + "_" + a.name + ".iosts")
 
 		/*
       	a.parameters.map[compile]
@@ -1329,21 +1495,50 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
     	var IOstsType result = null
     	if (name == 'integer') {
     		result = new IOstsIntType()
+    		if (result != null && DEBUG) {
+    			System.err.println("getIOstsType: type '"+name+"' found: predefined.")
+    		}
     	}
     	if (result == null && currentTypesMap != null) {
     		result = currentTypesMap.get(name)
+    		if (result != null && DEBUG) {
+    			System.err.println("getIOstsType: type '"+name+"' found in currentTypesMap.")	
+    		}
     	}
 	    if (result == null && currentSystem != null) {
             if (currentSystem.typesMap.containsKey(name)) {
                 result = currentSystem.typesMap.get(name)
+    			if (result != null && DEBUG) {
+    				System.err.println("getIOstsType: type '"+name+"' found in currentSystem.typesMap.")
+    			}
             }
         }
-        if (result == null && currentLibrary.typesMap.containsKey(name)) {
-            currentLibrary.typesMap.get(name)
-        } else {
-        	for (lib : currentLibrary.importedMap.values) {
-        		if (lib.typesMap.containsKey(name)) {
-        			result = lib.typesMap.get(name)
+        if (result == null) {
+        	result = getIOstsType(name, currentLibrary)
+        	// If found, put it in currentLibrary.typesMap to accelerate further searches
+        	if (result != null && !currentLibrary.typesMap.containsKey(name)) {
+        		currentLibrary.addType(name, result)
+        	}
+        }
+        result
+	}
+	
+	/*
+	 * Returns the name's IOstsType if found in the given library.
+	 * The search is recursive, which means imported libraries are also checked.
+	 */
+	def IOstsType getIOstsType(String name, IOstsLibrary library) {
+		var IOstsType result = null
+		if (library.typesMap.containsKey(name)) {
+            result = library.typesMap.get(name)
+    		if (result != null && DEBUG) {
+    			System.err.println("getIOstsType: type '"+name+"' found in library '"+library.name+"'.typesMap.")
+    		}
+        }
+        if (result == null) {
+        	for (lib : library.importedMap.values) {
+        		if (result == null) {
+        			result = getIOstsType(name, lib)
         		}
         	}
         }
@@ -1353,7 +1548,7 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 	def finalNameOfIOstsType(String name) {
 	    val IOstsType t = getIOstsType(name)
 	    val finalName = if (t == null) {
-	        if (DEBUG2) System.err.println("Warning: type '"+name+"' not found! Assuming integer...")
+	        if (DEBUG2) System.err.println("Warning: Type '"+name+"' not found! Assuming integer...")
 	        (new IOstsIntType()).toString
 	    } else switch t {
 	        IOstsIntType: t.toString
@@ -1363,42 +1558,6 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 	    if (DEBUG2) System.out.println("Final type name '"+name+"' = '"+finalName+"'.")
 	    finalName
 	}
-	
-	/* OLD version
-	def nameOfIOstsType(IOstsType type) {
-	    var name=""
-	    if (currentSystem != null) {
-            for (t:currentSystem.typesMap.entrySet) {
-                if (DEBUG2) System.out.print("comparing '"+type.toString+"' with '"+t.value.toString+"' : ")
-                if (t.value.equals(type)) {
-                    name=t.key
-                    if (DEBUG2) System.out.println("ok, name='"+name+"'")
-                } else {
-                    if (DEBUG2) System.out.println("KO.")
-                }
-            }
-            if (name == "") {
-                name=type.toString
-                currentSystem.typesMap.put(name,type)
-            }
-        } else {
-            for (t:globalTypesMap.entrySet) {
-                if (DEBUG2) System.out.print("comparing '"+type.toString+"' with '"+t.value.toString+"' : ")
-                if (t.value.equals(type)) {
-                    name=t.key
-                    if (DEBUG2) System.out.println("ok, name='"+name+"'")
-                } else {
-                    if (DEBUG2) System.out.println("KO.")
-                }
-            }
-            if (name == "") {
-                name=type.toString
-                globalTypesMap.put(name,type)
-            }
-        }
-        name
-	}
-	*/
 	
 	def nameOfIOstsType(IOstsType type) {
 		var name=""
@@ -1511,12 +1670,14 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
     }
     
     def dispatch IOstsType computeIOstsType(String t) {
-    	var result = getIOstsType(t)
-    	if (result == null) {
-    		System.err.println("Warning! type '"+t+"' is not declared! Assuming 'integer'...")
-            result=new IOstsIntType()
+    	var result1 = getIOstsType(t)
+    	if (result1 == null) {
+    		System.err.println("Warning! Type '"+t+"' is not declared! Assuming 'integer'...")
+            result1=new IOstsIntType()
+        } else {
+        	if (DEBUG) System.err.println("Type '"+t+"' found. ok.")
     	}
-    	result
+    	result1
     }
     
     /*
@@ -2272,7 +2433,6 @@ class IOstsProcess{
  */
 class IOstsSystem{
     val String name
-    var String fileName=""
     var String comment=""
     //OLD version: not needed anymore: var String behaviorName="UNDEFINED"
     public var LinkedHashMap<String,String> constantsMap = newLinkedHashMap()     // map of (name -> value as tring)
@@ -2285,14 +2445,6 @@ class IOstsSystem{
     
     def getName() {
     	this.name
-    }
-    
-    def setFileName(String fileName) {
-       this.fileName = fileName
-    }
-    
-    def fileName() {
-        fileName
     }
     
     def setComment(String comment) {
