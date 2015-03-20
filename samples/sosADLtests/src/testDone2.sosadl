@@ -1,0 +1,28 @@
+// ok: no testDone.iosts file will be generated
+// because: "done" generates no transition,
+// thus "behavior{done}" and "protocol{done}" will translate into nothing,
+// thus no iosts system.
+
+library testDone is {
+  
+  system test() is {
+    
+    datatype type1
+    
+    gate gate1 is {
+      connection connection1 is in{type1}
+    } guarantee {
+      protocol gate1protocol is {
+        // empty protocol: will not generate any iosts process.
+        done
+      }
+    }
+    
+    behavior test is {
+      // empty behavior: will not generate any iosts process.
+      done
+      via gate1::connection1 receive x
+      done
+    }
+  }
+}
