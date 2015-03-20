@@ -106,7 +106,7 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 		// ok: generate the iosts!
         var String resourceFilename = sfile.eResource.URI.trimFileExtension.lastSegment
         var String iostsFileName = resourceFilename+".iosts"
-        System.out.print("Transforming '"+sfile.eResource.URI.lastSegment+"' into '"+iostsFileName+"'")
+        System.out.println("Transforming '"+sfile.eResource.URI.lastSegment+"' into '"+iostsFileName+"'")
         importedMap = newLinkedHashMap()
         globalFsa.generateFile(iostsFileName, sfile.compile)
         // restore the context of the previous compilation
@@ -118,67 +118,6 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
         currentConnectionsMap = _saved_currentConnectionsMap
 	}
 	 
-	/* A REVOIR !!!! Comment recuperer la resource SosADL a partir d'un IFile ?
-	//cet import pose probleme : import org.eclipse.core.resources.IProject 
-	def SosADL loadSosADLLibrary(String resourceName) {
-		var SosADL result = null
-		/ * 
-		var Injector injector = new SosADLStandaloneSetupGenerated().createInjector//AndDoEMFRegistration()
-		var XtextResourceSet resourceSet = injector.getInstance(XtextResourceSet) as XtextResourceSet
-		//var URI uri = URI.createURI("platform:"+globalFolderName+'/'+resourceName+".sosadl")
-    	resourceSet.addLoadOption(XtextResource.RESOURCE__URI, uri)
-    	//var String platformString = resourceSet.getURI().toPlatformString(true)
-    	var java.net.URI uri = new java.net.URI(globalResource.URI.toString)
-    	var IFile myFile = new IFile(uri)//.toPlatformString(true); getProject() .getFile(new Path(platformString))
-		var IProject proj = myFile.getProject()
-		var IFile linkedFile = proj.getFile(value)
-		* /
-		//var String platformString = globalResource.getURI().toPlatformString(true)
-		var IProject project = ResourcesPlugin.getWorkspace().getRoot().getProject(globalFolderName)//.getFile(resourceName+".sosadl")
-		var IFolder folder = project.getFolder("src")
-		var IFile zefile = folder.getFile(resourceName+".sosadl")
-		result
-		result
-		//
-		/ *
-		var IFolder folder = IProject.getFolder("src")
-		var IResource[]	members = folder.members()
-		for (IResource member : members) {
-			if (member instanceof IFile && member.getFileExtension().equalsIgnoreCase("sosadl"){
-				var file = member as IFile
-			}
-		}
-		* /
-	}
-	*/
-  
-   	def SosADL loadSosADLResource1(String resourceName) {
-		var SosADL result
-		var Injector injector = new SosADLStandaloneSetupGenerated().createInjector//AndDoEMFRegistration()
-		var XtextResourceSet resourceSet = injector.getInstance(XtextResourceSet) as XtextResourceSet
-		//var URI uri = URI.createURI("platform:/resource/${project-name}/src/")
-		var URI uri = URI.createURI("platform:"+globalFolderName+'/'+resourceName+".sosadl")
-    	//resourceSet.addLoadOption(XtextResource.RESOURCE__URI, uri)
-    	resourceSet.addLoadOption(XtextResource.OPTION_RESOLVE_ALL, Boolean.TRUE)
-    	//var Resource resource = resourceSet.getResource(uri,true)
-    	var results = resourceSet.allContents.toIterable.filter(SosADL)//.filter([eResource.URI.trimFileExtension.lastSegment.equals(resourceName)])
-    	System.err.println("List of resource(s) found at URI='"+uri+"':")
-		for (e : results) {
-			System.err.println("- '"+e.eResource.URI+"'")
-		}
-		System.err.println("End of list.")
-		if (results.empty) {
-			System.err.println("Warning! Library '"+resourceName+"' not found!")
-		} else {
-			result = results.head as SosADL
-			if (result.eResource.URI.trimFileExtension.lastSegment.equals(resourceName)) {
-				System.err.println("Found library '"+resourceName+"'. ok.")
-			} else {
-				System.err.println("Found library '"+resourceName+"'? resource = '"+result.eResource.URI.trimFileExtension.lastSegment+"'")
-			}
-		}
-		result
-	}
 	
 	def SosADL loadSosADLResource(String resourceName) {
 		var SosADL result
@@ -189,7 +128,7 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 		var URI uri = URI.createURI("platform:"+globalFolderName+'/'+resourceName+".sosadl")
     	resourceSet.addLoadOption(XtextResource.RESOURCE__URI, uri.toString)
 		try {
-			var Resource resource = resourceSet.getResource(uri, true) // FIXME! bizarre!
+			var Resource resource = resourceSet.getResource(uri, true)
 			if (resource.getContents().empty) {
 				if(DEBUG) System.err.println("Library '"+resourceName+"' at URI='"+resource.URI+"' is empty!")
     			result = null
