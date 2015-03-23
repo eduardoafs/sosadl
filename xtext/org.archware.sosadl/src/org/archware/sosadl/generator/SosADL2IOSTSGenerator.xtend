@@ -4,28 +4,15 @@
 package org.archware.sosadl.generator
 
 import org.eclipse.emf.ecore.resource.Resource
-/* 
-import org.eclipse.core.resources.IFolder
-import org.eclipse.core.resources.IFile
-import org.eclipse.core.resources.IProject
-import org.eclipse.core.resources.ResourcesPlugin
-import org.eclipse.core.resources.IContainer
-*/
 import org.eclipse.xtext.generator.IGenerator
 import org.eclipse.xtext.generator.IFileSystemAccess
 import org.archware.sosadl.sosADL.*
 import org.archware.sosadl.SosADLStandaloneSetupGenerated
-//import org.eclipse.emf.common.util.URI
-//import org.archware.sosadl.SosADLComparator
-//import org.eclipse.xtext.parser.IParser
-//import java.io.StringReader
 import java.util.LinkedHashMap
 import java.util.Map.Entry
 import java.util.ArrayList
 import java.util.List
 import java.lang.System
-//import org.archware.sosadl.services.SosADLGrammarAccess.ValuingElements
-//import org.archware.sosadl.sosADL.impl.ValuingImpl
 import org.archware.sosadl.sosADL.SosADLFactory
 import org.archware.sosadl.sosADL.impl.SosADLFactoryImpl
 import com.google.inject.Guice
@@ -36,17 +23,6 @@ import org.archware.sosadl.sosADL.impl.ValuingImpl
 import com.google.inject.Injector
 import org.eclipse.xtext.resource.XtextResourceSet
 import org.eclipse.xtext.resource.XtextResource
-/* 
-import org.eclipse.core.resources.IResource
-import org.eclipse.core.resources.IFolder
-import org.eclipse.xtext.resource.IResourceServiceProvider
-import org.eclipse.xtext.resource.IResourceDescription
-import org.eclipse.xtext.resource.IResourceDescription.Manager
-import org.eclipse.xtext.resource.IEObjectDescription
-import org.eclipse.xtext.parser.IEncodingProvider
-import org.eclipse.xtext.naming.IQualifiedNameConverter
-*/
-//import org.archware.iosts.ui.contentassist.AbstractIoSTSProposalProvider
 
 /**
  * Generates IOSTS code from the given SosADL model files on save.
@@ -123,8 +99,6 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 		var SosADL result
 		var Injector injector = new SosADLStandaloneSetupGenerated().createInjector//AndDoEMFRegistration()
 		var XtextResourceSet resourceSet = injector.getInstance(XtextResourceSet) as XtextResourceSet
-		// We don't want all resources! we just one the resource for resourceName!
-		//resourceSet.addLoadOption(XtextResource.OPTION_RESOLVE_ALL, Boolean.TRUE)
 		var URI uri = URI.createURI("platform:"+globalFolderName+'/'+resourceName+".sosadl")
     	resourceSet.addLoadOption(XtextResource.RESOURCE__URI, uri.toString)
 		try {
@@ -309,98 +283,7 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 	
     
     //=========================== compilation
-	
-    /* Pour memoire 
-	
-	//---------------- parts of SosADL2IOSTSv1Generator : pour memoire
-	def compile(SystemDecl s){
-	  currentSystem = new IOstsSystem(s.name)
-	  currentSystem.constantsMap.putAll(globalConstantsMap)
-	  currentSystem.typesMap.putAll(globalTypesMap)
-      currentSystem.setFileName(resourceFilename+"_"+s.name+".iosts")
-	  s.parameters.map[compile]
-	  for (d : s.datatypes) {
-        d.compile
-      }
-      for (g : s.connections) {
-        g.compile
-      }
-      //if (s.assertion != null) {s.assertion.compile}  // not a protocol?
-      s.behavior.compile
-      // add system if it's not empty
-      if (! currentSystem.empty) {
-        systems.add(currentSystem)
-      }
-      currentSystem=null
-    }
-
-	def compile(ArchitectureDecl a){
-	  currentSystem = new IOstsSystem(a.name)
-      currentSystem.constantsMap.putAll(globalConstantsMap)
-      currentSystem.typesMap.putAll(globalTypesMap)
-      currentSystem.setFileName(resourceFilename+"_"+a.name+".iosts")
-      a.parameters.map[compile]
-      for (d : a.datatypes) {d.compile}
-      for (g : a.connections) {g.compile}
-      a.behavior.compile
-      //if (a.assertion != null) {a.assertion.compile} // not a protocol?
-      // add system if it's not empty
-      if (! currentSystem.empty) {
-        systems.add(currentSystem)
-      }
-      currentSystem=null
-    }
-
-    def compile(MediatorDecl m){
-      currentSystem = new IOstsSystem(m.name)
-      currentSystem.constantsMap.putAll(globalConstantsMap)
-      currentSystem.typesMap.putAll(globalTypesMap)
-      currentSystem.setFileName(resourceFilename+"_"+m.name+".iosts")
-      m.parameters.map[compile]
-      for (d : m.datatypes) {
-        d.compile
-      }
-      for (d : m.duties) {
-        d.compile
-      }
-      //if (m.assertion != null) {m.assertion.compile}  // not a protocol?
-      m.behavior.compile
-      // add system if it's not empty
-      if (! currentSystem.empty) {
-        systems.add(currentSystem)
-      }
-      currentSystem=null
-    }
-	
-	def compile(GateDecl g){
-	    for (c : g.connections) {
-	        val name=g.name+"_"+c.name
-	        val IOstsType type = computeIOstsType(c.valueType)
-	        val typeName = nameOfIOstsType(type)
-	        registerIOstsType(typeName, type)
-	        val finalTypeName = finalNameOfIOstsType(typeName)
-	        //currentSystem.addConnection(new IOstsConnection(name, computeIOstsType(c.valueType), c.mode.toString))
-	        currentSystem.addConnection(new IOstsConnection(name, finalTypeName, c.mode.toString))
-	    }
-	    '''«g.protocol.compile»'''
-	}
-
-	
-	def compile(DutyDecl d){
-        for (c : d.connections) {
-            val name=d.name+"_"+c.name
-            val IOstsType type = computeIOstsType(c.valueType)
-            val typeName = nameOfIOstsType(type)
-            registerIOstsType(typeName, type)
-            val finalTypeName = finalNameOfIOstsType(typeName)
-            //currentSystem.addConnection(new IOstsConnection(name, computeIOstsType(c.valueType), c.mode.toString))
-            currentSystem.addConnection(new IOstsConnection(name, finalTypeName, c.mode.toString))
-        }
-        '''«d.protocol.compile»'''
-    }
-    
-    */
-    
+	    
     override def compile(Import i) {
     	var IOstsLibrary library = null
     	if (librariesMap.containsKey(i.importedLibrary)) {
@@ -535,20 +418,7 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 	
 	override def compile(SystemDecl s) {
 		currentSystem = new IOstsSystem(s.name)
-		//currentSystem.setFileName(resourceFilename + ".iosts")
-
-		/*
-	  	s.parameters.map[compile]
-	  	for (d : s.datatypes) {
-        	d.compile
-      	}
-      	for (g : s.connections) {
-        	g.compile
-      	}
-	    //if (s.assertion != null) {s.assertion.compile}  // not a protocol?
-      	s.behavior.compile
-      	*/
-      	currentTypesMap = new LinkedHashMap()
+		currentTypesMap = new LinkedHashMap()
 		val result = super.compile(s)
 		currentSystem.typesMap.putAll(currentTypesMap)
 		currentTypesMap = null
@@ -563,20 +433,7 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
     
     override def compile(MediatorDecl m) {
 		currentSystem = new IOstsSystem(m.name)
-		//currentSystem.setFileName(resourceFilename + "_" + m.name + ".iosts")
-
-		/*
-      	m.parameters.map[compile]
-      	for (d : m.datatypes) {
-        	d.compile
-      	}
-      	for (d : m.duties) {
-        	d.compile
-      	}
-      	//if (m.assertion != null) {m.assertion.compile}  // not a protocol?
-      	m.behavior.compile
-      	*/
-      	currentTypesMap = new LinkedHashMap()
+		currentTypesMap = new LinkedHashMap()
 		val result = super.compile(m)
 		currentSystem.typesMap.putAll(currentTypesMap)
 		currentTypesMap = null
@@ -591,15 +448,6 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
     
     override def compile(ArchitectureDecl a) {
 		currentSystem = new IOstsSystem(a.name)
-		//currentSystem.setFileName(resourceFilename + "_" + a.name + ".iosts")
-
-		/*
-      	a.parameters.map[compile]
-      	for (d : a.datatypes) {d.compile}
-      	for (g : a.connections) {g.compile}
-      	a.behavior.compile
-      	//if (a.assertion != null) {a.assertion.compile} // not a protocol?
-      	*/
 		currentTypesMap = new LinkedHashMap()
 		val result = super.compile(a)
 		currentSystem.typesMap.putAll(currentTypesMap)
@@ -924,7 +772,6 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
                     currentProcess.addInoutput(channel, connection.typeName)
                     if (DEBUG2) System.out.println("Added channel '"+channel+"' to inoutput connections")
                 }
-                //OLD version: channel = channel.concat("_out")
             }
             else if (connection.mode == "out") {
             	if (! currentProcess.outputMap.containsKey(channel)) {
@@ -945,7 +792,6 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
                     currentProcess.addInoutput(channel, connection.typeName)
                     if (DEBUG2) System.out.println("Added channel '"+channel+"' to inoutput connections")
                 }
-                //OLD version: channel = channel.concat("_in")
             }
             else if (connection.mode == "in") {
 	            if (! currentProcess.inputMap.containsKey(channel)) {
@@ -985,7 +831,6 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
                     currentProcess.addInoutput(channel, connection.typeName)
                     if (DEBUG2) System.out.println("Added channel '"+channel+"' to inoutput connections")
                 }
-                //OLD version: channel = channel.concat("_out")
             }
             else if (connection.mode == "out") {
 	            if (! currentProcess.outputMap.containsKey(channel)) {
@@ -1003,8 +848,6 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
                  *     action.setAction(channel+"!("+parameter+")")
                  *     currentProcess.addParameter(parameter,connection.typeName)
                  */
-                // send any: no guard (thus not parameter) and send a random expression compatible with type of connection
-                //action.setGuard(parameter+" = 0  /*FIXME: 0 should be an expression of parameter's type*/")
                 action.setGuard(parameter+" = "+(a.suite as SendProtocolAction).expression.compile)
                 action.setAction("via "+channel+" send "+parameter)
                 currentProcess.addParameter(parameter,connection.typeName)
@@ -1025,7 +868,6 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
                     currentProcess.addInoutput(channel, connection.typeName)
                     if (DEBUG2) System.out.println("Added channel '"+channel+"' to inoutput connections")
                 }
-                //OLD version: channel = channel.concat("_in")
             }
             else if (connection.mode == "in") {
 	            if (! currentProcess.inputMap.containsKey(channel)) {
@@ -1051,7 +893,6 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
                     currentProcess.addInoutput(channel, connection.typeName)
                     if (DEBUG2) System.out.println("Added channel '"+channel+"' to inoutput connections")
                 }
-                //OLD version: channel = channel.concat("_in")
             }
             else if (connection.mode == "in") {
 	            if (! currentProcess.inputMap.containsKey(channel)) {
@@ -1212,23 +1053,6 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
     }
         
     /*
-     * - computeSTS for a Assert statement:
-     *   useless and never called, because the case Assert is handled differently:
-     *   -- if Assert is an AskAssertion, see computeSTS(int,AskAssertion)
-     *   -- if Assert is a  TellAssertion, see computeSTS(int,TellAssertion)
-     *
-    def dispatch ArrayList<Integer> computeSTS(int startState, Assert r){
-        // TODO!
-        val int final=currentProcess.newState()
-        var IOstsTransition assert = new IOstsTransition(startState,final)
-        assert.setComment("TODO! Assert")
-        currentProcess.addTransition(assert)
-        //System.out.println("Added fake assert transition: from="+startState+", to="+final)
-        newArrayList(final)
-    }
-    */
-    
-    /*
      * - computeSTS for a AskAssertion statement:
      */
     def dispatch ArrayList<Integer> computeSTS(int startState, AskAssertion r){
@@ -1239,7 +1063,6 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
         currentProcess.addTransition(ask)
         newArrayList(final)
     }
-    
     
     /*
      * - computeSTS for a TellAssertion statement
@@ -1621,18 +1444,6 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
     	result1
     }
     
-    /*
-     * TypeName generator: returns a new unused type id: BAD IDEA!
-     *
-    def String newIOstsTypeName() {
-        this.lastIOstsTypeNum = this.lastIOstsTypeNum+1
-        lastIOstsTypeName()
-    }
-    
-    def String lastIOstsTypeName() {
-        "$Type_"+this.lastIOstsTypeNum
-    }
-    */
 }
 
 //-------------- 
@@ -1918,41 +1729,6 @@ class IOstsSequenceType extends IOstsType {
 }
 
 
-/*
-class IOstsArrayType extends IOstsType {
-    
-    val int size
-    val IOstsType type
-    
-    // private thus inaccessible, because one cannot create array without size
-    private new() {
-        size = 0
-        type = new IOstsIntType()
-    }
-    
-    new(int size, IOstsType type) {
-        this.size = size
-        this.type = type
-    }
-    
-    override def String toString() {
-        "array["+size+"] of "+type.toString
-    }
-    
-    override def equals(IOstsType other) {
-        if (other instanceof IOstsArrayType) {
-            if (other.size != size) {
-                false
-            } else {
-                other.type.equals(type)
-            }
-        } else {
-            false
-        }
-    }
-}
-*/
-
 class IOstsNamedType extends IOstsType {
     
     val String name
@@ -2041,15 +1817,6 @@ class IOstsTransition {
 	String guard = "" // optional
 	String action = "unobservable" // default action is unobservable
 	List<String> assignments = newArrayList // optional
-
-	/* never used!
-	new(int fromState, int toState, String action) {
-		this.fromState = fromState
-		this.toState = toState
-		this.action = action
-		this.init = false
-	}
-	*/
 
 	new(int fromState, int toState) {
 		this.fromState = fromState
@@ -2276,54 +2043,7 @@ class IOstsProcess{
     def lastParameter() {
         this.name+"_p"+this.lastParameterNumber
     }
-    
-    /*
-     * Returns the text of the IOSTS Process
-     *
-     * OLD version:
-    override def String toString()'''
-    process «name»;
-    «IF !inputMap.empty»
-    
-    input  
-      «inputMap.keySet.join(",\n")»;
-    «ENDIF»
-    «IF !outputMap.empty»
-    
-    output
-      «outputMap.keySet.join(",\n")»;
-    «ENDIF»
-      
-    internal
-      tau;
-    «IF !parametersMap.empty»
-    
-    parameters // stg says they have already been declared!
-      «FOR p:parametersMap.keySet»
-      //«p» : «parametersMap.get(p)»; 
-      «ENDFOR»
-    «ENDIF»
-    «IF !variablesMap.empty»
-    
-    variables
-      «FOR v:variablesMap.entrySet»
-      «v.key» : «v.value»;
-      «ENDFOR»
-    «ENDIF»
-    
-    state
-      init: s0;
-      «FOR s:1..lastState»
-      s«s»;
-      «ENDFOR»  
-    
-    transition
-    «FOR t:transitions»
-    «t.toString»
-    «ENDFOR»
-    '''
-    */
-    
+        
     override def String toString()'''
     {
     	«IF !parametersMap.empty»
@@ -2428,69 +2148,6 @@ class IOstsSystem{
     def empty() {
         processesMap.empty
     }
-    
-    // OLD version: IOstsSystem.toString is never called.
-    /*
-    override def String toString() {
-        // generate something only if there is at least one process
-        if (empty) {
-            System.err.println("Warning! System '"+name+"' defines no process! Ignoring...")
-            ""
-        } else {     
-    '''
-    / *
-    Generated by org.archware.sosadl.generator.SosADL2IOSTSGenerator
-    
-    WARNING #1: The generator is a work in progress! This IOSTS file may not be complete!
-    WARNING #2: The generator assumes the SoSADL source is correct.
-                Otherwise, STG may not compile this IOSTS file. 
-
-    Run it with:
-      «IF processesMap.size == 1 && behaviorName != "UNDEFINED"»
-        stg «fileName» -test_name «behaviorName»
-      «ELSE»
-        «FOR p:processesMap.values»
-        «IF p.name.endsWith("_protocol")»
-        stg «fileName» -test_name «behaviorName» -test_purpose_name «p.name»
-        «ENDIF»
-        «ENDFOR»
-      «ENDIF»
-    * /
-    
-    system «name»;
-    «IF !constantsMap.empty»
-    
-    constant
-      «FOR c:constantsMap.entrySet»
-        «c.key» = «c.value»
-      «ENDFOR»
-    «ENDIF»
-    «IF !typesMap.empty»
-    
-    type
-      «FOR t:typesMap.entrySet»
-        «val tk = t.key»
-        «val tv = t.value»
-        «IF tv.toString == "int"»
-          // «tk» = int;
-        «ELSE»
-          «tk» = «tv»;
-        «ENDIF»
-      «ENDFOR»
-    «ENDIF»
-    
-    gate
-    «FOR g:connectionsMap.values»
-    «g.toString»
-    «ENDFOR»
-    «FOR p:processesMap.values»
-    
-    //--------------------------------------------------
-    «p.toString»
-    «ENDFOR»
-    '''}
-    }
-    */
 }
 
 /*
