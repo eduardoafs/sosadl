@@ -262,7 +262,7 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 	 * 
 	 * Note: unused since we do not use anymore this model transformation to translate AskAssertion
 	 *       into an IoSTS transition.
-	 */
+	 *
 	def IfThenElseBehavior newIfThenElseBehaviorFromAskAssertionAndBehaviorStatements(AskAssertion ask, ArrayList<BehaviorStatement> ifThenStatements) {
 		// create a Behavior which will contain the ifThenStatements
 		val factory = SosADLFactory.eINSTANCE
@@ -278,6 +278,7 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 		result.setIfTrue(ifTrueBehavior)
 		result
 	}
+	*/
 	
 	/* Create an IfThenElseProtocol 'if (Expression) then {ProtocolStatement*}'
 	 * out of the given list of ProtocolStatements where:
@@ -288,7 +289,7 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 	 * 
 	 * Note: unused since we do not use anymore this model transformation to translate AskAssertion
 	 *       into an IoSTS transition.
-	 */
+	 *
 	def IfThenElseProtocol newIfThenElseProtocolFromAskAssertionAndProtocolStatements(AskAssertion ask, ArrayList<ProtocolStatement> ifThenStatements) {
 		// create a Protocol which will contain the ifThenStatements
 		val factory = SosADLFactory.eINSTANCE
@@ -304,6 +305,7 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 		result.setIfTrue(ifTrueProtocol)
 		result
 	}
+	*/
 	
     
     //=========================== compilation
