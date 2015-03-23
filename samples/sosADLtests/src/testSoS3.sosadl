@@ -1,0 +1,15 @@
+// ok
+with Base
+
+sos testSoS3 is {
+  datatype Abscissa
+  datatype Ordinate
+  datatype Coordinate is tuple{x:Abscissa,y:Ordinate} {
+  	function (onecoordinate:Coordinate)::distance(othercoordinate:Coordinate):Distance is {
+      		return sqrt(sqr(onecoordinate::x-othercoordinate::x)+sqr(onecoordinate::y-othercoordinate::y))
+    }
+  }
+  datatype Depth
+  datatype MeasureData is tuple{coordinate:Coordinate,depth:Depth}
+  datatype MeasureDataBase is sequence{MeasureData}
+}

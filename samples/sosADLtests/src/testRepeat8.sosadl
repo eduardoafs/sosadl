@@ -1,6 +1,6 @@
 // ok
  
-library testRepeat7 is {
+library testRepeat8 is {
   
   system test() is {
     
@@ -12,20 +12,22 @@ library testRepeat7 is {
       connection connection3 is inout{type1}
     } guarantee {
       protocol gate1protocol is {
-        value data = 0
+        value data1 = 1
+        value data2 = 2
+        value data3 = 3
         repeat{
-          choose
-            {via gate1::connection1 receive any}
-          or 
-            {via gate1::connection2 send any}
-          or 
-            {via gate1::connection3 send any}
+          value data4 = 4
+          value data5 = 5
+          value data6 = 6
         }
+        value data7 = 7
+        value data8 = 8
+        value data9 = 9
       }
     }
     
     behavior test is {
-      done
+      done  
     }
   }
 }

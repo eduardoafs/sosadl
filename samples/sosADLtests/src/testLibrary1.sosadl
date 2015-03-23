@@ -1,0 +1,5 @@
+// ok
+ 
+library testLibrary1 is {
+	// nothing!
+}

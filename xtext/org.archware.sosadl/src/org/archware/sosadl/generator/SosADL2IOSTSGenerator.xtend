@@ -8,250 +8,547 @@ import org.eclipse.xtext.generator.IGenerator
 import org.eclipse.xtext.generator.IFileSystemAccess
 import org.archware.sosadl.sosADL.*
 import org.archware.sosadl.SosADLStandaloneSetupGenerated
-import org.eclipse.emf.common.util.URI
-import org.archware.sosadl.SosADLComparator
-import org.eclipse.xtext.parser.IParser
-import java.io.StringReader
 import java.util.LinkedHashMap
 import java.util.Map.Entry
 import java.util.ArrayList
 import java.util.List
 import java.lang.System
-
-//import org.archware.iosts.ui.contentassist.AbstractIoSTSProposalProvider
+import org.archware.sosadl.sosADL.SosADLFactory
+import org.eclipse.emf.common.util.URI
+import com.google.inject.Injector
+import org.eclipse.xtext.resource.XtextResourceSet
+import org.eclipse.xtext.resource.XtextResource
 
 /**
  * Generates IOSTS code from the given SosADL model files on save.
  * see http://www.eclipse.org/Xtext/documentation.html#TutorialCodeGeneration
+ * 
+ * The SosADL2IOSTSGenerator inherits most of its compile methods from the SosADLPrettyPrinterGenerator
+ * and overrides/adds methods for the STS generation.  
  */
-class SosADL2IOSTSGenerator implements IGenerator {
+class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGenerator {
     
     val DEBUG=false
     val DEBUG2=false
     val DEBUG3=false
     
     // global variables making the generation much easier
-    var String resourceFilename = null          // current SoSADL file name to be transformed
-    var LinkedHashMap<String,String> globalConstantsMap = newLinkedHashMap()
-    var LinkedHashMap<String,IOstsType> globalTypesMap = newLinkedHashMap()     // map of (types -> typeDecl)
-    var List<IOstsSystem> systems = null       // list of generated systems from one SoSADL file
+    // librariesMap contains all known libraries
+    var LinkedHashMap<String,IOstsLibrary> librariesMap = newLinkedHashMap()  // map of (name -> library)
+    // importedMap contains all libraries to import in the current file
+    var LinkedHashMap<String,IOstsLibrary> importedMap = newLinkedHashMap()  // map of (name -> library)
+    var IOstsType currentType = null           // type currently generated
+    var LinkedHashMap<String,IOstsType> currentTypesMap = null // map of (types -> typeDecl) currently generated
+    var IOstsListOfFunctions currentListOfFunctions = null // list of functions currently generated
+    var IOstsLibrary currentLibrary = null     // library currently generated
     var IOstsSystem currentSystem = null       // system currently generated
-    var IOstsProcess currentProcess = null           // process currently generated
+    var IOstsProcess currentProcess = null     // process currently generated
+    var LinkedHashMap<String,IOstsConnection> currentConnectionsMap = newLinkedHashMap()  // current connection map
     var lastIOstsTypeNum = 0
+    var lastDoExprResultNumber=0
+    var lastForEachVarNumber=0
+    
+    //FIXME: these two global variables should be avoided!
+    var String globalFolderName = null 
+    var IFileSystemAccess globalFsa = null
+    var Resource globalResource = null
     
 	override void doGenerate(Resource resource, IFileSystemAccess fsa) {
 
+		librariesMap = newLinkedHashMap()
+		
+		globalFolderName = resource.URI.path.substring(0,resource.URI.path.lastIndexOf('/'))
+		globalResource = resource
+		globalFsa = fsa
+		
 		for (e : resource.allContents.toIterable.filter(SosADL)) {
-		    var first=true
-		    resourceFilename = e.eResource.URI.trimFileExtension.lastSegment
-            System.out.print("Transforming '"+e.eResource.URI.lastSegment+"'")
-            systems = newLinkedList()
-            e.compile
-            if (systems.empty) {
-                System.out.println(" into nothing! Found no behavior, no protocol!")
-            } else {
-                if (DEBUG) System.out.println("--------- "+e.eResource.URI.lastSegment+" (starts) ----")
-                for (s:systems) {
-                    if (DEBUG) {
-                        System.out.println("----> "+s.fileName+" (starts) ----")
-                        System.out.println(s.toString)
-                    }
-                    else {
-                        System.out.print((if (first) " into: " else ", ")+"'"+s.fileName+"'")
-                        first=false
-                    }
-                    fsa.generateFile(s.fileName, s.toString)
-                    if (DEBUG) System.out.println("----> "+s.fileName+" (ends) ------")
-                }
-                if (DEBUG) System.out.println("--------- "+e.eResource.URI.lastSegment+" (ends) ------")
-                else System.out.println(". done.")
-            }
+			doGenerateOne(e)
 		}
 	}
-    
-	def compile(SosADL s) {
-	globalConstantsMap = newLinkedHashMap()
-	globalTypesMap = newLinkedHashMap()
-	lastIOstsTypeNum = 0
-	'''
-    «FOR i : s.imports»
-      «i.compile»
-    «ENDFOR»
-
-    «IF s.content instanceof Library»
-      «(s.content as Library).compile»
-    «ELSEIF s.content instanceof SoS»
-      «(s.content as SoS).compile»
-    «ENDIF»
-	'''
+	
+	def void doGenerateOne(SosADL sfile) {
+		// save the context of the previous compilation
+		val LinkedHashMap<String,IOstsLibrary> _saved_importedMap = importedMap
+		val IOstsType _saved_currentType = currentType
+		val LinkedHashMap<String,IOstsType> _saved_currentTypesMap = currentTypesMap
+		val IOstsSystem _saved_currentSystem = currentSystem
+    	val IOstsProcess _saved_currentProcess = currentProcess
+   	 	val LinkedHashMap<String,IOstsConnection> _saved_currentConnectionsMap = currentConnectionsMap
+		// ok: generate the iosts!
+        var String resourceFilename = sfile.eResource.URI.trimFileExtension.lastSegment
+        var String iostsFileName = resourceFilename+".iosts"
+        System.out.println("Transforming '"+sfile.eResource.URI.lastSegment+"' into '"+iostsFileName+"'")
+        importedMap = newLinkedHashMap()
+        globalFsa.generateFile(iostsFileName, sfile.compile)
+        // restore the context of the previous compilation
+        importedMap = _saved_importedMap
+        currentType = _saved_currentType
+        currentTypesMap = _saved_currentTypesMap
+        currentSystem = _saved_currentSystem
+        currentProcess = _saved_currentProcess
+        currentConnectionsMap = _saved_currentConnectionsMap
+	}
+	 
+	
+	def SosADL loadSosADLResource(String resourceName) {
+		var SosADL result
+		var Injector injector = new SosADLStandaloneSetupGenerated().createInjector//AndDoEMFRegistration()
+		var XtextResourceSet resourceSet = injector.getInstance(XtextResourceSet) as XtextResourceSet
+		var URI uri = URI.createURI("platform:"+globalFolderName+'/'+resourceName+".sosadl")
+    	resourceSet.addLoadOption(XtextResource.RESOURCE__URI, uri.toString)
+		try {
+			var Resource resource = resourceSet.getResource(uri, true)
+			if (resource.getContents().empty) {
+				if(DEBUG) System.err.println("Library '"+resourceName+"' at URI='"+resource.URI+"' is empty!")
+    			result = null
+    		} else {
+    			if(DEBUG) System.err.println("Found library '"+resourceName+"' at URI='"+resource.URI+"'. ok.")
+    			result = (resource.getContents().get(0) as SosADL)
+    		}  		
+    	} catch (Exception e) {
+    		System.err.println("Warning! Library '"+resourceName+"' not found at uri '"+uri.path()+"'!")
+    		result = null
+    	}
+		result
 	}
 	
-
-	def compile(Import i)'''
-	'''
-
-	def compile(Library l)'''
-    «l.decls.compile»
-    '''
-
-	def compile(SoS s)'''
-    «s.decls.compile»
-    '''
-
-	def compile(EntityBlock e) {
-        for (d : e.datatypes) {
-          d.compile
-        }
-        /*
-        for (f : e.functions) {
-          f.compile
-        }
-        */
-        for (s : e.systems) {
-          s.compile
-        }
-        for (m : e.mediators) {
-          m.compile
-        }
-        for (a : e.architectures) {
-          a.compile
-        }
-	''''''
-	}
-
-	def compile(SystemDecl s){
-	  currentSystem = new IOstsSystem(s.name)
-	  currentSystem.constantsMap.putAll(globalConstantsMap)
-	  currentSystem.typesMap.putAll(globalTypesMap)
-      currentSystem.setFileName(resourceFilename+"_"+s.name+".iosts")
-	  s.parameters.map[compile]
-	  for (d : s.datatypes) {
-        d.compile
-      }
-      for (g : s.gates) {
-        g.compile
-      }
-      //if (s.assertion != null) {s.assertion.compile}  // not a protocol?
-      s.behavior.compile
-      // add system if it's not empty
-      if (! currentSystem.empty) {
-        systems.add(currentSystem)
-      }
-      currentSystem=null
-    }
-
-	def compile(ArchitectureDecl a){
-	  currentSystem = new IOstsSystem(a.name)
-      currentSystem.constantsMap.putAll(globalConstantsMap)
-      currentSystem.typesMap.putAll(globalTypesMap)
-      currentSystem.setFileName(resourceFilename+"_"+a.name+".iosts")
-      a.parameters.map[compile]
-      for (d : a.datatypes) {d.compile}
-      for (g : a.gates) {g.compile}
-      a.behavior.compile
-      //if (a.assertion != null) {a.assertion.compile} // not a protocol?
-      // add system if it's not empty
-      if (! currentSystem.empty) {
-        systems.add(currentSystem)
-      }
-      currentSystem=null
-    }
-
-    def compile(MediatorDecl m){
-      currentSystem = new IOstsSystem(m.name)
-      currentSystem.constantsMap.putAll(globalConstantsMap)
-      currentSystem.typesMap.putAll(globalTypesMap)
-      currentSystem.setFileName(resourceFilename+"_"+m.name+".iosts")
-      m.parameters.map[compile]
-      for (d : m.datatypes) {
-        d.compile
-      }
-      for (d : m.duties) {
-        d.compile
-      }
-      //if (m.assertion != null) {m.assertion.compile}  // not a protocol?
-      m.behavior.compile
-      // add system if it's not empty
-      if (! currentSystem.empty) {
-        systems.add(currentSystem)
-      }
-      currentSystem=null
-    }
-	
-	def compile(GateDecl g){
-	    for (c : g.connections) {
-	        val name=g.name+"_"+c.name
-	        val IOstsType type = computeIOstsType(c.valueType)
-	        val typeName = nameOfIOstsType(type)
-	        registerIOstsType(typeName, type)
-	        val finalTypeName = finalNameOfIOstsType(typeName)
-	        //currentSystem.addGate(new IOstsGate(name, computeIOstsType(c.valueType), c.mode.toString))
-	        currentSystem.addGate(new IOstsGate(name, finalTypeName, c.mode.toString))
-	    }
-	    '''«g.protocol.compile»'''
-	}
-
-	
-	def compile(DutyDecl d){
-        for (c : d.connections) {
-            val name=d.name+"_"+c.name
-            val IOstsType type = computeIOstsType(c.valueType)
-            val typeName = nameOfIOstsType(type)
-            registerIOstsType(typeName, type)
-            val finalTypeName = finalNameOfIOstsType(typeName)
-            //currentSystem.addGate(new IOstsGate(name, computeIOstsType(c.valueType), c.mode.toString))
-            currentSystem.addGate(new IOstsGate(name, finalTypeName, c.mode.toString))
-        }
-        '''«d.protocol.compile»'''
-    }
+	//=========================== model transformations
 	
 	/*
-	def compile(Connection c)'''«IF c.environment»environment «ENDIF»connection «c.name» is «c.mode»{«c.valueType.compile»}'''
+	 * Create a new NamedType EObject with given name
+	 */
+	def NamedType newNamedType(String name) {
+		//val SosADLFactory factory = SosADLFactoryImpl.init()
+		val factory = SosADLFactory.eINSTANCE
+		var result = factory.createNamedType()  // will create a NamedTypeImpl!
+		result.setName(name)
+		// since result is really a NamedTypeImpl, cast to a NamedType!
+		(result as NamedType)
+	}
+	
+	/*
+	 * Transform a DoExpr into a Valuing EObject.
+	 * From the AST of 'do Expression', we generate the AST for 'value _doExprResult# is dataType = Expression'
+	 * where:
+	 * - _doExprResult# is a unique variable name
+	 * - dataType is the type of Expression
+	 */
+	def Valuing newValuingFromDoExpr(DoExpr doExpr) {
+		// generate a new dumb variable
+		lastDoExprResultNumber++
+		val String dumbVarName="_doExprResult"+lastDoExprResultNumber
+		// retrieve the type of Expression
+		val DataType datatype = newNamedType("integer")
+		// create a Valuing
+		val factory = SosADLFactory.eINSTANCE
+		var result = factory.createValuing()  // will create a ValuingImpl!
+		result.setType(datatype)
+		result.setVariable(dumbVarName)
+		result.setExpression(doExpr.expression)
+		// since result is really a ValuingImpl, cast to a Valuing!
+		(result as Valuing)
+	}
+	
+	/*
+	 * Create a ComplexName out of the name of a IOstsConnection
+	 * Since the name of a connection is already the concatenation of the elements of the ComplexName,
+	 * one has to split this name and remove the added '::' to get each element of the ComplexName.
+	 * Example: gate::connection has to be splitted in ComplexName(Name('gate'),Name('connection')) 
+	 */
+	def ComplexName newComplexNameFromString(String name) {
+		val factory = SosADLFactory.eINSTANCE
+		var result = factory.createComplexName()  // will create a ComplexNameImpl?
+		var complexname = name.split("::")
+		for (n : complexname) {
+			result.getName().add(n)
+		}
+		result
+	}
+	
+	/*
+	 * Create an ChooseProtocol (choose {action1} or {action2} ...)
+	 * out of the given list of connections.
+	 * From the list of declared connections in the current gate/duty, 
+	 * we generate the AST for 'choose {action1} or {action2}'
+	 * where:
+	 * - each declared connection <c> gives one or two actions.
+	 * - if one connection <c.name> has mode 'in', the generated action is 'via <c.name> receive any'. 
+	 * - if one connection <c.name> has mode 'out', the generated action is 'via <c.name> send any'. 
+	 * - if one connection <c.name> has mode 'inout', two actions are gerenated:
+	 *   'via <c.name> receive any' and 'via <c.name> send any'. 
+	 */
+	def ChooseProtocol newChooseProtocolActionFromConnections(LinkedHashMap<String,IOstsConnection> connectionsMap) {
+		// create a Valuing
+		val factory = SosADLFactory.eINSTANCE
+		var result = factory.createChooseProtocol()  // will create a ChooseProtocolImpl!
+		for (c : connectionsMap.values) {
+			// create the appropriate(s) action(s) and make it a new branch
+			if (c.mode == 'in' || c.mode == 'inout') {
+				// connection mode is 'in' or 'inout': create a branch with 'via <c.name> receive any'
+				// make a ComplexName out of the name of the connection
+				var ComplexName conectionName=newComplexNameFromString(c.name)
+				// create a new ReceiveAnyProtocolAction which is a ProtocolActionSuite
+				var actionSuite = factory.createReceiveAnyProtocolAction()
+				// create a new ProtocolAction
+				var action = factory.createProtocolAction()
+				action.setComplexName(conectionName)
+				action.setSuite(actionSuite)
+				// create a new Branch of the ChooseProtocol, and add the action to it
+			    var branch = factory.createProtocol()
+			    branch.getStatements().add(action)
+			    // add the branch to the ChooseProtocol
+			    result.getBranches().add(branch)
+			}
+			if (c.mode == 'out' || c.mode == 'inout') {
+				// connection mode is 'out' or 'inout': create a branch with 'via <c.name> send any'
+				// make a ComplexName out of the name of the connection
+				var ComplexName conectionName=newComplexNameFromString(c.name)
+				// create a FinalExpression Any ('any')
+				var anyExpression = factory.createAny()
+				// create a new ReceiveAnyProtocolAction which is a ProtocolActionSuite
+				var actionSuite = factory.createSendProtocolAction()
+				actionSuite.setExpression(anyExpression)
+				// create a new ProtocolAction
+				var action = factory.createProtocolAction()
+				action.setComplexName(conectionName)
+				action.setSuite(actionSuite)
+			    // create a new Branch of the ChooseProtocol, and add the action to it
+			    var branch = factory.createProtocol()
+			    branch.getStatements().add(action)
+			    // add the branch to the ChooseProtocol
+			    result.getBranches().add(branch)
+			}
+		}
+		result
+	}
+	
+	/* Create an IfThenElseBehavior 'if (Expression) then {BehaviorStatement*}'
+	 * out of the given list of BehaviorStatements where:
+	 * - the ask statement which is the AskAssertion, containing the condition=Expression of if(condition)
+	 * - the next statements, if any, are the BehaviorStatement to be put inside 'then{}' 
+	 * The SoSADL grammar does not allow a Behavior without statements.
+	 * Thus, in case the ifThenStatements is empty, a Done statement is added to it.
+	 * 
+	 * Note: unused since we do not use anymore this model transformation to translate AskAssertion
+	 *       into an IoSTS transition.
+	 *
+	def IfThenElseBehavior newIfThenElseBehaviorFromAskAssertionAndBehaviorStatements(AskAssertion ask, ArrayList<BehaviorStatement> ifThenStatements) {
+		// create a Behavior which will contain the ifThenStatements
+		val factory = SosADLFactory.eINSTANCE
+		var ifTrueBehavior = factory.createBehavior()
+		if (ifThenStatements.empty) {
+			val done = factory.createDone()
+			ifThenStatements.add(done)
+		}
+		ifTrueBehavior.getStatements().addAll(ifThenStatements)
+		// create an IfThenElseBehavior
+		var result = factory.createIfThenElseBehavior() // will create a IfThenElseBehaviorImpl!
+		result.setCondition(ask.expression)
+		result.setIfTrue(ifTrueBehavior)
+		result
+	}
 	*/
 	
-	def compile(AssertionDecl a)''''''
+	/* Create an IfThenElseProtocol 'if (Expression) then {ProtocolStatement*}'
+	 * out of the given list of ProtocolStatements where:
+	 * - the ask statement which is the AskAssertion, containing the condition=Expression of if(condition)
+	 * - the next statements, if any, are the ProtocolStatement to be put inside 'then{}' 
+	 * The SoSADL grammar does not allow a Protocol without statements.
+	 * Thus, in case the ifThenStatements is empty, a Done statement is added to it.
+	 * 
+	 * Note: unused since we do not use anymore this model transformation to translate AskAssertion
+	 *       into an IoSTS transition.
+	 *
+	def IfThenElseProtocol newIfThenElseProtocolFromAskAssertionAndProtocolStatements(AskAssertion ask, ArrayList<ProtocolStatement> ifThenStatements) {
+		// create a Protocol which will contain the ifThenStatements
+		val factory = SosADLFactory.eINSTANCE
+		var ifTrueProtocol = factory.createProtocol()
+		if (ifThenStatements.empty) {
+			val done = factory.createDone()
+			ifThenStatements.add(done)
+		}
+		ifTrueProtocol.getStatements().addAll(ifThenStatements)
+		// create an IfThenElseProtocol
+		var result = factory.createIfThenElseProtocol() // will create a IfThenElseProtocolImpl!
+		result.setCondition(ask.expression)
+		result.setIfTrue(ifTrueProtocol)
+		result
+	}
+	*/
+	
     
-    def compile(ProtocolDecl p) {
-        currentProcess = new IOstsProcess(p.name+"_protocol")
-        computeSTS(0,p.body)
-        currentSystem.addProcess(currentProcess)
-        '''«p.toString»'''
+    //=========================== compilation
+	    
+    override def compile(Import i) {
+    	var IOstsLibrary library = null
+    	if (librariesMap.containsKey(i.importedLibrary)) {
+    		if(DEBUG) System.err.println("Library '"+i.importedLibrary+"' already compiled, and imported. ok.")
+    		library = librariesMap.get(i.importedLibrary)
+     	} else if (i.importedLibrary.toLowerCase.equals("base")) {
+			// FIXME!
+			if(DEBUG) System.err.println("TODO: Define 'predefined' library '"+i.importedLibrary+"'!")
+	    	library = null
+    	} else {
+    		val SosADL sresource=loadSosADLResource(i.importedLibrary)
+    		if (sresource == null) {
+    			System.err.println("Warning! Cannot import '"+i.importedLibrary+"': source file not found!")
+    		} else {
+    			if(DEBUG) System.err.println("Importing library '"+i.importedLibrary+"'...")
+    			doGenerateOne(sresource)
+    			if (librariesMap.containsKey(i.importedLibrary)) {
+    				if(DEBUG) System.err.println("Library '"+i.importedLibrary+"' compiled, and imported. ok.")
+    			} else {
+    				System.err.println("Warning! Library '"+i.importedLibrary+"' compiled, but not imported!")
+    			}
+    			library = librariesMap.get(i.importedLibrary)
+    		}
+    	}
+    	if (library != null) {
+    		importedMap.put(i.importedLibrary, library)
+    	}
+    	super.compile(i)
+    }
+	
+	override def compile(Library l) {
+		currentLibrary = new IOstsLibrary(l.name)
+		currentLibrary.importedMap.putAll(importedMap)
+		val result = super.compile(l)
+		if (currentLibrary != null) {
+			librariesMap.put(l.name, currentLibrary)
+		}
+		currentLibrary = null
+		result
+	}
+	
+	override def compile(SoS s) {
+		currentLibrary = new IOstsLibrary(s.name)
+		val result = super.compile(s)
+		if (currentLibrary != null) {
+			importedMap.put(s.name, currentLibrary)
+		}
+		currentLibrary = null
+		result
+	}
+	
+	override def compile(EntityBlock e) {
+		currentSystem = null
+		
+		currentTypesMap = new LinkedHashMap()
+		var String datatypes =
+		'''
+		«IF !e.datatypes.empty»
+		«FOR d : e.datatypes»
+      		«d.compile»
+    	«ENDFOR»
+    	
+    	«ENDIF»
+    	'''
+    	currentLibrary.typesMap.putAll(currentTypesMap)
+    	
+		currentListOfFunctions = new IOstsListOfFunctions()
+		var String functions =
+		'''
+		«IF !e.functions.empty»
+      	«FOR f : e.functions»
+      		«f.compile»
+    	«ENDFOR»
+    	
+    	«ENDIF»
+    	'''
+	    currentLibrary.functions.addAll(currentListOfFunctions)
+	    
+        currentListOfFunctions = null
+        currentTypesMap=null
+        
+    	'''
+		«datatypes»
+		«functions»
+		
+        «FOR s : e.systems»
+      		«s.compile»
+    	«ENDFOR»
+    	«FOR m : e.mediators»
+      		«m.compile»
+    	«ENDFOR»
+    	«FOR a : e.architectures»
+      		«a.compile»
+    	«ENDFOR»
+    	'''
+	}
+	
+	override def compile(DataTypeDecl d) {
+		var IOstsType t
+		if (d.datatype == null) {
+			if(DEBUG2) System.err.println("Warning! type definition of '" + d.name + "' null! Assuming 'integer'...")
+			t = new IOstsIntType()
+		} else {
+			t = computeIOstsType(d.datatype)
+		}
+		// put this type in currentTypesMap allow function declarations to get it  
+		currentTypesMap.put(d.name, t)
+		// get list of functions
+		currentListOfFunctions = new IOstsListOfFunctions()
+		var result = super.compile(d)
+		t.functions.addAll(currentListOfFunctions)
+		currentListOfFunctions = null
+		// now that the type is completed with functions, put the type again in currentTypesMap
+		currentTypesMap.put(d.name, t)
+		result
+	}
+    
+    override def compile(FunctionDecl f) {
+    	var iof = new IOstsFunction(f.name.toString)
+    	iof.setData(f.dataName, computeIOstsType(f.dataTypeName))
+    	for (p : f.parameters) {
+    		iof.addFormalParameter(p.name, computeIOstsType(p.type))
+    	}
+    	iof.returnType = computeIOstsType(f.type)
+    	for (v : f.valuing) {
+    		iof.addValuing(v)
+    	}
+    	iof.returnExpression = f.expression
+    	currentListOfFunctions.add(iof)
+    	super.compile(f)
+    }
+	
+	override def compile(SystemDecl s) {
+		currentSystem = new IOstsSystem(s.name)
+		currentTypesMap = new LinkedHashMap()
+		val result = super.compile(s)
+		currentSystem.typesMap.putAll(currentTypesMap)
+		currentTypesMap = null
+
+		// add system if it's not empty
+		if (! currentSystem.empty) {
+			currentLibrary.addSystem(currentSystem)
+		}
+		currentSystem = null
+		result
+	}
+    
+    override def compile(MediatorDecl m) {
+		currentSystem = new IOstsSystem(m.name)
+		currentTypesMap = new LinkedHashMap()
+		val result = super.compile(m)
+		currentSystem.typesMap.putAll(currentTypesMap)
+		currentTypesMap = null
+
+		// add system if it's not empty
+		if (! currentSystem.empty) {
+			currentLibrary.addSystem(currentSystem)
+		}
+		currentSystem = null
+		result
+	}
+    
+    override def compile(ArchitectureDecl a) {
+		currentSystem = new IOstsSystem(a.name)
+		currentTypesMap = new LinkedHashMap()
+		val result = super.compile(a)
+		currentSystem.typesMap.putAll(currentTypesMap)
+		currentTypesMap = null
+
+		// add system if it's not empty
+		if (! currentSystem.empty) {
+			currentLibrary.addSystem(currentSystem)
+		}
+		currentSystem = null
+		result
+	}
+    
+    override def compile(GateDecl g){
+    	currentConnectionsMap = newLinkedHashMap()
+	    for (c : g.connections) {
+	        val name=g.name+"::"+c.name
+	        val IOstsType type = computeIOstsType(c.valueType)
+	        val typeName = nameOfIOstsType(type)
+	        val finalTypeName = finalNameOfIOstsType(typeName)
+	        currentConnectionsMap.put(name, new IOstsConnection(name, finalTypeName, c.mode.toString))
+	    }
+	    super.compile(g)
+	}
+
+	
+	override def compile(DutyDecl d){
+		currentConnectionsMap = newLinkedHashMap()
+        for (c : d.connections) {
+            val name=d.name+"::"+c.name
+            val IOstsType type = computeIOstsType(c.valueType)
+            val typeName = nameOfIOstsType(type)
+            val finalTypeName = finalNameOfIOstsType(typeName)
+            currentConnectionsMap.put(name, new IOstsConnection(name, finalTypeName, c.mode.toString))
+        }
+        super.compile(d)
     }
     
-    def CharSequence compile(Protocol p)''''''
-	
-	def compile(ProtocolStatement p)''''''
-	
-	def compile(IfThenElseProtocol i)''''''
-	
-	def compile(ChooseProtocol c)''''''
-	
-	def compile(ForEachProtocol f)''''''
-	
-	def compile(DoExpr d)'''
-    do «d.expression.compile»
-	'''
-	
-	def compile(RepeatProtocol r)'''''' 
-	
-	def compile(Done d)''''''  // nothing = no STS to be generated
-	    
-    def compile(ProtocolAction p)''''''
+    //---------------- Compilation of Protocol and Behavior is special
     
-    def compile(SendProtocolAction s)''''''
-    
-    def compile(ReceiveAnyProtocolAction r)''''''
-    
-    def compile(ReceiveProtocolAction r)''''''
-    
-    def compile(AnyAction a)''''''
-    
-    def compile(BehaviorDecl b){
-        //if (currentProcess != null) currentSystem.addProcess(currentProcess)
-        currentProcess = new IOstsProcess(b.name+"_behavior")
-        computeSTS(0,b.body)
+    override def compile(ProtocolDecl p) {
+        var IOstsTransition firstTransition = initTransition("true")
+        firstTransition.setComment("FIXME: system/mediator/architecture parameters may change this guard!")
+        currentProcess = new IOstsProcess(p.name)
+        currentProcess.addAllConnections(currentConnectionsMap)
+        currentProcess.addTransition(firstTransition)
+        computeSTS(firstTransition.toState(),p.body)
         currentSystem.addProcess(currentProcess)
-        ''''''
+        '''protocol «p.name» is «currentProcess»'''
+    }
+    
+    override def compile(BehaviorDecl b){
+        var IOstsTransition firstTransition = initTransition("true")
+        firstTransition.setComment("FIXME: system/mediator/architecture parameters may change this guard!")
+        currentProcess = new IOstsProcess(b.name)
+        currentProcess.addAllConnections(currentConnectionsMap)
+        currentProcess.addTransition(firstTransition)
+        computeSTS(firstTransition.toState(),b.body)
+        currentSystem.addProcess(currentProcess)
+        '''behavior «b.name» is «currentProcess»'''
+    }
+    
+    /* TODO! Generate the STS in place of the architecture behavior
+	def compile(ArchBehaviorDecl a)'''
+    behavior «a.name» is compose {
+      «FOR c:a.constituents»
+        «c.compile»
+      «ENDFOR»
+    } binding {
+      «a.bindings.compile»
+    }
+	'''
+	*/
+	
+	// get and register type of value
+	override def compile(Valuing v){
+	  registerValuing(v)
+	  super.compile(v)
+	}
+	
+	// register name and type of Valuing
+	def registerValuing(Valuing v) {
+		if (v.type == null)
+			currentProcess.addVariable(v.variable)
+		else {
+			val type = computeIOstsType(v.type)
+			val typeName = nameOfIOstsType(type)
+			currentProcess.addVariable(v.variable, finalNameOfIOstsType(typeName))
+		}
+	}
+	
+    
+    //=========================== Generation of the STS
+    
+    /*
+     * Returns an init transition: from 0 to 1, with given guard.
+     * Shall be added before any other in a Behavior or Protocol.
+     * The first transition has no action, not assignments.
+     * A default comment is added, but can be changed. 
+     */
+    def IOstsTransition initTransition(String guard) {
+    	var IOstsTransition firstTransition = new IOstsTransition(0,1)
+    	firstTransition.setInit(true)
+    	firstTransition.setGuard(guard)
+    	firstTransition.setComment("first transition") // default comment, can be changed later
+	    firstTransition
     }
     
     /*
@@ -265,28 +562,71 @@ class SosADL2IOSTSGenerator implements IGenerator {
         var int state=startState
         var ArrayList<Integer> finalStates = newArrayList()
         var boolean first=true
-        for (s : b.statements) {
-            // in a sequence, one has to add a transition with no action between two statements
-            if (first && (s instanceof Action) && startState==0 && state==0) {
-                //System.out.println("Preparing empty transition, because sync is not allowed in first transition": from="+state+", to="+state)
-                finalStates = newArrayList(0)
-                first=false
-            }
-            if (! first) {
-                state=currentProcess.newState()
-                var i=0
-                while (i < finalStates.length) {
-                    var IOstsTransition concatenation = new IOstsTransition(finalStates.get(i),state) //tau
-                    concatenation.setComment("Concatenation (sequentiality)")
-                    currentProcess.addTransition(concatenation)
-                    //System.out.println("Added concatenation transition: from="+finalStates.get(i)+", to="+state)
-                    i = i+1
+        var boolean previousIsValuing=false
+        var int previousStartState=0
+        var int istatement=0
+        var int nstatements=b.statements.length
+        while(istatement < nstatements) {
+        	var s=b.statements.get(istatement)
+            if (! first) { // && finalStates.length >= 2) {
+            	// NEW version: concatenation for sequentiality is generated between two statements
+            	// ONLY when the first statement ends with at least 2 final states.
+            	if (finalStates.length == 1) {
+            		state=finalStates.get(0)
+           		} else { // finalStates.length >= 2
+                	state=currentProcess.newState()
+	                var i=0
+	                while (i < finalStates.length) {
+	                    var IOstsTransition concatenation = new IOstsTransition(finalStates.get(i),state) //tau
+	                    concatenation.setComment("Concatenation (sequentiality)")
+	                    currentProcess.addTransition(concatenation)
+	                    //System.out.println("Added concatenation transition: from="+finalStates.get(i)+", to="+state)
+	                    i = i+1
+	                }
                 }
             }
             // in a sequence of statements, only the last statement can have multiple final states
             // we just assume it's true!
-            finalStates = computeSTS(state, s)
+            if (s instanceof Valuing) {
+            	if (previousIsValuing) {
+            		// adding a assignment to transition from state to finalStates.get(0)
+            		// instead of creating a new transition
+            		state = previousStartState
+            		if (DEBUG3) {System.err.println("CALLING computeSTS(state="+state+", s, final(0)="+finalStates.get(0)+")")}
+            		finalStates = computeSTS(state, s, finalStates.get(0), "Valuing")
+            		if (DEBUG3) {System.err.println("RESULT final(0)="+finalStates.get(0))}
+            	} else {
+               		if (DEBUG3) {System.err.println("CALLING computeSTS(state="+state+", s, 0)")}
+            		finalStates = computeSTS(state, s, 0, "Valuing")
+               		if (DEBUG3) {System.err.println("RESULT final(0)="+finalStates.get(0))}
+            	}
+            	previousIsValuing = true
+            } else {
+            	previousIsValuing = false
+            	/* OLD version with model transformation of AskAssertion into IfThenElseBehavior
+            	if (s instanceof AskAssertion) {
+            		// an AskAssertion is transformed into an IfThenElseBehavior statement
+            		// where:
+            		// - the AskAssertion expression becomes the condition of the IfThenElseBehavior
+            		// - all remaining statements following the AskAssertion become the IfThen statements
+            		var ArrayList<BehaviorStatement> remaining=newArrayList()
+            		istatement++
+            		while (istatement < nstatements) {
+            			remaining.add(b.statements.get(istatement))
+            			istatement++
+            		}
+            		var ifthen=newIfThenElseBehaviorFromAskAssertionAndBehaviorStatements(s, remaining)
+            		finalStates = computeSTS(state, ifthen, "AskAssertion transformed into IfThenElseBehavior")
+            	} else {
+            		finalStates = computeSTS(state, s)	
+            	}
+            	*/
+            	finalStates = computeSTS(state, s)
+           	}
             first=false
+            previousStartState=state
+            if (DEBUG3) {System.err.println("END LOOP: state="+state+", previousStartState="+previousStartState+", final(0)="+finalStates.get(0))}
+            istatement++
         }
         finalStates
     }
@@ -298,40 +638,113 @@ class SosADL2IOSTSGenerator implements IGenerator {
         var int state=startState
         var ArrayList<Integer> finalStates = newArrayList()
         var boolean first=true
-        for (s : b.statements) {
-            // in a sequence, one has to add a transition with no action between two statements
-            if (first && (s instanceof ProtocolAction) && startState==0 && state==0) {
-                //System.out.println("Preparing empty transition, because sync is not allowed in first transition": from="+state+", to="+state)
-                finalStates = newArrayList(0)
-                first=false
-            }
-            if (! first) {
-                state=currentProcess.newState()
-                var i=0
-                while (i < finalStates.length) {
-                    var IOstsTransition concatenation = new IOstsTransition(finalStates.get(i),state) //tau
-                    concatenation.setComment("Concatenation (sequentiality)")
-                    currentProcess.addTransition(concatenation)
-                    //System.out.println("Added concatenation transition: from="+finalStates.get(i)+", to="+state)
-                    i = i+1
+        var boolean previousIsValuing=false
+        var int previousStartState=0
+        var int istatement=0
+        var int nstatements=b.statements.length
+        while(istatement < nstatements) {
+        	var s=b.statements.get(istatement)
+        	if (! first) {
+            	// NEW version: concatenation for sequentiality is generated between two statements
+            	// ONLY when the first statement ends with at least 2 final states.
+            	if (finalStates.length == 1) {
+            		state=finalStates.get(0)
+           		} else { // finalStates.length >= 2
+                	state=currentProcess.newState()
+	                var i=0
+	                while (i < finalStates.length) {
+	                    var IOstsTransition concatenation = new IOstsTransition(finalStates.get(i),state) //tau
+	                    concatenation.setComment("Concatenation (sequentiality)")
+	                    currentProcess.addTransition(concatenation)
+	                    //System.out.println("Added concatenation transition: from="+finalStates.get(i)+", to="+state)
+	                    i = i+1
+	                }
                 }
             }
             // in a sequence of statements, only the last statement can have multiple final states
             // we just assume it's true!
-            finalStates = computeSTS(state, s)
+            if (s instanceof Valuing) {
+            	if (previousIsValuing) {
+            		// adding a assignment to transition from state to finalStates.get(0)
+            		// instead of creating a new transition
+            		state = previousStartState
+            		if (DEBUG3) {System.err.println("CALLING computeSTS(state="+state+", s, final(0)="+finalStates.get(0)+")")}
+            		finalStates = computeSTS(state, s, finalStates.get(0), "Valuing")
+            		if (DEBUG3) {System.err.println("RESULT final(0)="+finalStates.get(0))}
+            	} else {
+            		if (DEBUG3) {System.err.println("CALLING computeSTS(state="+state+", s, 0)")}
+            		finalStates = computeSTS(state, s, "Valuing")
+            		if (DEBUG3) {System.err.println("RESULT final(0)="+finalStates.get(0))}
+            	}
+            	previousIsValuing = true
+            } else {
+            	previousIsValuing = false
+            	/* OLD version with model transformation of AskAssertion into IfThenElseProtocol
+            	if (s instanceof AskAssertion) {
+            		// an AskAssertion is transformed into an IfThenElseProtocol statement
+            		// where:
+            		// - the AskAssertion expression becomes the condition of the IfThenElseProtocol
+            		// - all remaining statements following the AskAssertion become the IfThen statements
+            		var ArrayList<ProtocolStatement> remaining=newArrayList()
+            		istatement++
+            		while (istatement < nstatements) {
+            			remaining.add(b.statements.get(istatement))
+            			istatement++
+            		}
+            		var ifthen=newIfThenElseProtocolFromAskAssertionAndProtocolStatements(s, remaining)
+            		finalStates = computeSTS(state, ifthen, "AskAssertion transformed into IfThenElseProtocol")
+            	} else {
+            		finalStates = computeSTS(state, s)	
+            	}
+            	*/
+            	finalStates = computeSTS(state, s)
+           	}
             first=false
+            previousStartState=state
+            if (DEBUG3) {System.err.println("END LOOP: state="+state+", previousStartState="+previousStartState+", final(0)="+finalStates.get(0))}
+            istatement++
         }
         finalStates
     }
     
     /*
-     * - computeSTS for a Valuing statement.
+     * - computeSTS for a DoExpr statement: transform to a Valuing!
      */
-    def dispatch ArrayList<Integer> computeSTS(int startState, Valuing v){
-        val int final=currentProcess.newState()
-        var IOstsTransition valuing = new IOstsTransition(startState,final)
-        valuing.addStatement(v.compile.toString)
-        valuing.setComment("Valuing")
+    def dispatch ArrayList<Integer> computeSTS(int startState, DoExpr r){
+    	val Valuing v = newValuingFromDoExpr(r)
+    	computeSTS(startState, v, "DoExpr")
+    }
+    
+    /*
+     * - computeSTS for a Valuing statement, not following a previous Valuing
+     */
+    def ArrayList<Integer> computeSTS(int startState, Valuing v, String comment){
+    	computeSTS(startState, v, 0, comment)
+    }
+    
+    /*
+     * - computeSTS for a Valuing statement, may be following a Valuing statement.
+     */
+    def ArrayList<Integer> computeSTS(int startState, Valuing v, int finalState, String comment){
+    	var int final
+    	var IOstsTransition valuing
+    	if (finalState == 0) {
+    		final=currentProcess.newState()
+        	valuing = new IOstsTransition(startState,final)
+        } else {
+        	final=finalState
+        	if (DEBUG3) {
+        		System.err.println("CALLING getTransition(startState="+startState+", final="+final+")")
+        	}
+        	valuing = currentProcess.getTransition(startState,final)
+        	if (valuing == null) {
+        		System.err.println("ERROR! Transition from="+startState+" to="+final+" not found!")
+        	}
+        }
+        //valuing.addAssignment(v.compile.toString) // v.compile.toString hields SosADL syntax
+        registerValuing(v)
+        valuing.addAssignment(v.variable+" := "+v.expression.compile)
+        valuing.setComment(comment)
         currentProcess.addTransition(valuing)
         //System.out.println("Added valuing transition: from="+startState+", to="+final)
         newArrayList(final)
@@ -344,49 +757,51 @@ class SosADL2IOSTSGenerator implements IGenerator {
         val int final=currentProcess.newState()
         var IOstsTransition action = new IOstsTransition(startState,final)
         var String channel=a.complexName.compile.toString
-        val IOstsGate gate=currentSystem.gatesMap.get(channel)
-        if (gate == null) {
+        val IOstsConnection connection=currentSystem.getConnection(channel)
+        if (connection == null) {
             System.err.println("Warning! Channel '"+channel+"' not declared! Ignoring statement...")
         } else if (a.suite instanceof SendAction) {
             val parameter=currentProcess.newParameter()
-            if (gate.mode == "inout") {
+            if (connection.mode == "inout") {
                 if (! currentProcess.inoutputMap.containsKey(channel)) {
-                    currentProcess.addInoutput(channel, gate.typeName)
-                    if (DEBUG2) System.out.println("Added channel '"+channel+"' to inoutput gates")
+                    currentProcess.addInoutput(channel, connection.typeName)
+                    if (DEBUG2) System.out.println("Added channel '"+channel+"' to inoutput connections")
                 }
-                channel = channel.concat("_out")
             }
-            if (! currentProcess.outputMap.containsKey(channel)) {
-                currentProcess.addOutput(channel, gate.typeName)
-                if (DEBUG2) System.out.println("Added channel '"+channel+"' to output gates")
+            else if (connection.mode == "out") {
+            	if (! currentProcess.outputMap.containsKey(channel)) {
+                	currentProcess.addOutput(channel, connection.typeName)
+                	if (DEBUG2) System.out.println("Added channel '"+channel+"' to output connections")
+            	}           
             }
             action.setGuard(parameter+" = "+(a.suite as SendAction).expression.compile)
-            action.setAction(channel+"!("+parameter+")")
+            action.setAction("via "+channel+" send "+parameter)
             action.setComment("Send action")
-            currentProcess.addParameter(parameter,gate.typeName)
+            currentProcess.addParameter(parameter,connection.typeName)
             //System.out.println("Added send transition: from="+startState+", to="+final)
         } else if (a.suite instanceof ReceiveAction) {
             val variable=(a.suite as ReceiveAction).variable
             val parameter=variable+"_data"
-            if (gate.mode == "inout") {
+            if (connection.mode == "inout") {
                 if (! currentProcess.inoutputMap.containsKey(channel)) {
-                    currentProcess.addInoutput(channel, gate.typeName)
-                    if (DEBUG2) System.out.println("Added channel '"+channel+"' to inoutput gates")
+                    currentProcess.addInoutput(channel, connection.typeName)
+                    if (DEBUG2) System.out.println("Added channel '"+channel+"' to inoutput connections")
                 }
-                channel = channel.concat("_in")
             }
-            if (! currentProcess.inputMap.containsKey(channel)) {
-                currentProcess.addInput(channel, gate.typeName)
-                if (DEBUG2) System.out.println("Added channel '"+channel+"' to input gates")
+            else if (connection.mode == "in") {
+	            if (! currentProcess.inputMap.containsKey(channel)) {
+	                currentProcess.addInput(channel, connection.typeName)
+	                if (DEBUG2) System.out.println("Added channel '"+channel+"' to input connections")
+	            }
             }
             if (! currentProcess.parametersMap.containsKey(parameter)) {
-                currentProcess.addParameter(parameter, gate.typeName)
+                currentProcess.addParameter(parameter, connection.typeName)
             }
             if (! currentProcess.variablesMap.containsKey(variable)) {
-                currentProcess.addVariable(variable, gate.typeName)
+                currentProcess.addVariable(variable, connection.typeName)
             }
-            action.setAction(channel+"?("+parameter+")")
-            action.addStatement(variable+" := "+parameter)
+            action.setAction("via "+channel+" receive "+parameter)
+            action.addAssignment(variable+" := "+parameter)
             action.setComment("Receive action")
             //System.out.println("Added receive transition: from="+startState+", to="+final)
         }
@@ -401,109 +816,117 @@ class SosADL2IOSTSGenerator implements IGenerator {
         val int final=currentProcess.newState()
         var IOstsTransition action = new IOstsTransition(startState,final)
         var String channel=a.complexName.compile.toString
-        val IOstsGate gate=currentSystem.gatesMap.get(channel)
-        if (gate == null) {
+        val IOstsConnection connection=currentProcess.getConnection(channel)
+        if (connection == null) {
             System.err.println("Warning! Channel '"+channel+"' not declared! Ignoring statement...")
         } else if (a.suite instanceof SendProtocolAction) {
             val parameter=currentProcess.newParameter()
-            if (gate.mode == "inout") {
+            if (connection.mode == "inout") {
                 if (! currentProcess.inoutputMap.containsKey(channel)) {
-                    currentProcess.addInoutput(channel, gate.typeName)
-                    if (DEBUG2) System.out.println("Added channel '"+channel+"' to inoutput gates")
+                    currentProcess.addInoutput(channel, connection.typeName)
+                    if (DEBUG2) System.out.println("Added channel '"+channel+"' to inoutput connections")
                 }
-                channel = channel.concat("_out")
             }
-            if (! currentProcess.inputMap.containsKey(channel)) {
-                currentProcess.addOutput(channel, gate.typeName)
-                if (DEBUG2) System.out.println("Added channel '"+channel+"' to output gates")
+            else if (connection.mode == "out") {
+	            if (! currentProcess.outputMap.containsKey(channel)) {
+	                currentProcess.addOutput(channel, connection.typeName)
+	                if (DEBUG2) System.out.println("Added channel '"+channel+"' to output connections")
+	            }
             }
             if ((a.suite as SendProtocolAction).expression.compile.toString == "any") {
                 /* FIXME: send any:
                  * - option 1 "pas de if": ANY_typeConnection est une constante qui doit etre definie
                  *     action.setAction(channel+"!(ANY_typeConnection)")
-                 *     currentProcess.addParameter(parameter,gate.typeName)
+                 *     currentProcess.addParameter(parameter,connection.typeName)
                  * - option 2 "avec if en affectant au parametre une constante ANY_typeConnection" (au hasard?)
                  *     action.setGuard(parameter+" = "+(a.suite as SendProtocolAction).expression.compile)
                  *     action.setAction(channel+"!("+parameter+")")
-                 *     currentProcess.addParameter(parameter,gate.typeName)
+                 *     currentProcess.addParameter(parameter,connection.typeName)
                  */
-                // send any: no guard (thus not parameter) and send a random expression compatible with type of connection
-                action.setGuard(parameter+" = 0  //FIXME: 0 should be an expression of parameter's type")
-                action.setAction(channel+"!("+parameter+")")
-                currentProcess.addParameter(parameter,gate.typeName)
-                action.setComment("Send any action")
+                action.setGuard(parameter+" = "+(a.suite as SendProtocolAction).expression.compile)
+                action.setAction("via "+channel+" send "+parameter)
+                currentProcess.addParameter(parameter,connection.typeName)
+                action.setComment("Send any action. Note: any is a random value")
             } else {
                 // send some expression
                 action.setGuard(parameter+" = "+(a.suite as SendProtocolAction).expression.compile)
-                action.setAction(channel+"!("+parameter+")")
-                currentProcess.addParameter(parameter,gate.typeName)
+                action.setAction("via "+channel+" send "+parameter)
+                currentProcess.addParameter(parameter,connection.typeName)
                 action.setComment("Send action")
             }
             //System.out.println("Added send transition: from="+startState+", to="+final)
         } else if (a.suite instanceof ReceiveProtocolAction) { 
             val variable=(a.suite as ReceiveProtocolAction).variable
             val parameter=variable+"_data"
-            if (gate.mode == "inout") {
+            if (connection.mode == "inout") {
                 if (! currentProcess.inoutputMap.containsKey(channel)) {
-                    currentProcess.addInoutput(channel, gate.typeName)
-                    if (DEBUG2) System.out.println("Added channel '"+channel+"' to inoutput gates")
+                    currentProcess.addInoutput(channel, connection.typeName)
+                    if (DEBUG2) System.out.println("Added channel '"+channel+"' to inoutput connections")
                 }
-                channel = channel.concat("_in")
             }
-            if (! currentProcess.inputMap.containsKey(channel)) {
-                currentProcess.addInput(channel, gate.typeName)
-                if (DEBUG2) System.out.println("Added channel '"+channel+"' to input gates")
+            else if (connection.mode == "in") {
+	            if (! currentProcess.inputMap.containsKey(channel)) {
+	                currentProcess.addInput(channel, connection.typeName)
+	                if (DEBUG2) System.out.println("Added channel '"+channel+"' to input connections")
+	            }
             }
-            
             if (! currentProcess.parametersMap.containsKey(parameter)) {
-                currentProcess.addParameter(parameter, gate.typeName)
+                currentProcess.addParameter(parameter, connection.typeName)
             }
             if (! currentProcess.variablesMap.containsKey(variable)) {
-                currentProcess.addVariable(variable, gate.typeName)
+                currentProcess.addVariable(variable, connection.typeName)
             }
-            action.setAction(channel+"?("+parameter+")")
-            action.addStatement(variable+" := "+parameter)
+            action.setAction("via "+channel+" receive "+parameter)
+            action.addAssignment(variable+" := "+parameter)
             action.setComment("Receive action")
             //System.out.println("Added receive transition: from="+startState+", to="+final)
         } else if (a.suite instanceof ReceiveAnyProtocolAction) {
             val variable="any_s"+startState
             val parameter=variable+"_data"
-            if (gate.mode == "inout") {
+            if (connection.mode == "inout") {
                 if (! currentProcess.inoutputMap.containsKey(channel)) {
-                    currentProcess.addInoutput(channel, gate.typeName)
-                    if (DEBUG2) System.out.println("Added channel '"+channel+"' to inoutput gates")
+                    currentProcess.addInoutput(channel, connection.typeName)
+                    if (DEBUG2) System.out.println("Added channel '"+channel+"' to inoutput connections")
                 }
-                channel = channel.concat("_in")
             }
-            if (! currentProcess.inputMap.containsKey(channel)) {
-                currentProcess.addInput(channel, gate.typeName)
-                if (DEBUG2) System.out.println("Added channel '"+channel+"' to input gates")
+            else if (connection.mode == "in") {
+	            if (! currentProcess.inputMap.containsKey(channel)) {
+	                currentProcess.addInput(channel, connection.typeName)
+	                if (DEBUG2) System.out.println("Added channel '"+channel+"' to input connections")
+	            }
             }
             if (! currentProcess.parametersMap.containsKey(parameter)) {
-                currentProcess.addParameter(parameter, gate.typeName)
+                currentProcess.addParameter(parameter, connection.typeName)
             }
             if (! currentProcess.variablesMap.containsKey(variable)) {
-                currentProcess.addVariable(variable, gate.typeName)
+                currentProcess.addVariable(variable, connection.typeName)
             }
-            action.setAction(channel+"?("+parameter+")")
-            action.addStatement(variable+" := "+parameter)
+            action.setAction("via "+channel+" receive "+parameter)
+            action.addAssignment(variable+" := "+parameter)
             action.setComment("Receive any action")
             //System.out.println("Added receive any transition: from="+startState+", to="+final)
         }
         currentProcess.addTransition(action)
         newArrayList(final)
     }
-    
+
     /*
-     * - computeSTS for a IfThenElseBehavior statement.
+     * - computeSTS for a IfThenElseBehavior statement, without comment
      */
     def dispatch ArrayList<Integer> computeSTS(int startState, IfThenElseBehavior i){
+    	computeSTS(startState, i, "IfThenElseBehavior")
+    }
+    
+    /*
+     * - computeSTS for a IfThenElseBehavior statement, with comment
+     */
+    def dispatch ArrayList<Integer> computeSTS(int startState, IfThenElseBehavior i, String comment){
         var ArrayList<Integer> finalStates = newArrayList()
         // then required
         val int finalIfTrue=currentProcess.newState()
         var IOstsTransition ifTrue = new IOstsTransition(startState,finalIfTrue)
         ifTrue.setGuard(i.condition.compile.toString)
-        ifTrue.setComment("IfThenElse (true case)")
+        ifTrue.setComment(comment+" (true case)")
         currentProcess.addTransition(ifTrue)
         //System.out.println("Added ifTrue transition: from="+startState+", to="+finalIfTrue)
         finalStates.addAll(computeSTS(finalIfTrue, i.ifTrue))
@@ -512,24 +935,31 @@ class SosADL2IOSTSGenerator implements IGenerator {
             val int finalIfFalse=currentProcess.newState()
             var IOstsTransition ifFalse = new IOstsTransition(startState,finalIfFalse)
             ifFalse.setGuard("not "+i.condition.compile.toString)
-            ifFalse.setComment("IfThenElse (false case)")
+            ifFalse.setComment(comment+" (false case)")
             currentProcess.addTransition(ifFalse)
             //System.out.println("Added ifFalse transition: from="+startState+", to="+finalIfFalse)
             finalStates.addAll(computeSTS(finalIfFalse, i.ifFalse))
         }
         finalStates
     }
+    
+    /*
+     * - computeSTS for a IfThenElseBehavior statement, without comment
+     */
+    def dispatch ArrayList<Integer> computeSTS(int startState, IfThenElseProtocol i){
+    	computeSTS(startState, i, "IfThenElseProtocol")
+    }
 
     /*
      * - computeSTS for a IfThenElseProtocol statement.
      */
-    def dispatch ArrayList<Integer> computeSTS(int startState, IfThenElseProtocol i){
+    def dispatch ArrayList<Integer> computeSTS(int startState, IfThenElseProtocol i, String comment){
         var ArrayList<Integer> finalStates = newArrayList()
         // then required
         val int finalIfTrue=currentProcess.newState()
         var IOstsTransition ifTrue = new IOstsTransition(startState,finalIfTrue)
         ifTrue.setGuard(i.condition.compile.toString)
-        ifTrue.setComment("IfThenElse (true case)")
+        ifTrue.setComment(comment+" (true case)")
         currentProcess.addTransition(ifTrue)
         //System.out.println("Added ifTrue transition: from="+startState+", to="+finalIfTrue)
         finalStates.addAll(computeSTS(finalIfTrue, i.ifTrue))
@@ -538,7 +968,7 @@ class SosADL2IOSTSGenerator implements IGenerator {
             val int finalIfFalse=currentProcess.newState()
             var IOstsTransition ifFalse = new IOstsTransition(startState,finalIfFalse)
             ifFalse.setGuard("not "+i.condition.compile.toString)
-            ifFalse.setComment("IfThenElse (false case)")
+            ifFalse.setComment(comment+" (false case)")
             currentProcess.addTransition(ifFalse)
             //System.out.println("Added ifFalse transition: from="+startState+", to="+finalIfFalse)
             finalStates.addAll(computeSTS(finalIfFalse, i.ifFalse))
@@ -570,7 +1000,9 @@ class SosADL2IOSTSGenerator implements IGenerator {
         
     /*
      * - computeSTS for a RepeatBehavior statement.
-     */
+     * 
+     * OBSOLETE: RepeatBehavior is not allowed anymore!
+     *
     def dispatch ArrayList<Integer> computeSTS(int startState, RepeatBehavior r){
         var ArrayList<Integer> finalStates = newArrayList()
         // compute STS of repeated behavior, then get its final states
@@ -584,8 +1016,17 @@ class SosADL2IOSTSGenerator implements IGenerator {
                 //System.out.println("Added repeat transition: from="+final+", to="+startState)
             }
         }
-        newArrayList(startState) 
+        // add a transition with guard "false" and action "tau" from startState
+        // to avoid bypassing or exiting the repeat loop.
+        val int ifFalseAfterRepeat=currentProcess.newState()
+        var IOstsTransition ifFalse = new IOstsTransition(startState,ifFalseAfterRepeat)
+        ifFalse.setGuard("false")
+        ifFalse.setComment("IfFalse avoids exit from Repeat")
+        currentProcess.addTransition(ifFalse)
+        //System.out.println("Added ifFalse transition after Repeat: from="+startState+", to="+ifFalseAfterRepeat)
+        newArrayList(ifFalseAfterRepeat)
     }
+    */
 
     /*
      * - computeSTS for a RepeatProtocol statement.
@@ -607,68 +1048,182 @@ class SosADL2IOSTSGenerator implements IGenerator {
     }
         
     /*
-     * - computeSTS for a Assert statement.
+     * - computeSTS for a AskAssertion statement:
      */
-    def dispatch ArrayList<Integer> computeSTS(int startState, Assert r){
-        // TODO!
-        val int final=currentProcess.newState()
-        var IOstsTransition assert = new IOstsTransition(startState,final)
-        assert.setComment("TODO! Assert")
-        currentProcess.addTransition(assert)
-        //System.out.println("Added fake assert transition: from="+startState+", to="+final)
+    def dispatch ArrayList<Integer> computeSTS(int startState, AskAssertion r){
+    	val final=currentProcess.newState()
+        var IOstsTransition ask = new IOstsTransition(startState,final)
+        ask.setGuard(r.expression.compile.toString)
+        ask.setComment("AskAssertion")
+        currentProcess.addTransition(ask)
         newArrayList(final)
     }
+    
+    /*
+     * - computeSTS for a TellAssertion statement
+     * 
+     *   FIXME: For the moment, we only allow expression in the form "var = expr"
+     */
+    def dispatch ArrayList<Integer> computeSTS(int startState, TellAssertion r){
+    	val final=currentProcess.newState()
+        var IOstsTransition tell = new IOstsTransition(startState,final)
+        tell.setGuard(r.expression.compile.toString)
+        tell.setComment("TellAssertion")
+        // Now the tricky part! At the moment, we only recognize and handle this case:
+        // - case1: the expression is "envvar = expr"
+        // else, the assignment is left empty!
+        if (r.expression instanceof BinaryExpression) {
+        	val BinaryExpression e = (r.expression as BinaryExpression)
+        	if (e.getLeft instanceof IdentExpression) {
+        		val String varName = e.getLeft.compile.toString
+        	    if (e.op == '=') {
+        	    	// case 1
+        			tell.addAssignment(varName+" := "+e.getRight().compile)
+        			// register the varName as a global variable
+        			var String typeName = "integer /* FIXME! should be type of assigned expression! */"
+        			currentProcess.addGlobal(varName, typeName)
+        		}
+        	}
+        }
+        currentProcess.addTransition(tell)
+        newArrayList(final)
+    }
+    
     
     /*
      * - computeSTS for a ForEachBehavior statement.
      */
     def dispatch ArrayList<Integer> computeSTS(int startState, ForEachBehavior r){
-        // TODO!
-        val int final=currentProcess.newState()
-        var IOstsTransition foreach = new IOstsTransition(startState,final)
-        foreach.setComment("TODO! ForEachBehavior")
-        currentProcess.addTransition(foreach)
-        //System.out.println("Added fake foreach transition: from="+startState+", to="+final)
-        newArrayList(final)
+        lastForEachVarNumber++
+        val String iName = "i"+lastForEachVarNumber+"_"
+        val String setOfValues = r.setOfValues.compile.toString
+        val String variable = r.variable
+        currentProcess.addVariable(iName)
+        // transition: initialize i
+        val finalInit=currentProcess.newState()
+        var IOstsTransition init = new IOstsTransition(startState,finalInit)
+        init.setComment("ForEachBehavior: init "+iName)
+        init.addAssignment(iName+" := "+0)
+        currentProcess.addTransition(init)
+        // transition: if (i < sizeof(setOfValues))
+        val finalIfInf=currentProcess.newState()
+        var IOstsTransition ifInf = new IOstsTransition(finalInit, finalIfInf)
+        ifInf.setComment("ForEachBehavior: begin loop")
+        ifInf.setGuard(iName+" <= "+setOfValues+"::size()")
+        ifInf.addAssignment(variable+" := "+setOfValues+"::element("+iName+")")
+        currentProcess.addTransition(ifInf)
+        // transitions of the Behavior inside the ForEachBehavior
+        var ArrayList<Integer> endOfLoop = newArrayList()
+        endOfLoop.addAll(computeSTS(finalIfInf, r.repeated))
+        // transition(s) from end(s) of Behavior inside the ForEachBehavior to init
+        /* alt1 */
+        for (e : endOfLoop) {
+        	var IOstsTransition increment = new IOstsTransition(e,finalInit)
+        	increment.addAssignment(iName+" := "+iName+"+1")
+        	increment.setComment("ForEachBehavior: end loop with increment")
+        	currentProcess.addTransition(increment)
+        }
+        // end of alt1
+        /* alt2
+ 		// add a concatenation if body ends with multiple states
+        var int finalEndOfLoop
+        if (endOfLoop.length > 1) {
+        	finalEndOfLoop = currentProcess.newState()
+        	// adding concatenations to get a unique final state for the body of ForEach
+        	for (e : endOfLoop) {
+	        	var IOstsTransition concatenation = new IOstsTransition(e,finalEndOfLoop)
+	        	concatenation.setComment("ForEachBehavior: concatenation before increment")
+	        	currentProcess.addTransition(concatenation)
+	        }
+        } else {
+        	finalEndOfLoop = endOfLoop.get(0)
+        }
+        // increment
+        var IOstsTransition increment = new IOstsTransition(finalEndOfLoop,finalInit)
+        increment.addAssignment(iName+" := "+iName+"+1")
+        increment.setComment("ForEachBehavior: end loop increment")
+        currentProcess.addTransition(increment)
+        // end of alt2
+        */
+        // transition: if (i > sizeof(setOfValues))
+        val finalIfSup=currentProcess.newState()
+        var IOstsTransition ifSup = new IOstsTransition(finalInit, finalIfSup)
+        ifSup.setComment("ForEachBehavior: after foreach loop")
+        ifSup.setGuard(iName+" > "+setOfValues+"::size()")
+        currentProcess.addTransition(ifSup)
+    	newArrayList(finalIfSup)
     }
     
     /*
      * - computeSTS for a ForEachProtocol statement.
      */
     def dispatch ArrayList<Integer> computeSTS(int startState, ForEachProtocol r){
-        // TODO!
-        val int final=currentProcess.newState()
-        var IOstsTransition foreach = new IOstsTransition(startState,final)
-        foreach.setComment("TODO! ForEachProtocol")
-        currentProcess.addTransition(foreach)
-        //System.out.println("Added fake foreach transition: from="+startState+", to="+final)
-        newArrayList(final)
-    }
-    
-    /*
-     * - computeSTS for a DoExpr statement.
-     */
-    def dispatch ArrayList<Integer> computeSTS(int startState, DoExpr r){
-        // TODO!
-        val int final=currentProcess.newState()
-        var IOstsTransition doExpr = new IOstsTransition(startState,final)
-        doExpr.setComment("TODO! DoExpr")
-        currentProcess.addTransition(doExpr)
-        //System.out.println("Added fake DoExpr transition: from="+startState+", to="+final)
-        newArrayList(final)
+		lastForEachVarNumber++
+        val String iName = "i"+lastForEachVarNumber+"_"
+        val String setOfValues = r.setOfValues.compile.toString
+        val String variable = r.variable
+        currentProcess.addVariable(iName)
+        // transition: initialize i
+        val finalInit=currentProcess.newState()
+        var IOstsTransition init = new IOstsTransition(startState,finalInit)
+        init.setComment("ForEachProtocol: init "+iName)
+        init.addAssignment(iName+" := "+0)
+        currentProcess.addTransition(init)
+        // transition: if (i < sizeof(setOfValues))
+        val finalIfInf=currentProcess.newState()
+        var IOstsTransition ifInf = new IOstsTransition(finalInit, finalIfInf)
+        ifInf.setComment("ForEachProtocol: begin loop")
+        ifInf.setGuard(iName+" <= "+setOfValues+"::size()")
+        ifInf.addAssignment(variable+" := "+setOfValues+"::element("+iName+")")
+        currentProcess.addTransition(ifInf)
+        // transitions of the Behavior inside the ForEachProtocol
+        var ArrayList<Integer> endOfLoop = newArrayList()
+        endOfLoop.addAll(computeSTS(finalIfInf, r.repeated))
+        // transition(s) from end(s) of Behavior inside the ForEachBehavior to init
+        /* alt1 */
+        for (e : endOfLoop) {
+        	var IOstsTransition increment = new IOstsTransition(e,finalInit)
+        	increment.addAssignment(iName+" := "+iName+"+1")
+        	increment.setComment("ForEachProtocol: end loop with increment")
+        	currentProcess.addTransition(increment)
+        }
+        // end of alt1
+        /* alt2
+ 		// add a concatenation if body ends with multiple states
+        var int finalEndOfLoop
+        if (endOfLoop.length > 1) {
+        	finalEndOfLoop = currentProcess.newState()
+        	// adding concatenations to get a unique final state for the body of ForEach
+        	for (e : endOfLoop) {
+	        	var IOstsTransition concatenation = new IOstsTransition(e,finalEndOfLoop)
+	        	concatenation.setComment("ForEachProtocol: concatenation before increment")
+	        	currentProcess.addTransition(concatenation)
+	        }
+        } else {
+        	finalEndOfLoop = endOfLoop.get(0)
+        }
+        // increment
+        var IOstsTransition increment = new IOstsTransition(finalEndOfLoop,finalInit)
+        increment.addAssignment(iName+" := "+iName+"+1")
+        increment.setComment("ForEachProtocol: end loop increment")
+        currentProcess.addTransition(increment)
+        // end of alt2
+        */
+        // transition: if (i > sizeof(setOfValues))
+        val finalIfSup=currentProcess.newState()
+        var IOstsTransition ifSup = new IOstsTransition(finalInit, finalIfSup)
+        ifSup.setComment("ForEachProtocol: after foreach loop")
+        ifSup.setGuard(iName+" > "+setOfValues+"::size()")
+        currentProcess.addTransition(ifSup)
+    	newArrayList(finalIfSup)
     }
     
     /*
      * - computeSTS for an AnyAction statement.
      */
     def dispatch ArrayList<Integer> computeSTS(int startState, AnyAction a){
-        // TODO!
-        val int final=currentProcess.newState()
-        var IOstsTransition anyAction = new IOstsTransition(startState,final)
-        anyAction.setComment("TODO! AnyAction")
-        currentProcess.addTransition(anyAction)
-        //System.out.println("Added fake anyAction transition: from="+startState+", to="+final)
-        newArrayList(final)
+        val choose = newChooseProtocolActionFromConnections(currentProcess.connectionsMap)
+        computeSTS(startState, choose)
     }
     
     /*
@@ -690,40 +1245,69 @@ class SosADL2IOSTSGenerator implements IGenerator {
             currentProcess.addTransition(t)
             newArrayList(0) 
         }
-    }
-        
-	def compile(ArchBehaviorDecl a)''''''
-	
-	def compile(Constituent c)''''''
+    }    
 
-    def compile(Binding b)''''''
     
-    def compile(Relay r)''''''
-
-	def compile(Unify u)''''''
-
-	def compile(Quantify q)''''''
-	
-	def compile(ElementInConstituent e)''''''
-	
-	def getIOstsType(String name) {
-	    if (currentSystem != null) {
+    //=========================== Utility functions for handling IoSTS types
+    
+    def getIOstsType(String name) {
+    	var IOstsType result = null
+    	if (name == 'integer') {
+    		result = new IOstsIntType()
+    		if (result != null && DEBUG) {
+    			System.err.println("getIOstsType: type '"+name+"' found: predefined.")
+    		}
+    	}
+    	if (result == null && currentTypesMap != null) {
+    		result = currentTypesMap.get(name)
+    		if (result != null && DEBUG) {
+    			System.err.println("getIOstsType: type '"+name+"' found in currentTypesMap.")	
+    		}
+    	}
+	    if (result == null && currentSystem != null) {
             if (currentSystem.typesMap.containsKey(name)) {
-                currentSystem.typesMap.get(name)
-            } else {
-                null
+                result = currentSystem.typesMap.get(name)
+    			if (result != null && DEBUG) {
+    				System.err.println("getIOstsType: type '"+name+"' found in currentSystem.typesMap.")
+    			}
             }
-        } else if (globalTypesMap.containsKey(name)) {
-            globalTypesMap.get(name)
-        } else {
-            null
         }
+        if (result == null) {
+        	result = getIOstsType(name, currentLibrary)
+        	// If found, put it in currentLibrary.typesMap to accelerate further searches
+        	if (result != null && !currentLibrary.typesMap.containsKey(name)) {
+        		currentLibrary.addType(name, result)
+        	}
+        }
+        result
+	}
+	
+	/*
+	 * Returns the name's IOstsType if found in the given library.
+	 * The search is recursive, which means imported libraries are also checked.
+	 */
+	def IOstsType getIOstsType(String name, IOstsLibrary library) {
+		var IOstsType result = null
+		if (library.typesMap.containsKey(name)) {
+            result = library.typesMap.get(name)
+    		if (result != null && DEBUG) {
+    			System.err.println("getIOstsType: type '"+name+"' found in library '"+library.name+"'.typesMap.")
+    		}
+        }
+        if (result == null) {
+        	for (lib : library.importedMap.values) {
+        		if (result == null) {
+        			result = getIOstsType(name, lib)
+        		}
+        	}
+        }
+        result
 	}
 	
 	def finalNameOfIOstsType(String name) {
 	    val IOstsType t = getIOstsType(name)
 	    val finalName = if (t == null) {
-	        if (DEBUG2) System.err.println("Warning: type '"+name+"' not found! Assuming int...")
+	        if (DEBUG2) System.err.println("Warning: Type '"+name+"' not found! Assuming integer...")
 	        (new IOstsIntType()).toString
 	    } else switch t {
 	        IOstsIntType: t.toString
@@ -734,25 +1318,10 @@ class SosADL2IOSTSGenerator implements IGenerator {
 	    finalName
 	}
 	
-	def registerIOstsType(String name, IOstsType type) {
-	    if (currentSystem != null) {
-            if (currentSystem.typesMap.containsKey(name)) {
-                if (DEBUG2) System.err.println("Warning: system type '"+name+"' already declared! Overriding...")
-            }
-            currentSystem.typesMap.put(name,type)
-        } else {
-            if (globalTypesMap.containsKey(name)) {
-                if (DEBUG2) System.err.println("Warning: global type '"+name+"' already declared! Overriding...")
-            }
-            // the datatype declaration here occurs before the system/mediator/architecture declaration
-            globalTypesMap.put(name,type)
-        }
-	}
-	
 	def nameOfIOstsType(IOstsType type) {
-	    var name=""
-	    if (currentSystem != null) {
-            for (t:currentSystem.typesMap.entrySet) {
+		var name=""
+		if (currentTypesMap != null) {
+			for (t : currentTypesMap.entrySet) {
                 if (DEBUG2) System.out.print("comparing '"+type.toString+"' with '"+t.value.toString+"' : ")
                 if (t.value.equals(type)) {
                     name=t.key
@@ -761,12 +1330,9 @@ class SosADL2IOSTSGenerator implements IGenerator {
                     if (DEBUG2) System.out.println("KO.")
                 }
             }
-            if (name == "") {
-                name=newIOstsTypeName()
-                currentSystem.typesMap.put(name,type)
-            }
-        } else {
-            for (t:globalTypesMap.entrySet) {
+    	}
+	    if (name == "" && currentSystem != null) {
+            for (t : currentSystem.typesMap.entrySet) {
                 if (DEBUG2) System.out.print("comparing '"+type.toString+"' with '"+t.value.toString+"' : ")
                 if (t.value.equals(type)) {
                     name=t.key
@@ -775,24 +1341,36 @@ class SosADL2IOSTSGenerator implements IGenerator {
                     if (DEBUG2) System.out.println("KO.")
                 }
             }
-            if (name == "") {
-                name=newIOstsTypeName()
-                globalTypesMap.put(name,type)
-            }
+        }
+        if (name == "") {
+        	for (t : currentLibrary.typesMap.entrySet) {
+                if (DEBUG2) System.out.print("comparing '"+type.toString+"' with '"+t.value.toString+"' : ")
+                if (t.value.equals(type)) {
+                    name=t.key
+                    if (DEBUG2) System.out.println("ok, name='"+name+"'")
+                } else {
+                    if (DEBUG2) System.out.println("KO.")
+                }
+            } 
+        }
+        if (name == "") {
+        	for (lib : currentLibrary.importedMap.values) {
+        		for (t : lib.typesMap.entrySet) {
+	                if (DEBUG2) System.out.print("comparing '"+type.toString+"' with '"+t.value.toString+"' : ")
+	                if (t.value.equals(type)) {
+	                    name=t.key
+	                    if (DEBUG2) System.out.println("ok, name='"+name+"'")
+	                } else {
+	                    if (DEBUG2) System.out.println("KO.")
+	                }
+            	}	
+        	}
+        }
+        if (name == "") {
+            name=type.toString()    
         }
         name
 	}
-	
-	def dispatch IOstsType computeIOstsType(DataTypeDecl d) {
-	    var IOstsType t = null
-	    if (d.datatype == null)
-	       t=new IOstsIntType()
-        else
-           t=computeIOstsType(d.datatype)
-	    registerIOstsType(d.name, t)
-	    t
-	}
-	
 	
 	def dispatch IOstsType computeIOstsType(DataType t) {
 	    switch t {
@@ -802,7 +1380,7 @@ class SosADL2IOSTSGenerator implements IGenerator {
 	        RangeType: computeIOstsType(t)
 	        NamedType: computeIOstsType(t)
 	        default: {
-	            System.err.println("BUG! computeIOstsType of this datatype '"+t.toString+"' is not implemented! Assuming 'int'...")
+	            System.err.println("BUG! computeIOstsType of this datatype '"+t.toString+"' is not implemented! Assuming 'integer'...")
                 new IOstsIntType()
 	        }
 	    }
@@ -815,15 +1393,10 @@ class SosADL2IOSTSGenerator implements IGenerator {
     
 	def dispatch IOstsType computeIOstsType(SequenceType t) {
         // TODO: a relire et a tester !!!
-        var LinkedHashMap<String,IOstsType> fieldsMap=newLinkedHashMap()
         var String typeName = nameOfIOstsType(computeIOstsType(t.type))
-        var String arrayName="Array_Of_"+typeName
-        fieldsMap.put("length", new IOstsIntType())
-        registerIOstsType(arrayName, new IOstsArrayType(1000, new IOstsNamedType(typeName)))
-        fieldsMap.put("content", new IOstsNamedType(arrayName))
-        var IOstsType record = new IOstsRecordType(fieldsMap)
-        record.setComment("sequence{"+typeName+"}")
-        record
+        var IOstsType sequence = new IOstsSequenceType(new IOstsNamedType(typeName))
+        sequence.setComment("sequence{"+typeName+"}")
+        sequence
     }
 	
 	def dispatch IOstsType computeIOstsType(TupleType t) {
@@ -839,9 +1412,9 @@ class SosADL2IOSTSGenerator implements IGenerator {
             first=false
         }
         comment=comment.concat("}")
-        var record=new IOstsRecordType(fieldsMap)
-        record.setComment(comment)
-        record
+        var tuple=new IOstsTupleType(fieldsMap)
+        tuple.setComment(comment)
+        tuple
     }
     
     def dispatch IOstsType computeIOstsType(RangeType t) {
@@ -852,213 +1425,147 @@ class SosADL2IOSTSGenerator implements IGenerator {
     }
     
     def dispatch IOstsType computeIOstsType(NamedType t) {
-        var IOstsType tt = if (currentSystem != null) currentSystem.typesMap.get(t.name)
-                           else globalTypesMap.get(t.name)
-        if (tt == null) {
-            System.err.println("Warning! type '"+t.name+"' is not declared! Assuming 'int'...")
-            tt=new IOstsIntType()
-        }
-        tt
+    	computeIOstsType(t.name as String)
     }
     
-	
-	def compile(DataTypeDecl d){
-        var IOstsType t
-        if (d.datatype == null) {
-            if (DEBUG2) System.err.println("Warning! type definition of '"+d.name+"' null! Assuming 'int'...")
-            t=new IOstsIntType()
-        }
-        else {
-            t=computeIOstsType(d.datatype)
-        }
-        if (currentSystem != null) {
-            currentSystem.typesMap.put(d.name,t)
+    def dispatch IOstsType computeIOstsType(String t) {
+    	var result1 = getIOstsType(t)
+    	if (result1 == null) {
+    		System.err.println("Warning! Type '"+t+"' is not declared! Assuming 'integer'...")
+            result1=new IOstsIntType()
         } else {
-            // this datatype declaration occurs before the system/mediator/architecture declaration
-            globalTypesMap.put(d.name,t)
-        }
-        ''''''
+        	if (DEBUG) System.err.println("Type '"+t+"' found. ok.")
+    	}
+    	result1
     }
     
-	def CharSequence compile(DataType d)'''«
-	IF d instanceof IntegerType»«
-	  (d as IntegerType).compile»«
-    ELSEIF d instanceof TupleType»«
-      (d as TupleType).compile»«
-    ELSEIF d instanceof SequenceType»«
-      (d as SequenceType).compile»«
-    ELSEIF d instanceof RangeType»range «(d as RangeType).vmin.compile»..«(d as RangeType).vmax.compile»«
-    ELSEIF d instanceof ConnectionType»«
-      (d as ConnectionType).mode.compile»{«(d as ConnectionType).type.compile»}«
-    ELSEIF d instanceof NamedType»«
-      (d as NamedType).compile»«
-    ENDIF»'''
-    /**/
-	
-	def compile(FunctionDecl f)'''
-      function («f.dataName»:«f.dataTypeName»)::«f.name»(«f.parameters.map[compile].join(", ")»):«f.type.compile» is {
-        «FOR v:f.valuing»
-        «v.compile»
-        «ENDFOR»
-        return «f.expression.compile»
-      }
-	'''
-	
+}
 
-	def compile(FormalParameter p)'''  «p.name» : «p.type.compile»'''
+//-------------- 
+// IoSTS classes
+//-------------- 
+
+//-------------- IoSTS types and functions
+
+/*
+ * Function, has:
+ * 
+ * - name
+ * - type: the return type
+ * - dataName: name of data to which the function applies
+ * - dataTypeName: name's type of data to which the function applies
+ * - list of formal parameters
+ * - a list of Valuing
+ * - a return expression
+ */
+class IOstsFunction {
+	val String name
+	var String dataName = ""
+	var IOstsType dataType = null
+	var LinkedHashMap<String,IOstsType> formalParameters = newLinkedHashMap()
+	var ArrayList<Valuing> valuings = newArrayList()
+	var Expression returnExpression = null
+	var IOstsType returnType = null
 	
-	def compile(IntegerType t)'''int'''
-	
-	def compile(TupleType t)'''record «t.fields.map[compile].join("; ")»; end'''
-	
-	def compile(FieldDecl f)'''«f.name»:«f.type.compile»'''
-	
-	// TODO! define the size of the array!
-	def compile(SequenceType s)'''array [1000] of «s.type.compile»'''
-	
-	def compile(ModeType m)'''«m.literal»'''
-	
-	def compile(NamedType t) {
-	    val type = if (currentSystem != null) currentSystem.typesMap.get(t.name)
-                   else globalTypesMap.get(t.name)
-	    '''«IF type == "int"»int3«ELSE»«t.name»«ENDIF»'''
+	// private thus inaccessible, because one cannot create function without name
+    private new() {
+    	name = ""
+    }
+    
+	// constructor and name
+	new(String name) {
+		this.name = name
 	}
 
-    def compile(ComplexName c)'''«IF c.name != null»«c.name.join("_")»«ENDIF»'''
-    
-	def compile(Valuing v){
-	  if (v.type == null)
-	      currentProcess.addVariable(v.variable)
-	  else {
-	      val type = computeIOstsType(v.type)
-	      val typeName = nameOfIOstsType(type)
-	      registerIOstsType(typeName, type)
-	      currentProcess.addVariable(v.variable, finalNameOfIOstsType(typeName))  
-	  }
-	  '''«v.variable» := «v.expression.compile»'''
+	def name() {
+		this.name
 	}
 	
-	def compile(IntegerValue i)'''«i.absInt»'''
-	
-	def compile(Any a)'''any'''
-	
-	def compile(ConstructedValue c)'''«
-      IF c instanceof Tuple»«
-        (c as Tuple).compile»«
-      ELSEIF c instanceof Sequence»«
-        (c as Sequence).compile»«
-      ENDIF»'''
-	
-	def compile(Tuple t)'''tuple{«t.elements.map[compile].join(", ")»}'''
-	
-	def compile(TupleElement t)'''«t.label»=«t.value.compile»'''
-	
-	def compile(Sequence s)'''sequence{«s.elements.map[compile].join(", ")»}'''
-
-    def compile(Expression e)'''«
-	IF e instanceof BinaryExpression»«(e as BinaryExpression).compile»«
-	ELSEIF e instanceof UnaryExpression»«(e as UnaryExpression).compile»«
-	ELSEIF e instanceof Binding»«(e as Binding).compile»«
-	ELSEIF e instanceof CallExpression»«(e as CallExpression).compile»«
-	ELSEIF e instanceof IdentExpression»«(e as IdentExpression).compile»«
-	ELSEIF e instanceof UnobservableValue»«(e as UnobservableValue).compile»«
-	ELSEIF e instanceof Any»«(e as Any).compile»«
-    ELSEIF e instanceof Tuple»«(e as Tuple).compile»«
-    ELSEIF e instanceof Sequence»«(e as Sequence).compile»«
-    ELSEIF e instanceof IntegerValue»«(e as IntegerValue).compile»«
-    ELSEIF e instanceof Field»«(e as Field).compile»«
-    ELSEIF e instanceof Select»«(e as Select).compile»«
-    ELSEIF e instanceof Map»«(e as Map).compile»«
-    ELSEIF e instanceof MethodCall»«(e as MethodCall).compile»«
-	ENDIF»'''
-	
-	def CharSequence compile(BinaryExpression e) {
-        switch e.op {
-            case "implies" : "not "+compileAndBracket(e.left)+" or "+compileAndBracket(e.right)
-            case "xor" : "("+compileAndBracket(e.left)+" and not "+compileAndBracket(e.right)+") or (not "+compileAndBracket(e.left)+" and "+compileAndBracket(e.right)+")"
-            case "div" : compileAndBracket(e.left)+" / "+compileAndBracket(e.right)
-            case "mod" : compileAndBracket(e.left)+" % "+compileAndBracket(e.right)
-            default: compileAndBracket(e.left)+e.op+compileAndBracket(e.right)
-        }
-    }
-    
-    def compileAndBracket(Expression e) {
-        switch e {
-            BinaryExpression: "("+e.compile+")"
-            UnaryExpression: "("+e.compile+")"
-            default: e.compile
-        }
-    }
-    
-    def compile(IdentExpression e)'''«e.ident»'''
-    
-    def compile(UnobservableValue u)'''unobservable'''
-    
-    def compile(Field e)'''«e.object.compile».«(e as Field).field»'''
-	
-	def compile(CallExpression e)'''«
-	e.function»(«e.parameters.map[compile].join(", ")»)'''
-	
-	def compile(Select e)'''«
-	e.object.compile».select(«e.variable» suchthat «e.condition.compile»)'''
-
-	def compile(Map e)'''«
-	e.object.compile».collect(«e.variable» suchthat «e.expression.compile»)'''
-
-	def compile(MethodCall e)'''«
-	e.object.compile».«e.method»(«e.parameters.map[compile].join(", ")»)'''
-	
-    def compile(UnaryExpression u)''' «u.op» «u.right.compile»'''
-    
-    /*
-    def CharSequence compile(Assertion a)'''«
-	IF a instanceof BinaryAssertion»«(a as BinaryAssertion).compile»«
-	ELSEIF a instanceof UnaryAssertion» «(a as UnaryAssertion).op» «(a as UnaryAssertion).right.compile»«
-	ELSEIF a instanceof Expression»«(a as Expression).compile»«
-	ELSEIF a instanceof Always»«(a as Always).compile»«
-	ELSEIF a instanceof Anynext»«(a as Anynext).compile»«
-	ELSEIF a instanceof Action»«(a as Action).compile»«
-	ENDIF»'''
-	
-	def CharSequence compile(BinaryAssertion a) {
-	    switch a.op {
-            case "implies" : "not ("+a.left.compile+") or ("+a.right.compile+")"
-            case "xor" : "(("+a.left.compile+") and not ("+a.right.compile+")) or ((not "+a.left.compile+") and ("+a.right.compile+"))"
-            case "div" : "("+a.left.compile+") / ("+a.right.compile+")"
-            case "mod" : "("+a.left.compile+") % ("+a.right.compile+")"
-            default: "("+a.left.compile+")"+a.op+"("+a.right.compile+")"
-        }
+	// data on which the function applies
+	def setData(String name, IOstsType type) {
+		this.dataName = name
+		this.dataType = type
 	}
 	
-    def compile(UnaryAssertion u)'''«u.op»«u.right.compile»'''
-    
-    def compile(Always a)'''always(«a.expression.compile»)'''
-    
-    def compile(Anynext a)'''anynext(«a.expression.compile»)'''
-    */
-    
-    /*
-     * TypeName generator: returns a new unused type id
-     */
-    def String newIOstsTypeName() {
-        this.lastIOstsTypeNum = this.lastIOstsTypeNum+1
-        lastIOstsTypeName()
+	def getDataName() {
+		this.dataName
+	}
+	
+	def getDataType() {
+		this.dataType
+	}
+	
+	// formal parameters
+	def addFormalParameter(String name, IOstsType type) {
+		this.formalParameters.put(name, type)
+	}
+	
+	def formalParameter() {
+		this.formalParameters
+	}
+	
+	def getFormalParameterType(String name) {
+		this.formalParameters.get(name)
+	}
+	
+	// list of valuings
+	def addValuing(Valuing v) {
+		this.valuings.add(v)
+	}
+	
+	def valuings() {
+		this.valuings
+	}
+	
+	// return type and expression
+	def setReturnType(IOstsType type) {
+		this.returnType = type
+	}
+	
+	def returnType() {
+		this.returnType
+	}
+	
+	def setReturnExpression(Expression e) {
+		this.returnExpression = e
+	}
+	
+	def returnExpression() {
+		this.returnExpression
+	}
+}
+
+/*
+ * List of IOstsFunctions
+ */
+class IOstsListOfFunctions extends ArrayList<IOstsFunction> {
+	
+	new() {
+		super()
+	}
+	
+	def addFunction(IOstsFunction f) {
+    	this.add(f)
     }
     
-    def String lastIOstsTypeName() {
-        "Type_"+this.lastIOstsTypeNum
+    def getFunction(String name) {
+    	var IOstsFunction result=null
+    	var i=0
+    	while (i < this.length && result==null) {
+    		if (this.get(i).name.equals(name)) {
+    			result = this.get(i)
+    		}
+    	}
+    	result
     }
 }
 
-//-------------- Types
-
-
-    
 /*
  * Type: is the superclass of all types.
  */
 class IOstsType {
     var String comment=""
+    var IOstsListOfFunctions functions = new IOstsListOfFunctions()
     
     def setComment(String comment) {
         this.comment = comment
@@ -1068,13 +1575,17 @@ class IOstsType {
         this.comment
     }
     
+    def functions() {
+    	this.functions
+    }
+    
     def boolean equals (IOstsType other) {
         switch other {
             IOstsIntType: this.equals(other)
             IOstsBoolType: this.equals(other)
             IOstsRangeType: this.equals(other)
-            IOstsRecordType: this.equals(other)
-            IOstsArrayType: this.equals(other)
+            IOstsTupleType: this.equals(other)
+            IOstsSequenceType: this.equals(other)
             IOstsNamedType: this.equals(other)
             default: this.equals(other)
         }
@@ -1086,13 +1597,12 @@ class IOstsIntType extends IOstsType {
     new() {}
     
     override def String toString() {
-        "int"
+        "integer"
     }
     
     override def equals(IOstsType other) {
         (other instanceof IOstsIntType)
     }
-
 }
 
 class IOstsBoolType extends IOstsType {
@@ -1100,7 +1610,7 @@ class IOstsBoolType extends IOstsType {
     new() {}
     
     override def String toString() {
-        "bool"
+        "boolean"
     }
     
     override def equals(IOstsType other) {
@@ -1133,7 +1643,7 @@ class IOstsRangeType extends IOstsType {
     }
     
     override def String toString() {
-        "range "+min+".."+max
+        "range{"+min+".."+max+"}"
     }
     
     override def equals(IOstsType other) {
@@ -1145,12 +1655,11 @@ class IOstsRangeType extends IOstsType {
     }
 }
 
-
-class IOstsRecordType extends IOstsType {
+class IOstsTupleType extends IOstsType {
     
     public val LinkedHashMap<String,IOstsType> fieldsMap   // map of (name -> type)
     
-    // private thus inaccessible, because one cannot create record without fields
+    // private thus inaccessible, because one cannot create tuple without fields
     private new() {
         fieldsMap = newLinkedHashMap() 
     }
@@ -1162,13 +1671,13 @@ class IOstsRecordType extends IOstsType {
     override def String toString() {
         var String inner=""
         for (f:fieldsMap.entrySet) {
-            inner = inner.concat(f.key+":"+f.value.toString+"; ")
+            inner = inner.concat(f.key+":"+f.value.toString+",")
         }
-        "record "+inner+" end"
+        "tuple{"+inner+"}"
     }
     
     override def equals(IOstsType other) {
-        if (other instanceof IOstsRecordType) {
+        if (other instanceof IOstsTupleType) {
             if (other.fieldsMap.size != fieldsMap.size)
                 false
             else {
@@ -1188,38 +1697,32 @@ class IOstsRecordType extends IOstsType {
     }
 }
 
-class IOstsArrayType extends IOstsType {
+class IOstsSequenceType extends IOstsType {
     
-    val int size
     val IOstsType type
     
     // private thus inaccessible, because one cannot create array without size
     private new() {
-        size = 0
         type = new IOstsIntType()
     }
     
-    new(int size, IOstsType type) {
-        this.size = size
+    new(IOstsType type) {
         this.type = type
     }
     
     override def String toString() {
-        "array["+size+"] of "+type.toString
+        "sequence{"+type.toString+"}"
     }
     
     override def equals(IOstsType other) {
-        if (other instanceof IOstsArrayType) {
-            if (other.size != size) {
-                false
-            } else {
-                other.type.equals(type)
-            }
+        if (other instanceof IOstsSequenceType) {
+            other.type.equals(type)
         } else {
             false
         }
     }
 }
+
 
 class IOstsNamedType extends IOstsType {
     
@@ -1242,19 +1745,17 @@ class IOstsNamedType extends IOstsType {
     }
 }
 
-//-------------- Gate, Transition, Process and IOstsSystem
+//-------------- Connection, Transition, Process and IOstsSystem
 
 /*
- * Gate
+ * Connection
  * 
  * Notes:
  * - name, type, and mode are required at creation time, and immutable.
- * - a gate in IOSTS is a connection (not a *gate*) in SoS-ADL.
- * - the mode's gate in IOSTS can be 'in' or 'out'.
- * - if an SOS-ADL connection is 'inout', one has to implement two gates in IOSTS:
- *   one 'in', and one 'out'. 
+ * - connections in IOSTS and in SoS-ADL are identical.
+ * - now, the mode of IoSTS's connection are the same as in SoSADL: 'in', 'out', 'inout'.
  */
-class IOstsGate {
+class IOstsConnection {
     val String name
     val String typeName
     val String mode // FIXME! enum au lieu de string!
@@ -1280,12 +1781,12 @@ class IOstsGate {
     override def String toString() {
         switch mode {
             case "in":
-                "  "+name+"("+typeName+"); // "+mode+"\n"
+                "  "+name+"("+typeName+");\n"
             case "out":
-                "  "+name+"("+typeName+"); // "+mode+"\n"
+                "  "+name+"("+typeName+");\n"
             case "inout":
-                "  "+name+"_in("+typeName+");  // "+mode+"\n"+
-                "  "+name+"_out("+typeName+"); // "+mode+"\n"
+                "  "+name+"("+typeName+");\n"+
+                "  "+name+"("+typeName+");\n"
         } 
     }
     
@@ -1297,78 +1798,96 @@ class IOstsGate {
  * 
  * Note:
  * - fromState and toState are immutable and must be set at creation time.
- * - guard and statements are optional, thus mutable.
+ * - guard and assignments are optional, thus mutable.
  * - action is mutable thought it is required (tau by default):
  *   this is because it can be initialized after creation.
  *   Note: in the first transition, no sync is allowed.
  * - a comment helps to understand the transformation from SoDADL to IOSTS
  */
 class IOstsTransition {
-   val int fromState
-   val int toState
-   String comment=""
-   String guard=""  // optional
-   String action="tau"  // default action is tau
-   List<String> statements = newArrayList  // optional
-   
-   new(int fromState, int toState, String action) {
-       this.fromState=fromState
-       this.toState=toState
-       this.action=action
-   }
-   
-   new(int fromState, int toState) {
-       this.fromState=fromState
-       this.toState=toState
-   }
-   
-   def setComment(String comment) {
-       this.comment = comment
-   }
-   
-   def setGuard(String guard) {
-       this.guard = guard
-   }
-   
-   def setAction(String action) {
-       this.action = action
-   }
-   
-   def addStatement(String statement) {
-       statements.add(statement)
-   }
-   
-   override def String toString() {
-     /*
-      Shall we generate "sync" when fromState==0? 
-      If not, replace:
-        sync «action»
-      with:
-        «IF fromState != 0»
-        sync «action»
-        «ENDIF»
-      */
-     '''
-     
-       from s«fromState» «IF !comment.empty»// «comment»«ENDIF»
-         «IF !guard.empty»
-         if «guard»
-         «ENDIF»
-         «IF fromState == 0 && toState == 1»
-         //sync «action»  // STG doesn't accept sync in the first transition.
-         «ELSE»
-         sync «action»
-         «ENDIF»
-         «IF statements.length == 1»
-         do «statements.get(0)»
-         «ELSEIF statements.length > 1»
-         do {
-             «statements.join(" | ")»
-         }
-         «ENDIF»
-       to s«toState»;
-     '''
-   }
+	val int fromState
+	val int toState
+	var boolean init
+	String comment=""
+	String guard = "" // optional
+	String action = "unobservable" // default action is unobservable
+	List<String> assignments = newArrayList // optional
+
+	new(int fromState, int toState) {
+		this.fromState = fromState
+		this.toState = toState
+		this.init = false
+	}
+
+	def setInit(boolean init) {
+		this.init = init
+		if (init && guard.empty) {
+			guard = "true" // default value for the init transition
+		}
+	}
+	
+	def fromState() {
+		fromState
+	}
+	
+	def toState() {
+		toState
+	}
+
+	def setComment(String comment) {
+		this.comment = comment
+	}
+
+	def setGuard(String guard) {
+		this.guard = guard
+	}
+
+	def setAction(String action) {
+		if (init) {
+			System.err.println("Warning! Init transition does not admit action! Ignoring action...")
+		} else {
+			this.action = action
+		}
+	}
+
+	def addAssignment(String statement) {
+		if (init) {
+			System.err.println("Warning! Init transition does not admit statement! Ignoring action...")
+		} else {
+			assignments.add(statement)
+		}
+		
+	}
+
+	override def String toString() {
+		if (init) {
+		'''
+			from s«fromState» «IF !comment.empty»// «comment»«ENDIF»
+			    guard {
+			    	«guard»
+			    }
+			to s«toState»
+		'''
+		} else {
+		'''
+			from s«fromState» «IF !comment.empty»// «comment»«ENDIF»
+			    «IF !guard.empty»
+			    guard {
+			    	«guard»
+			    }
+			    «ENDIF»
+			  	action {
+			  		«action»
+			  	}
+			  	«IF assignments.length > 0»
+			  	assignments {
+			  	    «assignments.join(",\n")»
+			  	}
+			  	«ENDIF»
+			to s«toState»
+		'''
+		}
+	}
 }
 
 /*
@@ -1376,10 +1895,12 @@ class IOstsTransition {
  * 
  * Note:
  * - has an immutable name, which is required at creation time.
+ * - connectionsMap: map of connexions declared for this specific process (protocol of gate or duty, behavior)
  * - inputMap, outputMap, and parametersMap are mutable maps of input, output of the Process.
  * - inoutputMap is a map that lives only during the translation from SoS-ADL to IOSTS
  *   because SOS-ADL has inout connections.
  * - parametersMap, and variablesMap are mutable maps containing parameters and variables of the process.
+ * - globalsMap is a mutable map containing global variables used in the process.
  * - transitions is the mutable list of the transitions.
  * - lastState is an int used internally to assign names to states.
  * - lastParameterNumber is an int used internally to assign names to parameters.
@@ -1388,10 +1909,13 @@ class IOstsTransition {
 class IOstsProcess{
     val String name
     var String comment=""
+    var boolean first = true 
+    public var LinkedHashMap<String,IOstsConnection> connectionsMap = newLinkedHashMap()  // map of (connection name -> Connection)
     public var inputMap = newLinkedHashMap()    // map of (in connection -> type name)
     public var outputMap = newLinkedHashMap()   // map of (out connection -> type name)
     public var inoutputMap = newLinkedHashMap() // map of (inout connection -> type name)
     public var parametersMap = newLinkedHashMap()  // map of (received variable -> type name)
+    public var globalsMap = newLinkedHashMap()  // map of (global variable -> type name) 
     public var variablesMap = newLinkedHashMap()  // map of (variable -> type name) 
     public var List<IOstsTransition> transitions = newArrayList()
     var int lastState = 0 // number of the last state, starting at 0.
@@ -1407,6 +1931,20 @@ class IOstsProcess{
     
     def setComment(String comment) {
         this.comment = comment
+    }
+    
+    def addAllConnections(LinkedHashMap<String,IOstsConnection> connectionsMap) {
+    	this.connectionsMap.putAll(connectionsMap)
+    }
+    
+    /*
+    def addConnection(IOstsConnection connection) {
+        this.connectionsMap.put(connection.name, connection)
+    }
+    */
+    
+    def getConnection(String name) {
+    	connectionsMap.get(name)
     }
     
     def addInput(String name, String typeName) {
@@ -1425,6 +1963,23 @@ class IOstsProcess{
         this.parametersMap.put(name, typeName)
     }
     
+    def addGlobal(String name, String typeName) {
+    	if (this.variablesMap.containsKey(name)) {
+    		System.err.println("Warning! Global var '"+name+"' is already declared as local variable! Ignoring...")
+        }
+        else if (this.globalsMap.containsKey(name)) {
+    		if (! this.globalsMap.get(name).equals(typeName)) {
+    			System.err.println("Warning! Global var '"+name+"' is already declared with type '"+this.globalsMap.get(name)+"'! Ignoring...")
+    		} // else: global variable 'name' is already declared with same type: ok.
+    	} else {
+    		this.globalsMap.put(name, typeName)	
+    	}
+    }
+    
+    def addGlobal(String name) {
+        addGlobal(name, new IOstsIntType().toString)
+    }
+    
     def addVariable(String name, String typeName) {
         this.variablesMap.put(name, typeName)
     }
@@ -1433,8 +1988,31 @@ class IOstsProcess{
         addVariable(name, new IOstsIntType().toString)
     }
     
+    /*
+     * addTransition(transition):
+     * - if a transition with same fromState and toState exists, then remove it from the transitions.
+     * - adds transition to the list of transitions.
+     * - updates lastState with fromState (resp. finalState) in case lastState < fromState (resp. finalState)
+     */
     def addTransition(IOstsTransition transition) {
-        this.transitions.add(transition)
+    	if (this.transitions.empty) {
+    		transition.setInit(true)
+    	}
+    	if (this.transitions.exists[fromState() == transition.fromState() && toState() == transition.toState()]) {
+    		val t = this.transitions.findFirst[fromState() == transition.fromState() && toState() == transition.toState()]
+    		this.transitions.remove(t)
+    	}
+    	this.transitions.add(transition)	
+    	if (this.lastState < transition.fromState()) {
+    		this.lastState = transition.fromState()
+    	}
+    	if (this.lastState < transition.toState()) {
+    		this.lastState = transition.toState()
+    	}
+    }
+    
+    def getTransition(int startState, int finalState) {
+    	this.transitions.findFirst[fromState() == startState && toState() == finalState]
     }
     
     /*
@@ -1460,50 +2038,40 @@ class IOstsProcess{
     def lastParameter() {
         this.name+"_p"+this.lastParameterNumber
     }
-    
-    /*
-     * Returns the text of the IOSTS Process
-     */
+        
     override def String toString()'''
-    process «name»;
-    «IF !inputMap.empty»
-    
-    input  
-      «inputMap.keySet.join(",\n")»;
-    «ENDIF»
-    «IF !outputMap.empty»
-    
-    output
-      «outputMap.keySet.join(",\n")»;
-    «ENDIF»
-      
-    internal
-      tau;
-    «IF !parametersMap.empty»
-    
-    parameters // stg says they have already been declared!
-      «FOR p:parametersMap.keySet»
-      //«p» : «parametersMap.get(p)»; 
-      «ENDFOR»
-    «ENDIF»
-    «IF !variablesMap.empty»
-    
-    variables
-      «FOR v:variablesMap.entrySet»
-      «v.key» : «v.value»;
-      «ENDFOR»
-    «ENDIF»
-    
-    state
-      init: s0;
-      «FOR s:1..lastState»
-      s«s»;
-      «ENDFOR»  
-    
-    transition
-    «FOR t:transitions»
-    «t.toString»
-    «ENDFOR»
+    {
+    	«IF !parametersMap.empty»
+    	messages {
+    		«FOR p:parametersMap.keySet»
+    		«p» is «parametersMap.get(p)» 
+    		«ENDFOR»
+    	}
+    	«ENDIF»
+    	«IF !globalsMap.empty»
+    	globals {
+    		«FOR g:globalsMap.entrySet»
+    		«g.key» is «g.value»
+    		«ENDFOR»
+    	}
+    	«ENDIF»
+    	«IF !variablesMap.empty»
+    	variables {
+    		«FOR v:variablesMap.entrySet»
+    		«v.key» is «v.value»
+    		«ENDFOR»
+    	}
+    	«ENDIF»
+    	states {
+    		init{s0}«FOR s:1..lastState» s«s»«ENDFOR»
+    	}
+    	transitions {
+    		«FOR t:transitions»
+    		«t.toString»
+    		
+    		«ENDFOR»
+    	}
+    }
     '''
 }
 
@@ -1512,41 +2080,46 @@ class IOstsProcess{
  * 
  * Notes:
  * - has an immutable name, which is required at creation time.
- * - fileName is the name of the file to be sqved.
- * - constantSection is not used at this time.
+ * - fileName is the name of the file to be saved.
+ * - constantsMap is not used at this time.
  * - typesMap is a mutable map containing the declaration of all types used in this system.
- * - gatesMap is the mutable map of gates (called connections in SoS-ADL).
  * - processesMap is the map of processes of this system.
  * - a comment helps to understand the transformation from SoDADL to IOSTS.
+ * It is possible to get allConnections declared inside gate/duty of this system. 
  */
 class IOstsSystem{
     val String name
-    var String fileName=""
     var String comment=""
-    var String behaviorName="UNDEFINED"
+    //OLD version: not needed anymore: var String behaviorName="UNDEFINED"
     public var LinkedHashMap<String,String> constantsMap = newLinkedHashMap()     // map of (name -> value as tring)
     public var LinkedHashMap<String,IOstsType> typesMap = newLinkedHashMap()     // map of (name -> iosts type)
-    public var LinkedHashMap<String,IOstsGate> gatesMap = newLinkedHashMap()  // map of (gate name -> Gate)
     public var LinkedHashMap<String,IOstsProcess> processesMap = newLinkedHashMap()  // map of (process name -> Process)
     
     new(String name) {
        this.name=name
     }
     
-    def setFileName(String fileName) {
-       this.fileName = fileName
-    }
-    
-    def fileName() {
-        fileName
+    def getName() {
+    	this.name
     }
     
     def setComment(String comment) {
        this.comment = comment
     }
     
-    def addGate(IOstsGate gate) {
-        this.gatesMap.put(gate.name, gate)
+    // Returns all connections known to this system.
+    // These connections are declared in local gate/duty or behavior
+    def LinkedHashMap<String,IOstsConnection> allConnections() {
+    	var allConnections = newLinkedHashMap()
+    	for (p : processesMap.entrySet) {
+    		allConnections.putAll(p.value.connectionsMap)
+    	}
+    	allConnections
+    }
+    
+    def getConnection(String name) {
+    	val allConnections = allConnections()
+    	allConnections.get(name)
     }
     
     def addProcess(IOstsProcess process) {
@@ -1555,9 +2128,11 @@ class IOstsSystem{
         if (process.transitions.empty) {
             System.err.println("Warning! Process '"+process.name+"' is empty! Ignoring...")
         } else {
+            /* OLD version: now, there is no need anymore to distinguish protocol process from behavior process.
             if (process.name.contains("_behavior")) {
                 behaviorName=process.name
             }
+            */
             this.processesMap.put(process.name, process)
         }
     }
@@ -1568,64 +2143,87 @@ class IOstsSystem{
     def empty() {
         processesMap.empty
     }
-    
-    override def String toString() {
-        // generate something only if there is at least one process
-        if (empty) {
-            System.err.println("Warning! System '"+name+"' defines no process! Ignoring...")
-            ""
-        } else {     
-    '''
-    /*
-    Generated by org.archware.sosadl.generator.SosADL2IOSTSGenerator
-    
-    WARNING #1: The generator is a work in progress! This IOSTS file may not be complete!
-    WARNING #2: The generator assumes the SoSADL source is correct.
-                Otherwise, STG may not compile this IOSTS file. 
+}
 
-    Run it with:
-      «IF processesMap.size == 1 && behaviorName != "UNDEFINED"»
-        stg «fileName» -test_name «behaviorName»
-      «ELSE»
-        «FOR p:processesMap.values»
-        «IF p.name.endsWith("_protocol")»
-        stg «fileName» -test_name «behaviorName» -test_purpose_name «p.name»
-        «ENDIF»
-        «ENDFOR»
-      «ENDIF»
-    */
+/*
+ * IOstsLibrary
+ * 
+ * Notes:
+ * - has an immutable name, which is required at creation time.
+ * - fileName is the name of the file to be saved.
+ * - importedMap is a mutable map containing the list of imported libraries
+ * - typesMap is a mutable map containing the locally declared types
+ * - systemsMap is a mutable map containing the locally declared systems
+ * 
+ * In SoSADL, SoS and Library declare the same elements (an EntityBlock).
+ * Thus, after translated in IoSTS, we use an IOstsLibrary instance to store
+ * all iosts types and systems coming from either an SoS or a Library.
+ */
+class IOstsLibrary{
+    val String name
+    var String fileName=""
+	public var LinkedHashMap<String,IOstsLibrary> importedMap = newLinkedHashMap()  // map of (name -> imported iosts library)
+    public var LinkedHashMap<String,IOstsType> typesMap = newLinkedHashMap()     // map of (name -> iosts type)
+    public var IOstsListOfFunctions functions = new IOstsListOfFunctions()       // list of declared functions
+    public var LinkedHashMap<String,IOstsSystem> systemsMap = newLinkedHashMap()  // map of (name -> iosts system)
     
-    system «name»;
-    «IF !constantsMap.empty»
+    new(String name) {
+       this.name=name
+    }
     
-    constant
-      «FOR c:constantsMap.entrySet»
-        «c.key» = «c.value»
-      «ENDFOR»
-    «ENDIF»
-    «IF !typesMap.empty»
+    def name() {
+    	this.name
+    }
     
-    type
-      «FOR t:typesMap.entrySet»
-        «val tk = t.key»
-        «val tv = t.value»
-        «IF tv.toString == "int"»
-          // «tk» = int;
-        «ELSE»
-          «tk» = «tv»;
-        «ENDIF»
-      «ENDFOR»
-    «ENDIF»
+    def setFileName(String fileName) {
+       this.fileName = fileName
+    }
     
-    gate
-    «FOR g:gatesMap.values»
-    «g.toString»
-    «ENDFOR»
-    «FOR p:processesMap.values»
+    def fileName() {
+        fileName
+    }
     
-    //--------------------------------------------------
-    «p.toString»
-    «ENDFOR»
-    '''}
+    // Returns all iosts imported library
+    def LinkedHashMap<String,IOstsLibrary> importedLibraries() {
+    	this.importedMap
+    }
+    
+    def getImportedLibrary(String name) {
+    	this.importedMap.get(name)
+    }
+    
+    def addImportedLibrary(IOstsLibrary library) {
+        this.importedMap.put(library.name, library)
+    }
+    
+    // Returns all locally declared types
+    def LinkedHashMap<String,IOstsType> types() {
+    	this.typesMap
+    }
+    
+    def getType(String name) {
+    	this.typesMap.get(name)
+    }
+    
+    def addType(String name, IOstsType type) {
+        this.typesMap.put(name, type)
+    }
+    
+    // Returns all locally declared functions
+    def functions() {
+    	this.functions
+    }
+    
+    // Returns all iosts systems declared in this library
+    def LinkedHashMap<String,IOstsSystem> systems() {
+    	this.systemsMap
+    }
+    
+    def getSystem(String name) {
+    	this.systemsMap.get(name)
+    }
+    
+    def addSystem(IOstsSystem system) {
+        this.systemsMap.put(system.name, system)
     }
 }
