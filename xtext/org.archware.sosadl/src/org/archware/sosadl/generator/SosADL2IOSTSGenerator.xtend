@@ -118,7 +118,6 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 	 * Create a new NamedType EObject with given name
 	 */
 	def NamedType newNamedType(String name) {
-		//val SosADLFactory factory = SosADLFactoryImpl.init()
 		val factory = SosADLFactory.eINSTANCE
 		var result = factory.createNamedType()  // will create a NamedTypeImpl!
 		result.setName(name)
