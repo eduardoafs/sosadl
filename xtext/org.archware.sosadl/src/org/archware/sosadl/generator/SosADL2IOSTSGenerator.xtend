@@ -14,12 +14,7 @@ import java.util.ArrayList
 import java.util.List
 import java.lang.System
 import org.archware.sosadl.sosADL.SosADLFactory
-import org.archware.sosadl.sosADL.impl.SosADLFactoryImpl
-import com.google.inject.Guice
-import org.eclipse.emf.ecore.resource.ResourceSet
 import org.eclipse.emf.common.util.URI
-import org.archware.sosadl.SosADLRuntimeModule
-import org.archware.sosadl.sosADL.impl.ValuingImpl
 import com.google.inject.Injector
 import org.eclipse.xtext.resource.XtextResourceSet
 import org.eclipse.xtext.resource.XtextResource
