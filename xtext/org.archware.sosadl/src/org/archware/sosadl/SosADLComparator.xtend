@@ -10,6 +10,7 @@ import org.archware.sosadl.sosADL.EntityBlock
 import org.archware.sosadl.sosADL.FunctionDecl
 import org.archware.sosadl.sosADL.Import
 import org.archware.sosadl.sosADL.IntegerType
+import org.archware.sosadl.sosADL.RangeType
 import org.archware.sosadl.sosADL.Library
 import org.archware.sosadl.sosADL.MediatorDecl
 import org.archware.sosadl.sosADL.SequenceType
@@ -124,6 +125,7 @@ class SosADLComparator {
 	
 	def static dispatch boolean compareDataType(NamedType l, NamedType r)			{ l.name.equals(r.name) }
 	def static dispatch boolean compareDataType(IntegerType l, IntegerType r)	{ true }
+	def static dispatch boolean compareDataType(RangeType l, RangeType r)		{ compareExpression(l.vmin, r.vmin) && compareExpression(l.vmax, r.vmax) }
 	def static dispatch boolean compareDataType(SequenceType l, SequenceType r)	{ compareDataType(l.type, r.type) }
 	def static dispatch boolean compareDataType(TupleType l, TupleType r)		{ sameElements(l.fields, r.fields, [p, q | compare(p, q)]) }
 	def static dispatch boolean compareDataType(DataType l, DataType r)			{ false }
