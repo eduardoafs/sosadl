@@ -897,13 +897,12 @@ with type_body: env -> list AST.t_BehaviorStatement -> Prop :=
       body (AST.IfThenElseBehavior (Some c) (Some (AST.Behavior t)) None :: l) well typed in Gamma
 
 | type_IfThenElse:
-    forall Gamma c t e l,
+    forall Gamma c t e,
       (expression c has type AST.BooleanType in Gamma)
       /\ (body t well typed in Gamma)
       /\ (body e well typed in Gamma)
-      /\ (body l well typed in Gamma)
       ->
-      body (AST.IfThenElseBehavior (Some c) (Some (AST.Behavior t)) (Some (AST.Behavior e)) :: l)
+      body (AST.IfThenElseBehavior (Some c) (Some (AST.Behavior t)) (Some (AST.Behavior e)) :: nil)
            well typed in Gamma
 
 | type_ForEach:
