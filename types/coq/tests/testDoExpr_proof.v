@@ -1,5 +1,6 @@
 Require Import TypeSystem.
-Require Import tests.testIfThenElse1.
+Require Import TypingTactics.
+Require Import tests.testDoExpr.
 
 Import List.
 Import AST.
@@ -12,108 +13,26 @@ Local Open Scope string_scope.
 Local Open Scope list_scope.
 Local Open Scope Z_scope.
 
-Ltac apply_type_ReceiveStatement :=
-  match goal with
-      [ |- body (Behavior_statements
-                  (SosADL.Behavior
-                     ((SosADL.Action
-                         (Some (SosADL.ComplexName [?G; ?C]))
-                         (Some (SosADL.ReceiveAction (Some ?X)))) :: ?L)))
-               well typed in ?Gamma ]
-      =>
-      let gd := (eval compute in (Environment.ListBasedEnv.get Gamma G)) in
-      match constr:gd with
-        | Some (EGateOrDuty ?E) =>
-          let typ := (eval compute in (Environment.ListBasedEnv.get E C)) in
-          match constr:typ with
-            | Some (GDConnection SosADL.ModeTypeInout ?T) =>
-              apply (type_ReceiveStatement_InOut Gamma G E C X T L)
-            | Some (GDConnection SosADL.ModeTypeIn ?T) =>
-              apply (type_ReceiveStatement_In Gamma G E C X T L)
-            | _ => fail
-          end
-        | _ => fail
-      end
-  end.
-
-Ltac apply_type_SendStatement tau  :=
-  match goal with
-      [ |- body (Behavior_statements
-                  (SosADL.Behavior
-                     ((SosADL.Action
-                         (Some (SosADL.ComplexName [?G; ?C]))
-                         (Some (SosADL.SendAction (Some ?V)))) :: ?l)))
-               well typed in ?Gamma ]
-      =>
-      let gd := (eval compute in (Environment.ListBasedEnv.get Gamma G)) in
-      match constr:gd with
-        | Some (EGateOrDuty ?E) =>
-          let typ := (eval compute in (Environment.ListBasedEnv.get E C)) in
-          match constr:typ with
-            | Some (GDConnection SosADL.ModeTypeInout ?T) =>
-              apply (type_SendStatement_InOut Gamma G E C T V tau l)
-            | Some (GDConnection SosADL.ModeTypeOut ?T) =>
-              apply (type_SendStatement_Out Gamma G E C T V tau l)
-            | _ => fail
-          end
-        | _ => fail
-      end
-  end.
-
-Ltac apply_subtype :=
-  match goal with
-    | [ |- ?L </ NamedType (Some ?N) under ?Gamma ]
-      =>
-      let t := (eval compute in (Environment.ListBasedEnv.get Gamma N)) in
-      match constr:t with
-        | Some (EType (DataTypeDecl (Some N) (Some ?R) ?F))
-          =>
-          apply (subtype_right Gamma L N R F)
-      end
-    | [ |- NamedType (Some ?N) </ ?R under ?Gamma ]
-      =>
-      let t := (eval compute in (Environment.ListBasedEnv.get Gamma N)) in
-      match constr:t with
-        | Some (EType (DataTypeDecl (Some N) (Some ?L) ?F))
-          =>
-          apply (subtype_right Gamma N R L F)
-      end
-  end.
-
-Definition type1: t_DataType := RangeType (Some (IntegerValue (Some 0)))
-                                         (Some (IntegerValue (Some 0))).
-
-Theorem well_typed: SoSADL ast well typed.
+Theorem well_typed: ~ SoSADL ast well typed.
 Proof.
-  apply type_SosADL.
-  apply type_Library.
-  apply (type_EntityBlock_system _ _ "test" _ _ _). mysplit.
-  - apply type_SystemDecl. mysplit.
-    + apply Forall_nil.
-    + apply (type_SystemDecl_datatype_None _ _ _ type1 _ _ _ _ _). mysplit.
-      * apply type_DataTypeDecl_None.
-      * { apply (type_SystemDecl_gate _ _ _ "gate1" _ _ _). mysplit.
-          - apply type_GateDecl. mysplit.
-            + admit. (* TODO protocol *)
-            + decide_nodup (Some_dec _ string_dec).
-            + apply Forall_cons.
-              * apply type_Connection.
-                apply (type_NamedType _ _ (DataTypeDecl (Some "type1") (Some type1) [])).
-                reflexivity.
-              * apply Forall_nil.
-          - reflexivity.
-          - apply type_SystemDecl_None.
-            apply type_BehaviorDecl.
-            apply type_IfThenElse. mysplit.
-            + apply (type_expression_Equal _ _ (IntegerValue (Some 1)) (IntegerValue (Some 1))
-                                           _ (IntegerValue (Some 1)) (IntegerValue (Some 1))).
-              mysplit.
-              * apply type_expression_IntegerValue.
-              * apply type_expression_IntegerValue.
-            + apply type_Done.
-            + apply type_Done. }
-  - reflexivity.
-  - apply type_EntityBlock.
+  unfold ast. intro WT.
+  inversion_clear WT.
+  inversion_clear H.
+  inversion_clear H0.
+  decompose [and] H. clear - H0.
+  inversion_clear H0.
+  decompose [and] H. clear - H1.
+  inversion_clear H1.
+  decompose [and] H. clear - H1.
+  inversion_clear H1.
+  decompose [and] H. clear - H3.
+  inversion_clear H3.
+  inversion_clear H.
+  inversion_clear H0.
+  decompose [and] H. clear - H0.
+  inversion_clear H0.
+  decompose [and] H. clear - H0.
+  inversion_clear H0.
 Qed.
 
 (*

@@ -1,6 +1,6 @@
 Require Import TypeSystem.
 Require Import TypingTactics.
-Require Import tests.testIfThenElse1.
+Require Import tests.testDoExpr2.
 
 Import List.
 Import AST.
@@ -13,8 +13,7 @@ Local Open Scope string_scope.
 Local Open Scope list_scope.
 Local Open Scope Z_scope.
 
-Definition type1: t_DataType := RangeType (Some (IntegerValue (Some 0)))
-                                         (Some (IntegerValue (Some 0))).
+Axiom type1: t_DataType.
 
 Theorem well_typed: SoSADL ast well typed.
 Proof.
@@ -37,14 +36,14 @@ Proof.
           - reflexivity.
           - apply type_SystemDecl_None.
             apply type_BehaviorDecl.
-            apply type_IfThenElse. mysplit.
-            + apply (type_expression_Equal _ _ (IntegerValue (Some 1)) (IntegerValue (Some 1))
-                                           _ (IntegerValue (Some 1)) (IntegerValue (Some 1))).
+            apply (type_DoExpr _ _ (RangeType (Some (BinaryExpression (Some (IntegerValue (Some 2))) (Some "+") (Some (IntegerValue (Some 2)))))
+                                              (Some (BinaryExpression (Some (IntegerValue (Some 2))) (Some "+") (Some (IntegerValue (Some 2)))))) _).
+            mysplit.
+            + apply type_expression_Add.
               mysplit.
               * apply type_expression_IntegerValue.
               * apply type_expression_IntegerValue.
-            + apply type_Done.
-            + apply type_Done. }
+            + apply type_EmptyBody. }
   - reflexivity.
   - apply type_EntityBlock.
 Qed.
