@@ -1,6 +1,5 @@
 Require Import TypeSystem.
-Require Import TypingTactics.
-Require Import tests.testDoExpr.
+Require Import tests.failtestIfThenElse3.
 
 Import List.
 Import AST.
@@ -19,19 +18,15 @@ Proof.
   inversion_clear WT.
   inversion_clear H.
   inversion_clear H0.
-  decompose [and] H. clear - H0.
+  decompose [and] H. clear H H2 H3.
   inversion_clear H0.
-  decompose [and] H. clear - H1.
+  decompose [and] H. clear H H0.
   inversion_clear H1.
-  decompose [and] H. clear - H1.
+  decompose [and] H. clear H H0.
   inversion_clear H1.
-  decompose [and] H. clear - H3.
+  decompose [and] H. clear H H0 H2.
   inversion_clear H3.
   inversion_clear H.
-  inversion_clear H0.
-  decompose [and] H. clear - H0.
-  inversion_clear H0.
-  decompose [and] H. clear - H0.
   inversion_clear H0.
 Qed.
 

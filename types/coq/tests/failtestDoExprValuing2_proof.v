@@ -1,6 +1,6 @@
 Require Import TypeSystem.
 Require Import TypingTactics.
-Require Import tests.testDoExprValuing3.
+Require Import tests.failtestDoExprValuing2.
 
 Import List.
 Import AST.
@@ -29,8 +29,6 @@ Proof.
   inversion_clear H3.
   inversion_clear H.
   inversion_clear H0.
-  decompose [and] H. clear - H3.
-  inversion_clear H3.
   decompose [and] H. clear - H0.
   inversion_clear H0.
   decompose [and] H. clear - H0.

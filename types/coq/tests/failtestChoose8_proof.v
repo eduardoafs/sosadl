@@ -1,5 +1,5 @@
 Require Import TypeSystem.
-Require Import tests.testIfThenElse6.
+Require Import tests.failtestChoose8.
 
 Import List.
 Import AST.

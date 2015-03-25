@@ -1,5 +1,5 @@
 Require Import TypeSystem.
-Require Import tests.testIfThenElse3.
+Require Import tests.failtestIfThenElse6.
 
 Import List.
 Import AST.
