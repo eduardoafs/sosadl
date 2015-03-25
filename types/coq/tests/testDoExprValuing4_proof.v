@@ -48,10 +48,14 @@ Proof.
               mysplit.
               * apply type_expression_Add.
                 { mysplit.
-                  - apply type_expression_Ident.
-                    reflexivity.
-                  - apply type_expression_Ident.
-                    reflexivity. }
+                  - apply_type_expression_ident_trivial.
+                    mysplit.
+                    + reflexivity.
+                    + apply subtype_refl.
+                  - apply_type_expression_ident_trivial.
+                    mysplit.
+                    + reflexivity.
+                    + apply subtype_refl. }
               * apply type_EmptyBody. }
   - reflexivity.
   - apply type_EntityBlock.

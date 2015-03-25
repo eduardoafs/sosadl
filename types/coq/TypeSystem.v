@@ -149,20 +149,35 @@ Hypothesis names_of_expression: AST.t_Expression -> list string.
 Reserved Notation "t1 </ t2 'under' Gamma" (at level 70).
 
 Inductive subtype: env -> AST.t_DataType -> AST.t_DataType -> Prop :=
-| subtype_refl: forall Gamma t, t </ t under Gamma
-| subtype_range: forall Gamma lmi lma rmi rma,
-                   rmi <= lmi /\ lma <= rma
-                   -> (AST.RangeType (Some lmi) (Some lma)) </ (AST.RangeType (Some rmi) (Some rma)) under Gamma
-| subtype_left: forall Gamma l r def funs,
-                  (contains Gamma l (EType (AST.DataTypeDecl (Some l) (Some def) funs)))
-                  /\ (def </ r under Gamma)
-                  ->
-                  (AST.NamedType (Some l)) </ r under Gamma
-| subtype_right: forall Gamma l r def funs,
-                  (contains Gamma r (EType (AST.DataTypeDecl (Some r) (Some def) funs)))
-                  /\ (l </ def under Gamma)
-                  ->
-                  l </ (AST.NamedType (Some r)) under Gamma
+| subtype_refl:
+    forall Gamma t, t </ t under Gamma
+| subtype_range:
+    forall Gamma lmi lma rmi rma,
+      rmi <= lmi /\ lma <= rma
+      -> (AST.RangeType (Some lmi) (Some lma)) </ (AST.RangeType (Some rmi) (Some rma)) under Gamma
+| subtype_left:
+    forall Gamma l r def funs,
+      (contains Gamma l (EType (AST.DataTypeDecl (Some l) (Some def) funs)))
+      /\ (def </ r under Gamma)
+      ->
+      (AST.NamedType (Some l)) </ r under Gamma
+| subtype_right:
+    forall Gamma l r def funs,
+      (contains Gamma r (EType (AST.DataTypeDecl (Some r) (Some def) funs)))
+      /\ (l </ def under Gamma)
+      ->
+      l </ (AST.NamedType (Some r)) under Gamma
+| subtype_tuple:
+    forall Gamma l r,
+      (for each f of r,
+       exists n,
+         AST.FieldDecl_name f = Some n
+         /\ exists tr,
+             AST.FieldDecl_type f = Some tr
+             /\ exists tl, field_has_type l n tl
+                     /\ (tl </ tr under Gamma))
+      ->
+      (AST.TupleType l) </ (AST.TupleType r) under Gamma
 
 (** %\todo{%TBD%}% *)
 
@@ -378,11 +393,11 @@ with type_function: env -> AST.t_FunctionDecl -> Prop :=
 | type_FunctionDecl:
     forall Gamma name dataName dataTypeName params t vals e tau dtname dttype dtfuns,
       (for each p of params, (exists t, AST.FormalParameter_type p = Some t /\ type t well typed in Gamma))
-      /\ (expression e under vals has type tau in (env_add_params params Gamma))
+      /\ (expression e under vals has type tau in (env_add_params params Gamma[dataName <- EVariable (AST.NamedType (Some dataTypeName))]))
       /\ (contains Gamma dataTypeName (EType (AST.DataTypeDecl (Some dtname) (Some dttype) dtfuns)))
-      /\ (tau </ dttype under Gamma)
+      /\ (tau </ t under Gamma)
       ->
-      function (AST.FunctionDecl (Some name) (Some dataName) (Some dataTypeName) params (Some t) vals (Some e))
+      function (AST.FunctionDecl (Some dataName) (Some dataTypeName) (Some name) params (Some t) vals (Some e))
                well typed in Gamma
 
 (** ** System *)
@@ -456,6 +471,9 @@ with type_mediator: env -> AST.t_MediatorDecl -> Prop :=
       mediator (AST.MediatorDecl (Some name) params datatypes duties (Some b) assump assert) well typed in Gamma
 
 with type_mediatorblock: env -> AST.t_MediatorDecl -> Prop :=
+
+  (** %\todo{%Data type declarations in mediators should be inspired from the rules for systems.%}% *)
+  (*
 | type_MediatorDecl_datatype:
     forall Gamma name d d_name l duties bhv assump assert,
       (typedecl d well typed in Gamma)
@@ -464,6 +482,7 @@ with type_mediatorblock: env -> AST.t_MediatorDecl -> Prop :=
                        well typed in Gamma[d_name <- EType d])
       ->
       mediatorblock (AST.MediatorDecl (Some name) nil (d::l) duties (Some bhv) assump assert) well typed in Gamma
+   *)
 
 | type_MediatorDecl_duty:
     forall Gamma name d d_name l bhv assump assert,
@@ -496,6 +515,9 @@ with type_architecture: env -> AST.t_ArchitectureDecl -> Prop :=
                    well typed in Gamma
 
 with type_architectureblock: env -> AST.t_ArchitectureDecl -> Prop :=
+
+  (** %\todo{%Data type declarations in architectures should be inspired from the rules for systems.%}% *)
+  (*
 | type_ArchitectureDecl_datatype:
     forall Gamma name d d_name l gates bhv a,
       (typedecl d well typed in Gamma)
@@ -505,7 +527,8 @@ with type_architectureblock: env -> AST.t_ArchitectureDecl -> Prop :=
       ->
       architectureblock (AST.ArchitectureDecl (Some name) nil (d::l) gates (Some bhv) a)
                         well typed in Gamma
-
+   *)
+  
 | type_ArchitectureDecl_gate:
     forall Gamma name g g_name l bhv a,
       (gate g well typed in Gamma)
@@ -556,6 +579,13 @@ with type_datatype: env -> AST.t_DataType -> Prop :=
       /\ min <= max
       ->
       type (AST.RangeType (Some min) (Some max)) well typed in Gamma
+
+| type_RangeType_trivial:
+    forall Gamma min max,
+      AST.IntegerValue (Some min) <= AST.IntegerValue (Some max)
+      ->
+      type (AST.RangeType (Some (AST.IntegerValue (Some min)))
+                          (Some (AST.IntegerValue (Some max)))) well typed in Gamma
 
 (**
  ** Expression
@@ -685,10 +715,11 @@ written.%}% *)
       expression (AST.BinaryExpression (Some l) (Some ">=") (Some r)) has type AST.BooleanType in Gamma
 
 | type_expression_Ident:
-    forall Gamma x tau,
+    forall Gamma x tau tau__e,
       (contains Gamma x (EVariable tau))
+      /\ (tau </ tau__e under Gamma)
       ->
-      expression (AST.IdentExpression (Some x)) has type tau in Gamma
+      expression (AST.IdentExpression (Some x)) has type tau__e in Gamma
 
 (** %\note{%The rule [type_expression_MethodCall] assumes that the
 type of the [this] parameter is a named type, hence refering to the
@@ -701,7 +732,8 @@ declaration of a data type containing some functions (methods).%}% *)
       /\ (method name defined in tauDecl with parameters formalparams returns ret)
       /\ (for each fp p of formalparams params,
          (exists t, AST.FormalParameter_type fp = Some t
-               /\ expression p has type t in Gamma))
+               /\ (exists tp, (expression p has type tp in Gamma)
+                        /\ tp </ t under Gamma)))
       ->
       expression (AST.MethodCall (Some this) (Some name) params) has type ret in Gamma
 
@@ -929,6 +961,8 @@ environment [ee] in which all the (free) names of [e] are bound to
 some type. Then the type of [e] as well as of the following statements
 are done in [ee] merged in [Gamma]. *)
 
+                                                                                 (** *)
+  (*
 | type_AskStatement:
     forall Gamma name e ee l,
       (forall x, List.In x (names_of_expression e) <-> exists tau, contains ee x (EType tau))
@@ -936,6 +970,7 @@ are done in [ee] merged in [Gamma]. *)
       /\ (body l well typed in (Gamma <++ ee))
       ->
       body (AST.BehaviorStatement_AskAssertion (Some name) (Some e) :: l) well typed in Gamma
+*)
 
 (** %\note{%The [type_ReceiveStatement_In],
 [type_ReceiveStatement_InOut], [type_SendStatement_Out] and
