@@ -4,11 +4,7 @@ library testDoExprValuing1 is {
   
   system test() is {
     
-    datatype type1 is tuple{z:integer, t:integer} {
-    	function (data:type1)::y(x:integer):type1 is {
-    		return tuple{z=data::z+x, t=data::t+x}
-    	} 
-    }
+    datatype type1
     
     gate gate1 is {
       connection connection1 is in{type1}
