@@ -1,0 +1,23 @@
+// ok: testDoExpr.iosts
+
+library testDoExprValuing2 is {
+  
+  system test() is {
+    
+    datatype type1
+    
+    gate gate1 is {
+      connection connection1 is in{type1}
+    } guarantee {
+      protocol gate1protocol is {
+        value data1 is integer = 1
+        do data1 + data1
+      }
+    }
+    
+    behavior test is {
+      value data1 is integer{0..2} = 1
+      do data1 + data1
+    }
+  }
+}

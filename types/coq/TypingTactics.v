@@ -11,6 +11,17 @@ Local Open Scope string_scope.
 Local Open Scope list_scope.
 Local Open Scope Z_scope.
 
+(** printing Delta $\Delta$ #&Delta;# *)
+(** printing Phi $\Phi$ #&Phi;# *)
+(** printing Gamma $\Gamma$ #&Gamma;# *)
+(** printing tau $\tau$ #&tau;# *)
+(** printing Pi $\Pi$ #&Pi;# *)
+(** printing empty $\emptyset$ #&empty;# *)
+
+(** The following tactics help write typing proofs by-hand, especially
+in the cases when some information need be gather from the typing
+environment.  *)
+
 Ltac apply_type_ReceiveStatement :=
   let t G C X L Gamma :=
       let gd := (eval compute in (Environment.ListBasedEnv.get Gamma G)) in
