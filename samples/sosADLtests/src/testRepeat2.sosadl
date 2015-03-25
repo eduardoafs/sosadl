@@ -17,9 +17,7 @@ library testRepeat2 is {
     }
     
     behavior test is {
-      repeat{
-          value data = 0
-      }
+      done
     }
   }
 }

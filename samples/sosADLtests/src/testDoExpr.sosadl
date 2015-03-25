@@ -1,6 +1,6 @@
-// ok: nothing is generated!
- 
-library testRepeat1 is {
+// ok: testDoExpr.iosts
+
+library testDoExpr is {
   
   system test() is {
     
@@ -10,12 +10,12 @@ library testRepeat1 is {
       connection connection1 is in{type1}
     } guarantee {
       protocol gate1protocol is {
-        repeat{done}
+        do y(5)::z
       }
     }
     
     behavior test is {
-      done
+      do y(5)::z
     }
   }
 }

@@ -1,0 +1,9 @@
+// ok: will require testLibrary6
+with Base
+with testLibrary6  // declares Complex datatype
+
+library testLibrary7 is {
+  function (a:Complex)::sub(b:tuple{r:integer,i:integer}):tuple{r:integer,i:integer} is {
+    return tuple{r = a::r - b::r, i = a::i - b::i}
+  }
+}

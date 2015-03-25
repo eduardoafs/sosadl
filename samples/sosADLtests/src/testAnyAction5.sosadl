@@ -1,6 +1,6 @@
-// ok: nothing is generated!
+// ok
  
-library testRepeat1 is {
+library testAnyAction5 is {
   
   system test() is {
     
@@ -8,13 +8,16 @@ library testRepeat1 is {
     
     gate gate1 is {
       connection connection1 is in{type1}
+      connection connection2 is out{type1}
+      connection connection3 is inout{type1}
     } guarantee {
       protocol gate1protocol is {
-        repeat{done}
+        anyaction
       }
     }
     
     behavior test is {
+      // anyaction exists in protocol only
       done
     }
   }
