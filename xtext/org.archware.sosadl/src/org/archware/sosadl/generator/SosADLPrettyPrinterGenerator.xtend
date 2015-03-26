@@ -45,7 +45,14 @@ class SosADLPrettyPrinterGenerator implements IGenerator {
 		val e1 = p1.compile.toString()
 		val p2 = do_parse(e1)
 		val e2 = p2.compile.toString()
-		System.out.println("roundtrip test for " + uri.toString() + ": " + SosADLComparator.compare(e, p1) + " / " + SosADLComparator.compare(e, p2) + " / " + e1.equals(e2))		
+		val compare_e_p1 = SosADLComparator.compare(e, p1)
+		val compare_e_p2 = SosADLComparator.compare(e, p2)
+		val e1_equals_e2 = e1.equals(e2)
+		if (compare_e_p1 && compare_e_p2 && e1_equals_e2) {
+			System.out.println("Roundtrip test ok for " + uri.toString() + ": " + compare_e_p1 + " / " + compare_e_p2 + " / " + e1_equals_e2)
+		} else {
+			System.err.println("Warning! Roundtrip test KO for " + uri.toString() + ": " + compare_e_p1 + " / " + compare_e_p2 + " / " + e1_equals_e2)
+		}
 	}
 
 /* switch equivalent aux IF en cascade (sauf les espaces):
