@@ -43,6 +43,7 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
     var IOstsLibrary currentLibrary = null     // library currently generated
     var IOstsSystem currentSystem = null       // system currently generated
     var IOstsProcess currentProcess = null     // process currently generated
+    var IOstsFunction currentFunction = null   // function currently generated
     var LinkedHashMap<String,IOstsConnection> currentConnectionsMap = newLinkedHashMap()  // current connection map
     var lastIOstsTypeNum = 0
     var lastDoExprResultNumber=0
@@ -524,12 +525,17 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 	
 	// register name and type of Valuing
 	def registerValuing(Valuing v) {
-		if (v.type == null)
-			currentProcess.addVariable(v.variable)
-		else {
-			val type = computeIOstsType(v.type)
-			val typeName = nameOfIOstsType(type)
-			currentProcess.addVariable(v.variable, finalNameOfIOstsType(typeName))
+		if (currentProcess == null) {
+			// Nothing to do! This Valuing occurs inside a FunctionDecl
+		} else {
+			// the Valuing to register occurs inside a Process (Protocol or Behavior) 	
+			if (v.type == null) {
+				currentProcess.addVariable(v.variable)
+			} else {
+				val type = computeIOstsType(v.type)
+				val typeName = nameOfIOstsType(type)
+				currentProcess.addVariable(v.variable, finalNameOfIOstsType(typeName))
+			}
 		}
 	}
 	
@@ -1000,8 +1006,8 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
     /*
      * - computeSTS for a RepeatBehavior statement.
      * 
-     * OBSOLETE: RepeatBehavior is not allowed anymore!
-     *
+     * TODO: Remove RepeatBehavior which is not allowed anymore!
+     */
     def dispatch ArrayList<Integer> computeSTS(int startState, RepeatBehavior r){
         var ArrayList<Integer> finalStates = newArrayList()
         // compute STS of repeated behavior, then get its final states
@@ -1025,7 +1031,7 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
         //System.out.println("Added ifFalse transition after Repeat: from="+startState+", to="+ifFalseAfterRepeat)
         newArrayList(ifFalseAfterRepeat)
     }
-    */
+    
 
     /*
      * - computeSTS for a RepeatProtocol statement.
