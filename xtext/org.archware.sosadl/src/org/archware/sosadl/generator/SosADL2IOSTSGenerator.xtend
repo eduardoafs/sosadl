@@ -1072,7 +1072,7 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
     def dispatch ArrayList<Integer> computeSTS(int startState, TellAssertion r){
     	val final=currentProcess.newState()
         var IOstsTransition tell = new IOstsTransition(startState,final)
-        tell.setGuard(r.expression.compile.toString)
+        //tell.setGuard(r.expression.compile.toString)
         tell.setComment("TellAssertion")
         // Now the tricky part! At the moment, we only recognize and handle this case:
         // - case1: the expression is "envvar = expr"
