@@ -3,76 +3,75 @@ with Localization
 
 // Description of Gateway as a System Abstraction
 library WsnGateway is {
-  
-  system Gateway(lps: Coordinate) is {
-  	
-  	datatype Abscissa
-    datatype Ordinate
-    datatype Coordinate is tuple{x:Abscissa,y:Ordinate}
-    datatype Depth
-    datatype MeasureData is tuple{coordinate:Coordinate,depth:Depth}
-    
-    gate notification is {
-		  connection measure is in{MeasureData}  
-		  connection alert is out{MeasureData}  
+
+	system Gateway( lps:Coordinate ) is {
+
+		datatype Abscissa
+		datatype Ordinate
+		datatype Coordinate is tuple { x:Abscissa, y:Ordinate }
+		datatype Depth
+		datatype MeasureData is tuple { coordinate:Coordinate, depth:Depth }
+
+		gate notification is {
+			connection measure is in { MeasureData }
+			connection alert is out { MeasureData }
 			// alert sent by the gateway
-	  } guarantee {
-		  protocol notificationpact is {
-  		  repeat {
-  			  repeat {
-  				  via notification::measure receive any
-  				  repeat {anyaction}
-  			  }
-			    via notification::alert send any
-		    }
-		  }
-    }
-  
-   	gate request is {
-  		connection coordinate is in{Coordinate}
-      connection depth is out{Depth}
-    } guarantee {
-    	protocol requestpact is {
-    		repeat {
-    			via request::coordinate receive any
-    			repeat {anyaction}
-    			via request::depth send any
-        }
-      }
-    }
-    
-    gate location is {
-   		connection coordinate is out{Coordinate}
-  	} guarantee {
-  		protocol coordinatepact is {
-  			via location::coordinate send lps
-  		}
-    }
-  
-    behavior serving is {
-  		value depththreshold is Depth = 10
-  		value localbase is sequence{MeasureData} = sequence{}
-  	  value gatewaycoordinate is Coordinate = lps    
-  		tell gatewaylocation is {gatewaycoordinate = lps}    
-  		via location::coordinate send gatewaycoordinate
-  		repeat {
-  			choose {
-  				via notification::measure receive measure
-  				do localbase::append(measure)   
-  					// 'append' adds an element to the sequence
-  					// '::' applies operations to collections 
-  				if measure::depth > depththreshold then { 
-  					via notification::alert send measure
-  				}
-  			} or {
-  				via request::coordinate receive query
-        	via request::depth send 
-  					localbase::select{measure suchthat measure::coordinate=query}::
-  							collect{measure suchthat measure::depth}   
-  						// 'select' returns the selected elements
-  						// 'collect' returns the result of an expression 
-        }
-      }
-  	}
-  }
+		} guarantee {
+			protocol notificationpact is {
+				repeat {
+					repeat {
+						via notification::measure receive any
+						repeat { anyaction }
+					}
+					via notification::alert send any
+				}
+			}
+		}
+
+		gate request is {
+			connection coordinate is in { Coordinate }
+			connection depth is out { Depth }
+		} guarantee {
+			protocol requestpact is {
+				repeat {
+					via request::coordinate receive any
+					repeat { anyaction }
+					via request::depth send any
+				}
+			}
+		}
+
+		gate location is {
+			connection coordinate is out { Coordinate }
+		} guarantee {
+			protocol coordinatepact is {
+				via location::coordinate send lps
+			}
+		}
+
+		behavior serving is {
+			value depththreshold is Depth = 10
+			value localbase is sequence { MeasureData } = sequence { }
+			value gatewaycoordinate is Coordinate = lps
+			//tell gatewaylocation is { gatewaycoordinate = lps }
+			via location::coordinate send gatewaycoordinate
+			repeat {
+				choose {
+					via notification::measure receive measure
+					do localbase::append( measure )
+					// 'append' adds an element to the sequence
+					// '::' applies operations to collections 
+					if measure::depth > depththreshold then {
+						via notification::alert send measure
+					}
+				} or {
+					via request::coordinate receive query
+					via request::depth send localbase::select { measure suchthat measure::coordinate = query }::collect { measure
+								suchthat measure::depth }
+								// 'select' returns the selected elements
+					// 'collect' returns the result of an expression 
+				}
+			}
+		}
+	}
 }

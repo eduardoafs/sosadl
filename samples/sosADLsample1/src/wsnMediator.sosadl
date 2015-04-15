@@ -4,74 +4,68 @@ with Localization
 // Description of Transmitter as a Mediator Abstraction
 library WsnMediator is {
 
-  mediator Transmitter(distancebetweengates:Distance) is {
-    // 'datatypes' declared in 'mediator'
-	  datatype Abscissa
-	  datatype Ordinate
-	  datatype Coordinate is tuple{x:Abscissa,y:Ordinate} {
-    	function (onecoordinate:Coordinate)::distance(othercoordinate:Coordinate):Distance is {
-      		return sqrt(sqr(onecoordinate::x-othercoordinate::x)+sqr(onecoordinate::y-othercoordinate::y))
-    	}
-  	}
-	  datatype Depth
-	  datatype MeasureData is tuple{coordinate:Coordinate,depth:Depth}
-	  
-	  duty transmit is {
-		  connection fromSensors is in{MeasureData}  
-		  // measure received from a sensor
-		  connection towardsGateway is out{MeasureData}  
-		  // measure sent towards the gateway
-    } assume {
-      property inrange is {
-			  via location::fromCoordinate receive sendercoordinate 
-			  via location::toCoordinate receive receivercoordinate
-        ask distanceofsensors is {			
-				  sendercoordinate::distance(receivercoordinate) < distancebetweengates
-        		// the distance between the sender and 
-				    // the receiver must be smaller than 
-				    // the parameter of the mediator
-			  }
-		  }
-    } guarantee { 
-		  protocol transmitpact is {
-			  repeat {
-				  via transmit::fromSensors receive measure
-				  via transmit::towardsGateway send measure
-        }
-		  }
-	  }
-	  
-	  // GM: added location duty, because these connections are used in the behavior, but were not declared!
-	  //     Will this one fit?
-	  duty location is {
-      connection fromCoordinate is in{Coordinate}
-      connection toCoordinate is in{Coordinate}
-    } assume {
-      property coordinatepact is {
-        via location::fromCoordinate receive sendercoordinate
-        via location::toCoordinate receive receivercoordinate
-      }
-    } guarantee {
-      protocol coordinatepact is {
-        via location::fromCoordinate receive sendercoordinate
-        via location::toCoordinate receive receivercoordinate
-      }
-    } 
-	  
-	  behavior transmitting is {
-	    via location::fromCoordinate receive sendercoordinate 
-		  via location::toCoordinate receive receivercoordinate
-		  ask rangeoftransmission is {
-			  sendercoordinate::distance(receivercoordinate) < distancebetweengates
-        // the distance between the sender and 
-			  // the receiver must be smaller than 
-			  // the parameter of the mediator
-		  }
-		  repeat {
+	mediator Transmitter( distancebetweengates:Distance ) is {
+	// 'datatypes' declared in 'mediator'
+		datatype Abscissa
+		datatype Ordinate
+		datatype Coordinate is tuple { x:Abscissa, y:Ordinate } {
+			function( onecoordinate:Coordinate )::distance( othercoordinate:Coordinate ):Distance is {
+				return sqrt( sqr( onecoordinate::x - othercoordinate::x ) + sqr( onecoordinate::y - othercoordinate::y ) )
+			}
+		}
+		datatype Depth
+		datatype MeasureData is tuple { coordinate:Coordinate, depth:Depth }
+
+		duty transmit is {
+			connection fromSensors is in { MeasureData }
+			// measure received from a sensor
+			connection towardsGateway is out { MeasureData }
+			// measure sent towards the gateway
+		} assume {
+			property inrange is {
+				via location::fromCoordinate receive sendercoordinate
+				via location::toCoordinate receive receivercoordinate
+				//ask distanceofsensors is {sendercoordinate::distance( receivercoordinate ) < distancebetweengates}
+					// the distance between the sender and 
+					// the receiver must be smaller than 
+					// the parameter of the mediator
+			}
+		} guarantee {
+			protocol transmitpact is {
+				repeat {
+					via transmit::fromSensors receive measure
+					via transmit::towardsGateway send measure
+				}
+			}
+		}
+
+		duty location is {
+			connection fromCoordinate is in { Coordinate }
+			connection toCoordinate is in { Coordinate }
+		} assume {
+			property coordinatepact is {
+				via location::fromCoordinate receive sendercoordinate
+				via location::toCoordinate receive receivercoordinate
+			}
+		} guarantee {
+			protocol coordinatepact is {
+				via location::fromCoordinate receive sendercoordinate
+				via location::toCoordinate receive receivercoordinate
+			}
+		}
+
+		behavior transmitting is {
+			via location::fromCoordinate receive sendercoordinate
+			via location::toCoordinate receive receivercoordinate
+			//ask rangeoftransmission is {sendercoordinate::distance( receivercoordinate ) < distancebetweengates}
+				// the distance between the sender and 
+				// the receiver must be smaller than 
+				// the parameter of the mediator
+			repeat {
 				via transmit::fromSensors receive measure
 				via transmit::towardsGateway send measure
-		  }
+			}
 		}
-  }
+	}
 }
 

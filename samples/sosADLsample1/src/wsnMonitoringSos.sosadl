@@ -7,65 +7,56 @@ with WsnMediator
 
 // Description of WsnMonitoring as an Architecture Abstraction
 sos WsnMonitoringSos is {
-	
-  architecture WnsMonitoringSosArchitecture() is {
-    
-	  gate warning is {
-		  connection alert is out{MeasureData}  
-    } guarantee {
-      protocol alertpact is {
-        repeat {
-          repeat {anyaction}
-          via warning::alert send any
-        }
-      }
-    }
-    
-    gate request is {
-      connection coordinate is in{Coordinate}
-      connection depth is out{Depth}
-    } guarantee {
-      protocol requestpact is {
-        repeat {  
-          via request::coordinate receive any
-          repeat {anyaction}
-          via request::depth send any
-        }
-      }
-    }
-    
-	  behavior coalition is compose {
-		  sensors is sequence{Sensor}
-		  gateway is Gateway
-		  transmitters is sequence{Transmitter}
-	  } binding {
-	    relay gateway::notification::alert to warning::alert
-	    and relay gateway::request to request
-	    and forall{
-	 	    isensor1 in sensors, isensor2 in sensors 
-		    suchthat 
-			  exists {itransmitter in transmitters
-				  suchthat
-					(isensor1 <> isensor2) implies
-						unify one{itransmitter::fromSensors} 
-							 to one{isensor1::measurement::measure} 
-      		  and unify one{itransmitter::towardsGateway} 
-      						 to one{isensor2::measurement::pass}
-      			xor unify one{itransmitter::towardsGateway}
- 						    	   to one{gateway::notification::measure}
-			  }
-		    // multiplicities are 'one', 'none', 
-		    // 'lone' (none or one), 
-		    // 'any' (none or more), 
-		    // 'some' (one or more), 'all'
-		  }
-	  }
-  } guarantee {
-	  property alerting is {
-		  repeat {
-			  repeat {anyaction}
-			  via notification::alert send any
-		  }
-	  }
-  }
+
+	architecture WnsMonitoringSosArchitecture( ) is {
+
+		gate warning is {
+			connection alert is out { MeasureData }
+		} guarantee {
+			protocol alertpact is {
+				repeat {
+					repeat { anyaction }
+					via warning::alert send any
+				}
+			}
+		}
+
+		gate request is {
+			connection coordinate is in { Coordinate }
+			connection depth is out { Depth }
+		} guarantee {
+			protocol requestpact is {
+				repeat {
+					via request::coordinate receive any
+					repeat { anyaction }
+					via request::depth send any
+				}
+			}
+		}
+
+		behavior coalition is compose {
+			sensors is sequence { Sensor }
+			gateway is Gateway
+			transmitters is sequence { Transmitter }
+		} binding {
+			relay gateway::notification::alert to warning::alert and relay gateway::request to request and forall {
+				isensor1 in sensors, isensor2 in sensors suchthat exists { itransmitter in transmitters suchthat( isensor1 <>
+							isensor2 ) implies unify one { itransmitter::fromSensors } to one { isensor1::measurement::measure } and unify
+							one { itransmitter::towardsGateway } to one { isensor2::measurement::pass } xor unify one {
+								itransmitter::towardsGateway } to one { gateway::notification::measure }
+				}
+				// multiplicities are 'one', 'none', 
+				// 'lone' (none or one), 
+				// 'any' (none or more), 
+				// 'some' (one or more), 'all'
+			}
+		}
+	} guarantee {
+		property alerting is {
+			repeat {
+				repeat { anyaction }
+				via notification::alert send any
+			}
+		}
+	}
 }

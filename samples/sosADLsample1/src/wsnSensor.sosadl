@@ -1,123 +1,119 @@
 with Base
-with Localization   // 'with' imports declarations from an already defined library
+with Localization // 'with' imports declarations from an already defined library
 
 // Description of Sensor as a System Abstraction
-library WsnSensor is {   
-	
-  // 'system' declares a user-defined archetype 
-  // for creating system constituents
-  system Sensor(lps: Coordinate) is {
-    
-	  // Declaration of local types – 
-	  // the scope is the system declaration
-	  // The only base type is Integer 
-	  // All types are implicitly typed by Integer 
-	  // equipped with the usual operations
-	  datatype Depth   
+library WsnSensor is {
+
+// 'system' declares a user-defined archetype 
+// for creating system constituents
+	system Sensor( lps:Coordinate ) is {
+
+	// Declaration of local types – 
+	// the scope is the system declaration
+	// The only base type is Integer 
+	// All types are implicitly typed by Integer 
+	// equipped with the usual operations
+		datatype Depth
 		// An atomic type may be seen when needed as a 
 		// simple tuple type, e.g. tuple{:Depth}
-	  datatype RawData is 
-		  // 'datatype' declares an abstract datatype 
-		  tuple{coordinate:Coordinate,depth:Depth} {   
-		  // 'tuple' may have labels or not
-			  function (data:Rawdata)::convert():Depth is {
-				  value magnitude = 10
-				  return Depth(data/magnitude)   
-					// Depth() converts to type Depth 
-			  }
-    	}
-	  datatype MeasureData is 
-		  tuple{coordinate:Coordinate,depth:Depth}   
-	  datatype Energy
-	  
- 	  // 'gate' is the interface of a system – 
- 	  // a system may have several gates
-	  gate measurement is {   
-		  // 'gate' is defined by one or several connections
-      environment connection sense is in{RawData}   
+		datatype RawData is
+		// 'datatype' declares an abstract datatype 
+		tuple { coordinate:Coordinate, depth:Depth } {
+		// 'tuple' may have labels or not
+			function( data:Rawdata )::convert( ):Depth is {
+				value magnitude = 10 return Depth( data / magnitude )
+				// Depth() converts to type Depth 
+			}
+		}
+		datatype MeasureData is tuple { coordinate:Coordinate, depth:Depth }
+		datatype Energy
+
+		// 'gate' is the interface of a system – 
+		// a system may have several gates
+		gate measurement is {
+		// 'gate' is defined by one or several connections
+			environment connection sense is in { RawData }
 			// data coming from the electronic part of the 
 			// sensor device – 
 			// to be bound to the 'environment'
-      connection pass is in{MeasureData}   
+			connection pass is in { MeasureData }
 			// measure received by the sensor from 
 			// its neighbors
-      connection measure is out{MeasureData}   
+			connection measure is out { MeasureData }
 			// measure sent by the sensor to its neighbors
-	  } guarantee {   
-	    // 'guarantee' declares the assertions that are 
-	    // guaranteed by the behaviors through the gate
-		  protocol measurementpact is {  
-			  // 'protocol' defines the usage of the gate – 
-			  // a gate may have several protocols
-			  repeat{   
-				  choose{
-            via measurement::sense receive data   
-					  repeat{anyaction}   
+		} guarantee {
+		// 'guarantee' declares the assertions that are 
+		// guaranteed by the behaviors through the gate
+			protocol measurementpact is {
+			// 'protocol' defines the usage of the gate – 
+			// a gate may have several protocols
+				repeat {
+					choose {
+						via measurement::sense receive data
+						repeat { anyaction }
 						// 'anyaction' declares a wildcard for 
 						// actions including unobservable actions
-					  via measurement::measure send 
-						  tuple{coordinate=lps,depth=data::convert()}
-							// 'any' declares a wildcard for values 
-							// including any value 
-				  } or {
-            via measurement::pass receive data   
-					  via measurement::measure send data   
-				  }
-      	}
- 		  }
- 	  }
- 	  
-	  gate energy is {
-      environment connection threshold is in{Energy}
-      environment connection power is in{Energy}
-  	} guarantee {
+						via measurement::measure send tuple { coordinate = lps, depth = data::convert( ) }
+						// 'any' declares a wildcard for values 
+						// including any value 
+					} or {
+						via measurement::pass receive data
+						via measurement::measure send data
+					}
+				}
+			}
+		}
+
+		gate energy is {
+			environment connection threshold is in { Energy }
+			environment connection power is in { Energy }
+		} guarantee {
 			protocol energypact is {
 				via energy::threshold receive powerthreshold
-				repeat {via energy::power receive powerlevel}
- 		  }
- 	  }
- 	  
-	  gate location is {
- 		  connection coordinate is out{Coordinate}
-	  } guarantee {
-			protocol coordinatepact is	{
+				repeat { via energy::power receive powerlevel }
+			}
+		}
+
+		gate location is {
+			connection coordinate is out { Coordinate }
+		} guarantee {
+			protocol coordinatepact is {
 				via location::coordinate send lps
 			}
- 	  }
- 	  
-	  behavior sensing is {   
-	    // 'behavior' executes when the 'system' is created
-		  value sensorcoordinate is Coordinate = lps
-		  tell sensorlocation is {sensorcoordinate = lps}
-		  // assert the specified constraint with name 
-		  // and type extrusions
-		  via location::coordinate send sensorcoordinate
-		  via energy::threshold receive powerthreshold
-		  repeat {
-			  via energy::power receive powerlevel
-  			if (powerlevel > powerthreshold) then {   
-				  // 'if' tests the condition without blocking
-			    tell powering is {powerlevel > powerthreshold}    
-		    	choose{
-  					via measurement::sense receive data
-  			    via measurement::measure send 
-					    tuple{coordinate=lps,depth=data::convert()}
-  		    } or {
-  			    via measurement::pass receive data
-  			    via measurement::measure send data 
-        	}
-     		}
-    	}
-	  }
-  } guarantee {
-	  property measuring is {
-		  // assertion using the same SosADL subset 
-		  // as properties in gates
-		  repeat{ 
-			  repeat{anyaction}
-			  via measurement::measure send any
-		  }
-	  }
-  }
+		}
+
+		behavior sensing is {
+		// 'behavior' executes when the 'system' is created
+			value sensorcoordinate is Coordinate = lps
+			//tell sensorlocation is { sensorcoordinate = lps }
+			// assert the specified constraint with name 
+			// and type extrusions
+			via location::coordinate send sensorcoordinate
+			via energy::threshold receive powerthreshold
+			repeat {
+				via energy::power receive powerlevel
+				if( powerlevel > powerthreshold ) then {
+				// 'if' tests the condition without blocking
+					//tell powering is { powerlevel > powerthreshold }
+					choose {
+						via measurement::sense receive data
+						via measurement::measure send tuple { coordinate = lps, depth = data::convert( ) }
+					} or {
+						via measurement::pass receive data
+						via measurement::measure send data
+					}
+				}
+			}
+		}
+	} guarantee {
+		property measuring is {
+		// assertion using the same SosADL subset 
+		// as properties in gates
+			repeat {
+				repeat { anyaction }
+				via measurement::measure send any
+			}
+		}
+	}
 }
 
