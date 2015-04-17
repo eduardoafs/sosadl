@@ -34,9 +34,9 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
     
     // global variables making the generation much easier
     // librariesMap contains all known libraries
-    var LinkedHashMap<String,IOstsLibrary> librariesMap = newLinkedHashMap()  // map of (name -> library)
+    var LinkedHashMap<String,IOstsLibrary> librariesMap = new LinkedHashMap()  // map of (name -> library)
     // importedMap contains all libraries to import in the current file
-    var LinkedHashMap<String,IOstsLibrary> importedMap = newLinkedHashMap()  // map of (name -> library)
+    var LinkedHashMap<String,IOstsLibrary> importedMap = new LinkedHashMap()  // map of (name -> library)
     var IOstsType currentType = null           // type currently generated
     var LinkedHashMap<String,IOstsType> currentTypesMap = null // map of (types -> typeDecl) currently generated
     var IOstsListOfFunctions currentListOfFunctions = null // list of functions currently generated
@@ -44,7 +44,7 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
     var IOstsSystem currentSystem = null       // system currently generated
     var IOstsProcess currentProcess = null     // process currently generated
     var IOstsFunction currentFunction = null   // function currently generated
-    var LinkedHashMap<String,IOstsConnection> currentConnectionsMap = newLinkedHashMap()  // current connection map
+    var LinkedHashMap<String,IOstsConnection> currentConnectionsMap = new LinkedHashMap()  // current connection map
     var lastIOstsTypeNum = 0
     var lastDoExprResultNumber=0
     var lastForEachVarNumber=0
@@ -56,7 +56,7 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
     
 	override void doGenerate(Resource resource, IFileSystemAccess fsa) {
 
-		librariesMap = newLinkedHashMap()
+		librariesMap = new LinkedHashMap()
 		
 		globalFolderName = resource.URI.path.substring(0,resource.URI.path.lastIndexOf('/'))
 		globalResource = resource
@@ -79,7 +79,7 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
         var String resourceFilename = sfile.eResource.URI.trimFileExtension.lastSegment
         var String iostsFileName = resourceFilename+".iosts"
         System.out.println("Transforming '"+sfile.eResource.URI.lastSegment+"' into '"+iostsFileName+"'")
-        importedMap = newLinkedHashMap()
+        importedMap = new LinkedHashMap()
         globalFsa.generateFile(iostsFileName, sfile.compile)
         // restore the context of the previous compilation
         importedMap = _saved_importedMap
@@ -221,6 +221,20 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 		}
 		result
 	}
+	
+    def newIoSTSFunction(FunctionDecl f) {
+    	var iof = new IOstsFunction(f.name.toString)
+    	iof.setData(f.dataName, computeIOstsType(f.dataTypeName))
+    	for (p : f.parameters) {
+    		iof.addFormalParameter(p.name, computeIOstsType(p.type))
+    	}
+    	iof.returnType = computeIOstsType(f.type)
+    	for (v : f.valuing) {
+    		iof.addValuing(v)
+    	}
+    	iof.returnExpression = f.expression
+    	iof
+    }
 	
 	/* Create an IfThenElseBehavior 'if (Expression) then {BehaviorStatement*}'
 	 * out of the given list of BehaviorStatements where:
@@ -384,30 +398,21 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 		} else {
 			t = computeIOstsType(d.datatype)
 		}
-		// put this type in currentTypesMap allow function declarations to get it  
+		// put this type in currentTypesMap allow function declarations to get it
 		currentTypesMap.put(d.name, t)
 		// get list of functions
-		currentListOfFunctions = new IOstsListOfFunctions()
-		var result = super.compile(d)
-		t.functions.addAll(currentListOfFunctions)
-		currentListOfFunctions = null
+		for (f:d.functions) {
+			t.functions.add(newIoSTSFunction(f))
+		}
 		// now that the type is completed with functions, put the type again in currentTypesMap
 		currentTypesMap.put(d.name, t)
-		result
+		super.compile(d)
 	}
     
     override def compile(FunctionDecl f) {
-    	var iof = new IOstsFunction(f.name.toString)
-    	iof.setData(f.dataName, computeIOstsType(f.dataTypeName))
-    	for (p : f.parameters) {
-    		iof.addFormalParameter(p.name, computeIOstsType(p.type))
+    	if (currentListOfFunctions != null) {
+    		currentListOfFunctions.add(newIoSTSFunction(f))
     	}
-    	iof.returnType = computeIOstsType(f.type)
-    	for (v : f.valuing) {
-    		iof.addValuing(v)
-    	}
-    	iof.returnExpression = f.expression
-    	currentListOfFunctions.add(iof)
     	super.compile(f)
     }
 	
@@ -457,7 +462,7 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 	}
     
     override def compile(GateDecl g){
-    	currentConnectionsMap = newLinkedHashMap()
+    	currentConnectionsMap = new LinkedHashMap()
 	    for (c : g.connections) {
 	        val name=g.name+"::"+c.name
 	        val IOstsType type = computeIOstsType(c.valueType)
@@ -470,7 +475,7 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 
 	
 	override def compile(DutyDecl d){
-		currentConnectionsMap = newLinkedHashMap()
+		currentConnectionsMap = new LinkedHashMap()
         for (c : d.connections) {
             val name=d.name+"::"+c.name
             val IOstsType type = computeIOstsType(c.valueType)
@@ -1259,22 +1264,34 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
     	var IOstsType result = null
     	if (name == 'integer') {
     		result = new IOstsIntType()
-    		if (result != null && DEBUG) {
-    			System.err.println("getIOstsType: type '"+name+"' found: predefined.")
-    		}
+    		if (DEBUG) {
+	    		System.err.println("getIOstsType: type '"+name+"' found: predefined.")
+	    	}
     	}
     	if (result == null && currentTypesMap != null) {
     		result = currentTypesMap.get(name)
-    		if (result != null && DEBUG) {
-    			System.err.println("getIOstsType: type '"+name+"' found in currentTypesMap.")	
-    		}
-    	}
+    		if (result != null) {
+    			if (DEBUG) {	
+    				System.err.println("getIOstsType: type '"+name+"' found in currentTypesMap.")
+    			}	
+	    	} else {
+	    		if (DEBUG2) {
+	    			System.err.println("getIOstsType: type '"+name+"' NOT found in currentTypesMap.")
+	    		}
+	    	}
+	    }
 	    if (result == null && currentSystem != null) {
             if (currentSystem.typesMap.containsKey(name)) {
                 result = currentSystem.typesMap.get(name)
-    			if (result != null && DEBUG) {
-    				System.err.println("getIOstsType: type '"+name+"' found in currentSystem.typesMap.")
-    			}
+                if (result != null) {
+	    			if (DEBUG) {
+	    				System.err.println("getIOstsType: type '"+name+"' found in currentSystem.typesMap.")
+	    			}
+	    		} else {
+	    			if (DEBUG2) {
+	    				System.err.println("getIOstsType: type '"+name+"' NOT found in currentSystem.typesMap.")
+	    			}
+	    		}
             }
         }
         if (result == null) {
@@ -1405,7 +1422,7 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
     }
 	
 	def dispatch IOstsType computeIOstsType(TupleType t) {
-        var LinkedHashMap<String,IOstsType> fieldsMap=newLinkedHashMap()
+        var LinkedHashMap<String,IOstsType> fieldsMap=new LinkedHashMap()
         var comment="tuple{"
         var first=true
         for (f:(t as TupleType).fields) {
@@ -1467,7 +1484,7 @@ class IOstsFunction {
 	val String name
 	var String dataName = ""
 	var IOstsType dataType = null
-	var LinkedHashMap<String,IOstsType> formalParameters = newLinkedHashMap()
+	var LinkedHashMap<String,IOstsType> formalParameters = new LinkedHashMap()
 	var ArrayList<Valuing> valuings = newArrayList()
 	var Expression returnExpression = null
 	var IOstsType returnType = null
@@ -1666,7 +1683,7 @@ class IOstsTupleType extends IOstsType {
     
     // private thus inaccessible, because one cannot create tuple without fields
     private new() {
-        fieldsMap = newLinkedHashMap() 
+        fieldsMap = new LinkedHashMap() 
     }
     
     new(LinkedHashMap<String,IOstsType> listOfFields) {
@@ -1915,13 +1932,13 @@ class IOstsProcess{
     val String name
     var String comment=""
     var boolean first = true 
-    public var LinkedHashMap<String,IOstsConnection> connectionsMap = newLinkedHashMap()  // map of (connection name -> Connection)
-    public var inputMap = newLinkedHashMap()    // map of (in connection -> type name)
-    public var outputMap = newLinkedHashMap()   // map of (out connection -> type name)
-    public var inoutputMap = newLinkedHashMap() // map of (inout connection -> type name)
-    public var parametersMap = newLinkedHashMap()  // map of (received variable -> type name)
-    public var globalsMap = newLinkedHashMap()  // map of (global variable -> type name) 
-    public var variablesMap = newLinkedHashMap()  // map of (variable -> type name) 
+    public var LinkedHashMap<String,IOstsConnection> connectionsMap = new LinkedHashMap()  // map of (connection name -> Connection)
+    public var inputMap = new LinkedHashMap()    // map of (in connection -> type name)
+    public var outputMap = new LinkedHashMap()   // map of (out connection -> type name)
+    public var inoutputMap = new LinkedHashMap() // map of (inout connection -> type name)
+    public var parametersMap = new LinkedHashMap()  // map of (received variable -> type name)
+    public var globalsMap = new LinkedHashMap()  // map of (global variable -> type name) 
+    public var variablesMap = new LinkedHashMap()  // map of (variable -> type name) 
     public var List<IOstsTransition> transitions = newArrayList()
     var int lastState = 0 // number of the last state, starting at 0.
     var int lastParameterNumber = 0  // number of the last generated parameter
@@ -2096,9 +2113,9 @@ class IOstsSystem{
     val String name
     var String comment=""
     //OLD version: not needed anymore: var String behaviorName="UNDEFINED"
-    public var LinkedHashMap<String,String> constantsMap = newLinkedHashMap()     // map of (name -> value as tring)
-    public var LinkedHashMap<String,IOstsType> typesMap = newLinkedHashMap()     // map of (name -> iosts type)
-    public var LinkedHashMap<String,IOstsProcess> processesMap = newLinkedHashMap()  // map of (process name -> Process)
+    public var LinkedHashMap<String,String> constantsMap = new LinkedHashMap()     // map of (name -> value as tring)
+    public var LinkedHashMap<String,IOstsType> typesMap = new LinkedHashMap()     // map of (name -> iosts type)
+    public var LinkedHashMap<String,IOstsProcess> processesMap = new LinkedHashMap()  // map of (process name -> Process)
     
     new(String name) {
        this.name=name
@@ -2115,7 +2132,7 @@ class IOstsSystem{
     // Returns all connections known to this system.
     // These connections are declared in local gate/duty or behavior
     def LinkedHashMap<String,IOstsConnection> allConnections() {
-    	var allConnections = newLinkedHashMap()
+    	var allConnections = new LinkedHashMap()
     	for (p : processesMap.entrySet) {
     		allConnections.putAll(p.value.connectionsMap)
     	}
@@ -2167,10 +2184,10 @@ class IOstsSystem{
 class IOstsLibrary{
     val String name
     var String fileName=""
-	public var LinkedHashMap<String,IOstsLibrary> importedMap = newLinkedHashMap()  // map of (name -> imported iosts library)
-    public var LinkedHashMap<String,IOstsType> typesMap = newLinkedHashMap()     // map of (name -> iosts type)
+	public var LinkedHashMap<String,IOstsLibrary> importedMap = new LinkedHashMap()  // map of (name -> imported iosts library)
+    public var LinkedHashMap<String,IOstsType> typesMap = new LinkedHashMap()     // map of (name -> iosts type)
     public var IOstsListOfFunctions functions = new IOstsListOfFunctions()       // list of declared functions
-    public var LinkedHashMap<String,IOstsSystem> systemsMap = newLinkedHashMap()  // map of (name -> iosts system)
+    public var LinkedHashMap<String,IOstsSystem> systemsMap = new LinkedHashMap()  // map of (name -> iosts system)
     
     new(String name) {
        this.name=name
