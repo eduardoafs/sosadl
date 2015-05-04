@@ -20,9 +20,9 @@ library WsnSensor is {
 		// 'datatype' declares an abstract datatype 
 		tuple { coordinate:Coordinate, depth:Depth } {
 		// 'tuple' may have labels or not
-			function( data:Rawdata )::convert( ):Depth is {
-				value magnitude = 10 return Depth( data / magnitude )
-				// Depth() converts to type Depth 
+			function( data:RawData )::convert( ):Depth is {
+				value magnitude = 10
+				return data::depth / magnitude
 			}
 		}
 		datatype MeasureData is tuple { coordinate:Coordinate, depth:Depth }
