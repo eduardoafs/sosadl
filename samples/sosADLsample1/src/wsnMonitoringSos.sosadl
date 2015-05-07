@@ -36,7 +36,7 @@ sos WsnMonitoringSos is {
 
 		behavior coalition is compose {
 			sensors is sequence { Sensor }
-			gateway is Gateway
+			gateway is sequence { Gateway }
 			transmitters is sequence { Transmitter }
 		} binding {
 			relay gateway::notification::alert to warning::alert and relay gateway::request to request and forall {
