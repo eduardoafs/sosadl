@@ -467,7 +467,7 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 	        val name=g.name+"::"+c.name
 	        val IOstsType type = computeIOstsType(c.valueType)
 	        val typeName = nameOfIOstsType(type)
-	        val finalTypeName = finalNameOfIOstsType(typeName)
+	        val finalTypeName = typeName//finalNameOfIOstsType(typeName)
 	        currentConnectionsMap.put(name, new IOstsConnection(name, finalTypeName, c.mode.toString))
 	    }
 	    super.compile(g)
@@ -480,7 +480,7 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
             val name=d.name+"::"+c.name
             val IOstsType type = computeIOstsType(c.valueType)
             val typeName = nameOfIOstsType(type)
-            val finalTypeName = finalNameOfIOstsType(typeName)
+            val finalTypeName = typeName//finalNameOfIOstsType(typeName)
             currentConnectionsMap.put(name, new IOstsConnection(name, finalTypeName, c.mode.toString))
         }
         super.compile(d)
@@ -539,7 +539,7 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 			} else {
 				val type = computeIOstsType(v.type)
 				val typeName = nameOfIOstsType(type)
-				currentProcess.addVariable(v.variable, finalNameOfIOstsType(typeName))
+				currentProcess.addVariable(v.variable, typeName)//finalNameOfIOstsType(typeName))
 			}
 		}
 	}
@@ -1326,6 +1326,7 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
         result
 	}
 	
+	/*
 	def finalNameOfIOstsType(String name) {
 	    val IOstsType t = getIOstsType(name)
 	    val finalName = if (t == null) {
@@ -1339,7 +1340,15 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 	    if (DEBUG2) System.out.println("Final type name '"+name+"' = '"+finalName+"'.")
 	    finalName
 	}
+	*/
 	
+	/*
+	 * Returns the name of the given IOstsType found in the different maps:
+	 * 1) currentTypesMap, 2) currentSystem.typesMap,
+	 * 3) currentLibrary.typesMap, 4) currentLibrary.importedMap
+	 * If not found, returns the type.toString
+	 *  
+	 */
 	def nameOfIOstsType(IOstsType type) {
 		var name=""
 		if (currentTypesMap != null) {
@@ -1394,6 +1403,10 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
         name
 	}
 	
+	/*
+	 * IOstsType computeIOstsType(DataType t)
+	 * returns an IOstsType out of the given DataType t  
+	 */
 	def dispatch IOstsType computeIOstsType(DataType t) {
 	    switch t {
 	        IntegerType: computeIOstsType(t)
@@ -1691,11 +1704,7 @@ class IOstsTupleType extends IOstsType {
     }
     
     override def String toString() {
-        var String inner=""
-        for (f:fieldsMap.entrySet) {
-            inner = inner.concat(f.key+":"+f.value.toString+",")
-        }
-        "tuple{"+inner+"}"
+        "tuple{"+ fieldsMap.entrySet.map[key+":"+value.toString].join(",") +"}"
     }
     
     override def equals(IOstsType other) {
