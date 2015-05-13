@@ -137,8 +137,8 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 		// generate a new dumb variable
 		lastDoExprResultNumber++
 		val String dumbVarName="_doExprResult"+lastDoExprResultNumber
-		// retrieve the type of Expression
-		val DataType datatype = newNamedType("integer")
+		// FIXME: retrieve the type of Expression!
+		val DataType datatype = newNamedType("TYPE_TODO")
 		// create a Valuing
 		val factory = SosADLFactory.eINSTANCE
 		var result = factory.createValuing()  // will create a ValuingImpl!
@@ -466,9 +466,8 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 	    for (c : g.connections) {
 	        val name=g.name+"::"+c.name
 	        val IOstsType type = computeIOstsType(c.valueType)
-	        val typeName = nameOfIOstsType(type)
-	        val finalTypeName = typeName//finalNameOfIOstsType(typeName)
-	        currentConnectionsMap.put(name, new IOstsConnection(name, finalTypeName, c.mode.toString))
+	        val typeName = nameOfIOstsType(type) //finalNameOfIOstsType(nameOfIOstsType(type))
+	        currentConnectionsMap.put(name, new IOstsConnection(name, typeName, c.mode.toString))
 	    }
 	    super.compile(g)
 	}
@@ -479,9 +478,8 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
         for (c : d.connections) {
             val name=d.name+"::"+c.name
             val IOstsType type = computeIOstsType(c.valueType)
-            val typeName = nameOfIOstsType(type)
-            val finalTypeName = typeName//finalNameOfIOstsType(typeName)
-            currentConnectionsMap.put(name, new IOstsConnection(name, finalTypeName, c.mode.toString))
+            val typeName = nameOfIOstsType(type) //finalNameOfIOstsType(nameOfIOstsType(type))
+            currentConnectionsMap.put(name, new IOstsConnection(name, typeName, c.mode.toString))
         }
         super.compile(d)
     }
@@ -1351,7 +1349,10 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 	 */
 	def nameOfIOstsType(IOstsType type) {
 		var name=""
-		if (currentTypesMap != null) {
+		if (type instanceof IOstsNamedType) {
+			name=type.toString
+		}
+		if (name == "" && currentTypesMap != null) {
 			for (t : currentTypesMap.entrySet) {
                 if (DEBUG2) System.out.print("comparing '"+type.toString+"' with '"+t.value.toString+"' : ")
                 if (t.value.equals(type)) {
