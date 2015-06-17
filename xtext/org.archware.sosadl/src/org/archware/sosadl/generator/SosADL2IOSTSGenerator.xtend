@@ -1693,7 +1693,7 @@ class IOstsRangeType extends IOstsType {
     }
     
     override def String toString() {
-        "range{"+min+".."+max+"}"
+        "integer{"+min+".."+max+"}"
     }
     
     override def equals(IOstsType other) {
