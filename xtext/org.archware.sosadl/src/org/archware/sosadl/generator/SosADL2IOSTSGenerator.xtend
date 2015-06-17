@@ -34,20 +34,20 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
     
     // global variables making the generation much easier
     // librariesMap contains all known libraries
-    var LinkedHashMap<String,IOstsLibrary> librariesMap = new LinkedHashMap()  // map of (name -> library)
+    var LinkedHashMap<String,IOstsLibrary> librariesMap  // map of (name -> library)
     // importedMap contains all libraries to import in the current file
-    var LinkedHashMap<String,IOstsLibrary> importedMap = new LinkedHashMap()  // map of (name -> library)
-    var IOstsType currentType = null           // type currently generated
-    var LinkedHashMap<String,IOstsType> currentTypesMap = null // map of (types -> typeDecl) currently generated
-    var IOstsListOfFunctions currentListOfFunctions = null // list of functions currently generated
-    var IOstsLibrary currentLibrary = null     // library currently generated
-    var IOstsSystem currentSystem = null       // system currently generated
-    var IOstsProcess currentProcess = null     // process currently generated
-    var IOstsFunction currentFunction = null   // function currently generated
-    var LinkedHashMap<String,IOstsConnection> currentConnectionsMap = new LinkedHashMap()  // current connection map
-    var lastIOstsTypeNum = 0
-    var lastDoExprResultNumber=0
-    var lastForEachVarNumber=0
+    var LinkedHashMap<String,IOstsLibrary> importedMap  // map of (name -> library)
+    var IOstsType currentType                           // type currently generated
+    var LinkedHashMap<String,IOstsType> currentTypesMap // map of (types -> typeDecl) currently generated
+    var IOstsListOfFunctions currentListOfFunctions     // list of functions currently generated
+    var IOstsLibrary currentLibrary                     // library currently generated
+    var IOstsSystem currentSystem                       // system currently generated
+    var IOstsProcess currentProcess                     // process currently generated
+    var IOstsFunction currentFunction                   // function currently generated
+    var LinkedHashMap<String,IOstsConnection> currentConnectionsMap // current connection map
+    var int lastIOstsTypeNum
+    var int lastDoExprResultNumber
+    var int lastForEachVarNumber
     
     //FIXME: these two global variables should be avoided!
     var String globalFolderName = null 
@@ -57,7 +57,19 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 	override void doGenerate(Resource resource, IFileSystemAccess fsa) {
 
 		librariesMap = new LinkedHashMap()
-		
+	    importedMap = new LinkedHashMap()
+	    currentType = null
+	    currentTypesMap = null
+	    currentListOfFunctions = null
+	    currentLibrary = null
+	    currentSystem = null
+	    currentProcess = null
+	    currentFunction = null
+	    currentConnectionsMap = new LinkedHashMap()
+	    lastIOstsTypeNum = 0
+	    lastDoExprResultNumber=0
+	    lastForEachVarNumber=0
+    
 		globalFolderName = resource.URI.path.substring(0,resource.URI.path.lastIndexOf('/'))
 		globalResource = resource
 		globalFsa = fsa
