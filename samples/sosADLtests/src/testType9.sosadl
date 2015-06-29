@@ -1,0 +1,24 @@
+// ok
+
+library testType9 is {
+  
+  datatype type1 is integer{0..1}
+  datatype type2 is sequence{type1}
+  
+  system test() is {
+    
+    datatype type3 is sequence{type1}
+    
+    gate gate1 is {
+      connection connection1 is out{type1}
+    } guarantee {
+      protocol gate1protocol is {
+        done
+      }
+    }
+    
+    behavior test is {
+      done
+    }
+  }
+}

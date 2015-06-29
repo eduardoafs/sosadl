@@ -1,0 +1,21 @@
+// ok
+
+library testDoExpr6 is {
+  
+  system test() is {
+    
+    datatype type1
+    
+    gate gate1 is {
+      connection connection1 is in{type1}
+    } guarantee {
+      protocol gate1protocol is {
+        do 1+1=2 implies 1=1
+      }
+    }
+    
+    behavior test is {
+      do 2+1=3 implies 2=2
+    }
+  }
+}

@@ -1,0 +1,28 @@
+// ok
+
+library testType10 is {
+  
+  datatype type1 is integer
+  datatype type2 is integer{0..1}
+  datatype type3 is tuple{x:type1, y:type2}
+  datatype type4 is sequence{tuple{x:type1, y:type2}}
+  datatype type5 is sequence{type3}
+  
+  system test() is {
+    
+    datatype type5 is sequence{tuple{x:type1, y:type2}}
+    datatype type6 is sequence{type3}
+    
+    gate gate1 is {
+      connection connection1 is out{type1}
+    } guarantee {
+      protocol gate1protocol is {
+        done
+      }
+    }
+    
+    behavior test is {
+      done
+    }
+  }
+}

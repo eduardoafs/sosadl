@@ -1,0 +1,47 @@
+// ok
+
+library testFunction2 is {
+  
+  datatype type1 { // integer
+  	function (left : type1)::add(right : type1) : type1 is {
+  	  value result = left+right
+  	  return result
+  	}
+  	function (left : type1)::dist(right : type1) : type1 is {
+  	  value diff = left-right
+  	  value diff2 = sqr(diff)
+  	  return sqrt(diff2)
+    }
+  }
+  
+  function (left : type1)::divide(right : type1) : type1 is {
+  	return left div right
+  }
+  
+  system test() is {
+    
+    datatype type2 { // integer
+  	  function (left : type2)::add(right : type2) : type2 is {
+  	    value result = left+right
+  	    return result
+  	  }
+  	  function (left : type2)::dist(right : type2) : type2 is {
+  	    value diff = left-right
+  	    value diff2 = sqr(diff)
+  	    return sqrt(diff2)
+      }
+    }
+    
+    gate gate1 is {
+      connection connection1 is out{type1}
+    } guarantee {
+      protocol gate1protocol is {
+        done
+      }
+    }
+    
+    behavior test is {
+      done
+    }
+  }
+}

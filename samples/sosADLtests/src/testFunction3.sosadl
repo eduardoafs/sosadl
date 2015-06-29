@@ -1,0 +1,41 @@
+// ok
+
+library testFunction3 is {
+  
+  datatype type1 is integer{0..1} {
+  	function (left : type1)::add(right : type1) : type1 is {
+  	  return left+right
+  	}
+  	function (left : type1)::mult(right : type1) : type1 is {
+  	  return left*right
+    }
+  }
+  
+  function (left : type1)::divide(right : type1) : type1 is {
+  	return left div right
+  }
+  
+  system test() is {
+    
+    datatype type2 is integer{1..2} {
+  	  function (left : type2)::add(right : type2) : type2 is {
+  		return left+right
+  	  }
+  	  function (left : type2)::mult(right : type2) : type2 is {
+	  	return left*right
+	  }
+    }
+    
+    gate gate1 is {
+      connection connection1 is out{type1}
+    } guarantee {
+      protocol gate1protocol is {
+        done
+      }
+    }
+    
+    behavior test is {
+      done
+    }
+  }
+}

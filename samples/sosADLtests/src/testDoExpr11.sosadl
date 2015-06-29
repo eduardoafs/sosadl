@@ -1,0 +1,27 @@
+// ok
+
+library testDoExpr11 is {
+  
+  system test() is {
+    
+    datatype type1 is integer {
+    	function (left:type1)::add(right:type1):type1 is {
+    		return left+right
+    	} 
+    }
+    
+    gate gate1 is {
+      connection connection1 is in{type1}
+    } guarantee {
+      protocol gate1protocol is {
+      	value x is type1 = 0
+        do x::add(1)
+      }
+    }
+    
+    behavior test is {
+      value x is type1 = 1
+      do x::add(1)
+    }
+  }
+}

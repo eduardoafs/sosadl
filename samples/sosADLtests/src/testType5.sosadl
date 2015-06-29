@@ -1,0 +1,23 @@
+// ok
+
+library testType5 is {
+  
+  datatype type1 is tuple{x:integer{0..1}, y:integer{1..2}}
+  
+  system test() is {
+    
+    datatype type2 is tuple{x:integer{0..1}, y:integer{1..2}}
+    
+    gate gate1 is {
+      connection connection1 is out{type1}
+    } guarantee {
+      protocol gate1protocol is {
+        done
+      }
+    }
+    
+    behavior test is {
+      done
+    }
+  }
+}

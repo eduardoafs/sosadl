@@ -1,0 +1,45 @@
+// ok
+
+library testFunction4 is {
+  
+  datatype type1 is tuple{x:integer, y:integer} {
+  	function (left : type1)::addx(right : type1) : type1 is {
+  	  return left::x+right::x
+  	}
+  	function (left : type1)::addy(right : type1) : type1 is {
+  	  return left::y+right::y
+  	}
+  }
+  
+  function (left : type1)::multx(right : type1) : type1 is {
+  	return left::x*right::x
+  }
+  
+  function (left : type1)::multy(right : type1) : type1 is {
+  	return left::y*right::y
+  }
+  
+  system test() is {
+    
+    datatype type2 is integer{1..2} {
+  	  function (left : type2)::addx(right : type2) : type2 is {
+  		return left::x+right::x
+  	  }
+  	  function (left : type2)::addy(right : type2) : type2 is {
+	  	return left::y+right::y
+	  }
+    }
+    
+    gate gate1 is {
+      connection connection1 is out{type1}
+    } guarantee {
+      protocol gate1protocol is {
+        done
+      }
+    }
+    
+    behavior test is {
+      done
+    }
+  }
+}

@@ -1,0 +1,21 @@
+// ok
+
+library testDoExpr4 is {
+  
+  system test() is {
+    
+    datatype type1
+    
+    gate gate1 is {
+      connection connection1 is in{type1}
+    } guarantee {
+      protocol gate1protocol is {
+        do 1=2
+      }
+    }
+    
+    behavior test is {
+      do 2=3
+    }
+  }
+}

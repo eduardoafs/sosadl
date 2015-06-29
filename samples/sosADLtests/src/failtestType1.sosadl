@@ -1,0 +1,25 @@
+// type1 refers to type2, which refers to type1
+
+library failtestType1 is {
+  
+  datatype type1 is type2
+  datatype type2 is type1
+  
+  system test() is {
+    
+    datatype type3 is type4
+    datatype type4 is type3
+    
+    gate gate1 is {
+      connection connection1 is out{type1}
+    } guarantee {
+      protocol gate1protocol is {
+        done
+      }
+    }
+    
+    behavior test is {
+      done
+    }
+  }
+}

@@ -1,0 +1,23 @@
+// ok
+
+library testType1 is {
+  
+  datatype type1 // integer
+  
+  system test() is {
+    
+    datatype type2 // integer
+    
+    gate gate1 is {
+      connection connection1 is out{type1}
+    } guarantee {
+      protocol gate1protocol is {
+        done
+      }
+    }
+    
+    behavior test is {
+      done
+    }
+  }
+}
