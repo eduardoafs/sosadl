@@ -248,7 +248,8 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 	
     def newIoSTSFunction(FunctionDecl f) {
     	var iof = new IOstsFunction(f.name.toString)
-    	iof.setData(f.dataName, computeIOstsType(f.dataTypeName))
+    	//iof.setData(f.dataName, computeIOstsType(f.dataTypeName))
+    	iof.setData(f.data.name, computeIOstsType(f.data.type))
     	for (p : f.parameters) {
     		iof.addFormalParameter(p.name, computeIOstsType(p.type))
     	}

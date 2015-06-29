@@ -131,7 +131,8 @@ class SosADLComparator {
 	def static dispatch boolean compareDataType(DataType l, DataType r)			{ false }
 	
 	def static compare(FunctionDecl l, FunctionDecl r) {
-		l.dataName.equals(r.dataName) && l.dataTypeName.equals(r.dataTypeName) && l.name.equals(r.name)
+		//l.data.equals(r.data) && l.dataTypeName.equals(r.dataTypeName) && l.name.equals(r.name)
+		compare(l.data, r.data)
 		&& sameElements(l.parameters, r.parameters, [p, q | compare(p, q)]) && compareDataType(l.type, r.type)
 		&& sameElements(l.valuing, r.valuing, [p, q | compare(p, q)]) && compareExpression(l.expression, r.expression)
 	}

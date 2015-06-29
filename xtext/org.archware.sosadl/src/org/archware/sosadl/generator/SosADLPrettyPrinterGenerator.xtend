@@ -417,7 +417,7 @@ class SosADLPrettyPrinterGenerator implements IGenerator {
     ENDIF»'''
 	
 	def compile(FunctionDecl f)'''
-      function («f.dataName»:«f.dataTypeName»)::«f.name»(«f.parameters.map[compile].join(", ")»):«f.type.compile» is {
+      function («f.data.compile»)::«f.name»(«f.parameters.map[compile].join(", ")»):«f.type.compile» is {
         «FOR v:f.valuing»
         «v.compile»
         «ENDFOR»

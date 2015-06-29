@@ -194,7 +194,7 @@ DataType:
 ;
 
 FunctionDecl:
-	'function' '(' dataName=Name ':' dataTypeName=Name ')' '::'
+	'function' '(' data=FormalParameter ')' '::'
 	name=Name '(' (parameters+=FormalParameter (',' parameters+=FormalParameter)*)? ')' ':' type=DataType 'is' '{'
 	    (valuing+=Valuing)*
 		'return' expression=Expression
