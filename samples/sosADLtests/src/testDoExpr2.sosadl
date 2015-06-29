@@ -1,6 +1,6 @@
-// ok: testDoExpr.iosts
+// ok
 
-library testDoExpr is {
+library testDoExpr2 is {
   
   system test() is {
     
@@ -10,12 +10,12 @@ library testDoExpr is {
       connection connection1 is in{type1}
     } guarantee {
       protocol gate1protocol is {
-        do 2+2
+        do -1
       }
     }
     
     behavior test is {
-      do 2+2
+      do -2
     }
   }
 }
