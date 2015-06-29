@@ -1,6 +1,6 @@
-// ok: testDoExpr.iosts
+// ok
 
-library testDoExpr is {
+library testDoExpr10 is {
   
   system test() is {
     
