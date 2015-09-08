@@ -604,12 +604,12 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
             if (! first) { // && finalStates.length >= 2) {
             	// NEW version: concatenation for sequentiality is generated between two statements
             	// ONLY when the first statement ends with at least 2 final states.
-            	if (finalStates.length == 1) {
+            	if (finalStates.size == 1) {
             		state=finalStates.get(0)
            		} else { // finalStates.length >= 2
                 	state=currentProcess.newState()
 	                var i=0
-	                while (i < finalStates.length) {
+	                while (i < finalStates.size) {
 	                    var IOstsTransition concatenation = new IOstsTransition(finalStates.get(i),state) //tau
 	                    concatenation.setComment("Concatenation (sequentiality)")
 	                    currentProcess.addTransition(concatenation)
@@ -680,12 +680,12 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
         	if (! first) {
             	// NEW version: concatenation for sequentiality is generated between two statements
             	// ONLY when the first statement ends with at least 2 final states.
-            	if (finalStates.length == 1) {
+            	if (finalStates.size == 1) {
             		state=finalStates.get(0)
            		} else { // finalStates.length >= 2
                 	state=currentProcess.newState()
 	                var i=0
-	                while (i < finalStates.length) {
+	                while (i < finalStates.size) {
 	                    var IOstsTransition concatenation = new IOstsTransition(finalStates.get(i),state) //tau
 	                    concatenation.setComment("Concatenation (sequentiality)")
 	                    currentProcess.addTransition(concatenation)
