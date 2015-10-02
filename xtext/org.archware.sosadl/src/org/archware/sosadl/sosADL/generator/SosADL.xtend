@@ -277,7 +277,6 @@ class CoqGenerator {
 	
 	def CharSequence generatet_FormalParameter(FormalParameter n) '''(FormalParameter «_generateO(n.getName(), [generatestring])» «_generateO(n.getType(), [generatet_DataType])»)'''
 	
-	//def CharSequence generatet_FunctionDecl(FunctionDecl n) '''(FunctionDecl «_generateO(n.getDataName(), [generatestring])» «_generateO(n.getDataTypeName(), [generatestring])» «_generateO(n.getName(), [generatestring])» «_generateL(n.getParameters(), [generatet_FormalParameter])» «_generateO(n.getType(), [generatet_DataType])» «_generateL(n.getValuing(), [generatet_Valuing])» «_generateO(n.getExpression(), [generatet_Expression])»)'''
 	def CharSequence generatet_FunctionDecl(FunctionDecl n) '''(FunctionDecl «_generateO(n.getData(), [generatet_FormalParameter])» «_generateO(n.getName(), [generatestring])» «_generateL(n.getParameters(), [generatet_FormalParameter])» «_generateO(n.getType(), [generatet_DataType])» «_generateL(n.getValuing(), [generatet_Valuing])» «_generateO(n.getExpression(), [generatet_Expression])»)'''
 	
 	def CharSequence generatet_GateDecl(GateDecl n) '''(GateDecl «_generateO(n.getName(), [generatestring])» «_generateL(n.getConnections(), [generatet_Connection])» «_generateO(n.getProtocol(), [generatet_ProtocolDecl])»)'''
