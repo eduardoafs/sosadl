@@ -125,7 +125,7 @@ with t_FormalParameter: Set :=
 | FormalParameter: option string -> option t_DataType ->  t_FormalParameter
 
 with t_FunctionDecl: Set :=
-| FunctionDecl: option string -> option string -> option string -> list t_FormalParameter -> option t_DataType -> list t_Valuing -> option t_Expression ->  t_FunctionDecl
+| FunctionDecl: option t_FormalParameter -> option string -> list t_FormalParameter -> option t_DataType -> list t_Valuing -> option t_Expression ->  t_FunctionDecl
 
 with t_GateDecl: Set :=
 | GateDecl: option string -> list t_Connection -> option t_ProtocolDecl ->  t_GateDecl
@@ -372,39 +372,34 @@ Definition FormalParameter_type x :=
 	| FormalParameter _ y => y
 	end.
 
-Definition FunctionDecl_dataName x :=
+Definition FunctionDecl_data x :=
 	match x with
-	| FunctionDecl y _ _ _ _ _ _ => y
-	end.
-
-Definition FunctionDecl_dataTypeName x :=
-	match x with
-	| FunctionDecl _ y _ _ _ _ _ => y
+	| FunctionDecl y _ _ _ _ _ => y
 	end.
 
 Definition FunctionDecl_name x :=
 	match x with
-	| FunctionDecl _ _ y _ _ _ _ => y
+	| FunctionDecl _ y _ _ _ _ => y
 	end.
 
 Definition FunctionDecl_parameters x :=
 	match x with
-	| FunctionDecl _ _ _ y _ _ _ => y
+	| FunctionDecl _ _ y _ _ _ => y
 	end.
 
 Definition FunctionDecl_type x :=
 	match x with
-	| FunctionDecl _ _ _ _ y _ _ => y
+	| FunctionDecl _ _ _ y _ _ => y
 	end.
 
 Definition FunctionDecl_valuing x :=
 	match x with
-	| FunctionDecl _ _ _ _ _ y _ => y
+	| FunctionDecl _ _ _ _ y _ => y
 	end.
 
 Definition FunctionDecl_expression x :=
 	match x with
-	| FunctionDecl _ _ _ _ _ _ y => y
+	| FunctionDecl _ _ _ _ _ y => y
 	end.
 
 Definition GateDecl_name x :=

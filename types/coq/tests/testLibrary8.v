@@ -10,7 +10,7 @@ Local Open Scope string_scope.
 Local Open Scope Z_scope.
 
 Definition ast :=
-(SosADL [(Import (Some "Base")); (Import (Some "testLibrary7"))] (Some (Library (Some "testLibrary8") (Some (EntityBlock [] [(FunctionDecl (Some "a") (Some "Complex") (Some "sqr") [] (Some (NamedType (Some "Complex"))) [] (Some (MethodCall (Some (IdentExpression (Some "a"))) (Some "mult") [(IdentExpression (Some "a"))])))] [] [] []))))).
+(SosADL [(Import (Some "Base")); (Import (Some "testLibrary7"))] (Some (Library (Some "testLibrary8") (Some (EntityBlock [] [(FunctionDecl (Some (FormalParameter (Some "a") (Some (NamedType (Some "Complex"))))) (Some "sqr") [] (Some (NamedType (Some "Complex"))) [] (Some (MethodCall (Some (IdentExpression (Some "a"))) (Some "mult") [(IdentExpression (Some "a"))])))] [] [] []))))).
 
 (*
 Local Variables:

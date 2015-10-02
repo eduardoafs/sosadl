@@ -10,7 +10,7 @@ Local Open Scope string_scope.
 Local Open Scope Z_scope.
 
 Definition ast :=
-(SosADL [(Import (Some "Base"))] (Some (Library (Some "testLibrary4") (Some (EntityBlock [(DataTypeDecl (Some "type1") (Some IntegerType) [(FunctionDecl (Some "i") (Some "type1") (Some "add") [(FormalParameter (Some "j") (Some (NamedType (Some "type1"))))] (Some (NamedType (Some "type1"))) [] (Some (BinaryExpression (Some (IdentExpression (Some "i"))) (Some "+") (Some (IdentExpression (Some "j"))))))])] [(FunctionDecl (Some "i") (Some "type1") (Some "mult") [(FormalParameter (Some "j") (Some (NamedType (Some "type1"))))] (Some (NamedType (Some "type1"))) [] (Some (BinaryExpression (Some (IdentExpression (Some "i"))) (Some "*") (Some (IdentExpression (Some "j"))))))] [] [] []))))).
+(SosADL [(Import (Some "Base"))] (Some (Library (Some "testLibrary4") (Some (EntityBlock [(DataTypeDecl (Some "type1") (Some IntegerType) [(FunctionDecl (Some (FormalParameter (Some "i") (Some (NamedType (Some "type1"))))) (Some "add") [(FormalParameter (Some "j") (Some (NamedType (Some "type1"))))] (Some (NamedType (Some "type1"))) [] (Some (BinaryExpression (Some (IdentExpression (Some "i"))) (Some "+") (Some (IdentExpression (Some "j"))))))])] [(FunctionDecl (Some (FormalParameter (Some "i") (Some (NamedType (Some "type1"))))) (Some "mult") [(FormalParameter (Some "j") (Some (NamedType (Some "type1"))))] (Some (NamedType (Some "type1"))) [] (Some (BinaryExpression (Some (IdentExpression (Some "i"))) (Some "*") (Some (IdentExpression (Some "j"))))))] [] [] []))))).
 
 (*
 Local Variables:
