@@ -85,7 +85,7 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 		val IOstsType _saved_currentType = currentType
 		val LinkedHashMap<String,IOstsType> _saved_currentTypesMap = currentTypesMap
 		val IOstsSystem _saved_currentSystem = currentSystem
-    	val IOstsProcess _saved_currentProcess = currentProcess
+    		val IOstsProcess _saved_currentProcess = currentProcess
    	 	val LinkedHashMap<String,IOstsConnection> _saved_currentConnectionsMap = currentConnectionsMap
 		// ok: generate the iosts!
         var String resourceFilename = sfile.eResource.URI.trimFileExtension.lastSegment
