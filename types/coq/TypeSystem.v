@@ -245,9 +245,10 @@ a single form of judgment. Rules are built of the following:
 
 Inductive type_sosADL: AST.t_SosADL -> Prop :=
 | type_SosADL:
-    forall i d,
-      unit d well typed
-      ->
+    forall (i: list AST.t_Import)
+           (d: AST.t_Unit)
+           (p: unit d well typed)
+    ,
       SoSADL (AST.SosADL i (Some d)) well typed
 
 (**
@@ -258,15 +259,17 @@ same way by the typing rules.  *)
 
 with type_unit: AST.t_Unit -> Prop :=
 | type_SoS:
-    forall n e,
-      entity e well typed in empty
-      ->
+    forall (n: string)
+           (e: AST.t_EntityBlock)
+           (p: entity e well typed in empty)
+    ,
       unit (AST.SoS (Some n) (Some e)) well typed
 
 | type_Library:
-    forall n e,
-      entity e well typed in empty
-      ->
+    forall (n: string)
+           (e: AST.t_EntityBlock)
+           (p: entity e well typed in empty)
+    ,
       unit (AST.Library (Some n) (Some e)) well typed
 
 (** ** Entity *)
@@ -280,20 +283,35 @@ each of which exhausts of list of declarations in order.%}% *)
 
 with type_entityBlock: env -> AST.t_EntityBlock -> Prop :=
 | type_EntityBlock_datatype_Some:
-    forall Gamma d_name d_def d_funs l funs systems mediators architectures,
-      (typedecl (AST.DataTypeDecl (Some d_name) (Some d_def) d_funs) well typed in Gamma)
-      /\ (entity (AST.EntityBlock l funs systems mediators architectures)
-                well typed in Gamma[d_name <- EType (AST.DataTypeDecl (Some d_name) (Some d_def) d_funs)])
-      ->
+    forall (Gamma: env)
+           (d_name: string)
+           (d_def: AST.t_DataType)
+           (d_funs: list AST.t_FunctionDecl)
+           (l: list AST.t_DataTypeDecl)
+           (funs: list AST.t_FunctionDecl)
+           (systems: list AST.t_SystemDecl)
+           (mediators: list AST.t_MediatorDecl)
+           (architectures: list AST.t_ArchitectureDecl)
+           (p1: typedecl (AST.DataTypeDecl (Some d_name) (Some d_def) d_funs) well typed in Gamma)
+           (p2: entity (AST.EntityBlock l funs systems mediators architectures)
+                       well typed in Gamma[d_name <- EType (AST.DataTypeDecl (Some d_name) (Some d_def) d_funs)])
+    ,
       entity (AST.EntityBlock ((AST.DataTypeDecl (Some d_name) (Some d_def) d_funs)::l) funs systems mediators architectures)
              well typed in Gamma
 
 | type_EntityBlock_datatype_None:
-    forall Gamma d_name d_def d_funs l funs systems mediators architectures,
-      (typedecl (AST.DataTypeDecl (Some d_name) None d_funs) well typed in Gamma)
-      /\ (entity (AST.EntityBlock l funs systems mediators architectures)
-                well typed in Gamma[d_name <- EType (AST.DataTypeDecl (Some d_name) (Some d_def) d_funs)])
-      ->
+    forall (Gamma: env)
+           (d_name: string)
+           (d_funs: list AST.t_FunctionDecl)
+           (l: list: AST.t_DataTypeDecl)
+           (funs: list AST.t_FunctionDecl)
+           (systems: list AST.t_SystemDecl)
+           (mediators: list AST.t_MediatorDecl)
+           (architectures: list AST.t_ArchitectureDecl)
+           (p1: typedecl (AST.DataTypeDecl (Some d_name) None d_funs) well typed in Gamma)
+           (p2: entity (AST.EntityBlock l funs systems mediators architectures)
+                well typed in Gamma[d_name <- EType (AST.DataTypeDecl (Some d_name) None d_funs)])
+    ,
       entity (AST.EntityBlock ((AST.DataTypeDecl (Some d_name) None d_funs)::l) funs systems mediators architectures)
              well typed in Gamma
 
