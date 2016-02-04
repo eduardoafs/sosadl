@@ -23,4 +23,15 @@ public class CellEnvironmentImpl extends EnvironmentImpl implements Environment 
 		}
 	}
 
+	public String getName() {
+		return name;
+	}
+	
+	public EnvContent getInfo() {
+		return info;
+	}
+	
+	public Environment getParent() {
+		return parent;
+	}
 }

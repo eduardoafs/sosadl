@@ -1,4 +1,4 @@
-Require Import TypeSystem.
+Require Import SosADL.TypeSystem.
 
 Import List.
 Import AST.
@@ -112,6 +112,7 @@ Ltac do_exists :=
     | [ |- exists x, Some x = ?v /\ _ ] => d v
   end.
 
+(*
 Ltac apply_type_functiondecl tau :=
   let t DN DTN N P T V E Gamma :=
       let et := (eval compute in (Environment.ListBasedEnv.get Gamma DTN)) in
@@ -124,6 +125,7 @@ Ltac apply_type_functiondecl tau :=
       =>
       t DN DTN N P T V E Gamma
   end.
+*)
 
 Ltac apply_type_expression_ident_trivial :=
   match goal with
@@ -143,6 +145,7 @@ Ltac apply_type_named_type :=
       end
   end.
 
+(*
 Fixpoint find_function (l: list t_FunctionDecl) (n: string) {struct l}: option t_FunctionDecl :=
   match l with
     | [] => None
@@ -156,7 +159,9 @@ Fixpoint find_function (l: list t_FunctionDecl) (n: string) {struct l}: option t
         | _ => find_function tl n
       end
   end.
+*)
 
+(*
 Ltac apply_type_expression_methodcall tau :=
   match goal with
       [ |- expression (MethodCall (Some ?T) (Some ?N) ?P) has type ?R in ?Gamma ]
@@ -178,3 +183,4 @@ Ltac apply_type_expression_methodcall tau :=
 
 
 
+*)

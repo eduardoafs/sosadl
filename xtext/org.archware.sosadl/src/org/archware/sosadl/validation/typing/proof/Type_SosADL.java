@@ -11,7 +11,8 @@ public class Type_SosADL implements Type_sosADL {
 	@Mandatory
 	private final Unit d;
 	
-	@CoqType("unit d well typed")
+	@Mandatory
+	@CoqType("unit d well typed in empty")
 	private final Type_unit p;
 
 	public Type_SosADL(EList<Import> i, Unit u, Type_unit p) {

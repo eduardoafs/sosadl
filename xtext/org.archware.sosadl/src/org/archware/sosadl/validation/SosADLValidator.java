@@ -3,18 +3,15 @@
  */
 package org.archware.sosadl.validation;
 
-import org.eclipse.emf.common.util.ECollections;
-import org.eclipse.emf.common.util.EList;
-import org.eclipse.emf.ecore.EObject;
-import org.eclipse.xtext.validation.Check;
-
 import java.util.Iterator;
 
 import org.archware.sosadl.attributed.AttributeAdapter;
 import org.archware.sosadl.sosADL.ArchitectureDecl;
+import org.archware.sosadl.sosADL.DataType;
 import org.archware.sosadl.sosADL.DataTypeDecl;
 import org.archware.sosadl.sosADL.EntityBlock;
 import org.archware.sosadl.sosADL.FunctionDecl;
+import org.archware.sosadl.sosADL.Import;
 import org.archware.sosadl.sosADL.Library;
 import org.archware.sosadl.sosADL.MediatorDecl;
 import org.archware.sosadl.sosADL.SoS;
@@ -22,16 +19,26 @@ import org.archware.sosadl.sosADL.SosADL;
 import org.archware.sosadl.sosADL.SystemDecl;
 import org.archware.sosadl.sosADL.Unit;
 import org.archware.sosadl.validation.typing.Environment;
+import org.archware.sosadl.validation.typing.impl.SystemEnvContent;
 import org.archware.sosadl.validation.typing.impl.TypeEnvContent;
+import org.archware.sosadl.validation.typing.proof.Equality;
+import org.archware.sosadl.validation.typing.proof.Reflexivity;
+import org.archware.sosadl.validation.typing.proof.Type_EntityBlock;
 import org.archware.sosadl.validation.typing.proof.Type_EntityBlock_datatype_None;
 import org.archware.sosadl.validation.typing.proof.Type_EntityBlock_datatype_Some;
+import org.archware.sosadl.validation.typing.proof.Type_EntityBlock_system;
 import org.archware.sosadl.validation.typing.proof.Type_Library;
 import org.archware.sosadl.validation.typing.proof.Type_SoS;
 import org.archware.sosadl.validation.typing.proof.Type_SosADL;
 import org.archware.sosadl.validation.typing.proof.Type_datatypeDecl;
 import org.archware.sosadl.validation.typing.proof.Type_entityBlock;
 import org.archware.sosadl.validation.typing.proof.Type_sosADL;
+import org.archware.sosadl.validation.typing.proof.Type_system;
 import org.archware.sosadl.validation.typing.proof.Type_unit;
+import org.eclipse.emf.common.util.ECollections;
+import org.eclipse.emf.common.util.EList;
+import org.eclipse.emf.ecore.EObject;
+import org.eclipse.xtext.validation.Check;
 
 /**
  * Custom validation rules. 
@@ -39,7 +46,7 @@ import org.archware.sosadl.validation.typing.proof.Type_unit;
  * see http://www.eclipse.org/Xtext/documentation.html#validation
  */
 public class SosADLValidator extends AbstractSosADLValidator {
-
+	
 //  public static val INVALID_NAME = 'invalidName'
 //
 //	@Check
@@ -55,21 +62,21 @@ public class SosADLValidator extends AbstractSosADLValidator {
 	public Type_sosADL type_sosADL(SosADL file) {
 		// type_SosADL:
 		if(file.getContent() != null) {
-			return saveProof(file, new Type_SosADL(file.getImports(), file.getContent(), type_unit(file.getContent())));
+			return saveProof(file, createType_SosADL(file.getImports(), file.getContent(), type_unit(Environment.empty(), file.getContent())));
 		} else {
 			error("No unit found", file, null);
 			return null;
 		}
 	}
 
-	private Type_unit type_unit(Unit content) {
+	private Type_unit type_unit(Environment gamma, Unit content) {
 		// type_SoS:
 		if(content instanceof SoS && ((SoS)content).getName() != null && ((SoS)content).getDecls() != null) {
-			return saveProof(content, new Type_SoS(((SoS)content).getName(), ((SoS)content).getDecls(), type_entityBlock(Environment.empty(), ((SoS)content).getDecls())));
+			return saveProof(content, createType_SoS(gamma, ((SoS)content).getName(), ((SoS)content).getDecls(), type_entityBlock(gamma, ((SoS)content).getDecls())));
 		} else
 		// type_Library:
 		if(content instanceof Library && ((Library)content).getName() != null && ((Library)content).getDecls() != null) {
-			return saveProof(content, new Type_Library(((Library)content).getName(), ((Library)content).getDecls(), type_entityBlock(Environment.empty(), ((SoS)content).getDecls())));
+			return saveProof(content, createType_Library(gamma, ((Library)content).getName(), ((Library)content).getDecls(), type_entityBlock(gamma, ((Library)content).getDecls())));
 		} else {
 			error("The unit must contain a name and a block", content, null);
 			return null;
@@ -78,30 +85,47 @@ public class SosADLValidator extends AbstractSosADLValidator {
 
 	private Type_entityBlock type_entityBlock(Environment gamma, EntityBlock decls) {
 		saveEnvironment(decls, gamma);
-		return saveProof(decls, type_entityBlock(gamma, decls.getDatatypes(), decls.getFunctions(), decls.getSystems(), decls.getMediators(), decls.getArchitectures()));
+		return saveProof(decls, type_entityBlock(gamma, decls, decls.getDatatypes(), decls.getFunctions(), decls.getSystems(), decls.getMediators(), decls.getArchitectures()));
 	}
 
-	private Type_entityBlock type_entityBlock(Environment gamma, EList<DataTypeDecl> datatypes, EList<FunctionDecl> functions,
+	private Type_entityBlock type_entityBlock(Environment gamma, EntityBlock decls, EList<DataTypeDecl> datatypes, EList<FunctionDecl> functions,
 			EList<SystemDecl> systems, EList<MediatorDecl> mediators, EList<ArchitectureDecl> architectures) {
 		// type_EntityBlock_datatype_Some:
 		if(datatypes.size() >= 1 && datatypes.get(0).getName() != null && datatypes.get(0).getDatatype() != null) {
-			return new Type_EntityBlock_datatype_Some(gamma, datatypes.get(0).getName(), datatypes.get(0).getDatatype(),
+			return createType_EntityBlock_datatype_Some(gamma, datatypes.get(0).getName(), datatypes.get(0).getDatatype(),
 					datatypes.get(0).getFunctions(), cdr(datatypes), functions, systems, mediators, architectures,
 					type_datatypeDecl(gamma, datatypes.get(0)),
-					type_entityBlock(gamma.put(datatypes.get(0).getName(), new TypeEnvContent(datatypes.get(0))), cdr(datatypes), functions, systems, mediators, architectures));
+					type_entityBlock(gamma.put(datatypes.get(0).getName(), new TypeEnvContent(datatypes.get(0))), decls, cdr(datatypes), functions, systems, mediators, architectures));
 		} else
 		// type_EntityBlock_datatype_None:
-			if(datatypes.size() >= 1 && datatypes.get(0).getName() != null && datatypes.get(0).getDatatype() == null) {
-				return new Type_EntityBlock_datatype_None(gamma, datatypes.get(0).getName(),
-						datatypes.get(0).getFunctions(), cdr(datatypes), functions, systems, mediators, architectures,
-						type_datatypeDecl(gamma, datatypes.get(0)),
-						type_entityBlock(gamma.put(datatypes.get(0).getName(), new TypeEnvContent(datatypes.get(0))), cdr(datatypes), functions, systems, mediators, architectures));
+		if(datatypes.size() >= 1 && datatypes.get(0).getName() != null && datatypes.get(0).getDatatype() == null) {
+			return createType_EntityBlock_datatype_None(gamma, datatypes.get(0).getName(),
+					datatypes.get(0).getFunctions(), cdr(datatypes), functions, systems, mediators, architectures,
+					type_datatypeDecl(gamma, datatypes.get(0)),
+					type_entityBlock(gamma.put(datatypes.get(0).getName(), new TypeEnvContent(datatypes.get(0))), decls, cdr(datatypes), functions, systems, mediators, architectures));
+		} else
+		// type_EntityBlock_system:
+		if(datatypes.isEmpty() && functions.isEmpty() && systems.size() >= 1 && systems.get(0).getName() != null) {
+			return createType_EntityBlock_system(gamma, systems.get(0), systems.get(0).getName(), cdr(systems), mediators, architectures,
+					type_system(gamma, systems.get(0)),
+					createReflexivity(),
+					type_entityBlock(gamma.put(systems.get(0).getName(),  new SystemEnvContent(systems.get(0))), decls, datatypes, functions, cdr(systems), mediators, architectures));
+		} else
+		// type_EntityBlock:
+		if(datatypes.isEmpty() && functions.isEmpty() && systems.isEmpty() && mediators.isEmpty() && architectures.isEmpty()) {
+			return createType_EntityBlock(gamma);
 		} else {
-			// TODO
+			EObject x = firstOfOr(decls, datatypes, functions, systems, mediators, architectures);
+			error("Badly formed entity block", x, null);
 			return null;
 		}
 	}
-	
+
+	private Type_system type_system(Environment gamma, SystemDecl systemDecl) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 	private Type_datatypeDecl type_datatypeDecl(Environment gamma, DataTypeDecl dataTypeDecl) {
 		// TODO Auto-generated method stub
 		return null;
@@ -110,13 +134,17 @@ public class SosADLValidator extends AbstractSosADLValidator {
 	public static final String ENVIRONMENT = "Environment";
 	public static final String PROOF = "Proof";
 	
-	private static void saveEnvironment(EObject eObject, Environment env) {
+	public static void saveEnvironment(EObject eObject, Environment env) {
 		AttributeAdapter.adapterOf(eObject).putAttribute(ENVIRONMENT, env);
 	}
 	
-	private static <T> T saveProof(EObject eObject, T proof) {
+	public static <T> T saveProof(EObject eObject, T proof) {
 		AttributeAdapter.adapterOf(eObject).putAttribute(PROOF, proof);
 		return proof;
+	}
+
+	public static Object getProof(EObject eObject) {
+		return AttributeAdapter.adapterOf(eObject).getAttribute(PROOF);
 	}
 
 	private static <T> EList<T> cdr(EList<T> l) {
@@ -129,5 +157,49 @@ public class SosADLValidator extends AbstractSosADLValidator {
 			ret = ECollections.emptyEList();
 		}
 		return ECollections.unmodifiableEList(ret);
+	}
+
+	@SafeVarargs
+	private static EObject firstOfOr(EObject other, EList<? extends EObject>... lists) {
+		for(EList<? extends EObject> l : lists) {
+			if(!l.isEmpty()) {
+				return l.get(0);
+			}
+		}
+		return other;
+	}
+	
+	private static Type_sosADL createType_SosADL(EList<Import> i, Unit d, Type_unit p) {
+		return new Type_SosADL(i, d, p);
+	}
+	
+	private static Type_unit createType_SoS(Environment gamma, String n, EntityBlock e, Type_entityBlock p) {
+		return new Type_SoS(gamma, n, e, p);
+	}
+	
+	private static Type_unit createType_Library(Environment gamma, String n, EntityBlock e, Type_entityBlock p) {
+		return new Type_Library(gamma, n, e, p);
+	}
+	
+	private static Type_entityBlock createType_EntityBlock_datatype_Some(Environment gamma, String d_name, DataType d_def, EList<FunctionDecl> d_funs, EList<DataTypeDecl> l, EList<FunctionDecl> funs, EList<SystemDecl> systems, EList<MediatorDecl> mediators, EList<ArchitectureDecl> architectures, Type_datatypeDecl p1, Type_entityBlock p2) {
+		return new Type_EntityBlock_datatype_Some(gamma, d_name, d_def, d_funs, l, funs, systems, mediators, architectures, p1, p2);
+	}
+
+	private static Type_entityBlock createType_EntityBlock_datatype_None(Environment gamma, String d_name, EList<FunctionDecl> d_funs, EList<DataTypeDecl> l, EList<FunctionDecl> funs, EList<SystemDecl> systems, EList<MediatorDecl> mediators, EList<ArchitectureDecl> architectures, Type_datatypeDecl p1, Type_entityBlock p2) {
+		return new Type_EntityBlock_datatype_None(gamma, d_name, d_funs, l, funs, systems, mediators, architectures, p1, p2);
+	}
+	
+	private Type_entityBlock createType_EntityBlock_system(Environment gamma, SystemDecl s, String s_name,
+			EList<SystemDecl> l, EList<MediatorDecl> mediators, EList<ArchitectureDecl> architectures,
+			Type_system p1, Equality p2, Type_entityBlock p3) {
+		return new Type_EntityBlock_system(gamma, s, s_name, l, mediators, architectures, p1, p2, p3);
+	}
+
+	private Type_entityBlock createType_EntityBlock(Environment gamma) {
+		return new Type_EntityBlock(gamma);
+	}
+
+	private Equality createReflexivity() {
+		return new Reflexivity();
 	}
 }

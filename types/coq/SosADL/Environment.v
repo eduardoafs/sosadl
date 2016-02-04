@@ -44,9 +44,9 @@ End ListBasedEnv.
 
 Export ListBasedEnv.
 
-Notation "x [ n ]" := (get x n) (at level 0).
-Notation "x [ n <- v ]" := (set x n v) (at level 0).
+Notation "x [| n |]" := (get x n) (at level 0).
+Notation "x [| n <- v |]" := (set x n v) (at level 0).
 Notation "x <++ y" := (merge x y) (at level 0).
 
-Definition contains {A: Set} (e: environment A) n v := e[n] = Some v.
+Definition contains {A: Set} (e: environment A) n v := e[|n|] = Some v.
 

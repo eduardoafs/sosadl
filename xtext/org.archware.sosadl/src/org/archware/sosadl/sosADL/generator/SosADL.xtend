@@ -91,7 +91,13 @@ class CoqGenerator {
 		}
 	}
 
-	def <T> _generateL(List<T> l, Function1<? super T, ? extends CharSequence> gen) '''[«l.map(gen).join("; ")»]'''
+	def <T> _generateL(List<T> l, Function1<? super T, ? extends CharSequence> gen) {
+		if (l.empty) {
+			return '''[]'''
+		} else {
+			return '''[«l.map(gen).join("; ")»]'''
+		}
+	}
 
 	def generatebool(boolean b) {
 		if (b) {

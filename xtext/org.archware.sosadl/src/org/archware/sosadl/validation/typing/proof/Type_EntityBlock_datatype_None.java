@@ -26,9 +26,11 @@ public class Type_EntityBlock_datatype_None implements Type_entityBlock {
 	
 	private final EList<ArchitectureDecl> architectures;
 	
+	@Mandatory
 	@CoqType("typedecl (AST.DataTypeDeck (Some d_name) None d_funs) well typed in Gamma")
 	private final Type_datatypeDecl p1;
 	
+	@Mandatory
 	@CoqType("entity (AST.EntityBlock l funs systems mediators architectures) well typed in Gamma[d_name <- EType (AST.DataTypeDeck (Some d_name) (Some d_def) d_funs)]")
 	private final Type_entityBlock p2;
 

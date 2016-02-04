@@ -55,7 +55,7 @@ objects that can be stored in the typing environment. The main kinds of objects 
 Inductive env_content: Set :=
 | EType: AST.t_DataTypeDecl -> env_content
 | EFunction: AST.t_FunctionDecl -> env_content
-| ESystem: env_content
+| ESystem: AST.t_SystemDecl -> env_content
 | EMediator: env_content
 | EArchitecture: env_content
 | EGateOrDuty: environment gd_env_content -> env_content
@@ -77,7 +77,7 @@ Definition env_add_params  :=
        match AST.FormalParameter_name f with
          | Some name =>
            match AST.FormalParameter_type f with
-             | Some type => e[name <- EVariable type]
+             | Some type => e [| name <- EVariable type |]
              | None => e
            end
          | None => e
@@ -94,7 +94,7 @@ Definition conns_environment l :=
            match AST.Connection_mode c with
              | Some mode =>
                match AST.Connection_valueType c with
-                 | Some type => e[name <- GDConnection mode type]
+                 | Some type => e [| name <- GDConnection mode type |]
                  | None => e
                end
              | None => e
@@ -198,7 +198,7 @@ recursive call statement.
  *)
 
 Reserved Notation "'SoSADL' a 'well' 'typed'" (at level 200, no associativity).
-Reserved Notation "'unit' u 'well' 'typed'" (at level 200, no associativity).
+Reserved Notation "'unit' u 'well' 'typed' 'in' Gamma" (at level 200, no associativity).
 Reserved Notation "'entity' u 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
 Reserved Notation "'typedecl' t 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
 Reserved Notation "'functions' 'of' 'typedecl' t 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
@@ -247,7 +247,7 @@ Inductive type_sosADL: AST.t_SosADL -> Prop :=
 | type_SosADL:
     forall (i: list AST.t_Import)
            (d: AST.t_Unit)
-           (p: unit d well typed)
+           (p: unit d well typed in empty)
     ,
       SoSADL (AST.SosADL i (Some d)) well typed
 
@@ -257,25 +257,29 @@ Inductive type_sosADL: AST.t_SosADL -> Prop :=
 The two forms of compulation unit (SoS or library) are handled in the
 same way by the typing rules.  *)
 
-with type_unit: AST.t_Unit -> Prop :=
+(** %\note{%The environment is added in anticipation of the handling of the imports.%}% *)
+
+with type_unit: env -> AST.t_Unit -> Prop :=
 | type_SoS:
-    forall (n: string)
+    forall (Gamma: env)
+           (n: string)
            (e: AST.t_EntityBlock)
-           (p: entity e well typed in empty)
+           (p: entity e well typed in Gamma)
     ,
-      unit (AST.SoS (Some n) (Some e)) well typed
+      unit (AST.SoS (Some n) (Some e)) well typed in Gamma
 
 | type_Library:
-    forall (n: string)
+    forall (Gamma: env)
+           (n: string)
            (e: AST.t_EntityBlock)
-           (p: entity e well typed in empty)
+           (p: entity e well typed in Gamma)
     ,
-      unit (AST.Library (Some n) (Some e)) well typed
+      unit (AST.Library (Some n) (Some e)) well typed in Gamma
 
 (** ** Entity *)
 
 (** %\note{%We choose that the order of the declaration is
-signification for the typing rules. Namely, the scope of a declaration
+significant for the typing rules. Namely, the scope of a declaration
 starts after this declaration and spans until the end of the enclosing
 block. This choice prevents, e.g., (mutually) recursive
 declarations. This behavior is implemented by the following rules,
@@ -294,23 +298,25 @@ with type_entityBlock: env -> AST.t_EntityBlock -> Prop :=
            (architectures: list AST.t_ArchitectureDecl)
            (p1: typedecl (AST.DataTypeDecl (Some d_name) (Some d_def) d_funs) well typed in Gamma)
            (p2: entity (AST.EntityBlock l funs systems mediators architectures)
-                       well typed in Gamma[d_name <- EType (AST.DataTypeDecl (Some d_name) (Some d_def) d_funs)])
+                       well typed in Gamma [| d_name <- EType (AST.DataTypeDecl (Some d_name) (Some d_def) d_funs) |])
     ,
       entity (AST.EntityBlock ((AST.DataTypeDecl (Some d_name) (Some d_def) d_funs)::l) funs systems mediators architectures)
              well typed in Gamma
 
+(** %\note{%In [type_EntityBlock_datatype_None], we do not bind any [t_DataType] variable to the missing type definition. We consequently choose that such a type would remain opaque, and no further information could be provided.%}% *)
+                             
 | type_EntityBlock_datatype_None:
     forall (Gamma: env)
            (d_name: string)
            (d_funs: list AST.t_FunctionDecl)
-           (l: list: AST.t_DataTypeDecl)
+           (l: list AST.t_DataTypeDecl)
            (funs: list AST.t_FunctionDecl)
            (systems: list AST.t_SystemDecl)
            (mediators: list AST.t_MediatorDecl)
            (architectures: list AST.t_ArchitectureDecl)
            (p1: typedecl (AST.DataTypeDecl (Some d_name) None d_funs) well typed in Gamma)
            (p2: entity (AST.EntityBlock l funs systems mediators architectures)
-                well typed in Gamma[d_name <- EType (AST.DataTypeDecl (Some d_name) None d_funs)])
+                well typed in Gamma [| d_name <- EType (AST.DataTypeDecl (Some d_name) None d_funs) |] )
     ,
       entity (AST.EntityBlock ((AST.DataTypeDecl (Some d_name) None d_funs)::l) funs systems mediators architectures)
              well typed in Gamma
@@ -324,32 +330,46 @@ list. If the declaration adds a function, then there is no [this]
 parameter in the function declaration, which is not supported by the
 abstract syntax nor the concrete syntax.%}% *)
 
+                             (* TODO:
 | type_EntityBlock_function:
-    forall Gamma f f_name l systems mediators architectures,
-      (function f well typed in Gamma)
-      /\ (AST.FunctionDecl_name f = Some f_name)
-      /\ (entity (AST.EntityBlock nil l systems mediators architectures)
-                well typed in Gamma[f_name <- EFunction f])
-      ->
+    forall (Gamma: env)
+           (f: AST.t_FunctionDecl)
+           (f_name: string)
+           (l: list AST.t_FunctionDecl)
+           (systems: list AST.t_SystemDecl)
+           (mediators: list AST.t_MediatorDecl)
+           (architectures: list AST.t_ArchitectureDecl)
+           (p1: function f well typed in Gamma)
+           (p2: AST.FunctionDecl_name f = Some f_name)
+           (p3: entity (AST.EntityBlock nil l systems mediators architectures)
+                       well typed in Gamma [| f_name <- EFunction f |] )
+    ,
       entity (AST.EntityBlock nil (f::l) systems mediators architectures)
              well typed in Gamma
+*)
 
 | type_EntityBlock_system:
-    forall Gamma s s_name l mediators architectures,
-      (system s well typed in Gamma)
-      /\ AST.SystemDecl_name s = Some s_name
-      /\ (entity (AST.EntityBlock nil nil l mediators architectures)
-                well typed in Gamma[s_name <- ESystem])
-      ->
+    forall (Gamma: env)
+           (s: AST.t_SystemDecl)
+           (s_name: string)
+           (l: list AST.t_SystemDecl)
+           (mediators: list AST.t_MediatorDecl)
+           (architectures: list AST.t_ArchitectureDecl)
+           (p1: system s well typed in Gamma)
+           (p2: AST.SystemDecl_name s = Some s_name)
+           (p3: entity (AST.EntityBlock nil nil l mediators architectures)
+                       well typed in Gamma [| s_name <- ESystem s |] )
+    ,
       entity (AST.EntityBlock nil nil (s::l) mediators architectures)
              well typed in Gamma
 
+                             (* TODO
 | type_EntityBlock_mediator:
     forall Gamma m m_name l architectures,
       (mediator m well typed in Gamma)
       /\ (AST.MediatorDecl_name m = Some m_name)
       /\ (entity (AST.EntityBlock nil nil nil l architectures)
-                well typed in Gamma[m_name <- EMediator])
+                well typed in Gamma [| m_name <- EMediator |])
       ->
       entity (AST.EntityBlock nil nil nil (m::l) architectures)
              well typed in Gamma
@@ -359,13 +379,14 @@ abstract syntax nor the concrete syntax.%}% *)
       (architecture a well typed in Gamma)
       /\ (AST.ArchitectureDecl_name a = Some a_name)
       /\ (entity (AST.EntityBlock nil nil nil nil l)
-                well typed in Gamma[a_name <- EArchitecture])
+                well typed in Gamma [| a_name <- EArchitecture |])
       ->
       entity (AST.EntityBlock nil nil nil nil (a::l))
              well typed in Gamma
-
+                              *)
+                             
 | type_EntityBlock:
-    forall Gamma,
+    forall (Gamma: env),
       entity (AST.EntityBlock nil nil nil nil nil) well typed in Gamma
 
 (** ** Data type declaration *)
@@ -381,7 +402,7 @@ with type_datatypeDecl: env -> AST.t_DataTypeDecl -> Prop :=
       (type t well typed in Gamma)
       /\ (values (AST.FunctionDecl_name x) for x of funs are distinct)
       /\ (functions of typedecl funs
-                   well typed in Gamma[name <- EType (AST.DataTypeDecl (Some name) (Some t) funs)])
+                   well typed in Gamma [| name <- EType (AST.DataTypeDecl (Some name) (Some t) funs) |])
       ->
       typedecl (AST.DataTypeDecl (Some name) (Some t) funs) well typed in Gamma
 
@@ -408,15 +429,17 @@ with type_datatypeDecl_functions: env -> list AST.t_FunctionDecl -> Prop :=
 (** ** Function declaration *)
 
 with type_function: env -> AST.t_FunctionDecl -> Prop :=
+       (* TODO
 | type_FunctionDecl:
     forall Gamma name dataName dataTypeName params t vals e tau dtname dttype dtfuns,
       (for each p of params, (exists t, AST.FormalParameter_type p = Some t /\ type t well typed in Gamma))
-      /\ (expression e under vals has type tau in (env_add_params params Gamma[dataName <- EVariable (AST.NamedType (Some dataTypeName))]))
+      /\ (expression e under vals has type tau in (env_add_params params Gamma [| dataName <- EVariable (AST.NamedType (Some dataTypeName)) |]))
       /\ (contains Gamma dataTypeName (EType (AST.DataTypeDecl (Some dtname) (Some dttype) dtfuns)))
       /\ (tau </ t under Gamma)
       ->
       function (AST.FunctionDecl (Some dataName) (Some dataTypeName) (Some name) params (Some t) vals (Some e))
                well typed in Gamma
+*)
 
 (** ** System *)
 
@@ -437,7 +460,7 @@ with type_systemblock: env -> AST.t_SystemDecl -> Prop :=
     forall Gamma name d_name d_def d_funs l gates bhv assrt,
       (typedecl (AST.DataTypeDecl (Some d_name) (Some d_def) d_funs) well typed in Gamma)
       /\ (systemblock (AST.SystemDecl (Some name) nil l gates (Some bhv) assrt)
-                     well typed in Gamma[d_name <- EType (AST.DataTypeDecl (Some d_name) (Some d_def) d_funs)])
+                     well typed in Gamma [| d_name <- EType (AST.DataTypeDecl (Some d_name) (Some d_def) d_funs) |])
       ->
       systemblock (AST.SystemDecl (Some name) nil ((AST.DataTypeDecl (Some d_name) (Some d_def) d_funs)::l) gates (Some bhv) assrt)
                   well typed in Gamma
@@ -446,7 +469,7 @@ with type_systemblock: env -> AST.t_SystemDecl -> Prop :=
     forall Gamma name d_name d_def d_funs l gates bhv assrt,
       (typedecl (AST.DataTypeDecl (Some d_name) None d_funs) well typed in Gamma)
       /\ (systemblock (AST.SystemDecl (Some name) nil l gates (Some bhv) assrt)
-                     well typed in Gamma[d_name <- EType (AST.DataTypeDecl (Some d_name) (Some d_def) d_funs)])
+                     well typed in Gamma [| d_name <- EType (AST.DataTypeDecl (Some d_name) (Some d_def) d_funs) |])
       ->
       systemblock (AST.SystemDecl (Some name) nil ((AST.DataTypeDecl (Some d_name) None d_funs)::l) gates (Some bhv) assrt)
                   well typed in Gamma
@@ -456,7 +479,7 @@ with type_systemblock: env -> AST.t_SystemDecl -> Prop :=
       (gate g well typed in Gamma)
       /\ (AST.GateDecl_name g = Some g_name)
       /\ (systemblock (AST.SystemDecl (Some name) nil nil l (Some bhv) assrt)
-                     well typed in Gamma[g_name <- EGateOrDuty (build_gate_env g)])
+                     well typed in Gamma [| g_name <- EGateOrDuty (build_gate_env g) |])
       ->
       systemblock (AST.SystemDecl (Some name) nil nil (g::l) (Some bhv) assrt) well typed in Gamma
 
@@ -497,7 +520,7 @@ with type_mediatorblock: env -> AST.t_MediatorDecl -> Prop :=
       (typedecl d well typed in Gamma)
       /\ (AST.DataTypeDecl_name d = Some d_name)
       /\ (mediatorblock (AST.MediatorDecl (Some name) nil l duties (Some bhv) assump assert)
-                       well typed in Gamma[d_name <- EType d])
+                       well typed in Gamma [| d_name <- EType d |])
       ->
       mediatorblock (AST.MediatorDecl (Some name) nil (d::l) duties (Some bhv) assump assert) well typed in Gamma
    *)
@@ -507,7 +530,7 @@ with type_mediatorblock: env -> AST.t_MediatorDecl -> Prop :=
       (duty d well typed in Gamma)
       /\ (AST.DutyDecl_name d = Some d_name)
       /\ (mediatorblock (AST.MediatorDecl (Some name) nil nil l (Some bhv) assump assert)
-                       well typed in Gamma[d_name <- EGateOrDuty (build_duty_env d)])
+                       well typed in Gamma [| d_name <- EGateOrDuty (build_duty_env d) |])
       ->
       mediatorblock (AST.MediatorDecl (Some name) nil nil (d::l) (Some bhv) assump assert) well typed in Gamma
 
@@ -541,7 +564,7 @@ with type_architectureblock: env -> AST.t_ArchitectureDecl -> Prop :=
       (typedecl d well typed in Gamma)
       /\ (AST.DataTypeDecl_name d = Some d_name)
       /\ (architectureblock (AST.ArchitectureDecl (Some name) nil l gates (Some bhv) a)
-                           well typed in Gamma[d_name <- EType d])
+                           well typed in Gamma [| d_name <- EType d |])
       ->
       architectureblock (AST.ArchitectureDecl (Some name) nil (d::l) gates (Some bhv) a)
                         well typed in Gamma
@@ -552,7 +575,7 @@ with type_architectureblock: env -> AST.t_ArchitectureDecl -> Prop :=
       (gate g well typed in Gamma)
       /\ (AST.GateDecl_name g = Some g_name)
       /\ (architectureblock (AST.ArchitectureDecl (Some name) nil nil l (Some bhv) a)
-                           well typed in Gamma[g_name <- EGateOrDuty (build_gate_env g)])
+                           well typed in Gamma [| g_name <- EGateOrDuty (build_gate_env g) |])
       ->
       architectureblock (AST.ArchitectureDecl (Some name) nil nil (g::l) (Some bhv) a)
                         well typed in Gamma
@@ -778,14 +801,14 @@ declaration of a data type containing some functions (methods).%}% *)
 | type_expression_Map:
     forall Gamma coll tau x e tau__e,
       (expression coll has type (AST.SequenceType (Some tau)) in Gamma)
-      /\ (expression e has type tau__e in Gamma[x <- EVariable tau])
+      /\ (expression e has type tau__e in Gamma [| x <- EVariable tau |])
       ->
       expression (AST.Map (Some coll) (Some x) (Some e)) has type (AST.SequenceType (Some tau__e)) in Gamma
 
 | type_expression_Select:
     forall Gamma coll tau x e,
       (expression coll has type (AST.SequenceType (Some tau)) in Gamma)
-      /\ (expression e has type AST.BooleanType in Gamma[x <- EVariable tau])
+      /\ (expression e has type AST.BooleanType in Gamma [| x <- EVariable tau |])
       ->
       expression (AST.Select (Some coll) (Some x) (Some e)) has type (AST.SequenceType (Some tau)) in Gamma
 
@@ -815,7 +838,7 @@ with type_expression_where: env -> list AST.t_Valuing -> AST.t_Expression
 | type_expression_where_Valuing_None:
     forall Gamma e tau x x__e x__tau v,
       (expression x__e has type x__tau in Gamma)
-      /\ (expression e under v has type tau in Gamma[x <- EVariable x__tau])
+      /\ (expression e under v has type tau in Gamma [| x <- EVariable x__tau |])
       ->
       expression e under (AST.Valuing_Valuing (Some x) None (Some x__e) :: v) has type tau in Gamma
 
@@ -823,7 +846,7 @@ with type_expression_where: env -> list AST.t_Valuing -> AST.t_Expression
     forall Gamma e tau x x__t x__e x__tau v,
       (expression x__e has type x__tau in Gamma)
       /\ (x__tau </ x__t under Gamma)
-      /\ (expression e under v has type tau in Gamma[x <- EVariable x__t])
+      /\ (expression e under v has type tau in Gamma [| x <- EVariable x__t |])
       ->
       expression e under (AST.Valuing_Valuing (Some x) (Some x__t) (Some x__e) :: v) has type tau in Gamma
 
@@ -913,7 +936,7 @@ with type_body: env -> list AST.t_BehaviorStatement -> Prop :=
 | type_Valuing_None:
     forall Gamma x e tau l,
       (expression e has type tau in Gamma)
-      /\ (body l well typed in Gamma[x <- EVariable tau])
+      /\ (body l well typed in Gamma [| x <- EVariable tau |])
       ->
       body (AST.BehaviorStatement_Valuing (Some x) None (Some e) :: l) well typed in Gamma
 
@@ -921,7 +944,7 @@ with type_body: env -> list AST.t_BehaviorStatement -> Prop :=
     forall Gamma x e tau tau__e l,
       (expression e has type tau__e in Gamma)
       /\ (tau__e </ tau under Gamma)
-      /\ (body l well typed in Gamma[x <- EVariable  tau])
+      /\ (body l well typed in Gamma [| x <- EVariable  tau |])
       ->
       body (AST.BehaviorStatement_Valuing (Some x) (Some tau) (Some e) :: l) well typed in Gamma
 
@@ -958,7 +981,7 @@ with type_body: env -> list AST.t_BehaviorStatement -> Prop :=
 | type_ForEach:
     forall Gamma x tau vals b l,
       (expression vals has type (AST.SequenceType (Some tau)) in Gamma)
-      /\ (body b well typed in Gamma[x <- EVariable tau ])
+      /\ (body b well typed in Gamma [| x <- EVariable tau |])
       /\ (body l well typed in Gamma)
       ->
       body (AST.ForEachBehavior (Some x) (Some vals) (Some (AST.Behavior b)) :: l) well typed in Gamma
@@ -999,7 +1022,7 @@ gate-or-duty, connection.%}% *)
     forall Gamma gd E conn x conn__tau l,
       (contains Gamma gd (EGateOrDuty E))
       /\ (contains E conn (GDConnection AST.ModeTypeIn conn__tau))
-      /\ (body l well typed in Gamma[x <- EVariable conn__tau])
+      /\ (body l well typed in Gamma [| x <- EVariable conn__tau |])
       ->
       body (AST.Action (Some (AST.ComplexName (gd :: conn :: nil)))
                        (Some (AST.ReceiveAction (Some x))) :: l)
@@ -1010,7 +1033,7 @@ gate-or-duty, connection.%}% *)
     forall Gamma gd E conn x conn__tau l,
       (contains Gamma gd (EGateOrDuty E))
       /\ (contains E conn (GDConnection AST.ModeTypeInout conn__tau))
-      /\ (body l well typed in Gamma[x <- EVariable conn__tau])
+      /\ (body l well typed in Gamma [| x <- EVariable conn__tau |])
       ->
       body (AST.Action (Some (AST.ComplexName (gd :: conn :: nil)))
                        (Some (AST.ReceiveAction (Some x))) :: l)
@@ -1054,7 +1077,7 @@ gate-or-duty, connection.%}% *)
 
 (** ** Notations *)
 where "'SoSADL' a 'well' 'typed'" := (type_sosADL a)
-and "'unit' u 'well' 'typed'" := (type_unit u)
+and "'unit' u 'well' 'typed' 'in' Gamma" := (type_unit Gamma u)
 and "'entity' u 'well' 'typed' 'in' Gamma" := (type_entityBlock Gamma u)
 and "'typedecl' t 'well' 'typed' 'in' Gamma" := (type_datatypeDecl Gamma t)
 and "'functions' 'of' 'typedecl' t 'well' 'typed' 'in' Gamma" := (type_datatypeDecl_functions Gamma t)
