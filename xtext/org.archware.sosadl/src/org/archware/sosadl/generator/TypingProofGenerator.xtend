@@ -8,18 +8,6 @@ import org.archware.sosadl.sosADL.ActionSuite
 import org.archware.sosadl.sosADL.ArchBehaviorDecl
 import org.archware.sosadl.sosADL.ArchitectureDecl
 import org.archware.sosadl.sosADL.Assert
-import org.archware.sosadl.sosADL.Multiplicity
-import org.archware.sosadl.sosADL.Quantifier
-import org.archware.sosadl.sosADL.SosADL
-import org.archware.sosadl.sosADL.generator.CoqGenerator
-import org.archware.sosadl.validation.SosADLValidator
-import org.archware.sosadl.validation.typing.proof.Mandatory
-import org.archware.sosadl.validation.typing.proof.Type_sosADL
-import org.archware.sosadl.validation.typing.proof.TypingProof
-import org.eclipse.emf.common.util.EList
-import org.eclipse.emf.ecore.resource.Resource
-import org.eclipse.xtext.generator.IFileSystemAccess
-import org.eclipse.xtext.generator.IGenerator
 import org.archware.sosadl.sosADL.AssertionDecl
 import org.archware.sosadl.sosADL.Behavior
 import org.archware.sosadl.sosADL.BehaviorDecl
@@ -41,20 +29,32 @@ import org.archware.sosadl.sosADL.FunctionDecl
 import org.archware.sosadl.sosADL.GateDecl
 import org.archware.sosadl.sosADL.Import
 import org.archware.sosadl.sosADL.MediatorDecl
+import org.archware.sosadl.sosADL.Multiplicity
 import org.archware.sosadl.sosADL.Protocol
 import org.archware.sosadl.sosADL.ProtocolActionSuite
 import org.archware.sosadl.sosADL.ProtocolDecl
 import org.archware.sosadl.sosADL.ProtocolStatement
+import org.archware.sosadl.sosADL.Quantifier
+import org.archware.sosadl.sosADL.SosADL
 import org.archware.sosadl.sosADL.SystemDecl
 import org.archware.sosadl.sosADL.TupleElement
 import org.archware.sosadl.sosADL.Unit
 import org.archware.sosadl.sosADL.Valuing
+import org.archware.sosadl.sosADL.generator.CoqGenerator
+import org.archware.sosadl.validation.SosADLValidator
 import org.archware.sosadl.validation.typing.Environment
-import org.archware.sosadl.validation.typing.impl.EnvironmentImpl
 import org.archware.sosadl.validation.typing.impl.CellEnvironmentImpl
+import org.archware.sosadl.validation.typing.impl.EnvironmentImpl
 import org.archware.sosadl.validation.typing.impl.SystemEnvContent
 import org.archware.sosadl.validation.typing.impl.TypeEnvContent
-import org.archware.sosadl.validation.typing.proof.Reflexivity
+import org.archware.sosadl.validation.typing.proof.CoqConstructor
+import org.archware.sosadl.validation.typing.proof.Eluded
+import org.archware.sosadl.validation.typing.proof.Mandatory
+import org.archware.sosadl.validation.typing.proof.ProofTerm
+import org.eclipse.emf.common.util.EList
+import org.eclipse.emf.ecore.resource.Resource
+import org.eclipse.xtext.generator.IFileSystemAccess
+import org.eclipse.xtext.generator.IGenerator
 
 /**
  * Generates code from your model files on save.
@@ -94,10 +94,10 @@ class TypingProofGenerator implements IGenerator {
 	'''
 	
 	def generateProofOf(SosADL s) {
-		generateProof(SosADLValidator.getProof(s) as Type_sosADL)
+		generateProof(SosADLValidator.getProof(s) as ProofTerm)
 	}
 	
-	def CharSequence generateProof(TypingProof p) {
+	def CharSequence generateProof(ProofTerm p) {
 		var clazz = p.class
 		return '''(«clazz.ctorName»
 		    «FOR i : clazz.declaredFields»
@@ -105,10 +105,14 @@ class TypingProofGenerator implements IGenerator {
     		«ENDFOR»)'''
 	}
 	
-	def processField(TypingProof p, Class<?> clazz, Field f) {
-		var mandatory = f.isAnnotationPresent(Mandatory)
-		var content = getByGetter(p, clazz, f)
-		return processAny(mandatory, content)
+	def processField(ProofTerm p, Class<?> clazz, Field f) {
+		if(f.isAnnotationPresent(Eluded)) {
+			return '''_'''
+		} else {
+			var mandatory = f.isAnnotationPresent(Mandatory)
+			var content = getByGetter(p, clazz, f)
+			return processAny(mandatory, content)
+		}
 	}
 	
 	def CharSequence processAny(boolean mandatory, Object content) {
@@ -165,9 +169,8 @@ class TypingProofGenerator implements IGenerator {
 	def dispatch generatorFunction(TupleElement content) { return coqGenerator.generatet_TupleElement(content) }
 	def dispatch generatorFunction(Unit content) { return coqGenerator.generatet_Unit(content) }
 	def dispatch generatorFunction(Valuing content) { return coqGenerator.generatet_Valuing(content) }
-	def dispatch generatorFunction(TypingProof content) { return generateProof(content) }
+	def dispatch generatorFunction(ProofTerm content) { return generateProof(content) }
 	def dispatch generatorFunction(Environment content) { return '''(«generateEnvironment(content)»)''' }
-	def dispatch generatorFunction(Reflexivity content) { return '''(@eq_refl _ _)'''}
 	
 	def dispatch CharSequence generateEnvironment(CellEnvironmentImpl env) '''{| key := "«env.name»"; value := «env.info.generateEnvContent» |} :: «env.parent.generateEnvironment»'''
 	def dispatch generateEnvironment(EnvironmentImpl env) '''[]'''
@@ -177,7 +180,11 @@ class TypingProofGenerator implements IGenerator {
 	def dispatch generateEnvContent(TypeEnvContent c) '''(EType «coqGenerator.generatet_DataTypeDecl(c.dataTypeDecl)»)'''
 	
 	static def ctorName(Class<?> clazz) {
-		return clazz.simpleName.toFirstLower
+		if(clazz.isAnnotationPresent(CoqConstructor)) {
+			return clazz.getAnnotation(CoqConstructor).value
+		} else {
+			return clazz.simpleName.toFirstLower
+		}
 	}
 	
 	static def getGetterFor(Class<?> clazz, Field f) {

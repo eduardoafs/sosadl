@@ -4,13 +4,18 @@
 package org.archware.sosadl.validation;
 
 import java.util.Iterator;
+import java.util.function.Function;
 
 import org.archware.sosadl.attributed.AttributeAdapter;
 import org.archware.sosadl.sosADL.ArchitectureDecl;
+import org.archware.sosadl.sosADL.AssertionDecl;
+import org.archware.sosadl.sosADL.BehaviorDecl;
 import org.archware.sosadl.sosADL.DataType;
 import org.archware.sosadl.sosADL.DataTypeDecl;
 import org.archware.sosadl.sosADL.EntityBlock;
+import org.archware.sosadl.sosADL.FormalParameter;
 import org.archware.sosadl.sosADL.FunctionDecl;
+import org.archware.sosadl.sosADL.GateDecl;
 import org.archware.sosadl.sosADL.Import;
 import org.archware.sosadl.sosADL.Library;
 import org.archware.sosadl.sosADL.MediatorDecl;
@@ -22,7 +27,15 @@ import org.archware.sosadl.validation.typing.Environment;
 import org.archware.sosadl.validation.typing.impl.SystemEnvContent;
 import org.archware.sosadl.validation.typing.impl.TypeEnvContent;
 import org.archware.sosadl.validation.typing.proof.Equality;
-import org.archware.sosadl.validation.typing.proof.Reflexivity;
+import org.archware.sosadl.validation.typing.proof.Ex;
+import org.archware.sosadl.validation.typing.proof.Ex_intro;
+import org.archware.sosadl.validation.typing.proof.Forall;
+import org.archware.sosadl.validation.typing.proof.Forall_cons;
+import org.archware.sosadl.validation.typing.proof.Forall_nil;
+import org.archware.sosadl.validation.typing.proof.ProofTerm;
+import org.archware.sosadl.validation.typing.proof.And;
+import org.archware.sosadl.validation.typing.proof.Conj;
+import org.archware.sosadl.validation.typing.proof.Eq_refl;
 import org.archware.sosadl.validation.typing.proof.Type_EntityBlock;
 import org.archware.sosadl.validation.typing.proof.Type_EntityBlock_datatype_None;
 import org.archware.sosadl.validation.typing.proof.Type_EntityBlock_datatype_Some;
@@ -30,10 +43,13 @@ import org.archware.sosadl.validation.typing.proof.Type_EntityBlock_system;
 import org.archware.sosadl.validation.typing.proof.Type_Library;
 import org.archware.sosadl.validation.typing.proof.Type_SoS;
 import org.archware.sosadl.validation.typing.proof.Type_SosADL;
+import org.archware.sosadl.validation.typing.proof.Type_SystemDecl;
+import org.archware.sosadl.validation.typing.proof.Type_datatype;
 import org.archware.sosadl.validation.typing.proof.Type_datatypeDecl;
 import org.archware.sosadl.validation.typing.proof.Type_entityBlock;
 import org.archware.sosadl.validation.typing.proof.Type_sosADL;
 import org.archware.sosadl.validation.typing.proof.Type_system;
+import org.archware.sosadl.validation.typing.proof.Type_systemblock;
 import org.archware.sosadl.validation.typing.proof.Type_unit;
 import org.eclipse.emf.common.util.ECollections;
 import org.eclipse.emf.common.util.EList;
@@ -121,14 +137,45 @@ public class SosADLValidator extends AbstractSosADLValidator {
 		}
 	}
 
-	private Type_system type_system(Environment gamma, SystemDecl systemDecl) {
+	private Type_datatypeDecl type_datatypeDecl(Environment gamma, DataTypeDecl dataTypeDecl) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
-	private Type_datatypeDecl type_datatypeDecl(Environment gamma, DataTypeDecl dataTypeDecl) {
+	private Type_system type_system(Environment gamma, SystemDecl systemDecl) {
+		// type_SystemDecl:
+		if(systemDecl.getName() != null && systemDecl.getBehavior() != null) {
+			return saveProof(systemDecl, createType_SystemDecl(gamma, systemDecl.getName(), systemDecl.getParameters(), systemDecl.getDatatypes(),
+					systemDecl.getGates(), systemDecl.getBehavior(), systemDecl.getAssertion(),
+					proveForall(systemDecl.getParameters(), (p) -> proveExistsAndEqType(gamma, p)),
+					type_systemblock(gamma, systemDecl)));
+		} else {
+			error("The system must have a name and a behavior", systemDecl, null);
+			return null;
+		}
+	}
+	
+	private Ex<DataType, And<Equality,Type_datatype>> proveExistsAndEqType(Environment gamma, FormalParameter p) {
+		return new Ex_intro<DataType, And<Equality,Type_datatype>>(p.getType(), new Conj<>(new Eq_refl(), type_datatype(gamma, p.getType())));
+	}
+
+	private Type_datatype type_datatype(Environment gamma, DataType type) {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	private Type_systemblock type_systemblock(Environment gamma, SystemDecl systemDecl) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	private <T extends EObject, P extends ProofTerm> Forall<T, P> proveForall(
+			EList<? extends T> l, Function<T, ? extends P> prover) {
+		if(l.size() == 0) {
+			return new Forall_nil<T,P>();
+		} else {
+			return new Forall_cons<T,P>(l.get(0), prover.apply(l.get(0)), proveForall(cdr(l), prover));
+		}
 	}
 
 	public static final String ENVIRONMENT = "Environment";
@@ -198,8 +245,12 @@ public class SosADLValidator extends AbstractSosADLValidator {
 	private Type_entityBlock createType_EntityBlock(Environment gamma) {
 		return new Type_EntityBlock(gamma);
 	}
+	
+	private Type_system createType_SystemDecl(Environment gamma, String name, EList<FormalParameter> params, EList<DataTypeDecl> datatypes, EList<GateDecl> gates, BehaviorDecl bhv, AssertionDecl assrt, Forall<FormalParameter, Ex<DataType, And<Equality,Type_datatype>>> p1, Type_systemblock p2) {
+		return new Type_SystemDecl(gamma, name, params, datatypes, gates, bhv, assrt, p1, p2);
+	}
 
 	private Equality createReflexivity() {
-		return new Reflexivity();
+		return new Eq_refl();
 	}
 }

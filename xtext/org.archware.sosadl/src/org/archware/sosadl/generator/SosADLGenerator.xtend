@@ -24,13 +24,13 @@ import com.google.inject.Inject
  */
 class SosADLGenerator implements IGenerator {
 
-  @Inject SosADLPrettyPrinterGenerator gen1
-  @Inject SosADL2IOSTSGenerator gen2
+  //@Inject SosADLPrettyPrinterGenerator gen1
+  //@Inject SosADL2IOSTSGenerator gen2
   @Inject TypingProofGenerator gen3
 
   override void doGenerate(Resource resource, IFileSystemAccess fsa) {
-    gen1.doGenerate(resource, fsa)
-    gen2.doGenerate(resource, fsa)
+    //gen1.doGenerate(resource, fsa)
+    //gen2.doGenerate(resource, fsa)
     gen3.doGenerate(resource, fsa)
   }
 }

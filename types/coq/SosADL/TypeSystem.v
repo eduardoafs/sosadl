@@ -397,6 +397,7 @@ binds the data type declaration, including the list of functions
 (methods).%}% *)
 
 with type_datatypeDecl: env -> AST.t_DataTypeDecl -> Prop :=
+       (* TODO
 | type_DataTypeDecl_Some:
     forall Gamma name t funs,
       (type t well typed in Gamma)
@@ -409,6 +410,7 @@ with type_datatypeDecl: env -> AST.t_DataTypeDecl -> Prop :=
 | type_DataTypeDecl_None:
     forall Gamma name,
       typedecl (AST.DataTypeDecl (Some name) None nil) well typed in Gamma
+*)
 
 (** %\note{%The functions (methods) of the data type declaration are
 typed in order. In fact, this is not mandatory since the environment
@@ -416,6 +418,7 @@ remains the same while traversing the list of functions. The rule
 might be simplified in this regard, using, e.g., [List.Forall].%}% *)
 
 with type_datatypeDecl_functions: env -> list AST.t_FunctionDecl -> Prop :=
+       (* TODO
 | type_datatypeDecl_empty:
     forall Gamma, functions of typedecl nil well typed in Gamma
 
@@ -425,6 +428,7 @@ with type_datatypeDecl_functions: env -> list AST.t_FunctionDecl -> Prop :=
       /\ (functions of typedecl l well typed in Gamma)
       ->
       functions of typedecl (f::l) well typed in Gamma
+*)
                                  
 (** ** Function declaration *)
 
@@ -448,11 +452,17 @@ in order by the set rules for [type_systemblock].%}% *)
 
 with type_system: env -> AST.t_SystemDecl -> Prop :=
 | type_SystemDecl:
-    forall Gamma name params datatypes gates bhv assrt,
-      (for each p of params, (exists t, AST.FormalParameter_type p = Some t /\ type t well typed in Gamma))
-      /\ (systemblock (AST.SystemDecl (Some name) nil datatypes gates (Some bhv) assrt)
-                     well typed in (env_add_params params Gamma))
-      ->
+    forall (Gamma: env)
+           (name: string)
+           (params: list AST.t_FormalParameter)
+           (datatypes: list AST.t_DataTypeDecl)
+           (gates: list AST.t_GateDecl)
+           (bhv: AST.t_BehaviorDecl)
+           (assrt: option AST.t_AssertionDecl)
+           (p1: for each p of params, (exists t, AST.FormalParameter_type p = Some t /\ type t well typed in Gamma))
+           (p2: systemblock (AST.SystemDecl (Some name) nil datatypes gates (Some bhv) assrt)
+                            well typed in (env_add_params params Gamma))
+    ,
       system (AST.SystemDecl (Some name) params datatypes gates (Some bhv) assrt) well typed in Gamma
 
 with type_systemblock: env -> AST.t_SystemDecl -> Prop :=

@@ -1,5 +1,4 @@
 package org.archware.sosadl.validation.typing.proof;
 
-public interface Type_datatypeDecl extends ProofTerm {
-
+public interface Ex<A, P> extends ProofTerm {
 }
