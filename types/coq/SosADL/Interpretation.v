@@ -38,8 +38,8 @@ Fixpoint interp_in_Z (e: AST.t_Expression) {struct e} :=
               | "+" => Some Z.add
               | "-" => Some Z.sub
               | "*" => Some Z.mul
-              | "/" => Some Z.div
-              | "mod" => Some Z.modulo
+              | "/" => Some Z.quot
+              | "mod" => Some Z.rem
               | _ => None
             end with
         | Some f =>
@@ -63,11 +63,16 @@ translating the SoSADL expression to [Z], then use the evaluation and
 decision tools of this Coq library. *)
 
 Inductive expression_le: AST.t_Expression -> AST.t_Expression -> Prop :=
-| In_Z: forall l zl r zr,
-          interp_in_Z l = Interpreted zl
-          -> interp_in_Z r = Interpreted zr
-          -> (zl <= zr)%Z
-          -> l <= r
+| In_Z: forall
+    (l: AST.t_Expression)
+    (zl: BinInt.Z)
+    (r: AST.t_Expression)
+    (zr: BinInt.Z)
+    (p1: interp_in_Z l = Interpreted zl)
+    (p2: interp_in_Z r = Interpreted zr)
+    (p3: (zl <=? zr = true)%Z)
+  ,
+    l <= r
 
 where "e1 <= e2" := (expression_le e1 e2)
 .

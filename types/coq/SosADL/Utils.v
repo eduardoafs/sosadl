@@ -1,30 +1,5 @@
 Require Import List.
 Require Import String.
-
-(**
- * Some utility notations
-
- *)
-
-Notation "'for' 'each' e 'of' l , p" :=
-  (List.Forall (fun e => p) l)
-    (at level 200, e ident, right associativity).
-
-Notation "'values' e 'for' x 'of' f 'are' 'distinct'" :=
-  (List.NoDup (List.map (fun x => e) f))
-    (at level 200, x ident).
-
-Notation "'for' 'each' e f 'of' l m , p" :=
-  (List.Forall2 (fun e f => p) l m)
-    (at level 200, e ident, f ident, right associativity, l at level 1, m at level 1).
-
-(**
- * Some utility functions
-
- *)
-
-Import ListNotations.
-
 Section Decs.
   Variable A: Type.
   Variable A_dec: forall (x y: A), {x = y} + {x <> y}.
@@ -57,7 +32,7 @@ Section Decs.
   Fixpoint NoDup_dec (l: list A) {struct l}: {NoDup l} + {~ NoDup l}.
   Proof.
     refine (match l with
-              | [] => _
+              | nil => _
               | hd :: tl => _
             end).
     - left. apply NoDup_nil.
@@ -74,6 +49,35 @@ Section Decs.
         * right. intro N. inversion N. contradiction.
   Defined.
 End Decs.
+
+Definition has_no_dup {A: Type} (eqdec: forall x y: A, {x=y} + {x<>y}) (l: list A) := if NoDup_dec A eqdec l then true else false.
+
+(**
+ * Some utility notations
+
+ *)
+
+Notation "'for' 'each' e 'of' l , p" :=
+  (List.Forall (fun e => p) l)
+    (at level 200, e ident, right associativity).
+
+Notation "'values' e 'for' x 'of' l 'are' 'distinct' 'according' 'to' eqdec" :=
+  (* List.NoDup (List.map (fun x => e) f) *)
+  (has_no_dup eqdec (List.map (fun x => e) l) = true)
+    (at level 200, x ident).
+
+Notation "'for' 'each' e f 'of' l m , p" :=
+  (List.Forall2 (fun e f => p) l m)
+    (at level 200, e ident, f ident, right associativity, l at level 1, m at level 1).
+
+(**
+ * Some utility functions
+
+ *)
+
+Import ListNotations.
+
+Definition option_string_dec := Some_dec string string_dec.
 
 (*
 Ltac decide_nodup dec :=

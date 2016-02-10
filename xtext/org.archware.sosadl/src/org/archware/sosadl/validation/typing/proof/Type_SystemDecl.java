@@ -27,10 +27,12 @@ public class Type_SystemDecl implements Type_system {
 	@Mandatory private final Forall<FormalParameter, Ex<DataType, And<Equality,Type_datatype>>> p1;
 	
 	@Mandatory private final Type_systemblock p2;
+	
+	@Mandatory private final Equality p3;
 
 	public Type_SystemDecl(Environment gamma, String name, EList<FormalParameter> params, EList<DataTypeDecl> datatypes,
 			EList<GateDecl> gates, BehaviorDecl bhv, AssertionDecl assrt,
-			Forall<FormalParameter, Ex<DataType, And<Equality, Type_datatype>>> p1, Type_systemblock p2) {
+			Forall<FormalParameter, Ex<DataType, And<Equality, Type_datatype>>> p1, Type_systemblock p2, Equality p3) {
 		super();
 		this.gamma = gamma;
 		this.name = name;
@@ -41,6 +43,7 @@ public class Type_SystemDecl implements Type_system {
 		this.assrt = assrt;
 		this.p1 = p1;
 		this.p2 = p2;
+		this.p3 = p3;
 	}
 
 	public Environment getGamma() {
@@ -79,4 +82,7 @@ public class Type_SystemDecl implements Type_system {
 		return p2;
 	}
 
+	public Equality getP3() {
+		return p3;
+	}
 }

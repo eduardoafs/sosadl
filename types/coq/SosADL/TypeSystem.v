@@ -197,6 +197,7 @@ recursive call statement.
 
  *)
 
+Reserved Notation "'expression' e 'is' 'constant' 'integer'" (at level 200, no associativity).
 Reserved Notation "'SoSADL' a 'well' 'typed'" (at level 200, no associativity).
 Reserved Notation "'unit' u 'well' 'typed' 'in' Gamma" (at level 200, no associativity).
 Reserved Notation "'entity' u 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
@@ -236,6 +237,79 @@ a single form of judgment. Rules are built of the following:
 - premises of the rule appear above the [->] operator, connected by the conjunction [/\] operator; and
 - conclusion of the rule appear below the [->] operator.
  *)
+
+(**
+ ** Constant expressions
+ *)
+
+Inductive constexpr_expression: AST.t_Expression -> Prop :=
+| constexpr_IntegerValue:
+    forall
+      (v: BinInt.Z)
+    ,
+      expression (AST.IntegerValue (Some v)) is constant integer
+
+| constexpr_Opposite:
+    forall
+      (e: AST.t_Expression)
+      (p: expression e is constant integer)
+    ,
+      expression (AST.UnaryExpression (Some "-") (Some e)) is constant integer
+
+| constexpr_Same:
+    forall
+      (e: AST.t_Expression)
+      (p: expression e is constant integer)
+    ,
+      expression (AST.UnaryExpression (Some "+") (Some e)) is constant integer
+
+| constexpr_Add:
+    forall
+      (l: AST.t_Expression)
+      (r: AST.t_Expression)
+      (p1: expression l is constant integer)
+      (p2: expression r is constant integer)
+    ,
+      expression (AST.BinaryExpression (Some l) (Some "+") (Some r)) is constant integer
+
+| constexpr_Sub:
+    forall
+      (l: AST.t_Expression)
+      (r: AST.t_Expression)
+      (p1: expression l is constant integer)
+      (p2: expression r is constant integer)
+    ,
+      expression (AST.BinaryExpression (Some l) (Some "-") (Some r)) is constant integer
+
+| constexpr_Mul:
+    forall
+      (l: AST.t_Expression)
+      (r: AST.t_Expression)
+      (p1: expression l is constant integer)
+      (p2: expression r is constant integer)
+    ,
+      expression (AST.BinaryExpression (Some l) (Some "*") (Some r)) is constant integer
+
+| constexpr_Div:
+    forall
+      (l: AST.t_Expression)
+      (r: AST.t_Expression)
+      (p1: expression l is constant integer)
+      (p2: expression r is constant integer)
+    ,
+      expression (AST.BinaryExpression (Some l) (Some "/") (Some r)) is constant integer
+
+| constexpr_Mod:
+    forall
+      (l: AST.t_Expression)
+      (r: AST.t_Expression)
+      (p1: expression l is constant integer)
+      (p2: expression r is constant integer)
+    ,
+      expression (AST.BinaryExpression (Some l) (Some "mod") (Some r)) is constant integer
+                 
+where "'expression' e 'is' 'constant' 'integer'" := (constexpr_expression e)
+.
 
 (**
  ** SoS architecture
@@ -462,10 +536,12 @@ with type_system: env -> AST.t_SystemDecl -> Prop :=
            (p1: for each p of params, (exists t, AST.FormalParameter_type p = Some t /\ type t well typed in Gamma))
            (p2: systemblock (AST.SystemDecl (Some name) nil datatypes gates (Some bhv) assrt)
                             well typed in (env_add_params params Gamma))
+           (p3: values (AST.FormalParameter_name p) for p of params are distinct according to option_string_dec)
     ,
       system (AST.SystemDecl (Some name) params datatypes gates (Some bhv) assrt) well typed in Gamma
 
 with type_systemblock: env -> AST.t_SystemDecl -> Prop :=
+       (* TODO
 | type_SystemDecl_datatype_Some:
     forall Gamma name d_name d_def d_funs l gates bhv assrt,
       (typedecl (AST.DataTypeDecl (Some d_name) (Some d_def) d_funs) well typed in Gamma)
@@ -505,7 +581,7 @@ with type_systemblock: env -> AST.t_SystemDecl -> Prop :=
       (behavior bhv well typed in Gamma)
       ->
       systemblock (AST.SystemDecl (Some name) nil nil nil (Some bhv) None) well typed in Gamma
-
+*)
 
 (** ** Mediator *)
 
@@ -513,6 +589,7 @@ with type_systemblock: env -> AST.t_SystemDecl -> Prop :=
 in order by the set rules for [type_mediatorblock].%}% *)
 
 with type_mediator: env -> AST.t_MediatorDecl -> Prop :=
+       (* TODO
 | type_MediatorDecl:
     forall Gamma name params datatypes duties b assump assert,
       (for each p of params, (exists t, AST.FormalParameter_type p = Some t /\ type t well typed in Gamma))
@@ -520,11 +597,12 @@ with type_mediator: env -> AST.t_MediatorDecl -> Prop :=
                          well typed in (env_add_params params Gamma))
       ->
       mediator (AST.MediatorDecl (Some name) params datatypes duties (Some b) assump assert) well typed in Gamma
+*)
 
 with type_mediatorblock: env -> AST.t_MediatorDecl -> Prop :=
 
   (** %\todo{%Data type declarations in mediators should be inspired from the rules for systems.%}% *)
-  (*
+  (* TODO
 | type_MediatorDecl_datatype:
     forall Gamma name d d_name l duties bhv assump assert,
       (typedecl d well typed in Gamma)
@@ -533,7 +611,7 @@ with type_mediatorblock: env -> AST.t_MediatorDecl -> Prop :=
                        well typed in Gamma [| d_name <- EType d |])
       ->
       mediatorblock (AST.MediatorDecl (Some name) nil (d::l) duties (Some bhv) assump assert) well typed in Gamma
-   *)
+
 
 | type_MediatorDecl_duty:
     forall Gamma name d d_name l bhv assump assert,
@@ -549,14 +627,16 @@ with type_mediatorblock: env -> AST.t_MediatorDecl -> Prop :=
       (behavior bhv well typed in Gamma)
       ->
       mediatorblock (AST.MediatorDecl name nil nil nil (Some bhv) assump assert) well typed in Gamma
-
+   *)
+       
 (** ** Architecture *)
 
 (** %\note{%By choice, the elements declared in the architecture are
 typed in order by the set rules for [type_architectureblock].%}% *)
 
 with type_architecture: env -> AST.t_ArchitectureDecl -> Prop :=
-| type_ArchitectureDecl:
+(* TODO
+     | type_ArchitectureDecl:
     forall Gamma name params datatypes gates b a,
       (for each p of params, (exists t, AST.FormalParameter_type p = Some t /\ type t well typed in Gamma))
       /\ (architectureblock (AST.ArchitectureDecl (Some name) nil datatypes gates (Some b) a)
@@ -564,11 +644,11 @@ with type_architecture: env -> AST.t_ArchitectureDecl -> Prop :=
       ->
       architecture (AST.ArchitectureDecl (Some name) params datatypes gates (Some b) a)
                    well typed in Gamma
-
+*)
 with type_architectureblock: env -> AST.t_ArchitectureDecl -> Prop :=
 
   (** %\todo{%Data type declarations in architectures should be inspired from the rules for systems.%}% *)
-  (*
+  (* TODO
 | type_ArchitectureDecl_datatype:
     forall Gamma name d d_name l gates bhv a,
       (typedecl d well typed in Gamma)
@@ -578,7 +658,7 @@ with type_architectureblock: env -> AST.t_ArchitectureDecl -> Prop :=
       ->
       architectureblock (AST.ArchitectureDecl (Some name) nil (d::l) gates (Some bhv) a)
                         well typed in Gamma
-   *)
+
   
 | type_ArchitectureDecl_gate:
     forall Gamma name g g_name l bhv a,
@@ -596,33 +676,41 @@ with type_architectureblock: env -> AST.t_ArchitectureDecl -> Prop :=
       /\ (assertion a well typed in Gamma)
       ->
       architectureblock (AST.ArchitectureDecl (Some name) nil nil nil (Some bhv) (Some a)) well typed in Gamma
-
+*)
 
 
 (** ** Data types *)
 
 with type_datatype: env -> AST.t_DataType -> Prop :=
 | type_NamedType:
-    forall Gamma n t,
-      contains Gamma n (EType t)
-      ->
+    forall
+      (Gamma: env)
+      (n: string)
+      (t: AST.t_DataTypeDecl)
+      (p: contains Gamma n (EType t))
+    ,
       type (AST.NamedType (Some n)) well typed in Gamma
 
 | type_TupleType:
-    forall Gamma fields,
-      (values (AST.FieldDecl_name f) for f of fields are distinct)
-      /\ (for each f of fields,
-         (exists t, AST.FieldDecl_type f = Some t
-               /\ type t well typed in Gamma))
-      ->
+    forall
+      (Gamma: env)
+      (fields: list AST.t_FieldDecl)
+      (p1: values (AST.FieldDecl_name f) for f of fields are distinct according to option_string_dec)
+      (p2: for each f of fields,
+           (exists t, AST.FieldDecl_type f = Some t
+                      /\ type t well typed in Gamma))
+    ,
       type (AST.TupleType fields) well typed in Gamma
 
 | type_SequenceType:
-    forall Gamma t,
-      type t well typed in Gamma
-      ->
+    forall
+      (Gamma: env)
+      (t: AST.t_DataType)
+      (p: type t well typed in Gamma)
+    ,
       type (AST.SequenceType (Some t)) well typed in Gamma
 
+                                                       (*
 | type_RangeType:
     forall Gamma min max min__min min__max max__min max__max,
       (expression min has type (AST.RangeType (Some min__min) (Some min__max)) in Gamma)
@@ -630,13 +718,19 @@ with type_datatype: env -> AST.t_DataType -> Prop :=
       /\ min <= max
       ->
       type (AST.RangeType (Some min) (Some max)) well typed in Gamma
+*)
 
 | type_RangeType_trivial:
-    forall Gamma min max,
-      AST.IntegerValue (Some min) <= AST.IntegerValue (Some max)
-      ->
-      type (AST.RangeType (Some (AST.IntegerValue (Some min)))
-                          (Some (AST.IntegerValue (Some max)))) well typed in Gamma
+    forall
+      (Gamma: env)
+      (min: AST.t_Expression)
+      (max: AST.t_Expression)
+      (p1: expression min is constant integer)
+      (p2: expression max is constant integer)
+      (p3: min <= max)
+    ,
+      type (AST.RangeType (Some min)
+                          (Some max)) well typed in Gamma
 
 (**
  ** Expression
@@ -790,7 +884,7 @@ declaration of a data type containing some functions (methods).%}% *)
 
 | type_expression_Tuple:
     forall Gamma elts typ,
-      (values (AST.TupleElement_label x) for x of elts are distinct)
+      (values (AST.TupleElement_label x) for x of elts are distinct according to option_string_dec)
       /\ (for each e tau of elts typ,
          AST.TupleElement_label e = AST.FieldDecl_name tau)
       /\ (for each e tau of elts typ,
@@ -869,7 +963,7 @@ with type_gate: env -> AST.t_GateDecl -> Prop :=
 | type_GateDecl:
     forall Gamma name conns p,
       (protocol p well typed in Gamma)
-      /\ (values (AST.Connection_name c) for c of conns are distinct)
+      /\ (values (AST.Connection_name c) for c of conns are distinct according to option_string_dec)
       /\ (for each c of conns, connection c well typed in Gamma)
       ->
       gate (AST.GateDecl (Some name) conns (Some p)) well typed in Gamma
@@ -883,7 +977,7 @@ with type_duty: env -> AST.t_DutyDecl -> Prop :=
 | type_DutyDecl:
     forall Gamma name conns a p,
       (protocol p well typed in Gamma)
-      /\ (values (AST.Connection_name c) for c of conns are distinct)
+      /\ (values (AST.Connection_name c) for c of conns are distinct according to option_string_dec)
       /\ (for each c of conns, connection c well typed in Gamma)
       /\ (assertion a well typed in Gamma)
       ->

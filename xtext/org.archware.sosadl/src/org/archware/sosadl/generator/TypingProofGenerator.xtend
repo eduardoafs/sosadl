@@ -55,6 +55,7 @@ import org.eclipse.emf.common.util.EList
 import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.xtext.generator.IFileSystemAccess
 import org.eclipse.xtext.generator.IGenerator
+import java.math.BigInteger
 
 /**
  * Generates code from your model files on save.
@@ -76,6 +77,7 @@ class TypingProofGenerator implements IGenerator {
 	Require Import SosADL.Environment.
 	Require Import SosADL.TypeSystem.
 	Require Import SosADL.SosADL.
+	Require Import SosADL.Interpretation.
 	Require Import String.
 	Require Import List.
 	Require Import BinInt.
@@ -131,6 +133,7 @@ class TypingProofGenerator implements IGenerator {
 	}
 	
 	def dispatch generatorFunction(Integer content) { return coqGenerator.generateZ(content) }
+	def dispatch generatorFunction(BigInteger content) { return content.toString }
 	def dispatch generatorFunction(String content) { return coqGenerator.generatestring(content) }
 	def dispatch generatorFunction(Boolean content) { return coqGenerator.generatebool(content) }
 	def dispatch generatorFunction(Quantifier content) { return coqGenerator.generateQuantifier(content) }
