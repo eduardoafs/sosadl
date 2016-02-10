@@ -11,6 +11,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -45,6 +46,7 @@ import org.archware.sosadl.sosADL.Unit;
 import org.archware.sosadl.validation.typing.Environment;
 import org.archware.sosadl.validation.typing.impl.SystemEnvContent;
 import org.archware.sosadl.validation.typing.impl.TypeEnvContent;
+import org.archware.sosadl.validation.typing.impl.VariableEnvContent;
 import org.archware.sosadl.validation.typing.interp.InterpInZ;
 import org.archware.sosadl.validation.typing.proof.And;
 import org.archware.sosadl.validation.typing.proof.Conj;
@@ -185,7 +187,7 @@ public class SosADLValidator extends AbstractSosADLValidator {
 		saveEnvironment(systemDecl, gamma);
 		// type_SystemDecl:
 		if(systemDecl.getName() != null && systemDecl.getBehavior() != null && noDuplicate(systemDecl.getParameters().stream().map(FormalParameter::getName))) {
-			return saveProof(systemDecl, createType_SystemDecl(gamma, systemDecl.getName(), systemDecl.getParameters(), systemDecl.getDatatypes(),
+			return saveProof(systemDecl, createType_SystemDecl(env_add_params(systemDecl.getParameters(), gamma), systemDecl.getName(), systemDecl.getParameters(), systemDecl.getDatatypes(),
 					systemDecl.getGates(), systemDecl.getBehavior(), systemDecl.getAssertion(),
 					proveForall(systemDecl.getParameters(), (p) -> proveExistsAndEqType(gamma, p, FormalParameter::getType)),
 					type_systemblock(gamma, systemDecl), createReflexivity()));
@@ -358,6 +360,18 @@ public class SosADLValidator extends AbstractSosADLValidator {
 			ret = ECollections.emptyEList();
 		}
 		return ECollections.unmodifiableEList(ret);
+	}
+	
+	private static Environment env_add_params(List<FormalParameter> l, Environment gamma) {
+		return fold_left((e,p) -> (p.getName() != null && p.getType() != null ? e.put(p.getName(), new VariableEnvContent(p, p.getType())) : e), l, gamma);
+	}
+	
+	private static <A,B> A fold_left(BiFunction<A,B,A> f, List<B> l, A i) {
+		if(l.isEmpty()) {
+			return i;
+		} else {
+			return fold_left(f, cdr(l), f.apply(i, l.get(0)));
+		}
 	}
 	
 	private static <T> boolean noDuplicate(Stream<T> s) {

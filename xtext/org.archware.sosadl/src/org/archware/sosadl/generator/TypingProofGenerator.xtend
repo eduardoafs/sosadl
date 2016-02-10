@@ -56,6 +56,7 @@ import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.xtext.generator.IFileSystemAccess
 import org.eclipse.xtext.generator.IGenerator
 import java.math.BigInteger
+import org.archware.sosadl.validation.typing.impl.VariableEnvContent
 
 /**
  * Generates code from your model files on save.
@@ -181,6 +182,7 @@ class TypingProofGenerator implements IGenerator {
 	
 	def dispatch generateEnvContent(SystemEnvContent c) '''(ESystem «coqGenerator.generatet_SystemDecl(c.systemDecl)»)'''
 	def dispatch generateEnvContent(TypeEnvContent c) '''(EType «coqGenerator.generatet_DataTypeDecl(c.dataTypeDecl)»)'''
+	def dispatch generateEnvContent(VariableEnvContent c) '''(EVariable «coqGenerator.generatet_DataType(c.type)»))'''
 	
 	static def ctorName(Class<?> clazz) {
 		if(clazz.isAnnotationPresent(CoqConstructor)) {
