@@ -82,7 +82,9 @@ import org.archware.sosadl.validation.typing.proof.Type_SequenceType;
 import org.archware.sosadl.validation.typing.proof.Type_SoS;
 import org.archware.sosadl.validation.typing.proof.Type_SosADL;
 import org.archware.sosadl.validation.typing.proof.Type_SystemDecl;
+import org.archware.sosadl.validation.typing.proof.Type_SystemDecl_None;
 import org.archware.sosadl.validation.typing.proof.Type_TupleType;
+import org.archware.sosadl.validation.typing.proof.Type_behavior;
 import org.archware.sosadl.validation.typing.proof.Type_datatype;
 import org.archware.sosadl.validation.typing.proof.Type_datatypeDecl;
 import org.archware.sosadl.validation.typing.proof.Type_entityBlock;
@@ -190,7 +192,7 @@ public class SosADLValidator extends AbstractSosADLValidator {
 			return saveProof(systemDecl, createType_SystemDecl(env_add_params(systemDecl.getParameters(), gamma), systemDecl.getName(), systemDecl.getParameters(), systemDecl.getDatatypes(),
 					systemDecl.getGates(), systemDecl.getBehavior(), systemDecl.getAssertion(),
 					proveForall(systemDecl.getParameters(), (p) -> proveExistsAndEqType(gamma, p, FormalParameter::getType)),
-					type_systemblock(gamma, systemDecl), createReflexivity()));
+					type_systemblock(gamma, systemDecl, systemDecl.getDatatypes(), systemDecl.getGates(), systemDecl.getAssertion(), systemDecl.getBehavior()), createReflexivity()));
 		} else {
 			if(!noDuplicate(systemDecl.getParameters().stream().map(FormalParameter::getName))) {
 				EList<FormalParameter> params = systemDecl.getParameters();
@@ -310,7 +312,16 @@ public class SosADLValidator extends AbstractSosADLValidator {
 		}
 	}
 
-	private Type_systemblock type_systemblock(Environment gamma, SystemDecl systemDecl) {
+	private Type_systemblock type_systemblock(Environment gamma, SystemDecl systemDecl, EList<DataTypeDecl> dataTypeDecls, EList<GateDecl> gateDecls, AssertionDecl assertionDecl, BehaviorDecl behaviorDecl) {
+		if(systemDecl.getName() != null && dataTypeDecls.isEmpty() && gateDecls.isEmpty() && assertionDecl == null && behaviorDecl != null) {
+			return createType_SystemDecl_None(gamma, systemDecl.getName(), behaviorDecl, type_behavior(gamma, behaviorDecl));
+		} else {
+			error("Type error", systemDecl, null);
+			return null;
+		}
+	}
+
+	private Type_behavior type_behavior(Environment gamma, BehaviorDecl behaviorDecl) {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -456,6 +467,10 @@ public class SosADLValidator extends AbstractSosADLValidator {
 	
 	private static Type_datatype createType_RangeType_trivial(Environment gamma, Expression min, Expression max, Constexpr_expression p1, Constexpr_expression p2, Expression_le p3) {
 		return new Type_RangeType_trivial(gamma, min, max, p1, p2, p3);
+	}
+	
+	private static Type_systemblock createType_SystemDecl_None(Environment gamma, String name, BehaviorDecl bhv, Type_behavior p) {
+		return new Type_SystemDecl_None(gamma, name, bhv, p);
 	}
 	
 	private static Expression_le createIn_Z(Expression l, BigInteger zl, Expression r, BigInteger zr, Equality p1, Equality p2, Equality p3) {

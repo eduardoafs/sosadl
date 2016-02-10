@@ -575,13 +575,17 @@ with type_systemblock: env -> AST.t_SystemDecl -> Prop :=
       /\ (assertion assrt well typed in Gamma)
       ->
       systemblock (AST.SystemDecl (Some name) nil nil nil (Some bhv) (Some assrt)) well typed in Gamma
+*)
 
 | type_SystemDecl_None:
-    forall Gamma name bhv,
-      (behavior bhv well typed in Gamma)
-      ->
+    forall
+      (Gamma: env)
+      (name: string)
+      (bhv: AST.t_BehaviorDecl)
+      (p: behavior bhv well typed in Gamma)
+    ,
       systemblock (AST.SystemDecl (Some name) nil nil nil (Some bhv) None) well typed in Gamma
-*)
+
 
 (** ** Mediator *)
 
