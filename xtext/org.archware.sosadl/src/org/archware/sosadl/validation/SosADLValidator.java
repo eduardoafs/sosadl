@@ -265,7 +265,7 @@ public class SosADLValidator extends AbstractSosADLValidator {
 	}
 	
 	private Ex<DataType, And<Equality,Type_datatype>> type_formalParameter(Environment gamma, FormalParameter p, Environment gamma1) {
-		return proveExistsAndEqType(gamma, p, FormalParameter::getType);
+		return saveProof(p, proveExistsAndEqType(gamma, p, FormalParameter::getType));
 	}
 	
 	private static EnvContent formalParameterEnvContent(FormalParameter p) {
@@ -284,9 +284,10 @@ public class SosADLValidator extends AbstractSosADLValidator {
 			return saveProof(type, createType_NamedType(gamma, ((NamedType)type).getName(), ((TypeEnvContent)gamma.get(((NamedType)type).getName())).getDataTypeDecl(), createReflexivity()));
 		}
 		// type_TupleType:
-		else if(type instanceof TupleType && noDuplicate(((TupleType)type).getFields().stream().map(FieldDecl::getName))) {
-			return saveProof(type, createType_TupleType(gamma, ((TupleType)type).getFields(), createReflexivity(),
-					proveForall(((TupleType)type).getFields(), (f) -> proveExistsAndEqType(gamma, f, FieldDecl::getType))));
+		else if(type instanceof TupleType) {
+			System.out.println("typing a TupleType");
+			Pair<Mutually<FieldDecl, Ex<DataType, And<Equality, Type_datatype>>>, Environment> p1 = type_fields(gamma, ((TupleType)type).getFields());
+			return saveProof(type, createType_TupleType(gamma, ((TupleType)type).getFields(), p1.getA()));
 		}
 		// type_SequenceType:
 		else if(type instanceof SequenceType && ((SequenceType)type).getType() != null) {
@@ -306,9 +307,6 @@ public class SosADLValidator extends AbstractSosADLValidator {
 				error("`" + ((NamedType)type).getName() + "' is undefined in this context", type, null);
 			} else if(type instanceof NamedType && ((NamedType)type).getName() == null) {
 				error("The named type must have a name", type, null);
-			} else if(type instanceof TupleType && !noDuplicate(((TupleType)type).getFields().stream().map(FieldDecl::getName))) {
-				EList<FieldDecl> fields = ((TupleType)type).getFields();
-				fields.stream().filter((f) -> fields.stream().map(FieldDecl::getName).filter((n) -> n.equals(f.getName())).count() >= 2).forEach((f) -> error("Multiple fields named `" + f.getName() + "' in the tuple type", f, null));
 			} else if(type instanceof SequenceType && ((SequenceType)type).getType() == null) {
 				error("The sequence type must declare a base type", type, null);
 			} else if(type instanceof RangeType && ((RangeType)type).getVmin() != null && ((RangeType)type).getVmax() != null && !containsSomeNull(constexpr_expression(((RangeType)type).getVmin())) && !containsSomeNull(constexpr_expression(((RangeType)type).getVmax())) && InterpInZ.gt(((RangeType)type).getVmin(), ((RangeType)type).getVmax())) {
@@ -327,6 +325,15 @@ public class SosADLValidator extends AbstractSosADLValidator {
 			}
 			return null;
 		}
+	}
+	
+	private Ex<DataType, And<Equality,Type_datatype>> type_field(Environment gamma, FieldDecl f, Environment gamma1) {
+		return saveProof(f, proveExistsAndEqType(gamma, f, FieldDecl::getType));
+	}
+
+	private Pair<Mutually<FieldDecl, Ex<DataType, And<Equality, Type_datatype>>>, Environment> type_fields(
+			Environment gamma, EList<FieldDecl> fields) {
+		return proveMutually(gamma, fields, this::type_field, "(fun _ => None)", (x) -> null, "(fun _ => None)", (x) -> null);
 	}
 
 	private Constexpr_expression constexpr_expression(Expression e) {
@@ -404,7 +411,6 @@ public class SosADLValidator extends AbstractSosADLValidator {
 		}
 	}
 	
-	@SuppressWarnings("unused")
 	private <T extends EObject, P extends ProofTerm> Pair<Mutually<T,P>, Environment> proveMutually(Environment gamma, List<T> l,
 			TriFunction<Environment, T, Environment, P> prover, Function<T, ? extends String> name, Function<T, ? extends EnvContent> content) {
 		if(noDuplicate(l.stream().map(name))) {
@@ -520,7 +526,7 @@ public class SosADLValidator extends AbstractSosADLValidator {
 	}
 	
 	private static <T> boolean noDuplicate(Stream<T> s) {
-		List<T> list = s.collect(Collectors.toList());
+		List<T> list = s.filter((p) -> p != null).collect(Collectors.toList());
 		Set<T> set = new TreeSet<>(list);
 		return list.size() == set.size();
 	}
@@ -577,8 +583,8 @@ public class SosADLValidator extends AbstractSosADLValidator {
 		return new Type_NamedType(gamma, n, t, p);
 	}
 	
-	private static Type_datatype createType_TupleType(Environment gamma, EList<FieldDecl> fields, Equality p1, Forall<FieldDecl, Ex<DataType, And<Equality, Type_datatype>>> p2) {
-		return new Type_TupleType(gamma, fields, p1, p2);
+	private static Type_datatype createType_TupleType(Environment gamma, EList<FieldDecl> fields, Mutually<FieldDecl, Ex<DataType, And<Equality, Type_datatype>>> p1) {
+		return new Type_TupleType(gamma, fields, p1);
 	}
 	
 	private static Type_datatype createType_SequenceType(Environment gamma, DataType t, Type_datatype p) {

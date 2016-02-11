@@ -10,17 +10,14 @@ public class Type_TupleType implements Type_datatype {
 	
 	private final EList<FieldDecl> fields;
 	
-	@Mandatory private final Equality p1;
-	
-	@Mandatory private final Forall<FieldDecl, Ex<DataType, And<Equality, Type_datatype>>> p2;
+	@Mandatory private final Mutually<FieldDecl, Ex<DataType, And<Equality, Type_datatype>>> p1;
 
-	public Type_TupleType(Environment gamma, EList<FieldDecl> fields, Equality p1,
-			Forall<FieldDecl, Ex<DataType, And<Equality, Type_datatype>>> p2) {
+	public Type_TupleType(Environment gamma, EList<FieldDecl> fields,
+			Mutually<FieldDecl, Ex<DataType, And<Equality, Type_datatype>>> p1) {
 		super();
 		this.gamma = gamma;
 		this.fields = fields;
 		this.p1 = p1;
-		this.p2 = p2;
 	}
 
 	public Environment getGamma() {
@@ -31,12 +28,8 @@ public class Type_TupleType implements Type_datatype {
 		return fields;
 	}
 
-	public Equality getP1() {
+	public Mutually<FieldDecl, Ex<DataType, And<Equality, Type_datatype>>> getP1() {
 		return p1;
-	}
-
-	public Forall<FieldDecl, Ex<DataType, And<Equality, Type_datatype>>> getP2() {
-		return p2;
 	}
 
 }

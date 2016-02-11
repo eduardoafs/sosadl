@@ -406,6 +406,69 @@ Inductive constexpr_expression: SosADL.SosADL.t_Expression -> Prop :=
 where "'expression' e 'is' 'constant' 'integer'" := (constexpr_expression e)
 .
 
+(** ** Data types *)
+
+Inductive type_datatype: env -> SosADL.SosADL.t_DataType -> Prop :=
+| type_NamedType:
+    forall
+      (Gamma: env)
+      (n: string)
+      (t: SosADL.SosADL.t_DataTypeDecl)
+      (p: contains Gamma n (EType t))
+    ,
+      type (SosADL.SosADL.NamedType (Some n)) well typed in Gamma
+
+| type_TupleType:
+    forall
+      (Gamma: env)
+      (fields: list SosADL.SosADL.t_FieldDecl)
+      (p1: @mutually _ (fun gamma f _ =>
+                          exists t, SosADL.SosADL.FieldDecl_type f = Some t
+                                    /\ type t well typed in Gamma)
+                     (fun _ => None)
+                     (fun _ => None)
+                     Gamma fields Gamma)
+(*                     
+      (p1: values (SosADL.SosADL.FieldDecl_name f) for f of fields are distinct according to option_string_dec)
+      (p2: for each f of fields,
+           (exists t, SosADL.SosADL.FieldDecl_type f = Some t
+                      /\ type t well typed in Gamma))
+*)
+    ,
+      type (SosADL.SosADL.TupleType fields) well typed in Gamma
+
+| type_SequenceType:
+    forall
+      (Gamma: env)
+      (t: SosADL.SosADL.t_DataType)
+      (p: type t well typed in Gamma)
+    ,
+      type (SosADL.SosADL.SequenceType (Some t)) well typed in Gamma
+
+                                                       (*
+| type_RangeType:
+    forall Gamma min max min__min min__max max__min max__max,
+      (expression min has type (SosADL.SosADL.RangeType (Some min__min) (Some min__max)) in Gamma)
+      /\ (expression max has type (SosADL.SosADL.RangeType (Some max__min) (Some max__max)) in Gamma)
+      /\ min <= max
+      ->
+      type (SosADL.SosADL.RangeType (Some min) (Some max)) well typed in Gamma
+*)
+
+| type_RangeType_trivial:
+    forall
+      (Gamma: env)
+      (min: SosADL.SosADL.t_Expression)
+      (max: SosADL.SosADL.t_Expression)
+      (p1: expression min is constant integer)
+      (p2: expression max is constant integer)
+      (p3: min <= max)
+    ,
+      type (SosADL.SosADL.RangeType (Some min)
+                          (Some max)) well typed in Gamma
+
+where "'type' t 'well' 'typed' 'in' Gamma" := (type_datatype Gamma t)
+.
 
 
 
@@ -561,59 +624,6 @@ with type_architectureblock: env -> SosADL.SosADL.t_ArchitectureDecl -> Prop :=
       architectureblock (SosADL.SosADL.ArchitectureDecl (Some name) nil nil nil (Some bhv) (Some a)) well typed in Gamma
 *)
 
-
-(** ** Data types *)
-
-with type_datatype: env -> SosADL.SosADL.t_DataType -> Prop :=
-| type_NamedType:
-    forall
-      (Gamma: env)
-      (n: string)
-      (t: SosADL.SosADL.t_DataTypeDecl)
-      (p: contains Gamma n (EType t))
-    ,
-      type (SosADL.SosADL.NamedType (Some n)) well typed in Gamma
-
-| type_TupleType:
-    forall
-      (Gamma: env)
-      (fields: list SosADL.SosADL.t_FieldDecl)
-      (p1: values (SosADL.SosADL.FieldDecl_name f) for f of fields are distinct according to option_string_dec)
-      (p2: for each f of fields,
-           (exists t, SosADL.SosADL.FieldDecl_type f = Some t
-                      /\ type t well typed in Gamma))
-    ,
-      type (SosADL.SosADL.TupleType fields) well typed in Gamma
-
-| type_SequenceType:
-    forall
-      (Gamma: env)
-      (t: SosADL.SosADL.t_DataType)
-      (p: type t well typed in Gamma)
-    ,
-      type (SosADL.SosADL.SequenceType (Some t)) well typed in Gamma
-
-                                                       (*
-| type_RangeType:
-    forall Gamma min max min__min min__max max__min max__max,
-      (expression min has type (SosADL.SosADL.RangeType (Some min__min) (Some min__max)) in Gamma)
-      /\ (expression max has type (SosADL.SosADL.RangeType (Some max__min) (Some max__max)) in Gamma)
-      /\ min <= max
-      ->
-      type (SosADL.SosADL.RangeType (Some min) (Some max)) well typed in Gamma
-*)
-
-| type_RangeType_trivial:
-    forall
-      (Gamma: env)
-      (min: SosADL.SosADL.t_Expression)
-      (max: SosADL.SosADL.t_Expression)
-      (p1: expression min is constant integer)
-      (p2: expression max is constant integer)
-      (p3: min <= max)
-    ,
-      type (SosADL.SosADL.RangeType (Some min)
-                          (Some max)) well typed in Gamma
 
 (**
  ** Expression
@@ -1065,7 +1075,6 @@ gate-or-duty, connection.%}% *)
 where "'typedecl' t 'well' 'typed' 'in' Gamma" := (type_datatypeDecl Gamma t)
 and "'functions' 'of' 'typedecl' t 'well' 'typed' 'in' Gamma" := (type_datatypeDecl_functions Gamma t)
 and "'function' f 'well' 'typed' 'in' Gamma" := (type_function Gamma f)
-and "'type' t 'well' 'typed' 'in' Gamma" := (type_datatype Gamma t)
 and "'mediator' m 'well' 'typed' 'in' Gamma" := (type_mediator Gamma m)
 and "'mediatorblock' m 'well' 'typed' 'in' Gamma" := (type_mediatorblock Gamma m)
 and "'architecture' a 'well' 'typed' 'in' Gamma" := (type_architecture Gamma a)
