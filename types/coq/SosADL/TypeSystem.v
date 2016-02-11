@@ -199,6 +199,8 @@ Definition augment_env (Gamma: env) (n: option string) (c: option env_content) :
     end
   end.
 
+(** [incrementally] is a generic set of rules for incremental, ordered definitions. *)
+
 Inductive incrementally
           {T: Set} {P: env -> T -> Prop} {name: T -> option string} {content: T -> option env_content}:
   env -> list T -> env -> Prop :=
@@ -241,6 +243,8 @@ Qed.
 Definition augment_env_with_all (Gamma: env) {T: Set} (name: T -> option string) (content: T -> option env_content) (l: list T) :=
   List.fold_right (fun x g => augment_env g (name x) (content x)) Gamma l.
 
+(** [mutually] is a generic rule for unordered, simultaneous, mutual definitions. *)
+
 Inductive mutually
           {T: Set} {P: env -> T -> env -> Prop} {name: T -> option string} {content: T -> option env_content}:
   env -> list T -> env -> Prop :=
@@ -255,6 +259,25 @@ Inductive mutually
       (p3: for each x of l, P Gamma x Gamma1)
     ,
       mutually Gamma l Gamma1
+.
+
+(** [optionally] is a generic rule for an optional statement. *)
+
+Inductive optionally {T: Set} {P: env -> T -> Prop}:
+  env -> option T -> Prop :=
+| optionally_None:
+    forall
+      (Gamma: env)
+    ,
+      optionally Gamma None
+
+| optionally_Some:
+    forall
+      (Gamma: env)
+      (x: T)
+      (p1: P Gamma x)
+    ,
+      optionally Gamma (Some x)
 .
 
 (**
@@ -279,7 +302,6 @@ Reserved Notation "'functions' 'of' 'typedecl' t 'well' 'typed' 'in' Gamma" (at 
 Reserved Notation "'function' f 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
 Reserved Notation "'type' t 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
 Reserved Notation "'system' s 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
-Reserved Notation "'systemblock' s 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
 Reserved Notation "'mediator' m 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
 Reserved Notation "'mediatorblock' m 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
 Reserved Notation "'architecture' a 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
@@ -1077,65 +1099,9 @@ Definition type_formalParameters Gamma l Gamma1 :=
             SosADL.SosADL.FormalParameter_name
             formalParameter_to_EVariable
             Gamma l Gamma1.
+Definition type_gates Gamma l Gamma1 := @incrementally _ type_gate SosADL.SosADL.GateDecl_name (fun x => (** TODO *) None) Gamma l Gamma1.
 
 (** ** System *)
-
-Inductive type_systemblock: env -> SosADL.SosADL.t_SystemDecl -> Prop :=
-| type_SystemDecl_datatype_Some:
-    forall
-      (Gamma: env)
-      (name: string)
-      (d_name: string)
-      (d_def: SosADL.SosADL.t_DataType)
-      (d_funs: list SosADL.SosADL.t_FunctionDecl)
-      (l: list SosADL.SosADL.t_DataTypeDecl)
-      (gates: list SosADL.SosADL.t_GateDecl)
-      (bhv: SosADL.SosADL.t_BehaviorDecl)
-      (assrt: option SosADL.SosADL.t_AssertionDecl)
-      (p1: typedecl (SosADL.SosADL.DataTypeDecl (Some d_name) (Some d_def) d_funs) well typed in Gamma)
-      (p2: systemblock (SosADL.SosADL.SystemDecl (Some name) nil l gates (Some bhv) assrt)
-                     well typed in Gamma [| d_name <- EType (SosADL.SosADL.DataTypeDecl (Some d_name) (Some d_def) d_funs) |])
-    ,
-      systemblock (SosADL.SosADL.SystemDecl (Some name) nil ((SosADL.SosADL.DataTypeDecl (Some d_name) (Some d_def) d_funs)::l) gates (Some bhv) assrt)
-                  well typed in Gamma
-
-       (* TODO
-| type_SystemDecl_datatype_None:
-    forall Gamma name d_name d_def d_funs l gates bhv assrt,
-      (typedecl (SosADL.SosADL.DataTypeDecl (Some d_name) None d_funs) well typed in Gamma)
-      /\ (systemblock (SosADL.SosADL.SystemDecl (Some name) nil l gates (Some bhv) assrt)
-                     well typed in Gamma [| d_name <- EType (SosADL.SosADL.DataTypeDecl (Some d_name) (Some d_def) d_funs) |])
-      ->
-      systemblock (SosADL.SosADL.SystemDecl (Some name) nil ((SosADL.SosADL.DataTypeDecl (Some d_name) None d_funs)::l) gates (Some bhv) assrt)
-                  well typed in Gamma
-
-| type_SystemDecl_gate:
-    forall Gamma name g g_name l bhv assrt,
-      (gate g well typed in Gamma)
-      /\ (SosADL.SosADL.GateDecl_name g = Some g_name)
-      /\ (systemblock (SosADL.SosADL.SystemDecl (Some name) nil nil l (Some bhv) assrt)
-                     well typed in Gamma [| g_name <- EGateOrDuty (build_gate_env g) |])
-      ->
-      systemblock (SosADL.SosADL.SystemDecl (Some name) nil nil (g::l) (Some bhv) assrt) well typed in Gamma
-
-| type_SystemDecl_Some_Assertion:
-    forall Gamma name bhv assrt,
-      (behavior bhv well typed in Gamma)
-      /\ (assertion assrt well typed in Gamma)
-      ->
-      systemblock (SosADL.SosADL.SystemDecl (Some name) nil nil nil (Some bhv) (Some assrt)) well typed in Gamma
-*)
-
-| type_SystemDecl_None:
-    forall
-      (Gamma: env)
-      (name: string)
-      (bhv: SosADL.SosADL.t_BehaviorDecl)
-      (p: behavior bhv well typed in Gamma)
-    ,
-      systemblock (SosADL.SosADL.SystemDecl (Some name) nil nil nil (Some bhv) None) well typed in Gamma
-where "'systemblock' s 'well' 'typed' 'in' Gamma" := (type_systemblock Gamma s)
-.
 
 (** %\note{%By choice, the elements declared in the system are typed
 in order by the set rules for [type_systemblock].%}% *)
@@ -1148,12 +1114,16 @@ Inductive type_system: env -> SosADL.SosADL.t_SystemDecl -> Prop :=
       (params: list SosADL.SosADL.t_FormalParameter)
       (Gamma1: env)
       (datatypes: list SosADL.SosADL.t_DataTypeDecl)
+      (Gamma2: env)
       (gates: list SosADL.SosADL.t_GateDecl)
+      (Gamma3: env)
       (bhv: SosADL.SosADL.t_BehaviorDecl)
       (assrt: option SosADL.SosADL.t_AssertionDecl)
       (p1: type_formalParameters Gamma params Gamma1)
-      (p2: systemblock (SosADL.SosADL.SystemDecl (Some name) nil datatypes gates (Some bhv) assrt)
-                       well typed in Gamma1)
+      (p2: type_datatypeDecls Gamma1 datatypes Gamma2)
+      (p3: type_gates Gamma2 gates Gamma3)
+      (p4: behavior bhv well typed in Gamma3)
+      (p5: @optionally _ (fun g a => assertion a well typed in g) Gamma3 assrt)
     ,
       system (SosADL.SosADL.SystemDecl (Some name) params datatypes gates (Some bhv) assrt) well typed in Gamma
 where "'system' s 'well' 'typed' 'in' Gamma" := (type_system Gamma s)
