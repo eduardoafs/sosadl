@@ -1,7 +1,7 @@
 Require Import SosADL.TypeSystem.
 
 Import List.
-Import AST.
+Import SosADL.SosADL.
 Import ListNotations.
 Import Utils.
 Import String.

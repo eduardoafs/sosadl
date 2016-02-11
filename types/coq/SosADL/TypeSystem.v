@@ -1,11 +1,9 @@
 Require Import List.
 Require Import String.
-Require SosADL.
-Require Import Environment.
-Require Import Utils.
-Require Import Interpretation.
-
-Module AST := SosADL.
+Require SosADL.SosADL.
+Require Import SosADL.Environment.
+Require Import SosADL.Utils.
+Require Import SosADL.Interpretation.
 
 (** printing Delta $\Delta$ #&Delta;# *)
 (** printing Phi $\Phi$ #&Phi;# *)
@@ -37,7 +35,7 @@ duty.
  *)
 
 Inductive gd_env_content: Set :=
-| GDConnection: AST.ModeType -> AST.t_DataType -> gd_env_content.
+| GDConnection: SosADL.SosADL.ModeType -> SosADL.SosADL.t_DataType -> gd_env_content.
 
 (**
  ** Objects in [Gamma], the main environment
@@ -53,13 +51,13 @@ objects that can be stored in the typing environment. The main kinds of objects 
  *)
 
 Inductive env_content: Set :=
-| EType: AST.t_DataTypeDecl -> env_content
-| EFunction: AST.t_FunctionDecl -> env_content
-| ESystem: AST.t_SystemDecl -> env_content
-| EMediator: env_content
-| EArchitecture: env_content
+| EType: SosADL.SosADL.t_DataTypeDecl -> env_content
+| EFunction: SosADL.SosADL.t_FunctionDecl -> env_content
+| ESystem: SosADL.SosADL.t_SystemDecl -> env_content
+| EMediator: SosADL.SosADL.t_MediatorDecl -> env_content
+| EArchitecture: SosADL.SosADL.t_ArchitectureDecl -> env_content
 | EGateOrDuty: environment gd_env_content -> env_content
-| EVariable: AST.t_DataType -> env_content.
+| EVariable: SosADL.SosADL.t_DataType -> env_content.
 
 Definition env := environment env_content.
 
@@ -71,17 +69,17 @@ Definition env := environment env_content.
 (** [env_add_params] adds a list of formal parameters to an
 environment.  *)
 
-Definition env_add_params  :=
-  List.fold_left
-    (fun e f =>
-       match AST.FormalParameter_name f with
+Definition env_add_params a b :=
+  List.fold_right
+    (fun f e =>
+       match SosADL.SosADL.FormalParameter_name f with
          | Some name =>
-           match AST.FormalParameter_type f with
+           match SosADL.SosADL.FormalParameter_type f with
              | Some type => e [| name <- EVariable type |]
              | None => e
            end
          | None => e
-       end).
+       end) b a.
 
 (** [conns_environment] builds an environment containing connections,
 from a list of these connections. *)
@@ -89,11 +87,11 @@ from a list of these connections. *)
 Definition conns_environment l :=
   List.fold_left
     (fun e c =>
-       match AST.Connection_name c with
+       match SosADL.SosADL.Connection_name c with
          | Some name =>
-           match AST.Connection_mode c with
+           match SosADL.SosADL.Connection_mode c with
              | Some mode =>
-               match AST.Connection_valueType c with
+               match SosADL.SosADL.Connection_valueType c with
                  | Some type => e [| name <- GDConnection mode type |]
                  | None => e
                end
@@ -107,13 +105,13 @@ Definition conns_environment l :=
 declaration. *)
 
 Definition build_gate_env g :=
-  conns_environment (AST.GateDecl_connections g).
+  conns_environment (SosADL.SosADL.GateDecl_connections g).
 
 (** [build_duty_env] builds the secondary environment for a duty
 declaration. *)
 
 Definition build_duty_env d :=
-  conns_environment (AST.DutyDecl_connections d).
+  conns_environment (SosADL.SosADL.DutyDecl_connections d).
 
 (**
  * Utilities
@@ -123,20 +121,20 @@ Definition build_duty_env d :=
 data type declaration.  *)
 
 Notation "'method' m 'defined' 'in' d 'with' 'parameters' f 'returns' r" :=
-  (List.Exists (fun fd => AST.FunctionDecl_name fd = Some m
-                         /\ AST.FunctionDecl_parameters fd = f
-                         /\ AST.FunctionDecl_type fd = Some r)
-               (AST.DataTypeDecl_functions d))
+  (List.Exists (fun fd => SosADL.SosADL.FunctionDecl_name fd = Some m
+                         /\ SosADL.SosADL.FunctionDecl_parameters fd = f
+                         /\ SosADL.SosADL.FunctionDecl_type fd = Some r)
+               (SosADL.SosADL.DataTypeDecl_functions d))
     (at level 200, no associativity).
 
 (** [field_has_type] is a predicate to look for a field in a list of
 field declarations. *)
 
-Inductive field_has_type: list AST.t_FieldDecl -> string -> AST.t_DataType -> Prop :=
-| First_Field: forall n t r, field_has_type (AST.FieldDecl (Some n) (Some t) :: r) n t
+Inductive field_has_type: list SosADL.SosADL.t_FieldDecl -> string -> SosADL.SosADL.t_DataType -> Prop :=
+| First_Field: forall n t r, field_has_type (SosADL.SosADL.FieldDecl (Some n) (Some t) :: r) n t
 | Next_Field: forall n t h r, field_has_type r n t -> field_has_type (h :: r) n t.
 
-Hypothesis names_of_expression: AST.t_Expression -> list string.
+Hypothesis names_of_expression: SosADL.SosADL.t_Expression -> list string.
 (**
 %
 \def\todo#1{{\color{red}TODO: #1}}
@@ -148,40 +146,115 @@ Hypothesis names_of_expression: AST.t_Expression -> list string.
 
 Reserved Notation "t1 </ t2 'under' Gamma" (at level 70).
 
-Inductive subtype: env -> AST.t_DataType -> AST.t_DataType -> Prop :=
+Inductive subtype: env -> SosADL.SosADL.t_DataType -> SosADL.SosADL.t_DataType -> Prop :=
 | subtype_refl:
     forall Gamma t, t </ t under Gamma
 | subtype_range:
     forall Gamma lmi lma rmi rma,
       rmi <= lmi /\ lma <= rma
-      -> (AST.RangeType (Some lmi) (Some lma)) </ (AST.RangeType (Some rmi) (Some rma)) under Gamma
+      -> (SosADL.SosADL.RangeType (Some lmi) (Some lma)) </ (SosADL.SosADL.RangeType (Some rmi) (Some rma)) under Gamma
 | subtype_left:
     forall Gamma l r def funs,
-      (contains Gamma l (EType (AST.DataTypeDecl (Some l) (Some def) funs)))
+      (contains Gamma l (EType (SosADL.SosADL.DataTypeDecl (Some l) (Some def) funs)))
       /\ (def </ r under Gamma)
       ->
-      (AST.NamedType (Some l)) </ r under Gamma
+      (SosADL.SosADL.NamedType (Some l)) </ r under Gamma
 | subtype_right:
     forall Gamma l r def funs,
-      (contains Gamma r (EType (AST.DataTypeDecl (Some r) (Some def) funs)))
+      (contains Gamma r (EType (SosADL.SosADL.DataTypeDecl (Some r) (Some def) funs)))
       /\ (l </ def under Gamma)
       ->
-      l </ (AST.NamedType (Some r)) under Gamma
+      l </ (SosADL.SosADL.NamedType (Some r)) under Gamma
 | subtype_tuple:
     forall Gamma l r,
       (for each f of r,
        exists n,
-         AST.FieldDecl_name f = Some n
+         SosADL.SosADL.FieldDecl_name f = Some n
          /\ exists tr,
-             AST.FieldDecl_type f = Some tr
+             SosADL.SosADL.FieldDecl_type f = Some tr
              /\ exists tl, field_has_type l n tl
                      /\ (tl </ tr under Gamma))
       ->
-      (AST.TupleType l) </ (AST.TupleType r) under Gamma
+      (SosADL.SosADL.TupleType l) </ (SosADL.SosADL.TupleType r) under Gamma
 
 (** %\todo{%TBD%}% *)
 
 where "t1 </ t2 'under' Gamma" := (subtype Gamma t1 t2)
+.
+
+(**
+ * Generic constructions
+
+The following provide generic constructions for the type system.
+
+ *)
+
+Definition augment_env (Gamma: env) (n: option string) (c: option env_content) :=
+  match n with
+  | None => Gamma
+  | Some name =>
+    match c with
+    | None => Gamma
+    | Some content => Gamma [| name <- content |]
+    end
+  end.
+
+Inductive incrementally
+          {T: Set} {P: env -> T -> Prop} {name: T -> option string} {content: T -> option env_content}:
+  env -> list T -> env -> Prop :=
+  
+| incrementally_nil:
+    forall
+      (Gamma: env)
+    ,
+      incrementally Gamma nil Gamma
+
+| incrementally_cons:
+    forall
+      (Gamma: env)
+      (x: T)
+      (n: option string)
+      (c: option env_content)
+      (Gammai: env)
+      (l: list T)
+      (Gamma1: env)
+      (p1: P Gamma x)
+      (p2: name x = n)
+      (p3: content x = c)
+      (p4: augment_env Gamma n c = Gammai)
+      (p5: incrementally Gammai l Gamma1)
+    ,
+      incrementally Gamma (x::l) Gamma1
+.
+
+Lemma incrementally_fold_left:
+  forall {T: Set} (P: env -> T -> Prop) (name: T -> option string)
+         (content: T -> option env_content) (l: list T)
+         (Gamma: env) (Gamma': env)
+         (s: @incrementally T P name content Gamma l Gamma'),
+    Gamma' = fold_left (fun r x => augment_env r (name x) (content x)) l Gamma.
+Proof.
+  intros.
+  induction s; subst; auto.
+Qed.
+
+Definition augment_env_with_all (Gamma: env) {T: Set} (name: T -> option string) (content: T -> option env_content) (l: list T) :=
+  List.fold_right (fun x g => augment_env g (name x) (content x)) Gamma l.
+
+Inductive mutually
+          {T: Set} {P: env -> T -> env -> Prop} {name: T -> option string} {content: T -> option env_content}:
+  env -> list T -> env -> Prop :=
+
+| mutually_all:
+    forall
+      (Gamma: env)
+      (l: list T)
+      (Gamma1: env)
+      (p1: (augment_env_with_all Gamma name content l) = Gamma1)
+      (p2: values (name x) for x of l are distinct according to option_string_dec)
+      (p3: for each x of l, P Gamma x Gamma1)
+    ,
+      mutually Gamma l Gamma1
 .
 
 (**
@@ -242,226 +315,77 @@ a single form of judgment. Rules are built of the following:
  ** Constant expressions
  *)
 
-Inductive constexpr_expression: AST.t_Expression -> Prop :=
+Inductive constexpr_expression: SosADL.SosADL.t_Expression -> Prop :=
 | constexpr_IntegerValue:
     forall
       (v: BinInt.Z)
     ,
-      expression (AST.IntegerValue (Some v)) is constant integer
+      expression (SosADL.SosADL.IntegerValue (Some v)) is constant integer
 
 | constexpr_Opposite:
     forall
-      (e: AST.t_Expression)
+      (e: SosADL.SosADL.t_Expression)
       (p: expression e is constant integer)
     ,
-      expression (AST.UnaryExpression (Some "-") (Some e)) is constant integer
+      expression (SosADL.SosADL.UnaryExpression (Some "-") (Some e)) is constant integer
 
 | constexpr_Same:
     forall
-      (e: AST.t_Expression)
+      (e: SosADL.SosADL.t_Expression)
       (p: expression e is constant integer)
     ,
-      expression (AST.UnaryExpression (Some "+") (Some e)) is constant integer
+      expression (SosADL.SosADL.UnaryExpression (Some "+") (Some e)) is constant integer
 
 | constexpr_Add:
     forall
-      (l: AST.t_Expression)
-      (r: AST.t_Expression)
+      (l: SosADL.SosADL.t_Expression)
+      (r: SosADL.SosADL.t_Expression)
       (p1: expression l is constant integer)
       (p2: expression r is constant integer)
     ,
-      expression (AST.BinaryExpression (Some l) (Some "+") (Some r)) is constant integer
+      expression (SosADL.SosADL.BinaryExpression (Some l) (Some "+") (Some r)) is constant integer
 
 | constexpr_Sub:
     forall
-      (l: AST.t_Expression)
-      (r: AST.t_Expression)
+      (l: SosADL.SosADL.t_Expression)
+      (r: SosADL.SosADL.t_Expression)
       (p1: expression l is constant integer)
       (p2: expression r is constant integer)
     ,
-      expression (AST.BinaryExpression (Some l) (Some "-") (Some r)) is constant integer
+      expression (SosADL.SosADL.BinaryExpression (Some l) (Some "-") (Some r)) is constant integer
 
 | constexpr_Mul:
     forall
-      (l: AST.t_Expression)
-      (r: AST.t_Expression)
+      (l: SosADL.SosADL.t_Expression)
+      (r: SosADL.SosADL.t_Expression)
       (p1: expression l is constant integer)
       (p2: expression r is constant integer)
     ,
-      expression (AST.BinaryExpression (Some l) (Some "*") (Some r)) is constant integer
+      expression (SosADL.SosADL.BinaryExpression (Some l) (Some "*") (Some r)) is constant integer
 
 | constexpr_Div:
     forall
-      (l: AST.t_Expression)
-      (r: AST.t_Expression)
+      (l: SosADL.SosADL.t_Expression)
+      (r: SosADL.SosADL.t_Expression)
       (p1: expression l is constant integer)
       (p2: expression r is constant integer)
     ,
-      expression (AST.BinaryExpression (Some l) (Some "/") (Some r)) is constant integer
+      expression (SosADL.SosADL.BinaryExpression (Some l) (Some "/") (Some r)) is constant integer
 
 | constexpr_Mod:
     forall
-      (l: AST.t_Expression)
-      (r: AST.t_Expression)
+      (l: SosADL.SosADL.t_Expression)
+      (r: SosADL.SosADL.t_Expression)
       (p1: expression l is constant integer)
       (p2: expression r is constant integer)
     ,
-      expression (AST.BinaryExpression (Some l) (Some "mod") (Some r)) is constant integer
+      expression (SosADL.SosADL.BinaryExpression (Some l) (Some "mod") (Some r)) is constant integer
                  
 where "'expression' e 'is' 'constant' 'integer'" := (constexpr_expression e)
 .
 
-(**
- ** SoS architecture
-
-%\todo{%The import list is currently ignored.%}%
- *)
-
-Inductive type_sosADL: AST.t_SosADL -> Prop :=
-| type_SosADL:
-    forall (i: list AST.t_Import)
-           (d: AST.t_Unit)
-           (p: unit d well typed in empty)
-    ,
-      SoSADL (AST.SosADL i (Some d)) well typed
-
-(**
- ** Compilation unit
-
-The two forms of compulation unit (SoS or library) are handled in the
-same way by the typing rules.  *)
-
-(** %\note{%The environment is added in anticipation of the handling of the imports.%}% *)
-
-with type_unit: env -> AST.t_Unit -> Prop :=
-| type_SoS:
-    forall (Gamma: env)
-           (n: string)
-           (e: AST.t_EntityBlock)
-           (p: entity e well typed in Gamma)
-    ,
-      unit (AST.SoS (Some n) (Some e)) well typed in Gamma
-
-| type_Library:
-    forall (Gamma: env)
-           (n: string)
-           (e: AST.t_EntityBlock)
-           (p: entity e well typed in Gamma)
-    ,
-      unit (AST.Library (Some n) (Some e)) well typed in Gamma
-
-(** ** Entity *)
-
-(** %\note{%We choose that the order of the declaration is
-significant for the typing rules. Namely, the scope of a declaration
-starts after this declaration and spans until the end of the enclosing
-block. This choice prevents, e.g., (mutually) recursive
-declarations. This behavior is implemented by the following rules,
-each of which exhausts of list of declarations in order.%}% *)
-
-with type_entityBlock: env -> AST.t_EntityBlock -> Prop :=
-| type_EntityBlock_datatype_Some:
-    forall (Gamma: env)
-           (d_name: string)
-           (d_def: AST.t_DataType)
-           (d_funs: list AST.t_FunctionDecl)
-           (l: list AST.t_DataTypeDecl)
-           (funs: list AST.t_FunctionDecl)
-           (systems: list AST.t_SystemDecl)
-           (mediators: list AST.t_MediatorDecl)
-           (architectures: list AST.t_ArchitectureDecl)
-           (p1: typedecl (AST.DataTypeDecl (Some d_name) (Some d_def) d_funs) well typed in Gamma)
-           (p2: entity (AST.EntityBlock l funs systems mediators architectures)
-                       well typed in Gamma [| d_name <- EType (AST.DataTypeDecl (Some d_name) (Some d_def) d_funs) |])
-    ,
-      entity (AST.EntityBlock ((AST.DataTypeDecl (Some d_name) (Some d_def) d_funs)::l) funs systems mediators architectures)
-             well typed in Gamma
-
-(** %\note{%In [type_EntityBlock_datatype_None], we do not bind any [t_DataType] variable to the missing type definition. We consequently choose that such a type would remain opaque, and no further information could be provided.%}% *)
-                             
-| type_EntityBlock_datatype_None:
-    forall (Gamma: env)
-           (d_name: string)
-           (d_funs: list AST.t_FunctionDecl)
-           (l: list AST.t_DataTypeDecl)
-           (funs: list AST.t_FunctionDecl)
-           (systems: list AST.t_SystemDecl)
-           (mediators: list AST.t_MediatorDecl)
-           (architectures: list AST.t_ArchitectureDecl)
-           (p1: typedecl (AST.DataTypeDecl (Some d_name) None d_funs) well typed in Gamma)
-           (p2: entity (AST.EntityBlock l funs systems mediators architectures)
-                well typed in Gamma [| d_name <- EType (AST.DataTypeDecl (Some d_name) None d_funs) |] )
-    ,
-      entity (AST.EntityBlock ((AST.DataTypeDecl (Some d_name) None d_funs)::l) funs systems mediators architectures)
-             well typed in Gamma
 
 
-(** %\todo{%This rule [type_EntityBlock_function] is clearly
-incorrect. If the declaration adds a function (method) to a data type,
-then the list of the methods of this data type should be updated,
-under the precondition that the new one does not already exist in this
-list. If the declaration adds a function, then there is no [this]
-parameter in the function declaration, which is not supported by the
-abstract syntax nor the concrete syntax.%}% *)
-
-                             (* TODO:
-| type_EntityBlock_function:
-    forall (Gamma: env)
-           (f: AST.t_FunctionDecl)
-           (f_name: string)
-           (l: list AST.t_FunctionDecl)
-           (systems: list AST.t_SystemDecl)
-           (mediators: list AST.t_MediatorDecl)
-           (architectures: list AST.t_ArchitectureDecl)
-           (p1: function f well typed in Gamma)
-           (p2: AST.FunctionDecl_name f = Some f_name)
-           (p3: entity (AST.EntityBlock nil l systems mediators architectures)
-                       well typed in Gamma [| f_name <- EFunction f |] )
-    ,
-      entity (AST.EntityBlock nil (f::l) systems mediators architectures)
-             well typed in Gamma
-*)
-
-| type_EntityBlock_system:
-    forall (Gamma: env)
-           (s: AST.t_SystemDecl)
-           (s_name: string)
-           (l: list AST.t_SystemDecl)
-           (mediators: list AST.t_MediatorDecl)
-           (architectures: list AST.t_ArchitectureDecl)
-           (p1: system s well typed in Gamma)
-           (p2: AST.SystemDecl_name s = Some s_name)
-           (p3: entity (AST.EntityBlock nil nil l mediators architectures)
-                       well typed in Gamma [| s_name <- ESystem s |] )
-    ,
-      entity (AST.EntityBlock nil nil (s::l) mediators architectures)
-             well typed in Gamma
-
-                             (* TODO
-| type_EntityBlock_mediator:
-    forall Gamma m m_name l architectures,
-      (mediator m well typed in Gamma)
-      /\ (AST.MediatorDecl_name m = Some m_name)
-      /\ (entity (AST.EntityBlock nil nil nil l architectures)
-                well typed in Gamma [| m_name <- EMediator |])
-      ->
-      entity (AST.EntityBlock nil nil nil (m::l) architectures)
-             well typed in Gamma
-
-| type_EntityBlock_architecture:
-    forall Gamma a a_name l,
-      (architecture a well typed in Gamma)
-      /\ (AST.ArchitectureDecl_name a = Some a_name)
-      /\ (entity (AST.EntityBlock nil nil nil nil l)
-                well typed in Gamma [| a_name <- EArchitecture |])
-      ->
-      entity (AST.EntityBlock nil nil nil nil (a::l))
-             well typed in Gamma
-                              *)
-                             
-| type_EntityBlock:
-    forall (Gamma: env),
-      entity (AST.EntityBlock nil nil nil nil nil) well typed in Gamma
 
 (** ** Data type declaration *)
 
@@ -470,20 +394,20 @@ be mutually recursive. Indeed, they are typed in an environment that
 binds the data type declaration, including the list of functions
 (methods).%}% *)
 
-with type_datatypeDecl: env -> AST.t_DataTypeDecl -> Prop :=
+Inductive type_datatypeDecl: env -> SosADL.SosADL.t_DataTypeDecl -> Prop :=
        (* TODO
 | type_DataTypeDecl_Some:
     forall Gamma name t funs,
       (type t well typed in Gamma)
-      /\ (values (AST.FunctionDecl_name x) for x of funs are distinct)
+      /\ (values (SosADL.SosADL.FunctionDecl_name x) for x of funs are distinct)
       /\ (functions of typedecl funs
-                   well typed in Gamma [| name <- EType (AST.DataTypeDecl (Some name) (Some t) funs) |])
+                   well typed in Gamma [| name <- EType (SosADL.SosADL.DataTypeDecl (Some name) (Some t) funs) |])
       ->
-      typedecl (AST.DataTypeDecl (Some name) (Some t) funs) well typed in Gamma
+      typedecl (SosADL.SosADL.DataTypeDecl (Some name) (Some t) funs) well typed in Gamma
 
 | type_DataTypeDecl_None:
     forall Gamma name,
-      typedecl (AST.DataTypeDecl (Some name) None nil) well typed in Gamma
+      typedecl (SosADL.SosADL.DataTypeDecl (Some name) None nil) well typed in Gamma
 *)
 
 (** %\note{%The functions (methods) of the data type declaration are
@@ -491,7 +415,7 @@ typed in order. In fact, this is not mandatory since the environment
 remains the same while traversing the list of functions. The rule
 might be simplified in this regard, using, e.g., [List.Forall].%}% *)
 
-with type_datatypeDecl_functions: env -> list AST.t_FunctionDecl -> Prop :=
+with type_datatypeDecl_functions: env -> list SosADL.SosADL.t_FunctionDecl -> Prop :=
        (* TODO
 | type_datatypeDecl_empty:
     forall Gamma, functions of typedecl nil well typed in Gamma
@@ -506,85 +430,18 @@ with type_datatypeDecl_functions: env -> list AST.t_FunctionDecl -> Prop :=
                                  
 (** ** Function declaration *)
 
-with type_function: env -> AST.t_FunctionDecl -> Prop :=
+with type_function: env -> SosADL.SosADL.t_FunctionDecl -> Prop :=
        (* TODO
 | type_FunctionDecl:
     forall Gamma name dataName dataTypeName params t vals e tau dtname dttype dtfuns,
-      (for each p of params, (exists t, AST.FormalParameter_type p = Some t /\ type t well typed in Gamma))
-      /\ (expression e under vals has type tau in (env_add_params params Gamma [| dataName <- EVariable (AST.NamedType (Some dataTypeName)) |]))
-      /\ (contains Gamma dataTypeName (EType (AST.DataTypeDecl (Some dtname) (Some dttype) dtfuns)))
+      (for each p of params, (exists t, SosADL.SosADL.FormalParameter_type p = Some t /\ type t well typed in Gamma))
+      /\ (expression e under vals has type tau in (env_add_params params Gamma [| dataName <- EVariable (SosADL.SosADL.NamedType (Some dataTypeName)) |]))
+      /\ (contains Gamma dataTypeName (EType (SosADL.SosADL.DataTypeDecl (Some dtname) (Some dttype) dtfuns)))
       /\ (tau </ t under Gamma)
       ->
-      function (AST.FunctionDecl (Some dataName) (Some dataTypeName) (Some name) params (Some t) vals (Some e))
+      function (SosADL.SosADL.FunctionDecl (Some dataName) (Some dataTypeName) (Some name) params (Some t) vals (Some e))
                well typed in Gamma
 *)
-
-(** ** System *)
-
-(** %\note{%By choice, the elements declared in the system are typed
-in order by the set rules for [type_systemblock].%}% *)
-
-with type_system: env -> AST.t_SystemDecl -> Prop :=
-| type_SystemDecl:
-    forall (Gamma: env)
-           (name: string)
-           (params: list AST.t_FormalParameter)
-           (datatypes: list AST.t_DataTypeDecl)
-           (gates: list AST.t_GateDecl)
-           (bhv: AST.t_BehaviorDecl)
-           (assrt: option AST.t_AssertionDecl)
-           (p1: for each p of params, (exists t, AST.FormalParameter_type p = Some t /\ type t well typed in Gamma))
-           (p2: systemblock (AST.SystemDecl (Some name) nil datatypes gates (Some bhv) assrt)
-                            well typed in (env_add_params params Gamma))
-           (p3: values (AST.FormalParameter_name p) for p of params are distinct according to option_string_dec)
-    ,
-      system (AST.SystemDecl (Some name) params datatypes gates (Some bhv) assrt) well typed in Gamma
-
-with type_systemblock: env -> AST.t_SystemDecl -> Prop :=
-       (* TODO
-| type_SystemDecl_datatype_Some:
-    forall Gamma name d_name d_def d_funs l gates bhv assrt,
-      (typedecl (AST.DataTypeDecl (Some d_name) (Some d_def) d_funs) well typed in Gamma)
-      /\ (systemblock (AST.SystemDecl (Some name) nil l gates (Some bhv) assrt)
-                     well typed in Gamma [| d_name <- EType (AST.DataTypeDecl (Some d_name) (Some d_def) d_funs) |])
-      ->
-      systemblock (AST.SystemDecl (Some name) nil ((AST.DataTypeDecl (Some d_name) (Some d_def) d_funs)::l) gates (Some bhv) assrt)
-                  well typed in Gamma
-
-| type_SystemDecl_datatype_None:
-    forall Gamma name d_name d_def d_funs l gates bhv assrt,
-      (typedecl (AST.DataTypeDecl (Some d_name) None d_funs) well typed in Gamma)
-      /\ (systemblock (AST.SystemDecl (Some name) nil l gates (Some bhv) assrt)
-                     well typed in Gamma [| d_name <- EType (AST.DataTypeDecl (Some d_name) (Some d_def) d_funs) |])
-      ->
-      systemblock (AST.SystemDecl (Some name) nil ((AST.DataTypeDecl (Some d_name) None d_funs)::l) gates (Some bhv) assrt)
-                  well typed in Gamma
-
-| type_SystemDecl_gate:
-    forall Gamma name g g_name l bhv assrt,
-      (gate g well typed in Gamma)
-      /\ (AST.GateDecl_name g = Some g_name)
-      /\ (systemblock (AST.SystemDecl (Some name) nil nil l (Some bhv) assrt)
-                     well typed in Gamma [| g_name <- EGateOrDuty (build_gate_env g) |])
-      ->
-      systemblock (AST.SystemDecl (Some name) nil nil (g::l) (Some bhv) assrt) well typed in Gamma
-
-| type_SystemDecl_Some_Assertion:
-    forall Gamma name bhv assrt,
-      (behavior bhv well typed in Gamma)
-      /\ (assertion assrt well typed in Gamma)
-      ->
-      systemblock (AST.SystemDecl (Some name) nil nil nil (Some bhv) (Some assrt)) well typed in Gamma
-*)
-
-| type_SystemDecl_None:
-    forall
-      (Gamma: env)
-      (name: string)
-      (bhv: AST.t_BehaviorDecl)
-      (p: behavior bhv well typed in Gamma)
-    ,
-      systemblock (AST.SystemDecl (Some name) nil nil nil (Some bhv) None) well typed in Gamma
 
 
 (** ** Mediator *)
@@ -592,45 +449,45 @@ with type_systemblock: env -> AST.t_SystemDecl -> Prop :=
 (** %\note{%By choice, the elements declared in the mediator are typed
 in order by the set rules for [type_mediatorblock].%}% *)
 
-with type_mediator: env -> AST.t_MediatorDecl -> Prop :=
+with type_mediator: env -> SosADL.SosADL.t_MediatorDecl -> Prop :=
        (* TODO
 | type_MediatorDecl:
     forall Gamma name params datatypes duties b assump assert,
-      (for each p of params, (exists t, AST.FormalParameter_type p = Some t /\ type t well typed in Gamma))
-        /\ (mediatorblock (AST.MediatorDecl (Some name) nil datatypes duties (Some b) assump assert)
+      (for each p of params, (exists t, SosADL.SosADL.FormalParameter_type p = Some t /\ type t well typed in Gamma))
+        /\ (mediatorblock (SosADL.SosADL.MediatorDecl (Some name) nil datatypes duties (Some b) assump assert)
                          well typed in (env_add_params params Gamma))
       ->
-      mediator (AST.MediatorDecl (Some name) params datatypes duties (Some b) assump assert) well typed in Gamma
+      mediator (SosADL.SosADL.MediatorDecl (Some name) params datatypes duties (Some b) assump assert) well typed in Gamma
 *)
 
-with type_mediatorblock: env -> AST.t_MediatorDecl -> Prop :=
+with type_mediatorblock: env -> SosADL.SosADL.t_MediatorDecl -> Prop :=
 
   (** %\todo{%Data type declarations in mediators should be inspired from the rules for systems.%}% *)
   (* TODO
 | type_MediatorDecl_datatype:
     forall Gamma name d d_name l duties bhv assump assert,
       (typedecl d well typed in Gamma)
-      /\ (AST.DataTypeDecl_name d = Some d_name)
-      /\ (mediatorblock (AST.MediatorDecl (Some name) nil l duties (Some bhv) assump assert)
+      /\ (SosADL.SosADL.DataTypeDecl_name d = Some d_name)
+      /\ (mediatorblock (SosADL.SosADL.MediatorDecl (Some name) nil l duties (Some bhv) assump assert)
                        well typed in Gamma [| d_name <- EType d |])
       ->
-      mediatorblock (AST.MediatorDecl (Some name) nil (d::l) duties (Some bhv) assump assert) well typed in Gamma
+      mediatorblock (SosADL.SosADL.MediatorDecl (Some name) nil (d::l) duties (Some bhv) assump assert) well typed in Gamma
 
 
 | type_MediatorDecl_duty:
     forall Gamma name d d_name l bhv assump assert,
       (duty d well typed in Gamma)
-      /\ (AST.DutyDecl_name d = Some d_name)
-      /\ (mediatorblock (AST.MediatorDecl (Some name) nil nil l (Some bhv) assump assert)
+      /\ (SosADL.SosADL.DutyDecl_name d = Some d_name)
+      /\ (mediatorblock (SosADL.SosADL.MediatorDecl (Some name) nil nil l (Some bhv) assump assert)
                        well typed in Gamma [| d_name <- EGateOrDuty (build_duty_env d) |])
       ->
-      mediatorblock (AST.MediatorDecl (Some name) nil nil (d::l) (Some bhv) assump assert) well typed in Gamma
+      mediatorblock (SosADL.SosADL.MediatorDecl (Some name) nil nil (d::l) (Some bhv) assump assert) well typed in Gamma
 
 | type_MediatorDecl_Behavior:
     forall Gamma name bhv assump assert,
       (behavior bhv well typed in Gamma)
       ->
-      mediatorblock (AST.MediatorDecl name nil nil nil (Some bhv) assump assert) well typed in Gamma
+      mediatorblock (SosADL.SosADL.MediatorDecl name nil nil nil (Some bhv) assump assert) well typed in Gamma
    *)
        
 (** ** Architecture *)
@@ -638,40 +495,40 @@ with type_mediatorblock: env -> AST.t_MediatorDecl -> Prop :=
 (** %\note{%By choice, the elements declared in the architecture are
 typed in order by the set rules for [type_architectureblock].%}% *)
 
-with type_architecture: env -> AST.t_ArchitectureDecl -> Prop :=
+with type_architecture: env -> SosADL.SosADL.t_ArchitectureDecl -> Prop :=
 (* TODO
      | type_ArchitectureDecl:
     forall Gamma name params datatypes gates b a,
-      (for each p of params, (exists t, AST.FormalParameter_type p = Some t /\ type t well typed in Gamma))
-      /\ (architectureblock (AST.ArchitectureDecl (Some name) nil datatypes gates (Some b) a)
+      (for each p of params, (exists t, SosADL.SosADL.FormalParameter_type p = Some t /\ type t well typed in Gamma))
+      /\ (architectureblock (SosADL.SosADL.ArchitectureDecl (Some name) nil datatypes gates (Some b) a)
                            well typed in (env_add_params params Gamma))
       ->
-      architecture (AST.ArchitectureDecl (Some name) params datatypes gates (Some b) a)
+      architecture (SosADL.SosADL.ArchitectureDecl (Some name) params datatypes gates (Some b) a)
                    well typed in Gamma
 *)
-with type_architectureblock: env -> AST.t_ArchitectureDecl -> Prop :=
+with type_architectureblock: env -> SosADL.SosADL.t_ArchitectureDecl -> Prop :=
 
   (** %\todo{%Data type declarations in architectures should be inspired from the rules for systems.%}% *)
   (* TODO
 | type_ArchitectureDecl_datatype:
     forall Gamma name d d_name l gates bhv a,
       (typedecl d well typed in Gamma)
-      /\ (AST.DataTypeDecl_name d = Some d_name)
-      /\ (architectureblock (AST.ArchitectureDecl (Some name) nil l gates (Some bhv) a)
+      /\ (SosADL.SosADL.DataTypeDecl_name d = Some d_name)
+      /\ (architectureblock (SosADL.SosADL.ArchitectureDecl (Some name) nil l gates (Some bhv) a)
                            well typed in Gamma [| d_name <- EType d |])
       ->
-      architectureblock (AST.ArchitectureDecl (Some name) nil (d::l) gates (Some bhv) a)
+      architectureblock (SosADL.SosADL.ArchitectureDecl (Some name) nil (d::l) gates (Some bhv) a)
                         well typed in Gamma
 
   
 | type_ArchitectureDecl_gate:
     forall Gamma name g g_name l bhv a,
       (gate g well typed in Gamma)
-      /\ (AST.GateDecl_name g = Some g_name)
-      /\ (architectureblock (AST.ArchitectureDecl (Some name) nil nil l (Some bhv) a)
+      /\ (SosADL.SosADL.GateDecl_name g = Some g_name)
+      /\ (architectureblock (SosADL.SosADL.ArchitectureDecl (Some name) nil nil l (Some bhv) a)
                            well typed in Gamma [| g_name <- EGateOrDuty (build_gate_env g) |])
       ->
-      architectureblock (AST.ArchitectureDecl (Some name) nil nil (g::l) (Some bhv) a)
+      architectureblock (SosADL.SosADL.ArchitectureDecl (Some name) nil nil (g::l) (Some bhv) a)
                         well typed in Gamma
 
 | type_ArchitectureDecl_behavior:
@@ -679,196 +536,196 @@ with type_architectureblock: env -> AST.t_ArchitectureDecl -> Prop :=
       (archbehavior bhv well typed in Gamma)
       /\ (assertion a well typed in Gamma)
       ->
-      architectureblock (AST.ArchitectureDecl (Some name) nil nil nil (Some bhv) (Some a)) well typed in Gamma
+      architectureblock (SosADL.SosADL.ArchitectureDecl (Some name) nil nil nil (Some bhv) (Some a)) well typed in Gamma
 *)
 
 
 (** ** Data types *)
 
-with type_datatype: env -> AST.t_DataType -> Prop :=
+with type_datatype: env -> SosADL.SosADL.t_DataType -> Prop :=
 | type_NamedType:
     forall
       (Gamma: env)
       (n: string)
-      (t: AST.t_DataTypeDecl)
+      (t: SosADL.SosADL.t_DataTypeDecl)
       (p: contains Gamma n (EType t))
     ,
-      type (AST.NamedType (Some n)) well typed in Gamma
+      type (SosADL.SosADL.NamedType (Some n)) well typed in Gamma
 
 | type_TupleType:
     forall
       (Gamma: env)
-      (fields: list AST.t_FieldDecl)
-      (p1: values (AST.FieldDecl_name f) for f of fields are distinct according to option_string_dec)
+      (fields: list SosADL.SosADL.t_FieldDecl)
+      (p1: values (SosADL.SosADL.FieldDecl_name f) for f of fields are distinct according to option_string_dec)
       (p2: for each f of fields,
-           (exists t, AST.FieldDecl_type f = Some t
+           (exists t, SosADL.SosADL.FieldDecl_type f = Some t
                       /\ type t well typed in Gamma))
     ,
-      type (AST.TupleType fields) well typed in Gamma
+      type (SosADL.SosADL.TupleType fields) well typed in Gamma
 
 | type_SequenceType:
     forall
       (Gamma: env)
-      (t: AST.t_DataType)
+      (t: SosADL.SosADL.t_DataType)
       (p: type t well typed in Gamma)
     ,
-      type (AST.SequenceType (Some t)) well typed in Gamma
+      type (SosADL.SosADL.SequenceType (Some t)) well typed in Gamma
 
                                                        (*
 | type_RangeType:
     forall Gamma min max min__min min__max max__min max__max,
-      (expression min has type (AST.RangeType (Some min__min) (Some min__max)) in Gamma)
-      /\ (expression max has type (AST.RangeType (Some max__min) (Some max__max)) in Gamma)
+      (expression min has type (SosADL.SosADL.RangeType (Some min__min) (Some min__max)) in Gamma)
+      /\ (expression max has type (SosADL.SosADL.RangeType (Some max__min) (Some max__max)) in Gamma)
       /\ min <= max
       ->
-      type (AST.RangeType (Some min) (Some max)) well typed in Gamma
+      type (SosADL.SosADL.RangeType (Some min) (Some max)) well typed in Gamma
 *)
 
 | type_RangeType_trivial:
     forall
       (Gamma: env)
-      (min: AST.t_Expression)
-      (max: AST.t_Expression)
+      (min: SosADL.SosADL.t_Expression)
+      (max: SosADL.SosADL.t_Expression)
       (p1: expression min is constant integer)
       (p2: expression max is constant integer)
       (p3: min <= max)
     ,
-      type (AST.RangeType (Some min)
+      type (SosADL.SosADL.RangeType (Some min)
                           (Some max)) well typed in Gamma
 
 (**
  ** Expression
  *)
 
-with type_expression: env -> AST.t_Expression -> AST.t_DataType -> Prop :=
+with type_expression: env -> SosADL.SosADL.t_Expression -> SosADL.SosADL.t_DataType -> Prop :=
 | type_expression_IntegerValue:
     forall Gamma v,
-      expression (AST.IntegerValue (Some v))
-      has type (AST.RangeType (Some (AST.IntegerValue (Some v)))
-                              (Some (AST.IntegerValue (Some v)))) in Gamma
+      expression (SosADL.SosADL.IntegerValue (Some v))
+      has type (SosADL.SosADL.RangeType (Some (SosADL.SosADL.IntegerValue (Some v)))
+                              (Some (SosADL.SosADL.IntegerValue (Some v)))) in Gamma
 
 | type_expression_Any:
     forall Gamma tau,
-      expression AST.Any has type tau in Gamma
+      expression SosADL.SosADL.Any has type tau in Gamma
 
 | type_expression_Opposite:
     forall Gamma e min max,
-      (expression e has type (AST.RangeType (Some min) (Some max)) in Gamma)
+      (expression e has type (SosADL.SosADL.RangeType (Some min) (Some max)) in Gamma)
       ->
-      expression (AST.UnaryExpression (Some "-") (Some e))
-      has type (AST.RangeType (Some (AST.UnaryExpression (Some "-") (Some max)))
-                              (Some (AST.UnaryExpression (Some "-") (Some min)))) in Gamma
+      expression (SosADL.SosADL.UnaryExpression (Some "-") (Some e))
+      has type (SosADL.SosADL.RangeType (Some (SosADL.SosADL.UnaryExpression (Some "-") (Some max)))
+                              (Some (SosADL.SosADL.UnaryExpression (Some "-") (Some min)))) in Gamma
 
 | type_expression_Same:
     forall Gamma e min max,
-      (expression e has type (AST.RangeType (Some min) (Some max)) in Gamma)
+      (expression e has type (SosADL.SosADL.RangeType (Some min) (Some max)) in Gamma)
       ->
-      expression (AST.UnaryExpression (Some "+") (Some e))
-      has type (AST.RangeType (Some min) (Some max)) in Gamma
+      expression (SosADL.SosADL.UnaryExpression (Some "+") (Some e))
+      has type (SosADL.SosADL.RangeType (Some min) (Some max)) in Gamma
 
 | type_expression_Not:
     forall Gamma e,
-      (expression e has type AST.BooleanType in Gamma)
+      (expression e has type SosADL.SosADL.BooleanType in Gamma)
       ->
-      expression (AST.UnaryExpression (Some "not") (Some e)) has type AST.BooleanType in Gamma
+      expression (SosADL.SosADL.UnaryExpression (Some "not") (Some e)) has type SosADL.SosADL.BooleanType in Gamma
 
 | type_expression_Add:
     forall Gamma l l__min l__max r r__min r__max,
-      (expression l has type (AST.RangeType (Some l__min) (Some l__max)) in Gamma)
-      /\ (expression r has type (AST.RangeType (Some r__min) (Some r__max)) in Gamma)
+      (expression l has type (SosADL.SosADL.RangeType (Some l__min) (Some l__max)) in Gamma)
+      /\ (expression r has type (SosADL.SosADL.RangeType (Some r__min) (Some r__max)) in Gamma)
       ->
-      expression (AST.BinaryExpression (Some l) (Some "+") (Some r))
-      has type (AST.RangeType (Some (AST.BinaryExpression (Some l__min) (Some "+") (Some r__min)))
-                              (Some (AST.BinaryExpression (Some l__max) (Some "+") (Some r__max)))) in Gamma
+      expression (SosADL.SosADL.BinaryExpression (Some l) (Some "+") (Some r))
+      has type (SosADL.SosADL.RangeType (Some (SosADL.SosADL.BinaryExpression (Some l__min) (Some "+") (Some r__min)))
+                              (Some (SosADL.SosADL.BinaryExpression (Some l__max) (Some "+") (Some r__max)))) in Gamma
 
 | type_expression_Sub:
     forall Gamma l l__min l__max r r__min r__max,
-      (expression l has type (AST.RangeType (Some l__min) (Some l__max)) in Gamma)
-      /\ (expression r has type (AST.RangeType (Some r__min) (Some r__max)) in Gamma)
+      (expression l has type (SosADL.SosADL.RangeType (Some l__min) (Some l__max)) in Gamma)
+      /\ (expression r has type (SosADL.SosADL.RangeType (Some r__min) (Some r__max)) in Gamma)
       ->
-      expression (AST.BinaryExpression (Some l) (Some "-") (Some r))
-      has type (AST.RangeType (Some (AST.BinaryExpression (Some l__min) (Some "-") (Some r__max)))
-                              (Some (AST.BinaryExpression (Some l__max) (Some "-") (Some r__min)))) in Gamma
+      expression (SosADL.SosADL.BinaryExpression (Some l) (Some "-") (Some r))
+      has type (SosADL.SosADL.RangeType (Some (SosADL.SosADL.BinaryExpression (Some l__min) (Some "-") (Some r__max)))
+                              (Some (SosADL.SosADL.BinaryExpression (Some l__max) (Some "-") (Some r__min)))) in Gamma
 
 (** %\todo{%The typing rules for [*], [/] and [mod] needs to be
 written.%}% *)
 
 | type_expression_Implies:
    forall Gamma l r,
-     (expression l has type AST.BooleanType in Gamma)
-     /\ (expression r has type AST.BooleanType in Gamma)
+     (expression l has type SosADL.SosADL.BooleanType in Gamma)
+     /\ (expression r has type SosADL.SosADL.BooleanType in Gamma)
      ->
-     expression (AST.BinaryExpression (Some l) (Some "implies") (Some r)) has type AST.BooleanType in Gamma
+     expression (SosADL.SosADL.BinaryExpression (Some l) (Some "implies") (Some r)) has type SosADL.SosADL.BooleanType in Gamma
 
 | type_expression_Or:
    forall Gamma l r,
-     (expression l has type AST.BooleanType in Gamma)
-     /\ (expression r has type AST.BooleanType in Gamma)
+     (expression l has type SosADL.SosADL.BooleanType in Gamma)
+     /\ (expression r has type SosADL.SosADL.BooleanType in Gamma)
      ->
-     expression (AST.BinaryExpression (Some l) (Some "or") (Some r)) has type AST.BooleanType in Gamma
+     expression (SosADL.SosADL.BinaryExpression (Some l) (Some "or") (Some r)) has type SosADL.SosADL.BooleanType in Gamma
 
 | type_expression_Xor:
    forall Gamma l r,
-     (expression l has type AST.BooleanType in Gamma)
-     /\ (expression r has type AST.BooleanType in Gamma)
+     (expression l has type SosADL.SosADL.BooleanType in Gamma)
+     /\ (expression r has type SosADL.SosADL.BooleanType in Gamma)
      ->
-     expression (AST.BinaryExpression (Some l) (Some "xor") (Some r)) has type AST.BooleanType in Gamma
+     expression (SosADL.SosADL.BinaryExpression (Some l) (Some "xor") (Some r)) has type SosADL.SosADL.BooleanType in Gamma
 
 | type_expression_And:
    forall Gamma l r,
-     (expression l has type AST.BooleanType in Gamma)
-     /\ (expression r has type AST.BooleanType in Gamma)
+     (expression l has type SosADL.SosADL.BooleanType in Gamma)
+     /\ (expression r has type SosADL.SosADL.BooleanType in Gamma)
      ->
-     expression (AST.BinaryExpression (Some l) (Some "and") (Some r)) has type AST.BooleanType in Gamma
+     expression (SosADL.SosADL.BinaryExpression (Some l) (Some "and") (Some r)) has type SosADL.SosADL.BooleanType in Gamma
 
 | type_expression_Equal:
     forall Gamma l l__min l__max r r__min r__max,
-      (expression l has type (AST.RangeType (Some l__min) (Some l__max)) in Gamma)
-      /\ (expression r has type (AST.RangeType (Some r__min) (Some r__max)) in Gamma)
+      (expression l has type (SosADL.SosADL.RangeType (Some l__min) (Some l__max)) in Gamma)
+      /\ (expression r has type (SosADL.SosADL.RangeType (Some r__min) (Some r__max)) in Gamma)
       ->
-      expression (AST.BinaryExpression (Some l) (Some "=") (Some r)) has type AST.BooleanType in Gamma
+      expression (SosADL.SosADL.BinaryExpression (Some l) (Some "=") (Some r)) has type SosADL.SosADL.BooleanType in Gamma
 
 | type_expression_Diff:
     forall Gamma l l__min l__max r r__min r__max,
-      (expression l has type (AST.RangeType (Some l__min) (Some l__max)) in Gamma)
-      /\ (expression r has type (AST.RangeType (Some r__min) (Some r__max)) in Gamma)
+      (expression l has type (SosADL.SosADL.RangeType (Some l__min) (Some l__max)) in Gamma)
+      /\ (expression r has type (SosADL.SosADL.RangeType (Some r__min) (Some r__max)) in Gamma)
       ->
-      expression (AST.BinaryExpression (Some l) (Some "<>") (Some r)) has type AST.BooleanType in Gamma
+      expression (SosADL.SosADL.BinaryExpression (Some l) (Some "<>") (Some r)) has type SosADL.SosADL.BooleanType in Gamma
 
 | type_expression_Lt:
     forall Gamma l l__min l__max r r__min r__max,
-      (expression l has type (AST.RangeType (Some l__min) (Some l__max)) in Gamma)
-      /\ (expression r has type (AST.RangeType (Some r__min) (Some r__max)) in Gamma)
+      (expression l has type (SosADL.SosADL.RangeType (Some l__min) (Some l__max)) in Gamma)
+      /\ (expression r has type (SosADL.SosADL.RangeType (Some r__min) (Some r__max)) in Gamma)
       ->
-      expression (AST.BinaryExpression (Some l) (Some "<") (Some r)) has type AST.BooleanType in Gamma
+      expression (SosADL.SosADL.BinaryExpression (Some l) (Some "<") (Some r)) has type SosADL.SosADL.BooleanType in Gamma
 
 | type_expression_Le:
     forall Gamma l l__min l__max r r__min r__max,
-      (expression l has type (AST.RangeType (Some l__min) (Some l__max)) in Gamma)
-      /\ (expression r has type (AST.RangeType (Some r__min) (Some r__max)) in Gamma)
+      (expression l has type (SosADL.SosADL.RangeType (Some l__min) (Some l__max)) in Gamma)
+      /\ (expression r has type (SosADL.SosADL.RangeType (Some r__min) (Some r__max)) in Gamma)
       ->
-      expression (AST.BinaryExpression (Some l) (Some "<=") (Some r)) has type AST.BooleanType in Gamma
+      expression (SosADL.SosADL.BinaryExpression (Some l) (Some "<=") (Some r)) has type SosADL.SosADL.BooleanType in Gamma
 
 | type_expression_Gt:
     forall Gamma l l__min l__max r r__min r__max,
-      (expression l has type (AST.RangeType (Some l__min) (Some l__max)) in Gamma)
-      /\ (expression r has type (AST.RangeType (Some r__min) (Some r__max)) in Gamma)
+      (expression l has type (SosADL.SosADL.RangeType (Some l__min) (Some l__max)) in Gamma)
+      /\ (expression r has type (SosADL.SosADL.RangeType (Some r__min) (Some r__max)) in Gamma)
       ->
-      expression (AST.BinaryExpression (Some l) (Some ">") (Some r)) has type AST.BooleanType in Gamma
+      expression (SosADL.SosADL.BinaryExpression (Some l) (Some ">") (Some r)) has type SosADL.SosADL.BooleanType in Gamma
 
 | type_expression_Ge:
     forall Gamma l l__min l__max r r__min r__max,
-      (expression l has type (AST.RangeType (Some l__min) (Some l__max)) in Gamma)
-      /\ (expression r has type (AST.RangeType (Some r__min) (Some r__max)) in Gamma)
+      (expression l has type (SosADL.SosADL.RangeType (Some l__min) (Some l__max)) in Gamma)
+      /\ (expression r has type (SosADL.SosADL.RangeType (Some r__min) (Some r__max)) in Gamma)
       ->
-      expression (AST.BinaryExpression (Some l) (Some ">=") (Some r)) has type AST.BooleanType in Gamma
+      expression (SosADL.SosADL.BinaryExpression (Some l) (Some ">=") (Some r)) has type SosADL.SosADL.BooleanType in Gamma
 
 | type_expression_Ident:
     forall Gamma x tau tau__e,
       (contains Gamma x (EVariable tau))
       /\ (tau </ tau__e under Gamma)
       ->
-      expression (AST.IdentExpression (Some x)) has type tau__e in Gamma
+      expression (SosADL.SosADL.IdentExpression (Some x)) has type tau__e in Gamma
 
 (** %\note{%The rule [type_expression_MethodCall] assumes that the
 type of the [this] parameter is a named type, hence refering to the
@@ -876,56 +733,56 @@ declaration of a data type containing some functions (methods).%}% *)
 
 | type_expression_MethodCall:
     forall Gamma this tau tauDecl name formalparams params ret,
-      (expression this has type (AST.NamedType (Some tau)) in Gamma)
+      (expression this has type (SosADL.SosADL.NamedType (Some tau)) in Gamma)
       /\ (contains Gamma tau (EType tauDecl))
       /\ (method name defined in tauDecl with parameters formalparams returns ret)
       /\ (for each fp p of formalparams params,
-         (exists t, AST.FormalParameter_type fp = Some t
+         (exists t, SosADL.SosADL.FormalParameter_type fp = Some t
                /\ (exists tp, (expression p has type tp in Gamma)
                         /\ tp </ t under Gamma)))
       ->
-      expression (AST.MethodCall (Some this) (Some name) params) has type ret in Gamma
+      expression (SosADL.SosADL.MethodCall (Some this) (Some name) params) has type ret in Gamma
 
 | type_expression_Tuple:
     forall Gamma elts typ,
-      (values (AST.TupleElement_label x) for x of elts are distinct according to option_string_dec)
+      (values (SosADL.SosADL.TupleElement_label x) for x of elts are distinct according to option_string_dec)
       /\ (for each e tau of elts typ,
-         AST.TupleElement_label e = AST.FieldDecl_name tau)
+         SosADL.SosADL.TupleElement_label e = SosADL.SosADL.FieldDecl_name tau)
       /\ (for each e tau of elts typ,
          (exists e',
-            AST.TupleElement_value e = Some e'
+            SosADL.SosADL.TupleElement_value e = Some e'
             /\ exists tau',
-                AST.FieldDecl_type tau = Some tau'
+                SosADL.SosADL.FieldDecl_type tau = Some tau'
                 /\ expression e' has type tau' in Gamma))
       ->
-      expression (AST.Expression_Tuple elts) has type (AST.TupleType typ) in Gamma
+      expression (SosADL.SosADL.Expression_Tuple elts) has type (SosADL.SosADL.TupleType typ) in Gamma
 
 | type_expression_Sequence:
     forall Gamma elts tau,
       (for each e of elts, expression e has type tau in Gamma)
       ->
-      expression (AST.Expression_Sequence elts) has type (AST.SequenceType (Some tau)) in Gamma
+      expression (SosADL.SosADL.Expression_Sequence elts) has type (SosADL.SosADL.SequenceType (Some tau)) in Gamma
 
 | type_expression_Map:
     forall Gamma coll tau x e tau__e,
-      (expression coll has type (AST.SequenceType (Some tau)) in Gamma)
+      (expression coll has type (SosADL.SosADL.SequenceType (Some tau)) in Gamma)
       /\ (expression e has type tau__e in Gamma [| x <- EVariable tau |])
       ->
-      expression (AST.Map (Some coll) (Some x) (Some e)) has type (AST.SequenceType (Some tau__e)) in Gamma
+      expression (SosADL.SosADL.Map (Some coll) (Some x) (Some e)) has type (SosADL.SosADL.SequenceType (Some tau__e)) in Gamma
 
 | type_expression_Select:
     forall Gamma coll tau x e,
-      (expression coll has type (AST.SequenceType (Some tau)) in Gamma)
-      /\ (expression e has type AST.BooleanType in Gamma [| x <- EVariable tau |])
+      (expression coll has type (SosADL.SosADL.SequenceType (Some tau)) in Gamma)
+      /\ (expression e has type SosADL.SosADL.BooleanType in Gamma [| x <- EVariable tau |])
       ->
-      expression (AST.Select (Some coll) (Some x) (Some e)) has type (AST.SequenceType (Some tau)) in Gamma
+      expression (SosADL.SosADL.Select (Some coll) (Some x) (Some e)) has type (SosADL.SosADL.SequenceType (Some tau)) in Gamma
 
 | type_expression_Field:
     forall Gamma this tau name tau__f,
-      (expression this has type (AST.TupleType tau) in Gamma)
+      (expression this has type (SosADL.SosADL.TupleType tau) in Gamma)
       /\ field_has_type tau name tau__f
       ->
-      expression (AST.Field (Some this) (Some name)) has type tau__f in Gamma
+      expression (SosADL.SosADL.Field (Some this) (Some name)) has type tau__f in Gamma
 
 (** %\todo{%[CallExpression], [UnobservableValue], [Unify], [Relay]
 and [Quantify] are not handled yet.%}% *)
@@ -935,8 +792,8 @@ and [Quantify] are not handled yet.%}% *)
 (** %\note{%The valuings are typed in order, and added incrementally
 to the typing environment.%}% *)
 
-with type_expression_where: env -> list AST.t_Valuing -> AST.t_Expression
-                            -> AST.t_DataType -> Prop :=
+with type_expression_where: env -> list SosADL.SosADL.t_Valuing -> SosADL.SosADL.t_Expression
+                            -> SosADL.SosADL.t_DataType -> Prop :=
 | type_expression_where_empty:
     forall Gamma e tau,
       (expression e has type tau in Gamma)
@@ -948,7 +805,7 @@ with type_expression_where: env -> list AST.t_Valuing -> AST.t_Expression
       (expression x__e has type x__tau in Gamma)
       /\ (expression e under v has type tau in Gamma [| x <- EVariable x__tau |])
       ->
-      expression e under (AST.Valuing_Valuing (Some x) None (Some x__e) :: v) has type tau in Gamma
+      expression e under (SosADL.SosADL.Valuing_Valuing (Some x) None (Some x__e) :: v) has type tau in Gamma
 
 | type_expression_where_Valuing_Some:
     forall Gamma e tau x x__t x__e x__tau v,
@@ -956,72 +813,72 @@ with type_expression_where: env -> list AST.t_Valuing -> AST.t_Expression
       /\ (x__tau </ x__t under Gamma)
       /\ (expression e under v has type tau in Gamma [| x <- EVariable x__t |])
       ->
-      expression e under (AST.Valuing_Valuing (Some x) (Some x__t) (Some x__e) :: v) has type tau in Gamma
+      expression e under (SosADL.SosADL.Valuing_Valuing (Some x) (Some x__t) (Some x__e) :: v) has type tau in Gamma
 
 
 (**
  ** Gate
  *)
 
-with type_gate: env -> AST.t_GateDecl -> Prop :=
+with type_gate: env -> SosADL.SosADL.t_GateDecl -> Prop :=
 | type_GateDecl:
     forall Gamma name conns p,
       (protocol p well typed in Gamma)
-      /\ (values (AST.Connection_name c) for c of conns are distinct according to option_string_dec)
+      /\ (values (SosADL.SosADL.Connection_name c) for c of conns are distinct according to option_string_dec)
       /\ (for each c of conns, connection c well typed in Gamma)
       ->
-      gate (AST.GateDecl (Some name) conns (Some p)) well typed in Gamma
+      gate (SosADL.SosADL.GateDecl (Some name) conns (Some p)) well typed in Gamma
 
 
 (**
  ** Duty
  *)
 
-with type_duty: env -> AST.t_DutyDecl -> Prop :=
+with type_duty: env -> SosADL.SosADL.t_DutyDecl -> Prop :=
 | type_DutyDecl:
     forall Gamma name conns a p,
       (protocol p well typed in Gamma)
-      /\ (values (AST.Connection_name c) for c of conns are distinct according to option_string_dec)
+      /\ (values (SosADL.SosADL.Connection_name c) for c of conns are distinct according to option_string_dec)
       /\ (for each c of conns, connection c well typed in Gamma)
       /\ (assertion a well typed in Gamma)
       ->
-      duty (AST.DutyDecl (Some name) conns (Some a) (Some p)) well typed in Gamma
+      duty (SosADL.SosADL.DutyDecl (Some name) conns (Some a) (Some p)) well typed in Gamma
 
 (** ** Architecture behavior*)
 
 (* %\todo{%TBD%}% *)
 
-with type_archbehavior: env ->  AST.t_ArchBehaviorDecl -> Prop :=
+with type_archbehavior: env ->  SosADL.SosADL.t_ArchBehaviorDecl -> Prop :=
 
 (** ** Behavior *)
 
-with type_behavior: env -> AST.t_BehaviorDecl -> Prop :=
+with type_behavior: env -> SosADL.SosADL.t_BehaviorDecl -> Prop :=
 | type_BehaviorDecl:
     forall Gamma name b,
       (body b well typed in Gamma)
       ->
-      behavior (AST.BehaviorDecl (Some name) (Some (AST.Behavior b))) well typed in Gamma
+      behavior (SosADL.SosADL.BehaviorDecl (Some name) (Some (SosADL.SosADL.Behavior b))) well typed in Gamma
 
 (** ** Assertion *)
 
 (** %\todo{TBD}% *)
 
-with type_assertion: env -> AST.t_AssertionDecl -> Prop :=
+with type_assertion: env -> SosADL.SosADL.t_AssertionDecl -> Prop :=
 
 (** ** Protocol *)
 
 (** %\todo{TBD}% *)
 
-with type_protocol: env -> AST.t_ProtocolDecl -> Prop :=
+with type_protocol: env -> SosADL.SosADL.t_ProtocolDecl -> Prop :=
 
 (** ** Connection *)
 
-with type_connection: env -> AST.t_Connection -> Prop :=
+with type_connection: env -> SosADL.SosADL.t_Connection -> Prop :=
 | type_Connection:
     forall Gamma name k m t,
       (type t well typed in Gamma)
       ->
-      connection (AST.Connection (Some k) (Some name) (Some m) (Some t)) well typed in Gamma
+      connection (SosADL.SosADL.Connection (Some k) (Some name) (Some m) (Some t)) well typed in Gamma
 
 (** ** Body *)
 
@@ -1036,7 +893,7 @@ followed by subsequent statements. In summary, the typing rules are
 inconsistent in regard to the question whether the type system
 enforces some rules on the last statement of a sequence.%}% *)
 
-with type_body: env -> list AST.t_BehaviorStatement -> Prop :=
+with type_body: env -> list SosADL.SosADL.t_BehaviorStatement -> Prop :=
 | type_EmptyBody:
     forall Gamma,
       body nil well typed in Gamma
@@ -1046,7 +903,7 @@ with type_body: env -> list AST.t_BehaviorStatement -> Prop :=
       (expression e has type tau in Gamma)
       /\ (body l well typed in Gamma [| x <- EVariable tau |])
       ->
-      body (AST.BehaviorStatement_Valuing (Some x) None (Some e) :: l) well typed in Gamma
+      body (SosADL.SosADL.BehaviorStatement_Valuing (Some x) None (Some e) :: l) well typed in Gamma
 
 | type_Valuing_Some:
     forall Gamma x e tau tau__e l,
@@ -1054,56 +911,56 @@ with type_body: env -> list AST.t_BehaviorStatement -> Prop :=
       /\ (tau__e </ tau under Gamma)
       /\ (body l well typed in Gamma [| x <- EVariable  tau |])
       ->
-      body (AST.BehaviorStatement_Valuing (Some x) (Some tau) (Some e) :: l) well typed in Gamma
+      body (SosADL.SosADL.BehaviorStatement_Valuing (Some x) (Some tau) (Some e) :: l) well typed in Gamma
 
 | type_Repeat:
     forall Gamma b,
       (body b well typed in Gamma)
       ->
-      body (AST.RepeatBehavior (Some (AST.Behavior b)) :: nil) well typed in Gamma
+      body (SosADL.SosADL.RepeatBehavior (Some (SosADL.SosADL.Behavior b)) :: nil) well typed in Gamma
 
 | type_Choose:
     forall Gamma branches,
       (for each b of branches,
-       body (AST.Behavior_statements b) well typed in Gamma)
+       body (SosADL.SosADL.Behavior_statements b) well typed in Gamma)
       ->
-      body (AST.ChooseBehavior branches :: nil) well typed in Gamma
+      body (SosADL.SosADL.ChooseBehavior branches :: nil) well typed in Gamma
 
 | type_IfThen:
     forall Gamma c t l,
-      (expression c has type AST.BooleanType in Gamma)
+      (expression c has type SosADL.SosADL.BooleanType in Gamma)
       /\ (body t well typed in Gamma)
       /\ (body l well typed in Gamma)
       ->
-      body (AST.IfThenElseBehavior (Some c) (Some (AST.Behavior t)) None :: l) well typed in Gamma
+      body (SosADL.SosADL.IfThenElseBehavior (Some c) (Some (SosADL.SosADL.Behavior t)) None :: l) well typed in Gamma
 
 | type_IfThenElse:
     forall Gamma c t e,
-      (expression c has type AST.BooleanType in Gamma)
+      (expression c has type SosADL.SosADL.BooleanType in Gamma)
       /\ (body t well typed in Gamma)
       /\ (body e well typed in Gamma)
       ->
-      body (AST.IfThenElseBehavior (Some c) (Some (AST.Behavior t)) (Some (AST.Behavior e)) :: nil)
+      body (SosADL.SosADL.IfThenElseBehavior (Some c) (Some (SosADL.SosADL.Behavior t)) (Some (SosADL.SosADL.Behavior e)) :: nil)
            well typed in Gamma
 
 | type_ForEach:
     forall Gamma x tau vals b l,
-      (expression vals has type (AST.SequenceType (Some tau)) in Gamma)
+      (expression vals has type (SosADL.SosADL.SequenceType (Some tau)) in Gamma)
       /\ (body b well typed in Gamma [| x <- EVariable tau |])
       /\ (body l well typed in Gamma)
       ->
-      body (AST.ForEachBehavior (Some x) (Some vals) (Some (AST.Behavior b)) :: l) well typed in Gamma
+      body (SosADL.SosADL.ForEachBehavior (Some x) (Some vals) (Some (SosADL.SosADL.Behavior b)) :: l) well typed in Gamma
 
 | type_RecursiveCall:
     forall Gamma,
-      body (AST.RecursiveCall nil :: nil) well typed in Gamma
+      body (SosADL.SosADL.RecursiveCall nil :: nil) well typed in Gamma
 
 | type_TellStatement:
     forall Gamma name e l,
-      (expression e has type AST.BooleanType in Gamma)
+      (expression e has type SosADL.SosADL.BooleanType in Gamma)
       /\ (body l well typed in Gamma)
       ->
-      body (AST.BehaviorStatement_TellAssertion (Some name) (Some e) :: l) well typed in Gamma
+      body (SosADL.SosADL.BehaviorStatement_TellAssertion (Some name) (Some e) :: l) well typed in Gamma
 
 (** The idea underpinning the [type_AskStatement] rule is to assume an
 environment [ee] in which all the (free) names of [e] are bound to
@@ -1115,10 +972,10 @@ are done in [ee] merged in [Gamma]. *)
 | type_AskStatement:
     forall Gamma name e ee l,
       (forall x, List.In x (names_of_expression e) <-> exists tau, contains ee x (EType tau))
-      /\ (expression e has type AST.BooleanType in (Gamma <++ ee))
+      /\ (expression e has type SosADL.SosADL.BooleanType in (Gamma <++ ee))
       /\ (body l well typed in (Gamma <++ ee))
       ->
-      body (AST.BehaviorStatement_AskAssertion (Some name) (Some e) :: l) well typed in Gamma
+      body (SosADL.SosADL.BehaviorStatement_AskAssertion (Some name) (Some e) :: l) well typed in Gamma
 *)
 
 (** %\note{%The [type_ReceiveStatement_In],
@@ -1129,46 +986,46 @@ gate-or-duty, connection.%}% *)
 | type_ReceiveStatement_In:
     forall Gamma gd E conn x conn__tau l,
       (contains Gamma gd (EGateOrDuty E))
-      /\ (contains E conn (GDConnection AST.ModeTypeIn conn__tau))
+      /\ (contains E conn (GDConnection SosADL.SosADL.ModeTypeIn conn__tau))
       /\ (body l well typed in Gamma [| x <- EVariable conn__tau |])
       ->
-      body (AST.Action (Some (AST.ComplexName (gd :: conn :: nil)))
-                       (Some (AST.ReceiveAction (Some x))) :: l)
+      body (SosADL.SosADL.Action (Some (SosADL.SosADL.ComplexName (gd :: conn :: nil)))
+                       (Some (SosADL.SosADL.ReceiveAction (Some x))) :: l)
            well typed in Gamma
 
 
 | type_ReceiveStatement_InOut:
     forall Gamma gd E conn x conn__tau l,
       (contains Gamma gd (EGateOrDuty E))
-      /\ (contains E conn (GDConnection AST.ModeTypeInout conn__tau))
+      /\ (contains E conn (GDConnection SosADL.SosADL.ModeTypeInout conn__tau))
       /\ (body l well typed in Gamma [| x <- EVariable conn__tau |])
       ->
-      body (AST.Action (Some (AST.ComplexName (gd :: conn :: nil)))
-                       (Some (AST.ReceiveAction (Some x))) :: l)
+      body (SosADL.SosADL.Action (Some (SosADL.SosADL.ComplexName (gd :: conn :: nil)))
+                       (Some (SosADL.SosADL.ReceiveAction (Some x))) :: l)
            well typed in Gamma
 
 | type_SendStatement_Out:
     forall Gamma gd E conn conn__tau e tau l,
       (contains Gamma gd (EGateOrDuty E))
-      /\ (contains E conn (GDConnection AST.ModeTypeOut conn__tau))
+      /\ (contains E conn (GDConnection SosADL.SosADL.ModeTypeOut conn__tau))
       /\ (expression e has type tau in Gamma)
       /\ (tau </ conn__tau under Gamma)
       /\ (body l well typed in Gamma)
       ->
-      body (AST.Action (Some (AST.ComplexName (gd :: conn :: nil)))
-                       (Some (AST.SendAction (Some e))) :: l)
+      body (SosADL.SosADL.Action (Some (SosADL.SosADL.ComplexName (gd :: conn :: nil)))
+                       (Some (SosADL.SosADL.SendAction (Some e))) :: l)
            well typed in Gamma
 
 | type_SendStatement_InOut:
     forall Gamma gd E conn conn__tau e tau l,
       (contains Gamma gd (EGateOrDuty E))
-      /\ (contains E conn (GDConnection AST.ModeTypeInout conn__tau))
+      /\ (contains E conn (GDConnection SosADL.SosADL.ModeTypeInout conn__tau))
       /\ (expression e has type tau in Gamma)
       /\ (tau </ conn__tau under Gamma)
       /\ (body l well typed in Gamma)
       ->
-      body (AST.Action (Some (AST.ComplexName (gd :: conn :: nil)))
-                       (Some (AST.SendAction (Some e))) :: l)
+      body (SosADL.SosADL.Action (Some (SosADL.SosADL.ComplexName (gd :: conn :: nil)))
+                       (Some (SosADL.SosADL.SendAction (Some e))) :: l)
            well typed in Gamma
 
 | type_DoExpr:
@@ -1176,23 +1033,17 @@ gate-or-duty, connection.%}% *)
       (expression e has type tau in Gamma)
       /\ (body l well typed in Gamma)
       ->
-      body (AST.BehaviorStatement_DoExpr (Some e) :: l) well typed in Gamma
+      body (SosADL.SosADL.BehaviorStatement_DoExpr (Some e) :: l) well typed in Gamma
 
 | type_Done:
     forall Gamma,
-      body (AST.BehaviorStatement_Done :: nil) well typed in Gamma
+      body (SosADL.SosADL.BehaviorStatement_Done :: nil) well typed in Gamma
 
 
-(** ** Notations *)
-where "'SoSADL' a 'well' 'typed'" := (type_sosADL a)
-and "'unit' u 'well' 'typed' 'in' Gamma" := (type_unit Gamma u)
-and "'entity' u 'well' 'typed' 'in' Gamma" := (type_entityBlock Gamma u)
-and "'typedecl' t 'well' 'typed' 'in' Gamma" := (type_datatypeDecl Gamma t)
+where "'typedecl' t 'well' 'typed' 'in' Gamma" := (type_datatypeDecl Gamma t)
 and "'functions' 'of' 'typedecl' t 'well' 'typed' 'in' Gamma" := (type_datatypeDecl_functions Gamma t)
 and "'function' f 'well' 'typed' 'in' Gamma" := (type_function Gamma f)
 and "'type' t 'well' 'typed' 'in' Gamma" := (type_datatype Gamma t)
-and "'system' s 'well' 'typed' 'in' Gamma" := (type_system Gamma s)
-and "'systemblock' s 'well' 'typed' 'in' Gamma" := (type_systemblock Gamma s)
 and "'mediator' m 'well' 'typed' 'in' Gamma" := (type_mediator Gamma m)
 and "'mediatorblock' m 'well' 'typed' 'in' Gamma" := (type_mediatorblock Gamma m)
 and "'architecture' a 'well' 'typed' 'in' Gamma" := (type_architecture Gamma a)
@@ -1208,3 +1059,182 @@ and "'protocol' p 'well' 'typed' 'in' Gamma" := (type_protocol Gamma p)
 and "'connection' c 'well' 'typed' 'in' Gamma" := (type_connection Gamma c)
 and "'body' b 'well' 'typed' 'in' Gamma" := (type_body Gamma b)
 .
+
+Definition type_datatypeDecls Gamma l Gamma1 := @incrementally _ type_datatypeDecl SosADL.SosADL.DataTypeDecl_name (fun x => Some (EType x)) Gamma l Gamma1.
+Definition type_functionDecls Gamma l Gamma1 := @incrementally _ type_function SosADL.SosADL.FunctionDecl_name (fun x => Some (EFunction x)) Gamma l Gamma1.
+Definition type_mediators Gamma l Gamma1 := @incrementally _ type_mediator SosADL.SosADL.MediatorDecl_name (fun x => Some (EMediator x)) Gamma l Gamma1.
+Definition type_architectures Gamma l Gamma1 := @incrementally _ type_architecture SosADL.SosADL.ArchitectureDecl_name (fun x => Some (EArchitecture x)) Gamma l Gamma1.
+Definition formalParameter_to_EVariable p :=
+  match SosADL.SosADL.FormalParameter_type p with
+  | None => None
+  | Some t => Some (EVariable t)
+  end.
+Definition type_formalParameters Gamma l Gamma1 :=
+  @mutually _ (fun gamma p _ =>
+                 exists t,
+                   SosADL.SosADL.FormalParameter_type p = Some t
+                   /\ type t well typed in Gamma)
+            SosADL.SosADL.FormalParameter_name
+            formalParameter_to_EVariable
+            Gamma l Gamma1.
+
+(** ** System *)
+
+Inductive type_systemblock: env -> SosADL.SosADL.t_SystemDecl -> Prop :=
+| type_SystemDecl_datatype_Some:
+    forall
+      (Gamma: env)
+      (name: string)
+      (d_name: string)
+      (d_def: SosADL.SosADL.t_DataType)
+      (d_funs: list SosADL.SosADL.t_FunctionDecl)
+      (l: list SosADL.SosADL.t_DataTypeDecl)
+      (gates: list SosADL.SosADL.t_GateDecl)
+      (bhv: SosADL.SosADL.t_BehaviorDecl)
+      (assrt: option SosADL.SosADL.t_AssertionDecl)
+      (p1: typedecl (SosADL.SosADL.DataTypeDecl (Some d_name) (Some d_def) d_funs) well typed in Gamma)
+      (p2: systemblock (SosADL.SosADL.SystemDecl (Some name) nil l gates (Some bhv) assrt)
+                     well typed in Gamma [| d_name <- EType (SosADL.SosADL.DataTypeDecl (Some d_name) (Some d_def) d_funs) |])
+    ,
+      systemblock (SosADL.SosADL.SystemDecl (Some name) nil ((SosADL.SosADL.DataTypeDecl (Some d_name) (Some d_def) d_funs)::l) gates (Some bhv) assrt)
+                  well typed in Gamma
+
+       (* TODO
+| type_SystemDecl_datatype_None:
+    forall Gamma name d_name d_def d_funs l gates bhv assrt,
+      (typedecl (SosADL.SosADL.DataTypeDecl (Some d_name) None d_funs) well typed in Gamma)
+      /\ (systemblock (SosADL.SosADL.SystemDecl (Some name) nil l gates (Some bhv) assrt)
+                     well typed in Gamma [| d_name <- EType (SosADL.SosADL.DataTypeDecl (Some d_name) (Some d_def) d_funs) |])
+      ->
+      systemblock (SosADL.SosADL.SystemDecl (Some name) nil ((SosADL.SosADL.DataTypeDecl (Some d_name) None d_funs)::l) gates (Some bhv) assrt)
+                  well typed in Gamma
+
+| type_SystemDecl_gate:
+    forall Gamma name g g_name l bhv assrt,
+      (gate g well typed in Gamma)
+      /\ (SosADL.SosADL.GateDecl_name g = Some g_name)
+      /\ (systemblock (SosADL.SosADL.SystemDecl (Some name) nil nil l (Some bhv) assrt)
+                     well typed in Gamma [| g_name <- EGateOrDuty (build_gate_env g) |])
+      ->
+      systemblock (SosADL.SosADL.SystemDecl (Some name) nil nil (g::l) (Some bhv) assrt) well typed in Gamma
+
+| type_SystemDecl_Some_Assertion:
+    forall Gamma name bhv assrt,
+      (behavior bhv well typed in Gamma)
+      /\ (assertion assrt well typed in Gamma)
+      ->
+      systemblock (SosADL.SosADL.SystemDecl (Some name) nil nil nil (Some bhv) (Some assrt)) well typed in Gamma
+*)
+
+| type_SystemDecl_None:
+    forall
+      (Gamma: env)
+      (name: string)
+      (bhv: SosADL.SosADL.t_BehaviorDecl)
+      (p: behavior bhv well typed in Gamma)
+    ,
+      systemblock (SosADL.SosADL.SystemDecl (Some name) nil nil nil (Some bhv) None) well typed in Gamma
+where "'systemblock' s 'well' 'typed' 'in' Gamma" := (type_systemblock Gamma s)
+.
+
+(** %\note{%By choice, the elements declared in the system are typed
+in order by the set rules for [type_systemblock].%}% *)
+
+Inductive type_system: env -> SosADL.SosADL.t_SystemDecl -> Prop :=
+| type_SystemDecl:
+    forall
+      (Gamma: env)
+      (name: string)
+      (params: list SosADL.SosADL.t_FormalParameter)
+      (Gamma1: env)
+      (datatypes: list SosADL.SosADL.t_DataTypeDecl)
+      (gates: list SosADL.SosADL.t_GateDecl)
+      (bhv: SosADL.SosADL.t_BehaviorDecl)
+      (assrt: option SosADL.SosADL.t_AssertionDecl)
+      (p1: type_formalParameters Gamma params Gamma1)
+      (p2: systemblock (SosADL.SosADL.SystemDecl (Some name) nil datatypes gates (Some bhv) assrt)
+                       well typed in Gamma1)
+    ,
+      system (SosADL.SosADL.SystemDecl (Some name) params datatypes gates (Some bhv) assrt) well typed in Gamma
+where "'system' s 'well' 'typed' 'in' Gamma" := (type_system Gamma s)
+.
+
+Definition type_systems Gamma l Gamma1 := @incrementally _ type_system SosADL.SosADL.SystemDecl_name (fun x => Some (ESystem x)) Gamma l Gamma1.
+
+(** ** Entity *)
+
+(** %\note{%We choose that the order of the declaration is
+significant for the typing rules. Namely, the scope of a declaration
+starts after this declaration and spans until the end of the enclosing
+block. This choice prevents, e.g., (mutually) recursive
+declarations. This behavior is implemented by the following rules,
+each of which exhausts of list of declarations in order.%}% *)
+
+Inductive type_entityBlock: env -> SosADL.SosADL.t_EntityBlock -> Prop :=
+| type_EntityBlock_whole:
+    forall
+      (Gamma: env)
+      (datatypes: list SosADL.SosADL.t_DataTypeDecl)
+      (Gamma1: env)
+      (funs: list SosADL.SosADL.t_FunctionDecl)
+      (Gamma2: env)
+      (systems: list SosADL.SosADL.t_SystemDecl)
+      (Gamma3: env)
+      (mediators: list SosADL.SosADL.t_MediatorDecl)
+      (Gamma4: env)
+      (architectures: list SosADL.SosADL.t_ArchitectureDecl)
+      (Gamma5: env)
+      (p1: type_datatypeDecls Gamma datatypes Gamma1)
+      (p2: type_functionDecls Gamma1 funs Gamma2)
+      (p3: type_systems Gamma2 systems Gamma3)
+      (p4: type_mediators Gamma3 mediators Gamma4)
+      (p5: type_architectures Gamma4 architectures Gamma5)
+    ,
+      entity (SosADL.SosADL.EntityBlock datatypes funs systems mediators architectures) well typed in Gamma
+  
+where "'entity' u 'well' 'typed' 'in' Gamma" := (type_entityBlock Gamma u)
+.
+
+(**
+ ** Compilation unit
+
+The two forms of compulation unit (SoS or library) are handled in the
+same way by the typing rules.  *)
+
+(** %\note{%The environment is added in anticipation of the handling of the imports.%}% *)
+
+Inductive type_unit: env -> SosADL.SosADL.t_Unit -> Prop :=
+| type_SoS:
+    forall (Gamma: env)
+           (n: string)
+           (e: SosADL.SosADL.t_EntityBlock)
+           (p: entity e well typed in Gamma)
+    ,
+      unit (SosADL.SosADL.SoS (Some n) (Some e)) well typed in Gamma
+
+| type_Library:
+    forall (Gamma: env)
+           (n: string)
+           (e: SosADL.SosADL.t_EntityBlock)
+           (p: entity e well typed in Gamma)
+    ,
+      unit (SosADL.SosADL.Library (Some n) (Some e)) well typed in Gamma
+where "'unit' u 'well' 'typed' 'in' Gamma" := (type_unit Gamma u)
+.
+
+(**
+ ** SoS architecture
+
+%\todo{%The import list is currently ignored.%}%
+ *)
+
+Inductive type_sosADL: SosADL.SosADL.t_SosADL -> Prop :=
+| type_SosADL:
+    forall (i: list SosADL.SosADL.t_Import)
+           (d: SosADL.SosADL.t_Unit)
+           (p: unit d well typed in empty)
+    ,
+      SoSADL (SosADL.SosADL.SosADL i (Some d)) well typed
+where "'SoSADL' a 'well' 'typed'" := (type_sosADL a)
+.
+

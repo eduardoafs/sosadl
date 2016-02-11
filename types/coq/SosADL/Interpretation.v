@@ -1,14 +1,12 @@
-Require SosADL.
+Require SosADL.SosADL.
 Require Import BinInt.
 Require Import String.
-
-Module AST := SosADL.
 
 (** * General interpretation outcome *)
 
 Inductive interpretation {A: Set}: Set :=
 | Interpreted: A -> interpretation
-| Failed: AST.t_Expression -> AST.t_Expression -> interpretation.
+| Failed: SosADL.SosADL.t_Expression -> SosADL.SosADL.t_Expression -> interpretation.
 
 (** * An interpretation function in [Z] *)
 
@@ -17,10 +15,10 @@ interger values and arithmetic operations. *)
 
 Local Open Scope string_scope.
 
-Fixpoint interp_in_Z (e: AST.t_Expression) {struct e} :=
+Fixpoint interp_in_Z (e: SosADL.SosADL.t_Expression) {struct e} :=
   match e with
-    | AST.IntegerValue (Some x) => Interpreted x
-    | AST.UnaryExpression (Some op) (Some x) =>
+    | SosADL.SosADL.IntegerValue (Some x) => Interpreted x
+    | SosADL.SosADL.UnaryExpression (Some op) (Some x) =>
       match match op with
               | "-" => Some Z.opp
               | "+" => Some id
@@ -33,7 +31,7 @@ Fixpoint interp_in_Z (e: AST.t_Expression) {struct e} :=
           end
         | None => Failed e e
       end
-    | AST.BinaryExpression (Some l) (Some op) (Some r) =>
+    | SosADL.SosADL.BinaryExpression (Some l) (Some op) (Some r) =>
       match match op with
               | "+" => Some Z.add
               | "-" => Some Z.sub
@@ -62,11 +60,11 @@ Fixpoint interp_in_Z (e: AST.t_Expression) {struct e} :=
 translating the SoSADL expression to [Z], then use the evaluation and
 decision tools of this Coq library. *)
 
-Inductive expression_le: AST.t_Expression -> AST.t_Expression -> Prop :=
+Inductive expression_le: SosADL.SosADL.t_Expression -> SosADL.SosADL.t_Expression -> Prop :=
 | In_Z: forall
-    (l: AST.t_Expression)
+    (l: SosADL.SosADL.t_Expression)
     (zl: BinInt.Z)
-    (r: AST.t_Expression)
+    (r: SosADL.SosADL.t_Expression)
     (zr: BinInt.Z)
     (p1: interp_in_Z l = Interpreted zl)
     (p2: interp_in_Z r = Interpreted zr)

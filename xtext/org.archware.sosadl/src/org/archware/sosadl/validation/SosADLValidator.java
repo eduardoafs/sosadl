@@ -43,7 +43,11 @@ import org.archware.sosadl.sosADL.SystemDecl;
 import org.archware.sosadl.sosADL.TupleType;
 import org.archware.sosadl.sosADL.UnaryExpression;
 import org.archware.sosadl.sosADL.Unit;
+import org.archware.sosadl.validation.typing.EnvContent;
 import org.archware.sosadl.validation.typing.Environment;
+import org.archware.sosadl.validation.typing.impl.ArchitectureEnvContent;
+import org.archware.sosadl.validation.typing.impl.FunctionEnvContent;
+import org.archware.sosadl.validation.typing.impl.MediatorEnvContent;
 import org.archware.sosadl.validation.typing.impl.SystemEnvContent;
 import org.archware.sosadl.validation.typing.impl.TypeEnvContent;
 import org.archware.sosadl.validation.typing.impl.VariableEnvContent;
@@ -69,12 +73,15 @@ import org.archware.sosadl.validation.typing.proof.Forall;
 import org.archware.sosadl.validation.typing.proof.Forall_cons;
 import org.archware.sosadl.validation.typing.proof.Forall_nil;
 import org.archware.sosadl.validation.typing.proof.In_Z;
+import org.archware.sosadl.validation.typing.proof.Incrementally;
+import org.archware.sosadl.validation.typing.proof.Incrementally_cons;
+import org.archware.sosadl.validation.typing.proof.Incrementally_nil;
 import org.archware.sosadl.validation.typing.proof.Mandatory;
+import org.archware.sosadl.validation.typing.proof.Mutually;
+import org.archware.sosadl.validation.typing.proof.Mutually_all;
+import org.archware.sosadl.validation.typing.proof.Mutually_all_explicit;
 import org.archware.sosadl.validation.typing.proof.ProofTerm;
-import org.archware.sosadl.validation.typing.proof.Type_EntityBlock;
-import org.archware.sosadl.validation.typing.proof.Type_EntityBlock_datatype_None;
-import org.archware.sosadl.validation.typing.proof.Type_EntityBlock_datatype_Some;
-import org.archware.sosadl.validation.typing.proof.Type_EntityBlock_system;
+import org.archware.sosadl.validation.typing.proof.Type_EntityBlock_whole;
 import org.archware.sosadl.validation.typing.proof.Type_Library;
 import org.archware.sosadl.validation.typing.proof.Type_NamedType;
 import org.archware.sosadl.validation.typing.proof.Type_RangeType_trivial;
@@ -83,11 +90,15 @@ import org.archware.sosadl.validation.typing.proof.Type_SoS;
 import org.archware.sosadl.validation.typing.proof.Type_SosADL;
 import org.archware.sosadl.validation.typing.proof.Type_SystemDecl;
 import org.archware.sosadl.validation.typing.proof.Type_SystemDecl_None;
+import org.archware.sosadl.validation.typing.proof.Type_SystemDecl_datatype_Some;
 import org.archware.sosadl.validation.typing.proof.Type_TupleType;
+import org.archware.sosadl.validation.typing.proof.Type_architecture;
 import org.archware.sosadl.validation.typing.proof.Type_behavior;
 import org.archware.sosadl.validation.typing.proof.Type_datatype;
 import org.archware.sosadl.validation.typing.proof.Type_datatypeDecl;
 import org.archware.sosadl.validation.typing.proof.Type_entityBlock;
+import org.archware.sosadl.validation.typing.proof.Type_function;
+import org.archware.sosadl.validation.typing.proof.Type_mediator;
 import org.archware.sosadl.validation.typing.proof.Type_sosADL;
 import org.archware.sosadl.validation.typing.proof.Type_system;
 import org.archware.sosadl.validation.typing.proof.Type_systemblock;
@@ -148,35 +159,35 @@ public class SosADLValidator extends AbstractSosADLValidator {
 
 	private Type_entityBlock type_entityBlock(Environment gamma, EntityBlock decls, EList<DataTypeDecl> datatypes, EList<FunctionDecl> functions,
 			EList<SystemDecl> systems, EList<MediatorDecl> mediators, EList<ArchitectureDecl> architectures) {
-		// type_EntityBlock_datatype_Some:
-		if(datatypes.size() >= 1 && datatypes.get(0).getName() != null && datatypes.get(0).getDatatype() != null) {
-			return createType_EntityBlock_datatype_Some(gamma, datatypes.get(0).getName(), datatypes.get(0).getDatatype(),
-					datatypes.get(0).getFunctions(), cdr(datatypes), functions, systems, mediators, architectures,
-					type_datatypeDecl(gamma, datatypes.get(0)),
-					type_entityBlock(gamma.put(datatypes.get(0).getName(), new TypeEnvContent(datatypes.get(0))), decls, cdr(datatypes), functions, systems, mediators, architectures));
-		} else
-		// type_EntityBlock_datatype_None:
-		if(datatypes.size() >= 1 && datatypes.get(0).getName() != null && datatypes.get(0).getDatatype() == null) {
-			return createType_EntityBlock_datatype_None(gamma, datatypes.get(0).getName(),
-					datatypes.get(0).getFunctions(), cdr(datatypes), functions, systems, mediators, architectures,
-					type_datatypeDecl(gamma, datatypes.get(0)),
-					type_entityBlock(gamma.put(datatypes.get(0).getName(), new TypeEnvContent(datatypes.get(0))), decls, cdr(datatypes), functions, systems, mediators, architectures));
-		} else
-		// type_EntityBlock_system:
-		if(datatypes.isEmpty() && functions.isEmpty() && systems.size() >= 1 && systems.get(0).getName() != null) {
-			return createType_EntityBlock_system(gamma, systems.get(0), systems.get(0).getName(), cdr(systems), mediators, architectures,
-					type_system(gamma, systems.get(0)),
-					createReflexivity(),
-					type_entityBlock(gamma.put(systems.get(0).getName(),  new SystemEnvContent(systems.get(0))), decls, datatypes, functions, cdr(systems), mediators, architectures));
-		} else
-		// type_EntityBlock:
-		if(datatypes.isEmpty() && functions.isEmpty() && systems.isEmpty() && mediators.isEmpty() && architectures.isEmpty()) {
-			return createType_EntityBlock(gamma);
-		} else {
-			EObject x = firstOfOr(decls, datatypes, functions, systems, mediators, architectures);
-			error("Badly formed entity block", x, null);
-			return null;
-		}
+		Pair<Incrementally<DataTypeDecl, Type_datatypeDecl>, Environment> p1 = type_datatypeDecls(gamma, datatypes);
+		Pair<Incrementally<FunctionDecl, Type_function>, Environment> p2 = type_functions(p1.getB(), functions);
+		Pair<Incrementally<SystemDecl, Type_system>, Environment> p3 = type_systems(p2.getB(), systems);
+		Pair<Incrementally<MediatorDecl, Type_mediator>, Environment> p4 = type_mediators(p3.getB(), mediators);
+		Pair<Incrementally<ArchitectureDecl, Type_architecture>, Environment> p5 = type_architectures(p4.getB(), architectures);
+		return createType_EntityBlock_whole(gamma, datatypes, p1.getB(), functions, p2.getB(), systems, p3.getB(), mediators, p4.getB(), architectures, p5.getB(), p1.getA(), p2.getA(), p3.getA(), p4.getA(), p5.getA());
+	}
+
+	private Pair<Incrementally<ArchitectureDecl, Type_architecture>, Environment> type_architectures(Environment gamma, EList<ArchitectureDecl> architectures) {
+		return proveIncrementally(gamma, architectures, this::type_architecture, ArchitectureDecl::getName, (d) -> new ArchitectureEnvContent(d));
+	}
+
+	private Pair<Incrementally<MediatorDecl, Type_mediator>, Environment> type_mediators(
+			Environment gamma, EList<MediatorDecl> mediators) {
+		return proveIncrementally(gamma, mediators, this::type_mediator, MediatorDecl::getName, (d) -> new MediatorEnvContent(d));
+	}
+
+	private Pair<Incrementally<SystemDecl, Type_system>, Environment> type_systems(Environment gamma, EList<SystemDecl> systems) {
+		return proveIncrementally(gamma, systems, this::type_system, SystemDecl::getName, (d) -> new SystemEnvContent(d));
+	}
+
+	private Pair<Incrementally<FunctionDecl, Type_function>, Environment> type_functions(
+			Environment gamma, EList<FunctionDecl> functions) {
+		return proveIncrementally(gamma, functions, this::type_function, FunctionDecl::getName, (d) -> new FunctionEnvContent(d));
+	}
+
+	private Pair<Incrementally<DataTypeDecl, Type_datatypeDecl>, Environment> type_datatypeDecls(Environment gamma,
+			EList<DataTypeDecl> datatypes) {
+		return proveIncrementally(gamma, datatypes, this::type_datatypeDecl, DataTypeDecl::getName, (d) -> new TypeEnvContent(d));
 	}
 
 	private Type_datatypeDecl type_datatypeDecl(Environment gamma, DataTypeDecl dataTypeDecl) {
@@ -185,19 +196,23 @@ public class SosADLValidator extends AbstractSosADLValidator {
 		return null;
 	}
 
+	private Type_function type_function(Environment gamma, FunctionDecl fun) {
+		saveEnvironment(fun, gamma);
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 	private Type_system type_system(Environment gamma, SystemDecl systemDecl) {
 		saveEnvironment(systemDecl, gamma);
 		// type_SystemDecl:
-		if(systemDecl.getName() != null && systemDecl.getBehavior() != null && noDuplicate(systemDecl.getParameters().stream().map(FormalParameter::getName))) {
-			return saveProof(systemDecl, createType_SystemDecl(env_add_params(systemDecl.getParameters(), gamma), systemDecl.getName(), systemDecl.getParameters(), systemDecl.getDatatypes(),
-					systemDecl.getGates(), systemDecl.getBehavior(), systemDecl.getAssertion(),
-					proveForall(systemDecl.getParameters(), (p) -> proveExistsAndEqType(gamma, p, FormalParameter::getType)),
-					type_systemblock(gamma, systemDecl, systemDecl.getDatatypes(), systemDecl.getGates(), systemDecl.getAssertion(), systemDecl.getBehavior()), createReflexivity()));
+		if(systemDecl.getName() != null && systemDecl.getBehavior() != null) {
+			Pair<Mutually<FormalParameter,Ex<DataType, And<Equality,Type_datatype>>>, Environment> p = proveMutually(gamma, systemDecl.getParameters(),
+					this::type_formalParameter, "SosADL.SosADL.FormalParameter_name", FormalParameter::getName,
+					"SosADL.TypeSystem.formalParameter_to_EVariable", SosADLValidator::formalParameterEnvContent);
+			return saveProof(systemDecl, createType_SystemDecl(gamma, systemDecl.getName(), systemDecl.getParameters(), p.getB(), systemDecl.getDatatypes(), systemDecl.getGates(), systemDecl.getBehavior(), systemDecl.getAssertion(), p.getA(),
+					type_systemblock(env_add_params(systemDecl.getParameters(), gamma), systemDecl, systemDecl.getDatatypes(), systemDecl.getGates(), systemDecl.getAssertion(), systemDecl.getBehavior())));
 		} else {
-			if(!noDuplicate(systemDecl.getParameters().stream().map(FormalParameter::getName))) {
-				EList<FormalParameter> params = systemDecl.getParameters();
-				params.stream().filter((p) -> params.stream().map(FormalParameter::getName).filter((n) -> n.equals(p.getName())).count() >= 2).forEach((f) -> error("Multiple parameters named `" + f.getName() + "'", f, null));
-			} else if(systemDecl.getBehavior() == null) {
+			if(systemDecl.getBehavior() == null) {
 				error("The system must have a behavior", systemDecl, null);
 			} else if(systemDecl.getName() == null) {
 				error("The system must have a name", systemDecl, null);
@@ -208,8 +223,33 @@ public class SosADLValidator extends AbstractSosADLValidator {
 		}
 	}
 
+	private Type_mediator type_mediator(Environment gamma, MediatorDecl mediator) {
+		saveEnvironment(mediator, gamma);
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	private Type_architecture type_architecture(Environment gamma, ArchitectureDecl architecture) {
+		saveEnvironment(architecture, gamma);
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 	private <T> Ex<DataType, And<Equality,Type_datatype>> proveExistsAndEqType(Environment gamma, T t, Function<T, DataType> getter) {
 		return createEx_intro(getter.apply(t), createConj(createReflexivity(), type_datatype(gamma, getter.apply(t))));
+	}
+	
+	private Ex<DataType, And<Equality,Type_datatype>> type_formalParameter(Environment gamma, FormalParameter p, Environment gamma1) {
+		return proveExistsAndEqType(gamma, p, FormalParameter::getType);
+	}
+	
+	private static EnvContent formalParameterEnvContent(FormalParameter p) {
+		DataType t = p.getType();
+		if(t == null) {
+			return null;
+		} else {
+			return new VariableEnvContent(p, t);
+		}
 	}
 
 	private Type_datatype type_datatype(Environment gamma, DataType type) {
@@ -313,10 +353,17 @@ public class SosADLValidator extends AbstractSosADLValidator {
 	}
 
 	private Type_systemblock type_systemblock(Environment gamma, SystemDecl systemDecl, EList<DataTypeDecl> dataTypeDecls, EList<GateDecl> gateDecls, AssertionDecl assertionDecl, BehaviorDecl behaviorDecl) {
-		if(systemDecl.getName() != null && dataTypeDecls.isEmpty() && gateDecls.isEmpty() && assertionDecl == null && behaviorDecl != null) {
+		// type_SystemDecl_datatype_Some
+		if(systemDecl.getName() != null && !dataTypeDecls.isEmpty() && dataTypeDecls.get(0).getName() != null && dataTypeDecls.get(0).getDatatype() != null && behaviorDecl != null) {
+			return saveProof(systemDecl, createType_SystemDecl_datatype_Some(gamma, systemDecl.getName(), dataTypeDecls.get(0).getName(), dataTypeDecls.get(0).getDatatype(), dataTypeDecls.get(0).getFunctions(), cdr(dataTypeDecls), gateDecls, behaviorDecl, assertionDecl,
+					type_datatypeDecl(gamma, dataTypeDecls.get(0)),
+					type_systemblock(gamma.put(dataTypeDecls.get(0).getName(), new TypeEnvContent(dataTypeDecls.get(0))), systemDecl, cdr(dataTypeDecls), gateDecls, assertionDecl, behaviorDecl)));
+		}
+		// type_SystemDecl_None:
+		else if(systemDecl.getName() != null && dataTypeDecls.isEmpty() && gateDecls.isEmpty() && assertionDecl == null && behaviorDecl != null) {
 			return createType_SystemDecl_None(gamma, systemDecl.getName(), behaviorDecl, type_behavior(gamma, behaviorDecl));
 		} else {
-			error("Type error", systemDecl, null);
+			// TODO error("Type error", systemDecl, null);
 			return null;
 		}
 	}
@@ -326,12 +373,50 @@ public class SosADLValidator extends AbstractSosADLValidator {
 		return null;
 	}
 
-	private <T extends EObject, P extends ProofTerm> Forall<T, P> proveForall(
+	private static <T extends EObject, P extends ProofTerm> Forall<T, P> proveForall(
 			List<? extends T> l, Function<T, ? extends P> prover) {
-		if(l.size() == 0) {
+		if(l.isEmpty()) {
 			return createForall_nil();
 		} else {
 			return createForall_cons(l.get(0), prover.apply(l.get(0)), proveForall(cdr(l), prover));
+		}
+	}
+	
+	private static <T extends EObject, P extends ProofTerm> Pair<Incrementally<T,P>,Environment> proveIncrementally(Environment gamma, List<T> l,
+			BiFunction<Environment, T, P> prover, Function<T, ? extends String> name, Function<T, ? extends EnvContent> content) {
+		if(l.isEmpty()) {
+			return new Pair<>(createIncrementally_nil(gamma), gamma);
+		} else {
+			Environment gammai = augment_env(gamma, name.apply(l.get(0)), content.apply(l.get(0)));
+			Pair<Incrementally<T, P>, Environment> p = proveIncrementally(gammai, cdr(l), prover, name, content);
+			Environment gamma1 = p.getB();
+			return new Pair<>(createIncrementally_cons(gamma, l.get(0), name.apply(l.get(0)), content.apply(l.get(0)), gammai, cdr(l), gamma1,
+					prover.apply(gamma, l.get(0)), createReflexivity(), createReflexivity(), createReflexivity(), p.getA()), gamma1);
+		}
+	}
+	
+	private <T extends EObject, P extends ProofTerm> Pair<Mutually<T,P>, Environment> proveMutually(Environment gamma, List<T> l,
+			TriFunction<Environment, T, Environment, P> prover, Function<T, ? extends String> name, Function<T, ? extends EnvContent> content) {
+		if(noDuplicate(l.stream().map(name))) {
+			Environment gamma1 = fold_right((x, g) -> augment_env(g, name.apply(x), content.apply(x)), gamma, l);
+			return new Pair<>(createMutually_all(gamma, l, gamma1, createReflexivity(), createReflexivity(), proveForall(l, (x) -> prover.apply(gamma,  x,  gamma1))), gamma1);
+		} else {
+			l.stream().filter((p) -> l.stream().map(name).filter((n) -> n.equals(name.apply(p))).count() >= 2)
+			.forEach((f) -> error("Multiple definitions of `" + name.apply(f) + "'", f, null));
+			return new Pair<>(null, gamma);
+		}
+	}
+
+	private <T extends EObject, P extends ProofTerm> Pair<Mutually<T,P>, Environment> proveMutually(Environment gamma, List<T> l,
+			TriFunction<Environment, T, Environment, P> prover, String n, Function<T, ? extends String> name,
+			String c, Function<T, ? extends EnvContent> content) {
+		if(noDuplicate(l.stream().map(name))) {
+			Environment gamma1 = fold_right((x, g) -> augment_env(g, name.apply(x), content.apply(x)), gamma, l);
+			return new Pair<>(createMutually_all_explicit(n, c, gamma, l, gamma1, createReflexivity(), createReflexivity(), proveForall(l, (x) -> prover.apply(gamma,  x,  gamma1))), gamma1);
+		} else {
+			l.stream().filter((p) -> l.stream().map(name).filter((x) -> x.equals(name.apply(p))).count() >= 2)
+			.forEach((f) -> error("Multiple definitions of `" + name.apply(f) + "'", f, null));
+			return new Pair<>(null, gamma);
 		}
 	}
 
@@ -360,6 +445,16 @@ public class SosADLValidator extends AbstractSosADLValidator {
 	public static Object getProof(EObject eObject) {
 		return AttributeAdapter.adapterOf(eObject).getAttribute(PROOF);
 	}
+	
+	private static Environment augment_env(Environment gamma, String name, EnvContent content) {
+		if(name == null) {
+			return gamma;
+		} else if(content == null) {
+			return gamma;
+		} else {
+			return gamma.put(name, content);
+		}
+	}
 
 	private static <T> EList<T> cdr(List<T> l) {
 		Iterator<T> i = l.iterator();
@@ -374,15 +469,40 @@ public class SosADLValidator extends AbstractSosADLValidator {
 	}
 	
 	private static Environment env_add_params(List<FormalParameter> l, Environment gamma) {
-		return fold_left((e,p) -> (p.getName() != null && p.getType() != null ? e.put(p.getName(), new VariableEnvContent(p, p.getType())) : e), l, gamma);
+		return fold_right((p,e) -> (p.getName() != null && p.getType() != null ? e.put(p.getName(), new VariableEnvContent(p, p.getType())) : e), gamma, l);
 	}
 	
+	@SuppressWarnings("unused")
 	private static <A,B> A fold_left(BiFunction<A,B,A> f, List<B> l, A i) {
+		/*
 		if(l.isEmpty()) {
 			return i;
 		} else {
 			return fold_left(f, cdr(l), f.apply(i, l.get(0)));
 		}
+		*/
+		A r = i;
+		for(B x:l) {
+			r = f.apply(r, x);
+		}
+		return r;
+	}
+	
+	private static <A,B> A fold_right(BiFunction<B,A,A> f, A i, List<B> l) {
+		/*
+		if(l.isEmpty()) {
+			return i;
+		} else {
+			return f.apply(l.get(0), fold_right(f, i, cdr(l)));
+		}
+		*/
+		A r = i;
+		for(int j = l.size();j > 0;) {
+			--j;
+			B x = l.get(j);
+			r = f.apply(x, r);
+		}
+		return r;
 	}
 	
 	private static <T> boolean noDuplicate(Stream<T> s) {
@@ -408,16 +528,6 @@ public class SosADLValidator extends AbstractSosADLValidator {
 		}
 		return false;
 	}
-
-	@SafeVarargs
-	private static EObject firstOfOr(EObject other, EList<? extends EObject>... lists) {
-		for(EList<? extends EObject> l : lists) {
-			if(!l.isEmpty()) {
-				return l.get(0);
-			}
-		}
-		return other;
-	}
 	
 	private static Type_sosADL createType_SosADL(EList<Import> i, Unit d, Type_unit p) {
 		return new Type_SosADL(i, d, p);
@@ -431,26 +541,17 @@ public class SosADLValidator extends AbstractSosADLValidator {
 		return new Type_Library(gamma, n, e, p);
 	}
 	
-	private static Type_entityBlock createType_EntityBlock_datatype_Some(Environment gamma, String d_name, DataType d_def, EList<FunctionDecl> d_funs, EList<DataTypeDecl> l, EList<FunctionDecl> funs, EList<SystemDecl> systems, EList<MediatorDecl> mediators, EList<ArchitectureDecl> architectures, Type_datatypeDecl p1, Type_entityBlock p2) {
-		return new Type_EntityBlock_datatype_Some(gamma, d_name, d_def, d_funs, l, funs, systems, mediators, architectures, p1, p2);
-	}
-
-	private static Type_entityBlock createType_EntityBlock_datatype_None(Environment gamma, String d_name, EList<FunctionDecl> d_funs, EList<DataTypeDecl> l, EList<FunctionDecl> funs, EList<SystemDecl> systems, EList<MediatorDecl> mediators, EList<ArchitectureDecl> architectures, Type_datatypeDecl p1, Type_entityBlock p2) {
-		return new Type_EntityBlock_datatype_None(gamma, d_name, d_funs, l, funs, systems, mediators, architectures, p1, p2);
-	}
-	
-	private static Type_entityBlock createType_EntityBlock_system(Environment gamma, SystemDecl s, String s_name,
-			EList<SystemDecl> l, EList<MediatorDecl> mediators, EList<ArchitectureDecl> architectures,
-			Type_system p1, Equality p2, Type_entityBlock p3) {
-		return new Type_EntityBlock_system(gamma, s, s_name, l, mediators, architectures, p1, p2, p3);
-	}
-
-	private static Type_entityBlock createType_EntityBlock(Environment gamma) {
-		return new Type_EntityBlock(gamma);
+	private static Type_entityBlock createType_EntityBlock_whole(Environment gamma, List<DataTypeDecl> datatypes, Environment gamma1,
+			List<FunctionDecl> funs, Environment gamma2, List<SystemDecl> systems, Environment gamma3,
+			List<MediatorDecl> mediators, Environment gamma4, List<ArchitectureDecl> architectures, Environment gamma5,
+			Incrementally<DataTypeDecl, Type_datatypeDecl> p1, Incrementally<FunctionDecl, Type_function> p2,
+			Incrementally<SystemDecl, Type_system> p3, Incrementally<MediatorDecl, Type_mediator> p4,
+			Incrementally<ArchitectureDecl, Type_architecture> p5) {
+		return new Type_EntityBlock_whole(gamma, datatypes, gamma1, funs, gamma2, systems, gamma3, mediators, gamma4, architectures, gamma5, p1, p2, p3, p4, p5);
 	}
 	
-	private static Type_system createType_SystemDecl(Environment gamma, String name, EList<FormalParameter> params, EList<DataTypeDecl> datatypes, EList<GateDecl> gates, BehaviorDecl bhv, AssertionDecl assrt, Forall<FormalParameter, Ex<DataType, And<Equality,Type_datatype>>> p1, Type_systemblock p2, Equality p3) {
-		return new Type_SystemDecl(gamma, name, params, datatypes, gates, bhv, assrt, p1, p2, p3);
+	private static Type_system createType_SystemDecl(Environment gamma, String name, EList<FormalParameter> params, Environment gamma1, EList<DataTypeDecl> datatypes, EList<GateDecl> gates, BehaviorDecl bhv, AssertionDecl assrt, Mutually<FormalParameter, Ex<DataType, And<Equality, Type_datatype>>> p1, Type_systemblock p2) {
+		return new Type_SystemDecl(gamma, name, params, gamma1, datatypes, gates, bhv, assrt, p1, p2);
 	}
 
 	private static Type_datatype createType_NamedType(Environment gamma, String n, DataTypeDecl t, Equality p) {
@@ -471,6 +572,10 @@ public class SosADLValidator extends AbstractSosADLValidator {
 	
 	private static Type_systemblock createType_SystemDecl_None(Environment gamma, String name, BehaviorDecl bhv, Type_behavior p) {
 		return new Type_SystemDecl_None(gamma, name, bhv, p);
+	}
+	
+	private static Type_systemblock createType_SystemDecl_datatype_Some(Environment gamma, String name, String d_name, DataType d_def, EList<FunctionDecl> d_funs, EList<DataTypeDecl> l, EList<GateDecl> gates, BehaviorDecl bhv, AssertionDecl assrt, Type_datatypeDecl p1, Type_systemblock p2) {
+		return new Type_SystemDecl_datatype_Some(gamma, name, d_name, d_def, d_funs, l, gates, bhv, assrt, p1, p2);
 	}
 	
 	private static Expression_le createIn_Z(Expression l, BigInteger zl, Expression r, BigInteger zr, Equality p1, Equality p2, Equality p3) {
@@ -507,6 +612,22 @@ public class SosADLValidator extends AbstractSosADLValidator {
 	
 	private static Constexpr_expression createConstexpr_Mod(Expression l, Expression r, Constexpr_expression p1, Constexpr_expression p2) {
 		return new Constexpr_Mod(l, r, p1, p2);
+	}
+	
+	private static <T,P> Incrementally<T,P> createIncrementally_nil(Environment gamma) {
+		return new Incrementally_nil<>(gamma);
+	}
+	
+	private static <T,P> Incrementally<T,P> createIncrementally_cons(Environment gamma, T x, String n, EnvContent c, Environment gammai, List<T> l, Environment gamma1, P p1, Equality p2, Equality p3, Equality p4, Incrementally<T,P> p5) {
+		return new Incrementally_cons<T, P>(gamma, x, n, c, gammai, l, gamma1, p1, p2, p3, p4, p5);
+	}
+	
+	private static <T,P> Mutually<T,P> createMutually_all(Environment gamma, List<T> l, Environment gamma1, Equality p1, Equality p2, Forall<T,P> p3) {
+		return new Mutually_all<>(gamma, l, gamma1, p1, p2, p3);
+	}
+
+	private static <T,P> Mutually<T,P> createMutually_all_explicit(String name, String content, Environment gamma, List<T> l, Environment gamma1, Equality p1, Equality p2, Forall<T,P> p3) {
+		return new Mutually_all_explicit<>(name, content, gamma, l, gamma1, p1, p2, p3);
 	}
 	
 	private static <A,B> And<A,B> createConj(A a, B b) {

@@ -57,6 +57,8 @@ import org.eclipse.xtext.generator.IFileSystemAccess
 import org.eclipse.xtext.generator.IGenerator
 import java.math.BigInteger
 import org.archware.sosadl.validation.typing.impl.VariableEnvContent
+import org.archware.sosadl.validation.typing.EnvContent
+import org.archware.sosadl.validation.typing.proof.CoqLiteral
 
 /**
  * Generates code from your model files on save.
@@ -83,7 +85,6 @@ class TypingProofGenerator implements IGenerator {
 	Require Import List.
 	Require Import BinInt.
 	
-	Import AST.
 	Import ListNotations.
 	
 	Local Open Scope list_scope.
@@ -113,18 +114,22 @@ class TypingProofGenerator implements IGenerator {
 			return '''_'''
 		} else {
 			var mandatory = f.isAnnotationPresent(Mandatory)
+			var literal = f.isAnnotationPresent(CoqLiteral)
 			var content = getByGetter(p, clazz, f)
-			return processAny(mandatory, content)
+			return processAny(mandatory, literal, content)
 		}
 	}
 	
-	def CharSequence processAny(boolean mandatory, Object content) {
+	def CharSequence processAny(boolean mandatory, boolean literal, Object content) {
 		if(mandatory && content == null) {
 			return '''(admitted _)'''
 		} else if(content instanceof EList<?>) {
-			return coqGenerator._generateL(content as EList<?>, [x | processAny(true, x)])
+			return coqGenerator._generateL(content as EList<?>, [x | processAny(true, literal, x)])
 		} else {
 			var genfun = [Object x | generatorFunction(x) as CharSequence]
+			if(literal) {
+				genfun = [Object x | x as CharSequence ]
+			}
 			if(mandatory) {
 				return genfun.apply(content)
 			} else {
@@ -175,6 +180,7 @@ class TypingProofGenerator implements IGenerator {
 	def dispatch generatorFunction(Valuing content) { return coqGenerator.generatet_Valuing(content) }
 	def dispatch generatorFunction(ProofTerm content) { return generateProof(content) }
 	def dispatch generatorFunction(Environment content) { return '''(«generateEnvironment(content)»)''' }
+	def dispatch generatorFunction(EnvContent content) { return generateEnvContent(content) }
 	
 	def dispatch CharSequence generateEnvironment(CellEnvironmentImpl env) '''{| key := "«env.name»"; value := «env.info.generateEnvContent» |} :: «env.parent.generateEnvironment»'''
 	def dispatch generateEnvironment(EnvironmentImpl env) '''[]'''
@@ -182,7 +188,7 @@ class TypingProofGenerator implements IGenerator {
 	
 	def dispatch generateEnvContent(SystemEnvContent c) '''(ESystem «coqGenerator.generatet_SystemDecl(c.systemDecl)»)'''
 	def dispatch generateEnvContent(TypeEnvContent c) '''(EType «coqGenerator.generatet_DataTypeDecl(c.dataTypeDecl)»)'''
-	def dispatch generateEnvContent(VariableEnvContent c) '''(EVariable «coqGenerator.generatet_DataType(c.type)»))'''
+	def dispatch generateEnvContent(VariableEnvContent c) '''(EVariable «coqGenerator.generatet_DataType(c.type)»)'''
 	
 	static def ctorName(Class<?> clazz) {
 		if(clazz.isAnnotationPresent(CoqConstructor)) {
