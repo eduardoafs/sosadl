@@ -84,6 +84,8 @@ import org.archware.sosadl.validation.typing.proof.Optionally;
 import org.archware.sosadl.validation.typing.proof.Optionally_None;
 import org.archware.sosadl.validation.typing.proof.Optionally_Some;
 import org.archware.sosadl.validation.typing.proof.ProofTerm;
+import org.archware.sosadl.validation.typing.proof.Simple_increment;
+import org.archware.sosadl.validation.typing.proof.Simple_increment_step;
 import org.archware.sosadl.validation.typing.proof.Type_EntityBlock_whole;
 import org.archware.sosadl.validation.typing.proof.Type_Library;
 import org.archware.sosadl.validation.typing.proof.Type_NamedType;
@@ -161,35 +163,35 @@ public class SosADLValidator extends AbstractSosADLValidator {
 
 	private Type_entityBlock type_entityBlock(Environment gamma, EntityBlock decls, EList<DataTypeDecl> datatypes, EList<FunctionDecl> functions,
 			EList<SystemDecl> systems, EList<MediatorDecl> mediators, EList<ArchitectureDecl> architectures) {
-		Pair<Incrementally<DataTypeDecl, Type_datatypeDecl>, Environment> p1 = type_datatypeDecls(gamma, datatypes);
-		Pair<Incrementally<FunctionDecl, Type_function>, Environment> p2 = type_functions(p1.getB(), functions);
-		Pair<Incrementally<SystemDecl, Type_system>, Environment> p3 = type_systems(p2.getB(), systems);
-		Pair<Incrementally<MediatorDecl, Type_mediator>, Environment> p4 = type_mediators(p3.getB(), mediators);
-		Pair<Incrementally<ArchitectureDecl, Type_architecture>, Environment> p5 = type_architectures(p4.getB(), architectures);
+		Pair<Incrementally<DataTypeDecl,Simple_increment<DataTypeDecl,Type_datatypeDecl>>,Environment> p1 = type_datatypeDecls(gamma, datatypes);
+		Pair<Incrementally<FunctionDecl,Simple_increment<FunctionDecl,Type_function>>,Environment> p2 = type_functions(p1.getB(), functions);
+		Pair<Incrementally<SystemDecl,Simple_increment<SystemDecl,Type_system>>,Environment> p3 = type_systems(p2.getB(), systems);
+		Pair<Incrementally<MediatorDecl,Simple_increment<MediatorDecl,Type_mediator>>,Environment> p4 = type_mediators(p3.getB(), mediators);
+		Pair<Incrementally<ArchitectureDecl, Simple_increment<ArchitectureDecl, Type_architecture>>, Environment> p5 = type_architectures(p4.getB(), architectures);
 		return createType_EntityBlock_whole(gamma, datatypes, p1.getB(), functions, p2.getB(), systems, p3.getB(), mediators, p4.getB(), architectures, p5.getB(), p1.getA(), p2.getA(), p3.getA(), p4.getA(), p5.getA());
 	}
 
-	private Pair<Incrementally<ArchitectureDecl, Type_architecture>, Environment> type_architectures(Environment gamma, EList<ArchitectureDecl> architectures) {
-		return proveIncrementally(gamma, architectures, this::type_architecture, ArchitectureDecl::getName, (d) -> new ArchitectureEnvContent(d));
+	private Pair<Incrementally<ArchitectureDecl, Simple_increment<ArchitectureDecl, Type_architecture>>, Environment> type_architectures(Environment gamma, EList<ArchitectureDecl> architectures) {
+		return proveIncrementally(gamma, architectures, (g,x) -> proveSimpleIncrement(g, x, this::type_architecture, "SosADL.SosADL.ArchitectureDecl_name", ArchitectureDecl::getName, "(fun x => Some (EArchitecture x))", (d) -> new ArchitectureEnvContent(d)));
 	}
 
-	private Pair<Incrementally<MediatorDecl, Type_mediator>, Environment> type_mediators(
+	private Pair<Incrementally<MediatorDecl, Simple_increment<MediatorDecl,Type_mediator>>, Environment> type_mediators(
 			Environment gamma, EList<MediatorDecl> mediators) {
-		return proveIncrementally(gamma, mediators, this::type_mediator, MediatorDecl::getName, (d) -> new MediatorEnvContent(d));
+		return proveIncrementally(gamma, mediators, (g,x) -> proveSimpleIncrement(g, x, this::type_mediator, "SosADL.SosADL.MediatorDecl_name", MediatorDecl::getName, "(fun x => Some (EMediator x))", (d) -> new MediatorEnvContent(d)));
 	}
 
-	private Pair<Incrementally<SystemDecl, Type_system>, Environment> type_systems(Environment gamma, EList<SystemDecl> systems) {
-		return proveIncrementally(gamma, systems, this::type_system, SystemDecl::getName, (d) -> new SystemEnvContent(d));
+	private Pair<Incrementally<SystemDecl, Simple_increment<SystemDecl,Type_system>>, Environment> type_systems(Environment gamma, EList<SystemDecl> systems) {
+		return proveIncrementally(gamma, systems, (g,x) -> proveSimpleIncrement(g, x, this::type_system, "SosADL.SosADL.SystemDecl_name", SystemDecl::getName, "(fun x => Some (ESystem x))", (d) -> new SystemEnvContent(d)));
 	}
 
-	private Pair<Incrementally<FunctionDecl, Type_function>, Environment> type_functions(
+	private Pair<Incrementally<FunctionDecl, Simple_increment<FunctionDecl,Type_function>>, Environment> type_functions(
 			Environment gamma, EList<FunctionDecl> functions) {
-		return proveIncrementally(gamma, functions, this::type_function, FunctionDecl::getName, (d) -> new FunctionEnvContent(d));
+		return proveIncrementally(gamma, functions, (g,x) -> proveSimpleIncrement(g, x, this::type_function, "SosADL.SosADL.FunctionDecl", FunctionDecl::getName, "(fun x => Some (EFunction x))", (d) -> new FunctionEnvContent(d)));
 	}
 
-	private Pair<Incrementally<DataTypeDecl, Type_datatypeDecl>, Environment> type_datatypeDecls(Environment gamma,
+	private Pair<Incrementally<DataTypeDecl, Simple_increment<DataTypeDecl, Type_datatypeDecl>>, Environment> type_datatypeDecls(Environment gamma,
 			EList<DataTypeDecl> datatypes) {
-		return proveIncrementally(gamma, datatypes, this::type_datatypeDecl, DataTypeDecl::getName, (d) -> new TypeEnvContent(d));
+		return proveIncrementally(gamma, datatypes, (g,x) -> proveSimpleIncrement(g, x, this::type_datatypeDecl, "SosADL.SosADL.DataTypeDecl_name", DataTypeDecl::getName, "(fun x => Some (EType x))", (d) -> new TypeEnvContent(d)));
 	}
 
 	private Type_datatypeDecl type_datatypeDecl(Environment gamma, DataTypeDecl dataTypeDecl) {
@@ -209,8 +211,8 @@ public class SosADLValidator extends AbstractSosADLValidator {
 		// type_SystemDecl:
 		if(systemDecl.getName() != null && systemDecl.getBehavior() != null) {
 			Pair<Mutually<FormalParameter,Ex<DataType, And<Equality,Type_datatype>>>, Environment> p1 = type_formalParameters(gamma, systemDecl.getParameters());
-			Pair<Incrementally<DataTypeDecl,Type_datatypeDecl>, Environment> p2 = type_datatypeDecls(p1.getB(), systemDecl.getDatatypes());
-			Pair<Incrementally<GateDecl,Type_gate>, Environment> p3 = type_gates(p2.getB(), systemDecl.getGates());
+			Pair<Incrementally<DataTypeDecl,Simple_increment<DataTypeDecl,Type_datatypeDecl>>,Environment> p2 = type_datatypeDecls(p1.getB(), systemDecl.getDatatypes());
+			Pair<Incrementally<GateDecl,Simple_increment<GateDecl,Type_gate>>,Environment> p3 = type_gates(p2.getB(), systemDecl.getGates());
 			return saveProof(systemDecl, createType_SystemDecl(gamma, systemDecl.getName(), systemDecl.getParameters(), p1.getB(), systemDecl.getDatatypes(), p2.getB(), systemDecl.getGates(), p3.getB(),
 					systemDecl.getBehavior(), systemDecl.getAssertion(), p1.getA(), p2.getA(), p3.getA(),
 					type_behavior(p3.getB(), systemDecl.getBehavior()),
@@ -227,8 +229,8 @@ public class SosADLValidator extends AbstractSosADLValidator {
 		}
 	}
 
-	private Pair<Incrementally<GateDecl, Type_gate>, Environment> type_gates(Environment gamma, EList<GateDecl> l) {
-		return proveIncrementally(gamma, l, this::type_gate, GateDecl::getName, (x) -> null);
+	private Pair<Incrementally<GateDecl, Simple_increment<GateDecl,Type_gate>>, Environment> type_gates(Environment gamma, EList<GateDecl> l) {
+		return proveIncrementally(gamma, l, (g,x) -> proveSimpleIncrement(g, x, this::type_gate, "SosADL.SosADL.GateDecl_name", GateDecl::getName, "(fun x => None)", (y) -> null));
 	}
 	
 	private Type_assertion type_assertion(Environment gamma, AssertionDecl a) {
@@ -285,7 +287,6 @@ public class SosADLValidator extends AbstractSosADLValidator {
 		}
 		// type_TupleType:
 		else if(type instanceof TupleType) {
-			System.out.println("typing a TupleType");
 			Pair<Mutually<FieldDecl, Ex<DataType, And<Equality, Type_datatype>>>, Environment> p1 = type_fields(gamma, ((TupleType)type).getFields());
 			return saveProof(type, createType_TupleType(gamma, ((TupleType)type).getFields(), p1.getA()));
 		}
@@ -399,18 +400,24 @@ public class SosADLValidator extends AbstractSosADLValidator {
 	}
 	
 	private static <T extends EObject, P extends ProofTerm> Pair<Incrementally<T,P>,Environment> proveIncrementally(Environment gamma, List<T> l,
-			BiFunction<Environment, T, P> prover, Function<T, ? extends String> name, Function<T, ? extends EnvContent> content) {
+			BiFunction<Environment, T, Pair<P, Environment>> prover) {
 		if(l.isEmpty()) {
 			return new Pair<>(createIncrementally_nil(gamma), gamma);
 		} else {
-			Environment gammai = augment_env(gamma, name.apply(l.get(0)), content.apply(l.get(0)));
-			Pair<Incrementally<T, P>, Environment> p = proveIncrementally(gammai, cdr(l), prover, name, content);
-			Environment gamma1 = p.getB();
-			return new Pair<>(createIncrementally_cons(gamma, l.get(0), name.apply(l.get(0)), content.apply(l.get(0)), gammai, cdr(l), gamma1,
-					prover.apply(gamma, l.get(0)), createReflexivity(), createReflexivity(), createReflexivity(), p.getA()), gamma1);
+			Pair<P, Environment> pi = prover.apply(gamma,  l.get(0));
+			Environment gammai = pi.getB();
+			Pair<Incrementally<T, P>, Environment> pn = proveIncrementally(gammai, cdr(l), prover);
+			Environment gamma1 = pn.getB();
+			return new Pair<>(createIncrementally_cons(gamma, l.get(0), gammai, cdr(l), gamma1, pi.getA(), pn.getA()), gamma1);
 		}
 	}
 	
+	private static <T extends EObject, P extends ProofTerm> Pair<Simple_increment<T,P>,Environment> proveSimpleIncrement(Environment gamma, T x,
+			BiFunction<Environment, T, P> prover, String n, Function<T, ? extends String> name, String c, Function<T, ? extends EnvContent> content) {
+		Environment gamma1 = augment_env(gamma, name.apply(x), content.apply(x));
+		return new Pair<>(createSimple_increment_step(n, c, gamma, x, gamma1, createReflexivity(), prover.apply(gamma, x)), gamma1);
+	}
+
 	private <T extends EObject, P extends ProofTerm> Pair<Mutually<T,P>, Environment> proveMutually(Environment gamma, List<T> l,
 			TriFunction<Environment, T, Environment, P> prover, Function<T, ? extends String> name, Function<T, ? extends EnvContent> content) {
 		if(noDuplicate(l.stream().map(name))) {
@@ -564,9 +571,9 @@ public class SosADLValidator extends AbstractSosADLValidator {
 	private static Type_entityBlock createType_EntityBlock_whole(Environment gamma, List<DataTypeDecl> datatypes, Environment gamma1,
 			List<FunctionDecl> funs, Environment gamma2, List<SystemDecl> systems, Environment gamma3,
 			List<MediatorDecl> mediators, Environment gamma4, List<ArchitectureDecl> architectures, Environment gamma5,
-			Incrementally<DataTypeDecl, Type_datatypeDecl> p1, Incrementally<FunctionDecl, Type_function> p2,
-			Incrementally<SystemDecl, Type_system> p3, Incrementally<MediatorDecl, Type_mediator> p4,
-			Incrementally<ArchitectureDecl, Type_architecture> p5) {
+			Incrementally<DataTypeDecl,Simple_increment<DataTypeDecl,Type_datatypeDecl>> p1, Incrementally<FunctionDecl,Simple_increment<FunctionDecl,Type_function>> p2,
+			Incrementally<SystemDecl,Simple_increment<SystemDecl,Type_system>> p3, Incrementally<MediatorDecl,Simple_increment<MediatorDecl,Type_mediator>> p4,
+			Incrementally<ArchitectureDecl, Simple_increment<ArchitectureDecl, Type_architecture>> p5) {
 		return new Type_EntityBlock_whole(gamma, datatypes, gamma1, funs, gamma2, systems, gamma3, mediators, gamma4, architectures, gamma5, p1, p2, p3, p4, p5);
 	}
 	
@@ -574,7 +581,7 @@ public class SosADLValidator extends AbstractSosADLValidator {
 			EList<DataTypeDecl> datatypes, Environment gamma2, EList<GateDecl> gates, Environment gamma3,
 			BehaviorDecl bhv, AssertionDecl assrt,
 			Mutually<FormalParameter, Ex<DataType, And<Equality, Type_datatype>>> p1,
-			Incrementally<DataTypeDecl, Type_datatypeDecl> p2, Incrementally<GateDecl, Type_gate> p3, Type_behavior p4,
+			Incrementally<DataTypeDecl,Simple_increment<DataTypeDecl,Type_datatypeDecl>> p2, Incrementally<GateDecl,Simple_increment<GateDecl,Type_gate>> p3, Type_behavior p4,
 			Optionally<AssertionDecl, Type_assertion> p5) {
 		return new Type_SystemDecl(gamma, name, params, gamma1, datatypes, gamma2, gates, gamma3, bhv, assrt, p1, p2, p3, p4, p5);
 	}
@@ -635,8 +642,13 @@ public class SosADLValidator extends AbstractSosADLValidator {
 		return new Incrementally_nil<>(gamma);
 	}
 	
-	private static <T,P> Incrementally<T,P> createIncrementally_cons(Environment gamma, T x, String n, EnvContent c, Environment gammai, List<T> l, Environment gamma1, P p1, Equality p2, Equality p3, Equality p4, Incrementally<T,P> p5) {
-		return new Incrementally_cons<T, P>(gamma, x, n, c, gammai, l, gamma1, p1, p2, p3, p4, p5);
+	private static <T,P> Incrementally<T,P> createIncrementally_cons(Environment gamma, T x, Environment gammai, List<T> l, Environment gamma1, P p1, Incrementally<T,P> p2) {
+		return new Incrementally_cons<T, P>(gamma, x, gammai, l, gamma1, p1, p2);
+	}
+	
+	private static <T, P> Simple_increment<T,P> createSimple_increment_step(String n, String c, Environment gamma, T x, Environment gamma1,
+			Equality p1, P p2) {
+		return new Simple_increment_step<>(n, c, gamma, x, gamma1, p1, p2);
 	}
 	
 	private static <T,P> Mutually<T,P> createMutually_all(Environment gamma, List<T> l, Environment gamma1, Equality p1, Equality p2, Forall<T,P> p3) {

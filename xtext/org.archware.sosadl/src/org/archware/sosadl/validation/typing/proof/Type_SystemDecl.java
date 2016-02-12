@@ -32,9 +32,9 @@ public class Type_SystemDecl implements Type_system {
 	
 	@Mandatory private final Mutually<FormalParameter, Ex<DataType, And<Equality,Type_datatype>>> p1;
 	
-	@Mandatory private final Incrementally<DataTypeDecl, Type_datatypeDecl> p2;
+	@Mandatory private final Incrementally<DataTypeDecl,Simple_increment<DataTypeDecl,Type_datatypeDecl>> p2;
 
-	@Mandatory private final Incrementally<GateDecl, Type_gate> p3;
+	@Mandatory private final Incrementally<GateDecl, Simple_increment<GateDecl, Type_gate>> p3;
 	
 	@Mandatory private final Type_behavior p4;
 	
@@ -44,7 +44,7 @@ public class Type_SystemDecl implements Type_system {
 			EList<DataTypeDecl> datatypes, Environment gamma2, EList<GateDecl> gates, Environment gamma3,
 			BehaviorDecl bhv, AssertionDecl assrt,
 			Mutually<FormalParameter, Ex<DataType, And<Equality, Type_datatype>>> p1,
-			Incrementally<DataTypeDecl, Type_datatypeDecl> p2, Incrementally<GateDecl, Type_gate> p3, Type_behavior p4,
+			Incrementally<DataTypeDecl,Simple_increment<DataTypeDecl,Type_datatypeDecl>> p2, Incrementally<GateDecl,Simple_increment<GateDecl,Type_gate>> p3, Type_behavior p4,
 			Optionally<AssertionDecl, Type_assertion> p5) {
 		super();
 		this.gamma = gamma;
@@ -108,11 +108,11 @@ public class Type_SystemDecl implements Type_system {
 		return p1;
 	}
 
-	public Incrementally<DataTypeDecl, Type_datatypeDecl> getP2() {
+	public Incrementally<DataTypeDecl, Simple_increment<DataTypeDecl, Type_datatypeDecl>> getP2() {
 		return p2;
 	}
 
-	public Incrementally<GateDecl, Type_gate> getP3() {
+	public Incrementally<GateDecl,Simple_increment<GateDecl,Type_gate>> getP3() {
 		return p3;
 	}
 

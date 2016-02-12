@@ -202,7 +202,7 @@ Definition augment_env (Gamma: env) (n: option string) (c: option env_content) :
 (** [incrementally] is a generic set of rules for incremental, ordered definitions. *)
 
 Inductive incrementally
-          {T: Set} {P: env -> T -> Prop} {name: T -> option string} {content: T -> option env_content}:
+          {T: Set} {P: env -> T -> env -> Prop}:
   env -> list T -> env -> Prop :=
   
 | incrementally_nil:
@@ -215,29 +215,56 @@ Inductive incrementally
     forall
       (Gamma: env)
       (x: T)
-      (n: option string)
-      (c: option env_content)
       (Gammai: env)
       (l: list T)
       (Gamma1: env)
-      (p1: P Gamma x)
-      (p2: name x = n)
-      (p3: content x = c)
-      (p4: augment_env Gamma n c = Gammai)
-      (p5: incrementally Gammai l Gamma1)
+      (p1: P Gamma x Gammai)
+      (p2: incrementally Gammai l Gamma1)
     ,
       incrementally Gamma (x::l) Gamma1
 .
 
+Inductive simple_increment
+          (T: Set) (P: env -> T -> Prop) (name: T -> option string)
+          (content: T -> option env_content):
+  env -> T -> env -> Prop :=
+
+| simple_increment_step:
+    forall
+      (Gamma: env)
+      (x: T)
+      (Gamma1: env)
+      (p1: Gamma1 = augment_env Gamma (name x) (content x))
+      (p2: P Gamma x)
+    ,
+      simple_increment T P name content Gamma x Gamma1
+.
+
 Lemma incrementally_fold_left:
-  forall {T: Set} (P: env -> T -> Prop) (name: T -> option string)
-         (content: T -> option env_content) (l: list T)
+  forall {T: Set} (P: env -> T -> env -> Prop) (name: T -> option string)
+         (content: T -> option env_content)
+         (p: forall g x g', P g x g' -> g' = augment_env g (name x) (content x))
+         (l: list T)
          (Gamma: env) (Gamma': env)
-         (s: @incrementally T P name content Gamma l Gamma'),
+         (s: @incrementally T P Gamma l Gamma'),
     Gamma' = fold_left (fun r x => augment_env r (name x) (content x)) l Gamma.
 Proof.
   intros.
-  induction s; subst; auto.
+  induction s.
+  - auto.
+  - apply p in p1. subst. auto.
+Qed.
+
+Lemma simple_incrementally_fold_left:
+  forall {T: Set} (P: env -> T -> Prop) (name: T -> option string)
+         (content: T -> option env_content)
+         (l: list T)
+         (Gamma: env) (Gamma': env)
+         (s: @incrementally T (simple_increment T P name content) Gamma l Gamma'),
+    Gamma' = fold_left (fun r x => augment_env r (name x) (content x)) l Gamma.
+Proof.
+  intros T P name content l Gamma Gamma'. apply incrementally_fold_left. intros g x g' H.
+  destruct H. auto.
 Qed.
 
 Definition augment_env_with_all (Gamma: env) {T: Set} (name: T -> option string) (content: T -> option env_content) (l: list T) :=
@@ -298,7 +325,6 @@ Reserved Notation "'SoSADL' a 'well' 'typed'" (at level 200, no associativity).
 Reserved Notation "'unit' u 'well' 'typed' 'in' Gamma" (at level 200, no associativity).
 Reserved Notation "'entity' u 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
 Reserved Notation "'typedecl' t 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
-Reserved Notation "'functions' 'of' 'typedecl' t 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
 Reserved Notation "'function' f 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
 Reserved Notation "'type' t 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
 Reserved Notation "'system' s 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
@@ -470,166 +496,11 @@ Inductive type_datatype: env -> SosADL.SosADL.t_DataType -> Prop :=
 where "'type' t 'well' 'typed' 'in' Gamma" := (type_datatype Gamma t)
 .
 
-
-
-(** ** Data type declaration *)
-
-(** %\note{%The functions (methods) of the data type declaration can
-be mutually recursive. Indeed, they are typed in an environment that
-binds the data type declaration, including the list of functions
-(methods).%}% *)
-
-Inductive type_datatypeDecl: env -> SosADL.SosADL.t_DataTypeDecl -> Prop :=
-       (* TODO
-| type_DataTypeDecl_Some:
-    forall Gamma name t funs,
-      (type t well typed in Gamma)
-      /\ (values (SosADL.SosADL.FunctionDecl_name x) for x of funs are distinct)
-      /\ (functions of typedecl funs
-                   well typed in Gamma [| name <- EType (SosADL.SosADL.DataTypeDecl (Some name) (Some t) funs) |])
-      ->
-      typedecl (SosADL.SosADL.DataTypeDecl (Some name) (Some t) funs) well typed in Gamma
-
-| type_DataTypeDecl_None:
-    forall Gamma name,
-      typedecl (SosADL.SosADL.DataTypeDecl (Some name) None nil) well typed in Gamma
-*)
-
-(** %\note{%The functions (methods) of the data type declaration are
-typed in order. In fact, this is not mandatory since the environment
-remains the same while traversing the list of functions. The rule
-might be simplified in this regard, using, e.g., [List.Forall].%}% *)
-
-with type_datatypeDecl_functions: env -> list SosADL.SosADL.t_FunctionDecl -> Prop :=
-       (* TODO
-| type_datatypeDecl_empty:
-    forall Gamma, functions of typedecl nil well typed in Gamma
-
-| type_datatypeDecl_f:
-    forall Gamma f l,
-      (function f well typed in Gamma)
-      /\ (functions of typedecl l well typed in Gamma)
-      ->
-      functions of typedecl (f::l) well typed in Gamma
-*)
-                                 
-(** ** Function declaration *)
-
-with type_function: env -> SosADL.SosADL.t_FunctionDecl -> Prop :=
-       (* TODO
-| type_FunctionDecl:
-    forall Gamma name dataName dataTypeName params t vals e tau dtname dttype dtfuns,
-      (for each p of params, (exists t, SosADL.SosADL.FormalParameter_type p = Some t /\ type t well typed in Gamma))
-      /\ (expression e under vals has type tau in (env_add_params params Gamma [| dataName <- EVariable (SosADL.SosADL.NamedType (Some dataTypeName)) |]))
-      /\ (contains Gamma dataTypeName (EType (SosADL.SosADL.DataTypeDecl (Some dtname) (Some dttype) dtfuns)))
-      /\ (tau </ t under Gamma)
-      ->
-      function (SosADL.SosADL.FunctionDecl (Some dataName) (Some dataTypeName) (Some name) params (Some t) vals (Some e))
-               well typed in Gamma
-*)
-
-
-(** ** Mediator *)
-
-(** %\note{%By choice, the elements declared in the mediator are typed
-in order by the set rules for [type_mediatorblock].%}% *)
-
-with type_mediator: env -> SosADL.SosADL.t_MediatorDecl -> Prop :=
-       (* TODO
-| type_MediatorDecl:
-    forall Gamma name params datatypes duties b assump assert,
-      (for each p of params, (exists t, SosADL.SosADL.FormalParameter_type p = Some t /\ type t well typed in Gamma))
-        /\ (mediatorblock (SosADL.SosADL.MediatorDecl (Some name) nil datatypes duties (Some b) assump assert)
-                         well typed in (env_add_params params Gamma))
-      ->
-      mediator (SosADL.SosADL.MediatorDecl (Some name) params datatypes duties (Some b) assump assert) well typed in Gamma
-*)
-
-with type_mediatorblock: env -> SosADL.SosADL.t_MediatorDecl -> Prop :=
-
-  (** %\todo{%Data type declarations in mediators should be inspired from the rules for systems.%}% *)
-  (* TODO
-| type_MediatorDecl_datatype:
-    forall Gamma name d d_name l duties bhv assump assert,
-      (typedecl d well typed in Gamma)
-      /\ (SosADL.SosADL.DataTypeDecl_name d = Some d_name)
-      /\ (mediatorblock (SosADL.SosADL.MediatorDecl (Some name) nil l duties (Some bhv) assump assert)
-                       well typed in Gamma [| d_name <- EType d |])
-      ->
-      mediatorblock (SosADL.SosADL.MediatorDecl (Some name) nil (d::l) duties (Some bhv) assump assert) well typed in Gamma
-
-
-| type_MediatorDecl_duty:
-    forall Gamma name d d_name l bhv assump assert,
-      (duty d well typed in Gamma)
-      /\ (SosADL.SosADL.DutyDecl_name d = Some d_name)
-      /\ (mediatorblock (SosADL.SosADL.MediatorDecl (Some name) nil nil l (Some bhv) assump assert)
-                       well typed in Gamma [| d_name <- EGateOrDuty (build_duty_env d) |])
-      ->
-      mediatorblock (SosADL.SosADL.MediatorDecl (Some name) nil nil (d::l) (Some bhv) assump assert) well typed in Gamma
-
-| type_MediatorDecl_Behavior:
-    forall Gamma name bhv assump assert,
-      (behavior bhv well typed in Gamma)
-      ->
-      mediatorblock (SosADL.SosADL.MediatorDecl name nil nil nil (Some bhv) assump assert) well typed in Gamma
-   *)
-       
-(** ** Architecture *)
-
-(** %\note{%By choice, the elements declared in the architecture are
-typed in order by the set rules for [type_architectureblock].%}% *)
-
-with type_architecture: env -> SosADL.SosADL.t_ArchitectureDecl -> Prop :=
-(* TODO
-     | type_ArchitectureDecl:
-    forall Gamma name params datatypes gates b a,
-      (for each p of params, (exists t, SosADL.SosADL.FormalParameter_type p = Some t /\ type t well typed in Gamma))
-      /\ (architectureblock (SosADL.SosADL.ArchitectureDecl (Some name) nil datatypes gates (Some b) a)
-                           well typed in (env_add_params params Gamma))
-      ->
-      architecture (SosADL.SosADL.ArchitectureDecl (Some name) params datatypes gates (Some b) a)
-                   well typed in Gamma
-*)
-with type_architectureblock: env -> SosADL.SosADL.t_ArchitectureDecl -> Prop :=
-
-  (** %\todo{%Data type declarations in architectures should be inspired from the rules for systems.%}% *)
-  (* TODO
-| type_ArchitectureDecl_datatype:
-    forall Gamma name d d_name l gates bhv a,
-      (typedecl d well typed in Gamma)
-      /\ (SosADL.SosADL.DataTypeDecl_name d = Some d_name)
-      /\ (architectureblock (SosADL.SosADL.ArchitectureDecl (Some name) nil l gates (Some bhv) a)
-                           well typed in Gamma [| d_name <- EType d |])
-      ->
-      architectureblock (SosADL.SosADL.ArchitectureDecl (Some name) nil (d::l) gates (Some bhv) a)
-                        well typed in Gamma
-
-  
-| type_ArchitectureDecl_gate:
-    forall Gamma name g g_name l bhv a,
-      (gate g well typed in Gamma)
-      /\ (SosADL.SosADL.GateDecl_name g = Some g_name)
-      /\ (architectureblock (SosADL.SosADL.ArchitectureDecl (Some name) nil nil l (Some bhv) a)
-                           well typed in Gamma [| g_name <- EGateOrDuty (build_gate_env g) |])
-      ->
-      architectureblock (SosADL.SosADL.ArchitectureDecl (Some name) nil nil (g::l) (Some bhv) a)
-                        well typed in Gamma
-
-| type_ArchitectureDecl_behavior:
-    forall Gamma name bhv a,
-      (archbehavior bhv well typed in Gamma)
-      /\ (assertion a well typed in Gamma)
-      ->
-      architectureblock (SosADL.SosADL.ArchitectureDecl (Some name) nil nil nil (Some bhv) (Some a)) well typed in Gamma
-*)
-
-
 (**
  ** Expression
  *)
 
-with type_expression: env -> SosADL.SosADL.t_Expression -> SosADL.SosADL.t_DataType -> Prop :=
+Inductive type_expression: env -> SosADL.SosADL.t_Expression -> SosADL.SosADL.t_DataType -> Prop :=
 | type_expression_IntegerValue:
     forall Gamma v,
       expression (SosADL.SosADL.IntegerValue (Some v))
@@ -818,6 +689,121 @@ declaration of a data type containing some functions (methods).%}% *)
 
 (** %\todo{%[CallExpression], [UnobservableValue], [Unify], [Relay]
 and [Quantify] are not handled yet.%}% *)
+
+where "'expression' e 'has' 'type' t 'in' Gamma" := (type_expression Gamma e t)
+.
+
+(** ** Function declaration *)
+
+Inductive type_function: env -> SosADL.SosADL.t_FunctionDecl -> Prop :=
+       (* TODO
+| type_FunctionDecl:
+    forall Gamma name dataName dataTypeName params t vals e tau dtname dttype dtfuns,
+      (for each p of params, (exists t, SosADL.SosADL.FormalParameter_type p = Some t /\ type t well typed in Gamma))
+      /\ (expression e under vals has type tau in (env_add_params params Gamma [| dataName <- EVariable (SosADL.SosADL.NamedType (Some dataTypeName)) |]))
+      /\ (contains Gamma dataTypeName (EType (SosADL.SosADL.DataTypeDecl (Some dtname) (Some dttype) dtfuns)))
+      /\ (tau </ t under Gamma)
+      ->
+      function (SosADL.SosADL.FunctionDecl (Some dataName) (Some dataTypeName) (Some name) params (Some t) vals (Some e))
+               well typed in Gamma
+*)
+
+
+(** ** Mediator *)
+
+(** %\note{%By choice, the elements declared in the mediator are typed
+in order by the set rules for [type_mediatorblock].%}% *)
+
+with type_mediator: env -> SosADL.SosADL.t_MediatorDecl -> Prop :=
+       (* TODO
+| type_MediatorDecl:
+    forall Gamma name params datatypes duties b assump assert,
+      (for each p of params, (exists t, SosADL.SosADL.FormalParameter_type p = Some t /\ type t well typed in Gamma))
+        /\ (mediatorblock (SosADL.SosADL.MediatorDecl (Some name) nil datatypes duties (Some b) assump assert)
+                         well typed in (env_add_params params Gamma))
+      ->
+      mediator (SosADL.SosADL.MediatorDecl (Some name) params datatypes duties (Some b) assump assert) well typed in Gamma
+*)
+
+with type_mediatorblock: env -> SosADL.SosADL.t_MediatorDecl -> Prop :=
+
+  (** %\todo{%Data type declarations in mediators should be inspired from the rules for systems.%}% *)
+  (* TODO
+| type_MediatorDecl_datatype:
+    forall Gamma name d d_name l duties bhv assump assert,
+      (typedecl d well typed in Gamma)
+      /\ (SosADL.SosADL.DataTypeDecl_name d = Some d_name)
+      /\ (mediatorblock (SosADL.SosADL.MediatorDecl (Some name) nil l duties (Some bhv) assump assert)
+                       well typed in Gamma [| d_name <- EType d |])
+      ->
+      mediatorblock (SosADL.SosADL.MediatorDecl (Some name) nil (d::l) duties (Some bhv) assump assert) well typed in Gamma
+
+
+| type_MediatorDecl_duty:
+    forall Gamma name d d_name l bhv assump assert,
+      (duty d well typed in Gamma)
+      /\ (SosADL.SosADL.DutyDecl_name d = Some d_name)
+      /\ (mediatorblock (SosADL.SosADL.MediatorDecl (Some name) nil nil l (Some bhv) assump assert)
+                       well typed in Gamma [| d_name <- EGateOrDuty (build_duty_env d) |])
+      ->
+      mediatorblock (SosADL.SosADL.MediatorDecl (Some name) nil nil (d::l) (Some bhv) assump assert) well typed in Gamma
+
+| type_MediatorDecl_Behavior:
+    forall Gamma name bhv assump assert,
+      (behavior bhv well typed in Gamma)
+      ->
+      mediatorblock (SosADL.SosADL.MediatorDecl name nil nil nil (Some bhv) assump assert) well typed in Gamma
+   *)
+       
+(** ** Architecture *)
+
+(** %\note{%By choice, the elements declared in the architecture are
+typed in order by the set rules for [type_architectureblock].%}% *)
+
+with type_architecture: env -> SosADL.SosADL.t_ArchitectureDecl -> Prop :=
+(* TODO
+     | type_ArchitectureDecl:
+    forall Gamma name params datatypes gates b a,
+      (for each p of params, (exists t, SosADL.SosADL.FormalParameter_type p = Some t /\ type t well typed in Gamma))
+      /\ (architectureblock (SosADL.SosADL.ArchitectureDecl (Some name) nil datatypes gates (Some b) a)
+                           well typed in (env_add_params params Gamma))
+      ->
+      architecture (SosADL.SosADL.ArchitectureDecl (Some name) params datatypes gates (Some b) a)
+                   well typed in Gamma
+*)
+with type_architectureblock: env -> SosADL.SosADL.t_ArchitectureDecl -> Prop :=
+
+  (** %\todo{%Data type declarations in architectures should be inspired from the rules for systems.%}% *)
+  (* TODO
+| type_ArchitectureDecl_datatype:
+    forall Gamma name d d_name l gates bhv a,
+      (typedecl d well typed in Gamma)
+      /\ (SosADL.SosADL.DataTypeDecl_name d = Some d_name)
+      /\ (architectureblock (SosADL.SosADL.ArchitectureDecl (Some name) nil l gates (Some bhv) a)
+                           well typed in Gamma [| d_name <- EType d |])
+      ->
+      architectureblock (SosADL.SosADL.ArchitectureDecl (Some name) nil (d::l) gates (Some bhv) a)
+                        well typed in Gamma
+
+  
+| type_ArchitectureDecl_gate:
+    forall Gamma name g g_name l bhv a,
+      (gate g well typed in Gamma)
+      /\ (SosADL.SosADL.GateDecl_name g = Some g_name)
+      /\ (architectureblock (SosADL.SosADL.ArchitectureDecl (Some name) nil nil l (Some bhv) a)
+                           well typed in Gamma [| g_name <- EGateOrDuty (build_gate_env g) |])
+      ->
+      architectureblock (SosADL.SosADL.ArchitectureDecl (Some name) nil nil (g::l) (Some bhv) a)
+                        well typed in Gamma
+
+| type_ArchitectureDecl_behavior:
+    forall Gamma name bhv a,
+      (archbehavior bhv well typed in Gamma)
+      /\ (assertion a well typed in Gamma)
+      ->
+      architectureblock (SosADL.SosADL.ArchitectureDecl (Some name) nil nil nil (Some bhv) (Some a)) well typed in Gamma
+*)
+
 
 (** ** Expression in the scope of a list of valuings *)
 
@@ -1072,14 +1058,11 @@ gate-or-duty, connection.%}% *)
       body (SosADL.SosADL.BehaviorStatement_Done :: nil) well typed in Gamma
 
 
-where "'typedecl' t 'well' 'typed' 'in' Gamma" := (type_datatypeDecl Gamma t)
-and "'functions' 'of' 'typedecl' t 'well' 'typed' 'in' Gamma" := (type_datatypeDecl_functions Gamma t)
-and "'function' f 'well' 'typed' 'in' Gamma" := (type_function Gamma f)
+where "'function' f 'well' 'typed' 'in' Gamma" := (type_function Gamma f)
 and "'mediator' m 'well' 'typed' 'in' Gamma" := (type_mediator Gamma m)
 and "'mediatorblock' m 'well' 'typed' 'in' Gamma" := (type_mediatorblock Gamma m)
 and "'architecture' a 'well' 'typed' 'in' Gamma" := (type_architecture Gamma a)
 and "'architectureblock' a 'well' 'typed' 'in' Gamma" := (type_architectureblock Gamma a)
-and "'expression' e 'has' 'type' t 'in' Gamma" := (type_expression Gamma e t)
 and "'expression' e 'under' v 'has' 'type' t 'in' Gamma" := (type_expression_where Gamma v e t)
 and "'gate' g 'well' 'typed' 'in' Gamma" := (type_gate Gamma g)
 and "'duty' d 'well' 'typed' 'in' Gamma" := (type_duty Gamma d)
@@ -1091,10 +1074,9 @@ and "'connection' c 'well' 'typed' 'in' Gamma" := (type_connection Gamma c)
 and "'body' b 'well' 'typed' 'in' Gamma" := (type_body Gamma b)
 .
 
-Definition type_datatypeDecls Gamma l Gamma1 := @incrementally _ type_datatypeDecl SosADL.SosADL.DataTypeDecl_name (fun x => Some (EType x)) Gamma l Gamma1.
-Definition type_functionDecls Gamma l Gamma1 := @incrementally _ type_function SosADL.SosADL.FunctionDecl_name (fun x => Some (EFunction x)) Gamma l Gamma1.
-Definition type_mediators Gamma l Gamma1 := @incrementally _ type_mediator SosADL.SosADL.MediatorDecl_name (fun x => Some (EMediator x)) Gamma l Gamma1.
-Definition type_architectures Gamma l Gamma1 := @incrementally _ type_architecture SosADL.SosADL.ArchitectureDecl_name (fun x => Some (EArchitecture x)) Gamma l Gamma1.
+Definition type_functionDecls Gamma l Gamma1 := @incrementally _ (simple_increment _ type_function SosADL.SosADL.FunctionDecl_name (fun x => Some (EFunction x))) Gamma l Gamma1.
+Definition type_mediators Gamma l Gamma1 := @incrementally _ (simple_increment _ type_mediator SosADL.SosADL.MediatorDecl_name (fun x => Some (EMediator x))) Gamma l Gamma1.
+Definition type_architectures Gamma l Gamma1 := @incrementally _ (simple_increment _ type_architecture SosADL.SosADL.ArchitectureDecl_name (fun x => Some (EArchitecture x))) Gamma l Gamma1.
 Definition formalParameter_to_EVariable p :=
   match SosADL.SosADL.FormalParameter_type p with
   | None => None
@@ -1108,7 +1090,40 @@ Definition type_formalParameters Gamma l Gamma1 :=
             SosADL.SosADL.FormalParameter_name
             formalParameter_to_EVariable
             Gamma l Gamma1.
-Definition type_gates Gamma l Gamma1 := @incrementally _ type_gate SosADL.SosADL.GateDecl_name (fun x => (** TODO *) None) Gamma l Gamma1.
+Definition type_gates Gamma l Gamma1 := @incrementally _ (simple_increment _ type_gate SosADL.SosADL.GateDecl_name (fun x => (** TODO *) None)) Gamma l Gamma1.
+
+(** ** Data type declaration *)
+
+(** %\note{%The functions (methods) of the data type declaration can
+be mutually recursive. Indeed, they are typed in an environment that
+binds the data type declaration, including the list of functions
+(methods).%}% *)
+
+Inductive type_datatypeDecl: env -> SosADL.SosADL.t_DataTypeDecl -> Prop :=
+  (*
+| type_DataTypeDecl_Some:
+    forall
+      (Gamma: env)
+      (name: string)
+      (t: SosADL.SosADL.t_DataType)
+      (funs: list SosADL.SosADL.t_FunctionDecl)
+      (Gamma1: env)
+      (p1: type t well typed in Gamma)
+      (p2: type_functionDecls (Gamma [| name <- EType (SosADL.SosADL.DataTypeDecl (Some name) (Some t) funs) |]) funs Gamma1)
+      (p3: functions of typedecl funs
+                     well typed in Gamma [| name <- EType (SosADL.SosADL.DataTypeDecl (Some name) (Some t) funs) |])
+    ,
+      typedecl (SosADL.SosADL.DataTypeDecl (Some name) (Some t) funs) well typed in Gamma
+
+| type_DataTypeDecl_None:
+    forall Gamma name,
+      typedecl (SosADL.SosADL.DataTypeDecl (Some name) None nil) well typed in Gamma
+*)
+
+where "'typedecl' t 'well' 'typed' 'in' Gamma" := (type_datatypeDecl Gamma t)
+.
+
+Definition type_datatypeDecls Gamma l Gamma1 := @incrementally _ (simple_increment _ type_datatypeDecl SosADL.SosADL.DataTypeDecl_name (fun x => Some (EType x))) Gamma l Gamma1.
 
 (** ** System *)
 
@@ -1138,7 +1153,7 @@ Inductive type_system: env -> SosADL.SosADL.t_SystemDecl -> Prop :=
 where "'system' s 'well' 'typed' 'in' Gamma" := (type_system Gamma s)
 .
 
-Definition type_systems Gamma l Gamma1 := @incrementally _ type_system SosADL.SosADL.SystemDecl_name (fun x => Some (ESystem x)) Gamma l Gamma1.
+Definition type_systems Gamma l Gamma1 := @incrementally _ (simple_increment _ type_system SosADL.SosADL.SystemDecl_name (fun x => Some (ESystem x))) Gamma l Gamma1.
 
 (** ** Entity *)
 

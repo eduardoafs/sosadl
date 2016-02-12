@@ -32,22 +32,22 @@ public class Type_EntityBlock_whole implements Type_entityBlock {
 
 	@Mandatory private final Environment gamma5;
 
-	@Mandatory private final Incrementally<DataTypeDecl, Type_datatypeDecl> p1;
+	@Mandatory private final Incrementally<DataTypeDecl,Simple_increment<DataTypeDecl,Type_datatypeDecl>> p1;
 
-	@Mandatory private final Incrementally<FunctionDecl, Type_function> p2;
+	@Mandatory private final Incrementally<FunctionDecl, Simple_increment<FunctionDecl, Type_function>> p2;
 
-	@Mandatory private final Incrementally<SystemDecl, Type_system> p3;
+	@Mandatory private final Incrementally<SystemDecl,Simple_increment<SystemDecl,Type_system>> p3;
 
-	@Mandatory private final Incrementally<MediatorDecl, Type_mediator> p4;
+	@Mandatory private final Incrementally<MediatorDecl,Simple_increment<MediatorDecl,Type_mediator>> p4;
 
-	@Mandatory private final Incrementally<ArchitectureDecl, Type_architecture> p5;
+	@Mandatory private final Incrementally<ArchitectureDecl,Simple_increment<ArchitectureDecl,Type_architecture>> p5;
 
 	public Type_EntityBlock_whole(Environment gamma, List<DataTypeDecl> datatypes, Environment gamma1,
 			List<FunctionDecl> funs, Environment gamma2, List<SystemDecl> systems, Environment gamma3,
 			List<MediatorDecl> mediators, Environment gamma4, List<ArchitectureDecl> architectures, Environment gamma5,
-			Incrementally<DataTypeDecl, Type_datatypeDecl> p1, Incrementally<FunctionDecl, Type_function> p2,
-			Incrementally<SystemDecl, Type_system> p3, Incrementally<MediatorDecl, Type_mediator> p4,
-			Incrementally<ArchitectureDecl, Type_architecture> p5) {
+			Incrementally<DataTypeDecl,Simple_increment<DataTypeDecl,Type_datatypeDecl>> p1, Incrementally<FunctionDecl,Simple_increment<FunctionDecl,Type_function>> p2,
+			Incrementally<SystemDecl,Simple_increment<SystemDecl,Type_system>> p3, Incrementally<MediatorDecl,Simple_increment<MediatorDecl,Type_mediator>> p4,
+			Incrementally<ArchitectureDecl, Simple_increment<ArchitectureDecl, Type_architecture>> p5) {
 		super();
 		this.gamma = gamma;
 		this.datatypes = datatypes;
@@ -111,23 +111,23 @@ public class Type_EntityBlock_whole implements Type_entityBlock {
 		return gamma5;
 	}
 
-	public Incrementally<DataTypeDecl, Type_datatypeDecl> getP1() {
+	public Incrementally<DataTypeDecl,Simple_increment<DataTypeDecl,Type_datatypeDecl>> getP1() {
 		return p1;
 	}
 
-	public Incrementally<FunctionDecl, Type_function> getP2() {
+	public Incrementally<FunctionDecl, Simple_increment<FunctionDecl, Type_function>> getP2() {
 		return p2;
 	}
 
-	public Incrementally<SystemDecl, Type_system> getP3() {
+	public Incrementally<SystemDecl, Simple_increment<SystemDecl, Type_system>> getP3() {
 		return p3;
 	}
 
-	public Incrementally<MediatorDecl, Type_mediator> getP4() {
+	public Incrementally<MediatorDecl,Simple_increment<MediatorDecl,Type_mediator>> getP4() {
 		return p4;
 	}
 
-	public Incrementally<ArchitectureDecl, Type_architecture> getP5() {
+	public Incrementally<ArchitectureDecl,Simple_increment<ArchitectureDecl,Type_architecture>> getP5() {
 		return p5;
 	}
 
