@@ -44,7 +44,6 @@ import org.archware.sosadl.sosADL.generator.CoqGenerator
 import org.archware.sosadl.validation.SosADLValidator
 import org.archware.sosadl.validation.typing.Environment
 import org.archware.sosadl.validation.typing.impl.CellEnvironmentImpl
-import org.archware.sosadl.validation.typing.impl.EnvironmentImpl
 import org.archware.sosadl.validation.typing.impl.SystemEnvContent
 import org.archware.sosadl.validation.typing.impl.TypeEnvContent
 import org.archware.sosadl.validation.typing.proof.CoqConstructor
@@ -59,6 +58,7 @@ import java.math.BigInteger
 import org.archware.sosadl.validation.typing.impl.VariableEnvContent
 import org.archware.sosadl.validation.typing.EnvContent
 import org.archware.sosadl.validation.typing.proof.CoqLiteral
+import org.archware.sosadl.validation.typing.impl.EnvironmentImpl
 
 /**
  * Generates code from your model files on save.
@@ -187,7 +187,7 @@ class TypingProofGenerator implements IGenerator {
 	def dispatch generateEnvironment(Environment env) { throw new UnsupportedOperationException }
 	
 	def dispatch generateEnvContent(SystemEnvContent c) '''(ESystem «coqGenerator.generatet_SystemDecl(c.systemDecl)»)'''
-	def dispatch generateEnvContent(TypeEnvContent c) '''(EType «coqGenerator.generatet_DataTypeDecl(c.dataTypeDecl)»)'''
+	def dispatch generateEnvContent(TypeEnvContent c) '''(EType «coqGenerator.generatet_DataTypeDecl(c.dataTypeDecl)» «coqGenerator._generateL(c.methods, [ f | coqGenerator.generatet_FunctionDecl(f)])»)'''
 	def dispatch generateEnvContent(VariableEnvContent c) '''(EVariable «coqGenerator.generatet_DataType(c.type)»)'''
 	
 	static def ctorName(Class<?> clazz) {

@@ -1,6 +1,9 @@
 package org.archware.sosadl.validation.typing.proof;
 
+import java.util.List;
+
 import org.archware.sosadl.sosADL.DataTypeDecl;
+import org.archware.sosadl.sosADL.FunctionDecl;
 import org.archware.sosadl.validation.typing.Environment;
 
 public class Type_NamedType implements Type_datatype {
@@ -10,9 +13,9 @@ public class Type_NamedType implements Type_datatype {
 	
 	@Mandatory private final DataTypeDecl t;
 	
-	@Mandatory private final Equality p;
+	@Mandatory private final Ex<List<FunctionDecl>, Equality> p;
 
-	public Type_NamedType(Environment gamma, String n, DataTypeDecl t, Equality p) {
+	public Type_NamedType(Environment gamma, String n, DataTypeDecl t, Ex<List<FunctionDecl>, Equality> p) {
 		super();
 		this.gamma = gamma;
 		this.n = n;
@@ -32,7 +35,7 @@ public class Type_NamedType implements Type_datatype {
 		return t;
 	}
 
-	public Equality getP() {
+	public Ex<List<FunctionDecl>,Equality> getP() {
 		return p;
 	}
 
