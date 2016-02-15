@@ -29,7 +29,12 @@ public interface AttributeAdapter {
 					factories.add(new AttributeAdapterFactoryImpl());
 				}
 			}
-			return (AttributeAdapter) EcoreUtil.getRegisteredAdapter(o, AttributeAdapter.class);
+			AttributeAdapter result2 = (AttributeAdapter) EcoreUtil.getRegisteredAdapter(o, AttributeAdapter.class);
+			if (result2 == null) {
+				return (AttributeAdapter) new AttributeAdapterFactoryImpl().adapt(o, AttributeAdapter.class);
+			} else {
+				return result2;
+			}
 		}
 	}
 }

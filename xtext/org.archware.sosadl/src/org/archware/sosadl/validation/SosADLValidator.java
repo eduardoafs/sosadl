@@ -110,7 +110,9 @@ import org.archware.sosadl.validation.typing.proof.Type_datatype;
 import org.archware.sosadl.validation.typing.proof.Type_datatypeDecl;
 import org.archware.sosadl.validation.typing.proof.Type_entityBlock;
 import org.archware.sosadl.validation.typing.proof.Type_expression;
+import org.archware.sosadl.validation.typing.proof.Type_expression_Add;
 import org.archware.sosadl.validation.typing.proof.Type_expression_IntegerValue;
+import org.archware.sosadl.validation.typing.proof.Type_expression_Not;
 import org.archware.sosadl.validation.typing.proof.Type_expression_Opposite;
 import org.archware.sosadl.validation.typing.proof.Type_expression_Same;
 import org.archware.sosadl.validation.typing.proof.Type_function;
@@ -306,23 +308,79 @@ public class SosADLValidator extends AbstractSosADLValidator {
 		return null;
 	}
 
+	private static UnaryTypeInfo<?>[] unaryTypeInformations = new UnaryTypeInfo[] {
+			new UnaryTypeInfo<>("+", RangeType.class, "range type", () -> createRangeType(0,0),
+					(g, e, p1, p2) -> createType_expression_Same(g, e.getRight(), p1.getB(),
+							p2.getB().getVmin(), p2.getB().getVmax(), p1.getA(), p2.getA()),
+					(g, e, p1, p2) -> p2.getB()),
+			new UnaryTypeInfo<>("-", RangeType.class, "range type", () -> createRangeType(0,0),
+					(g, e, p1, p2) ->  createType_expression_Opposite(g, ((UnaryExpression)e).getRight(), p1.getB(),
+							p2.getB().getVmax(), p2.getB().getVmax(), p1.getA(), p2.getA()),
+					(g, e, p1, p2) -> createRangeType(createOpposite(EcoreUtil.copy(p2.getB().getVmax())),
+							createOpposite(EcoreUtil.copy(p2.getB().getVmax())))),
+			new UnaryTypeInfo<>("not", BooleanType.class, "boolean type", () -> createBooleanType(),
+					(g, e, p1, p2) -> createType_expression_Not(g, e, p1.getB(), p1.getA(), p2.getA()),
+					(g, e, p1, p2) -> p2.getB())
+	};
+	
+	private static BinaryTypeInfo<?, ?>[] binaryTypeInformations = new BinaryTypeInfo[] {
+			new BinaryTypeInfo<>("+",
+					RangeType.class, "range type", () -> createRangeType(0, 0),
+					RangeType.class, "range type", () -> createRangeType(0, 0),
+					(g, e, p1, p2, p3, p4) -> createType_expression_Add(g,
+							e.getLeft(), p1.getB(), p2.getB().getVmin(), p2.getB().getVmax(),
+							e.getRight(), p3.getB(), p4.getB().getVmin(), p4.getB().getVmax(),
+							p1.getA(), p2.getA(), p3.getA(), p4.getA()),
+					(g, e, p1, p2, p3, p4) -> createRangeType(
+							createBinaryExpression(EcoreUtil.copy(p2.getB().getVmin()), "+", EcoreUtil.copy(p4.getB().getVmin())),
+							createBinaryExpression(EcoreUtil.copy(p2.getB().getVmax()), "+", EcoreUtil.copy(p4.getB().getVmax()))))
+	};
+	
+	private <T extends DataType> Pair<Type_expression, DataType> typeUnaryExpression(Environment gamma, UnaryExpression e, UnaryTypeInfo<T> i) {
+		Pair<Type_expression, DataType> p1 = type_expression(gamma, e.getRight());
+		Pair<Subtype, T> p2 = smallestSuperType(i.getClazz(), i.getLabel(), i.getIfNone().get(), gamma, p1.getB(), e, SosADLPackage.Literals.UNARY_EXPRESSION__RIGHT);
+		return new Pair<>(saveProof(e, i.getCreateProofTerm().apply(gamma, e, p1, p2)), saveType(e, i.getCreateType().apply(gamma, e, p1, p2)));
+	}
+	
+	private <L extends DataType, R extends DataType> Pair<Type_expression, DataType> typeBinaryExpression(Environment gamma, BinaryExpression e, BinaryTypeInfo<L, R> i) {
+		Pair<Type_expression, DataType> p1 = type_expression(gamma, e.getLeft());
+		Pair<Subtype, L> p2 = smallestSuperType(i.getlClass(), i.getlLabel(), i.getlIfNone().get(), gamma, p1.getB(), e, SosADLPackage.Literals.BINARY_EXPRESSION__LEFT);
+		Pair<Type_expression, DataType> p3 = type_expression(gamma, e.getRight());
+		Pair<Subtype, R> p4 = smallestSuperType(i.getrClass(), i.getrLabel(), i.getrIfNone().get(), gamma, p3.getB(), e, SosADLPackage.Literals.BINARY_EXPRESSION__RIGHT);
+		return new Pair<>(saveProof(e, i.createProofTerm.apply(gamma, e, p1, p2, p3, p4)), saveType(e, i.createType.apply(gamma, e, p1, p2, p3, p4)));
+	}
+
+	
 	private Pair<Type_expression, DataType> type_expression(Environment gamma, Expression e) {
 		saveEnvironment(e, gamma);
 		if(e instanceof IntegerValue) {
-			return new Pair<>(saveProof(e, createType_expression_IntegerValue(gamma, BigInteger.valueOf(((IntegerValue) e).getAbsInt()))),
-					saveType(e, createRangeType(EcoreUtil.copy(e), EcoreUtil.copy(e))));
-		} else if(e instanceof UnaryExpression && ((UnaryExpression)e).getOp().equals("+")) {
-			Pair<Type_expression, DataType> p1 = type_expression(gamma, ((UnaryExpression)e).getRight());
-			Pair<Subtype, RangeType> p2 = smallestRangeSuperType(gamma, p1.getB(), e, SosADLPackage.Literals.UNARY_EXPRESSION__RIGHT);
-			return new Pair<>(saveProof(e, createType_expression_Same(gamma, ((UnaryExpression)e).getRight(), p1.getB(),
-					p2.getB().getVmin(), p2.getB().getVmax(), p1.getA(), p2.getA())), p2.getB());
-		} else if(e instanceof UnaryExpression && ((UnaryExpression)e).getOp().equals("-")) {
-			Pair<Type_expression, DataType> p1 = type_expression(gamma, ((UnaryExpression)e).getRight());
-			Pair<Subtype, RangeType> p2 = smallestRangeSuperType(gamma, p1.getB(), e, SosADLPackage.Literals.UNARY_EXPRESSION__RIGHT);
-			return new Pair<>(saveProof(e, createType_expression_Opposite(gamma, ((UnaryExpression)e).getRight(), p1.getB(),
-					p2.getB().getVmax(), p2.getB().getVmax(), p1.getA(), p2.getA())),
-					createRangeType(createOpposite(EcoreUtil.copy(p2.getB().getVmax())),
-							createOpposite(EcoreUtil.copy(p2.getB().getVmax()))));
+			try {
+			DataType t = createRangeType(EcoreUtil.copy(e), EcoreUtil.copy(e));
+			return new Pair<>(saveProof(e, createType_expression_IntegerValue(gamma, BigInteger.valueOf(((IntegerValue) e).getAbsInt()),
+					type_datatype(gamma, t))),
+					saveType(e, t));
+			} catch (Throwable t) {
+				t.printStackTrace();
+				error("Type error", e, null);
+				return new Pair<>(null, SosADLFactory.eINSTANCE.createBooleanType());
+			}
+			// TODO add "type (returned type) is well typed in gamma", for sanity check
+		} else if(e instanceof UnaryExpression) {
+			for(UnaryTypeInfo<? extends DataType> i : unaryTypeInformations) {
+				if(((UnaryExpression)e).getOp().equals(i.getOperator())) {
+					return typeUnaryExpression(gamma, (UnaryExpression)e, i);
+				}
+			}
+			error("Unknown unary operator", e, SosADLPackage.Literals.UNARY_EXPRESSION__OP);
+			return new Pair<>(null, SosADLFactory.eINSTANCE.createBooleanType());
+		} else if(e instanceof BinaryExpression) {
+			for(BinaryTypeInfo<? extends DataType, ? extends DataType> i: binaryTypeInformations) {
+				if(((BinaryExpression)e).getOp().equals(i.getOperator())) {
+					return typeBinaryExpression(gamma, (BinaryExpression)e, i);
+				}
+			}
+			error("Unknown binary operator", e, SosADLPackage.Literals.BINARY_EXPRESSION__OP);
+			return new Pair<>(null, SosADLFactory.eINSTANCE.createBooleanType());
 		} else {
 			// TODO
 			error("Type error", e, null);
@@ -330,16 +388,16 @@ public class SosADLValidator extends AbstractSosADLValidator {
 		}
 	}
 
-	private Pair<Subtype, RangeType> smallestRangeSuperType(Environment gamma, DataType t, EObject targetForError, EStructuralFeature forError) {
-		if(t instanceof RangeType) {
-			return new Pair<>(createSubtype_refl(gamma, t), (RangeType)t);
+	private <T extends DataType> Pair<Subtype, T> smallestSuperType(Class<T> target, String label, T ifNone, Environment gamma, DataType t, EObject targetForError, EStructuralFeature forError) {
+		if(target.isInstance(t)) {
+			return new Pair<>(createSubtype_refl(gamma, t), target.cast(t));
 		} else if(t instanceof NamedType && ((NamedType)t).getName() != null && gamma.get(((NamedType)t).getName()) != null
 				&& gamma.get(((NamedType)t).getName()) instanceof TypeEnvContent
 				&& ((TypeEnvContent)gamma.get(((NamedType)t).getName())).getDataTypeDecl().getName() != null
 				&& ((TypeEnvContent)gamma.get(((NamedType)t).getName())).getDataTypeDecl().getName().equals(((NamedType)t).getName())
 				&& ((TypeEnvContent)gamma.get(((NamedType)t).getName())).getDataTypeDecl().getDatatype() != null) {
 			DataType def = ((TypeEnvContent)gamma.get(((NamedType)t).getName())).getDataTypeDecl().getDatatype();
-			Pair<Subtype, RangeType> p2 = smallestRangeSuperType(gamma, def, targetForError, forError);
+			Pair<Subtype, T> p2 = smallestSuperType(target, label, ifNone, gamma, def, targetForError, forError);
 			return new Pair<>(createSubtype_unfold_left(gamma, ((NamedType)t).getName(), def,
 					((TypeEnvContent)gamma.get(((NamedType)t).getName())).getDataTypeDecl().getFunctions(),
 					((TypeEnvContent)gamma.get(((NamedType)t).getName())).getMethods(),
@@ -355,20 +413,22 @@ public class SosADLValidator extends AbstractSosADLValidator {
 				} else if (((TypeEnvContent)gamma.get(((NamedType)t).getName())).getDataTypeDecl().getName() == null || !((TypeEnvContent)gamma.get(((NamedType)t).getName())).getDataTypeDecl().getName().equals(((NamedType)t).getName())) {
 					error("The name `" + ((NamedType)t).getName() + "' does not match the declaration `" + ((TypeEnvContent)gamma.get(((NamedType)t).getName())).getDataTypeDecl().getName() + "'", targetForError, forError);
 				} else if (((TypeEnvContent)gamma.get(((NamedType)t).getName())).getDataTypeDecl().getDatatype() == null) {
-					error("The type `" + ((NamedType)t).getName() + "', whose definition is opaque, cannot be converted to a range type", targetForError, forError);
+					error("The type `" + ((NamedType)t).getName() + "', whose definition is opaque, cannot be converted to a " + label, targetForError, forError);
 				} else {
 					error("Type error", targetForError, forError);
 				}
 			} else if(t instanceof BooleanType) {
-				error("Boolean types cannot be converted to range types", targetForError, forError);
+				error("A boolean type cannot be converted to a " + label, targetForError, forError);
 			} else if(t instanceof SequenceType) {
-				error("Sequence types cannot be converted to range types", targetForError, forError);
+				error("A sequence type cannot be converted to a " + label, targetForError, forError);
 			} else if(t instanceof TupleType) {
-				error("Tuple types cannot be converted to range types", targetForError, forError);
+				error("A tuple type cannot be converted to a " + label, targetForError, forError);
+			} else if(t instanceof RangeType) {
+				error("A range type cannot be converted to a " + label, targetForError, forError);
 			} else {
 				error("Type error", targetForError, forError);
 			}
-			return new Pair<>(null, createRangeType(0,0));
+			return new Pair<>(null, ifNone);
 		}
 	}
 
@@ -809,8 +869,8 @@ public class SosADLValidator extends AbstractSosADLValidator {
 		return new Type_FunctionDecl_Method(gamma, dataName, dataTypeName, dataTypeDecl, dataTypeMethods, name, params, gammap, rettype, vals, gammav, retexpr, tau, gamma1, p1, p2, p3, p4, p5, p6, p7);
 	}
 	
-	private static Type_expression createType_expression_IntegerValue(Environment gamma, BigInteger v) {
-		return new Type_expression_IntegerValue(gamma, v);
+	private static Type_expression createType_expression_IntegerValue(Environment gamma, BigInteger v, Type_datatype p) {
+		return new Type_expression_IntegerValue(gamma, v, p);
 	}
 	
 	private static Expression_le createIn_Z(Expression l, BigInteger zl, Expression r, BigInteger zr, Equality p1, Equality p2, Equality p3) {
@@ -916,11 +976,23 @@ public class SosADLValidator extends AbstractSosADLValidator {
 		return r;
 	}
 	
+	private static BooleanType createBooleanType() {
+		return SosADLFactory.eINSTANCE.createBooleanType();
+	}
+	
 	private static Expression createOpposite(Expression e) {
 		UnaryExpression r = SosADLFactory.eINSTANCE.createUnaryExpression();
 		r.setOp("-");
 		r.setRight(e);
 		return r;
+	}
+	
+	private static Expression createBinaryExpression(Expression l, String o, Expression r) {
+		BinaryExpression ret = SosADLFactory.eINSTANCE.createBinaryExpression();
+		ret.setLeft(l);
+		ret.setOp(o);
+		ret.setRight(r);
+		return ret;
 	}
 	
 	private static Type_expression createType_expression_Same(Environment gamma, Expression e, DataType tau, Expression min,
@@ -931,6 +1003,16 @@ public class SosADLValidator extends AbstractSosADLValidator {
 	private static Type_expression createType_expression_Opposite(Environment gamma, Expression e, DataType tau, Expression min,
 			Expression max, Type_expression p1, Subtype p2) {
 		return new Type_expression_Opposite(gamma, e, tau, min, max, p1, p2);
+	}
+	
+	private static Type_expression createType_expression_Not(Environment gamma, Expression e, DataType tau, Type_expression p1, Subtype p2) {
+		return new Type_expression_Not(gamma, e, tau, p1, p2);
+	}
+	
+	private static Type_expression createType_expression_Add(Environment gamma, Expression l, DataType l__tau, Expression l__min, Expression l__max,
+			Expression r, DataType r__tau, Expression r__min, Expression r__max, Type_expression p1, Subtype p2,
+			Type_expression p3, Subtype p4) {
+		return new Type_expression_Add(gamma, l, l__tau, l__min, l__max, r, r__tau, r__min, r__max, p1, p2, p3, p4);
 	}
 
 	private static Subtype createSubtype_refl(Environment gamma, DataType t) {

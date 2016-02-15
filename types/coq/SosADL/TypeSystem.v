@@ -532,6 +532,10 @@ Inductive type_expression: env -> SosADL.SosADL.t_Expression -> SosADL.SosADL.t_
     forall
       (Gamma: env)
       (v: BinInt.Z)
+      (p: type (SosADL.SosADL.RangeType
+                  (Some (SosADL.SosADL.IntegerValue (Some v)))
+                  (Some (SosADL.SosADL.IntegerValue (Some v))))
+               well typed in Gamma)
     ,
       expression (SosADL.SosADL.IntegerValue (Some v))
       has type (SosADL.SosADL.RangeType
@@ -566,22 +570,38 @@ Inductive type_expression: env -> SosADL.SosADL.t_Expression -> SosADL.SosADL.t_
       expression (SosADL.SosADL.UnaryExpression (Some "+") (Some e))
       has type (SosADL.SosADL.RangeType (Some min) (Some max)) in Gamma
 
-(*
+
 | type_expression_Not:
-    forall Gamma e,
-      (expression e has type SosADL.SosADL.BooleanType in Gamma)
-      ->
+    forall
+      (Gamma: env)
+      (e: SosADL.SosADL.t_Expression)
+      (tau: SosADL.SosADL.t_DataType)
+      (p1: expression e has type tau in Gamma)
+      (p2: tau </ SosADL.SosADL.BooleanType under Gamma)
+    ,
       expression (SosADL.SosADL.UnaryExpression (Some "not") (Some e)) has type SosADL.SosADL.BooleanType in Gamma
 
 | type_expression_Add:
-    forall Gamma l l__min l__max r r__min r__max,
-      (expression l has type (SosADL.SosADL.RangeType (Some l__min) (Some l__max)) in Gamma)
-      /\ (expression r has type (SosADL.SosADL.RangeType (Some r__min) (Some r__max)) in Gamma)
-      ->
+    forall
+      (Gamma: env)
+      (l: SosADL.SosADL.t_Expression)
+      (l__tau: SosADL.SosADL.t_DataType)
+      (l__min: SosADL.SosADL.t_Expression)
+      (l__max: SosADL.SosADL.t_Expression)
+      (r: SosADL.SosADL.t_Expression)
+      (r__tau: SosADL.SosADL.t_DataType)
+      (r__min: SosADL.SosADL.t_Expression)
+      (r__max: SosADL.SosADL.t_Expression)
+      (p1: expression l has type l__tau in Gamma)
+      (p2: l__tau </ (SosADL.SosADL.RangeType (Some l__min) (Some l__max)) under Gamma)
+      (p3: expression r has type r__tau in Gamma)
+      (p4: r__tau </ (SosADL.SosADL.RangeType (Some r__min) (Some r__max)) under Gamma)
+    ,
       expression (SosADL.SosADL.BinaryExpression (Some l) (Some "+") (Some r))
       has type (SosADL.SosADL.RangeType (Some (SosADL.SosADL.BinaryExpression (Some l__min) (Some "+") (Some r__min)))
                               (Some (SosADL.SosADL.BinaryExpression (Some l__max) (Some "+") (Some r__max)))) in Gamma
 
+(*
 | type_expression_Sub:
     forall Gamma l l__min l__max r r__min r__max,
       (expression l has type (SosADL.SosADL.RangeType (Some l__min) (Some l__max)) in Gamma)
