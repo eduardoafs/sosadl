@@ -10,21 +10,14 @@ public class Type_RangeType_trivial implements Type_datatype {
 	
 	@Mandatory private final Expression max;
 	
-	@Mandatory private final Constexpr_expression p1;
+	@Mandatory private final Expression_le p1;
 
-	@Mandatory private final Constexpr_expression p2;
-	
-	@Mandatory private final Expression_le p3;
-
-	public Type_RangeType_trivial(Environment gamma, Expression min, Expression max, Constexpr_expression p1,
-			Constexpr_expression p2, Expression_le p3) {
+	public Type_RangeType_trivial(Environment gamma, Expression min, Expression max, Expression_le p1) {
 		super();
 		this.gamma = gamma;
 		this.min = min;
 		this.max = max;
 		this.p1 = p1;
-		this.p2 = p2;
-		this.p3 = p3;
 	}
 
 	public Environment getGamma() {
@@ -39,16 +32,8 @@ public class Type_RangeType_trivial implements Type_datatype {
 		return max;
 	}
 
-	public Constexpr_expression getP1() {
+	public Expression_le getP1() {
 		return p1;
-	}
-
-	public Constexpr_expression getP2() {
-		return p2;
-	}
-
-	public Expression_le getP3() {
-		return p3;
 	}
 
 }

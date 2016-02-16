@@ -92,6 +92,7 @@ import org.archware.sosadl.validation.typing.proof.Simple_increment_step;
 import org.archware.sosadl.validation.typing.proof.Subtype;
 import org.archware.sosadl.validation.typing.proof.Subtype_refl;
 import org.archware.sosadl.validation.typing.proof.Subtype_unfold_left;
+import org.archware.sosadl.validation.typing.proof.Type_BooleanType;
 import org.archware.sosadl.validation.typing.proof.Type_DataTypeDecl_def;
 import org.archware.sosadl.validation.typing.proof.Type_EntityBlock_whole;
 import org.archware.sosadl.validation.typing.proof.Type_FunctionDecl_Method;
@@ -116,6 +117,7 @@ import org.archware.sosadl.validation.typing.proof.Type_expression_IntegerValue;
 import org.archware.sosadl.validation.typing.proof.Type_expression_Not;
 import org.archware.sosadl.validation.typing.proof.Type_expression_Opposite;
 import org.archware.sosadl.validation.typing.proof.Type_expression_Same;
+import org.archware.sosadl.validation.typing.proof.Type_expression_Sub;
 import org.archware.sosadl.validation.typing.proof.Type_expression_and_type;
 import org.archware.sosadl.validation.typing.proof.Type_function;
 import org.archware.sosadl.validation.typing.proof.Type_gate;
@@ -345,7 +347,17 @@ public class SosADLValidator extends AbstractSosADLValidator {
 							p1.getA(), p2.getA(), p3.getA(), p4.getA()),
 					(g, e, p1, p2, p3, p4) -> createRangeType(
 							createBinaryExpression(EcoreUtil.copy(p2.getB().getVmin()), "+", EcoreUtil.copy(p4.getB().getVmin())),
-							createBinaryExpression(EcoreUtil.copy(p2.getB().getVmax()), "+", EcoreUtil.copy(p4.getB().getVmax()))))
+							createBinaryExpression(EcoreUtil.copy(p2.getB().getVmax()), "+", EcoreUtil.copy(p4.getB().getVmax())))),
+			new BinaryTypeInfo<>("-",
+					RangeType.class, "range type", () -> createRangeType(0, 0),
+					RangeType.class, "range type", () -> createRangeType(0, 0),
+					(g, e, p1, p2, p3, p4) -> createType_expression_Sub(g,
+							e.getLeft(), p1.getB(), p2.getB().getVmin(), p2.getB().getVmax(),
+							e.getRight(), p3.getB(), p4.getB().getVmin(), p4.getB().getVmax(),
+							p1.getA(), p2.getA(), p3.getA(), p4.getA()),
+					(g, e, p1, p2, p3, p4) -> createRangeType(
+							createBinaryExpression(EcoreUtil.copy(p2.getB().getVmin()), "-", EcoreUtil.copy(p4.getB().getVmax())),
+							createBinaryExpression(EcoreUtil.copy(p2.getB().getVmax()), "-", EcoreUtil.copy(p4.getB().getVmin()))))
 	};
 	
 	private <T extends DataType> Pair<Type_expression_node, DataType> typeUnaryExpression(Environment gamma, UnaryExpression e, UnaryTypeInfo<T> i) {
@@ -541,12 +553,14 @@ public class SosADLValidator extends AbstractSosADLValidator {
 			saveMin(type, InterpInZ.eval(((RangeType)type).getVmin()));
 			saveMax(type, InterpInZ.eval(((RangeType)type).getVmax()));
 			return saveProof(type, createType_RangeType_trivial(gamma, ((RangeType)type).getVmin(), ((RangeType)type).getVmax(),
-					constexpr_expression(((RangeType)type).getVmin()),
-					constexpr_expression(((RangeType)type).getVmax()),
 					createIn_Z(((RangeType)type).getVmin(),
 							InterpInZ.eval(((RangeType)type).getVmin()), ((RangeType)type).getVmax(),
 							InterpInZ.eval(((RangeType)type).getVmax()),
 							createReflexivity(), createReflexivity(), createReflexivity())));
+		}
+		// type_BooleanType:
+		else if(type instanceof BooleanType) {
+			return saveProof(type, createType_BooleanType(gamma));
 		} else {
 			if(type instanceof NamedType && ((NamedType)type).getName() != null && gamma.get(((NamedType)type).getName()) != null && gamma.get(((NamedType)type).getName()) instanceof TypeEnvContent && ((TypeEnvContent)gamma.get(((NamedType)type).getName())).getDataTypeDecl() == null) {
 				error("No type declaration named `" + gamma.get(((NamedType)type).getName()) + "'", type, null);
@@ -666,6 +680,7 @@ public class SosADLValidator extends AbstractSosADLValidator {
 		return new Pair<>(createSimple_increment_step(n, c, gamma, x, gamma1, createReflexivity(), prover.apply(gamma, x)), gamma1);
 	}
 
+	@SuppressWarnings("unused")
 	private <T extends EObject, P extends ProofTerm> Pair<Mutually<T,P>, Environment> proveMutually(Environment gamma, List<T> l,
 			TriFunction<Environment, T, Environment, P> prover, Function<T, ? extends String> name, Function<T, ? extends EnvContent> content) {
 		if(noDuplicate(l.stream().map(name))) {
@@ -872,8 +887,12 @@ public class SosADLValidator extends AbstractSosADLValidator {
 		return new Type_SequenceType(gamma, t, p);
 	}
 	
-	private static Type_datatype createType_RangeType_trivial(Environment gamma, Expression min, Expression max, Constexpr_expression p1, Constexpr_expression p2, Expression_le p3) {
-		return new Type_RangeType_trivial(gamma, min, max, p1, p2, p3);
+	private static Type_datatype createType_RangeType_trivial(Environment gamma, Expression min, Expression max, Expression_le p1) {
+		return new Type_RangeType_trivial(gamma, min, max, p1);
+	}
+	
+	private static Type_datatype createType_BooleanType(Environment gamma) {
+		return new Type_BooleanType(gamma);
 	}
 	
 	private static Type_function createType_FunctionDecl_Method(Environment gamma, String dataName, String dataTypeName, DataTypeDecl dataTypeDecl,
@@ -1034,6 +1053,12 @@ public class SosADLValidator extends AbstractSosADLValidator {
 			Expression r, DataType r__tau, Expression r__min, Expression r__max, Type_expression p1, Subtype p2,
 			Type_expression p3, Subtype p4) {
 		return new Type_expression_Add(gamma, l, l__tau, l__min, l__max, r, r__tau, r__min, r__max, p1, p2, p3, p4);
+	}
+	
+	private static Type_expression_node createType_expression_Sub(Environment gamma, Expression l, DataType l__tau, Expression l__min, Expression l__max,
+			Expression r, DataType r__tau, Expression r__min, Expression r__max, Type_expression p1, Subtype p2,
+			Type_expression p3, Subtype p4) {
+		return new Type_expression_Sub(gamma, l, l__tau, l__min, l__max, r, r__tau, r__min, r__max, p1, p2, p3, p4);
 	}
 
 	private static Subtype createSubtype_refl(Environment gamma, DataType t) {

@@ -457,6 +457,15 @@ Inductive constexpr_expression: SosADL.SosADL.t_Expression -> Prop :=
 where "'expression' e 'is' 'constant' 'integer'" := (constexpr_expression e)
 .
 
+Lemma interpInZ_implies_constexpr: forall e f (H: interp_in_Z e = Interpreted f), expression e is constant integer.
+Proof.
+  intros.
+  assert (exists f, interp_in_Z e = Interpreted f) as I by (exists f; auto).
+  clear f H.
+  revert e I.
+  apply interp_in_Z_ind; intros; constructor; auto.
+Qed.
+
 (** ** Data types *)
 
 Inductive type_datatype: env -> SosADL.SosADL.t_DataType -> Prop :=
@@ -511,12 +520,16 @@ Inductive type_datatype: env -> SosADL.SosADL.t_DataType -> Prop :=
       (Gamma: env)
       (min: SosADL.SosADL.t_Expression)
       (max: SosADL.SosADL.t_Expression)
-      (p1: expression min is constant integer)
-      (p2: expression max is constant integer)
-      (p3: min <= max)
+      (p1: min <= max)
     ,
       type (SosADL.SosADL.RangeType (Some min)
-                          (Some max)) well typed in Gamma
+                                    (Some max)) well typed in Gamma
+
+| type_BooleanType:
+    forall
+      (Gamma: env)
+    ,
+      type SosADL.SosADL.BooleanType well typed in Gamma
 
 where "'type' t 'well' 'typed' 'in' Gamma" := (type_datatype Gamma t)
 .
@@ -610,16 +623,55 @@ with type_expression_node: env -> SosADL.SosADL.t_Expression -> SosADL.SosADL.t_
       has type (SosADL.SosADL.RangeType (Some (SosADL.SosADL.BinaryExpression (Some l__min) (Some "+") (Some r__min)))
                               (Some (SosADL.SosADL.BinaryExpression (Some l__max) (Some "+") (Some r__max)))) in Gamma
 
-(*
 | type_expression_Sub:
-    forall Gamma l l__min l__max r r__min r__max,
-      (expression l has type (SosADL.SosADL.RangeType (Some l__min) (Some l__max)) in Gamma)
-      /\ (expression r has type (SosADL.SosADL.RangeType (Some r__min) (Some r__max)) in Gamma)
-      ->
-      expression (SosADL.SosADL.BinaryExpression (Some l) (Some "-") (Some r))
+    forall
+      (Gamma: env)
+      (l: SosADL.SosADL.t_Expression)
+      (l__tau: SosADL.SosADL.t_DataType)
+      (l__min: SosADL.SosADL.t_Expression)
+      (l__max: SosADL.SosADL.t_Expression)
+      (r: SosADL.SosADL.t_Expression)
+      (r__tau: SosADL.SosADL.t_DataType)
+      (r__min: SosADL.SosADL.t_Expression)
+      (r__max: SosADL.SosADL.t_Expression)
+      (p1: expression l has type l__tau in Gamma)
+      (p2: l__tau </ (SosADL.SosADL.RangeType (Some l__min) (Some l__max)) under Gamma)
+      (p3: expression r has type r__tau in Gamma)
+      (p4: r__tau </ (SosADL.SosADL.RangeType (Some r__min) (Some r__max)) under Gamma)
+    ,
+      expression node (SosADL.SosADL.BinaryExpression (Some l) (Some "-") (Some r))
       has type (SosADL.SosADL.RangeType (Some (SosADL.SosADL.BinaryExpression (Some l__min) (Some "-") (Some r__max)))
                               (Some (SosADL.SosADL.BinaryExpression (Some l__max) (Some "-") (Some r__min)))) in Gamma
-*)
+
+| type_expression_Mul_trivial:
+    forall
+      (Gamma: env)
+      (l: SosADL.SosADL.t_Expression)
+      (l__tau: SosADL.SosADL.t_DataType)
+      (l__min: SosADL.SosADL.t_Expression)
+      (l__max: SosADL.SosADL.t_Expression)
+      (r: SosADL.SosADL.t_Expression)
+      (r__tau: SosADL.SosADL.t_DataType)
+      (r__min: SosADL.SosADL.t_Expression)
+      (r__max: SosADL.SosADL.t_Expression)
+      (min: SosADL.SosADL.t_Expression)
+      (max: SosADL.SosADL.t_Expression)
+      (p1: expression l has type l__tau in Gamma)
+      (p2: l__tau </ (SosADL.SosADL.RangeType (Some l__min) (Some l__max)) under Gamma)
+      (p3: expression r has type r__tau in Gamma)
+      (p4: r__tau </ (SosADL.SosADL.RangeType (Some r__min) (Some r__max)) under Gamma)
+      (p5: min <= (SosADL.SosADL.BinaryExpression (Some l__min) (Some "*") (Some r__min)))
+      (p6: min <= (SosADL.SosADL.BinaryExpression (Some l__min) (Some "*") (Some r__max)))
+      (p7: min <= (SosADL.SosADL.BinaryExpression (Some l__max) (Some "*") (Some r__min)))
+      (p8: min <= (SosADL.SosADL.BinaryExpression (Some l__max) (Some "*") (Some r__max)))
+      (p9: (SosADL.SosADL.BinaryExpression (Some l__min) (Some "*") (Some r__min)) <= max)
+      (pa: (SosADL.SosADL.BinaryExpression (Some l__min) (Some "*") (Some r__max)) <= max)
+      (pb: (SosADL.SosADL.BinaryExpression (Some l__max) (Some "*") (Some r__min)) <= max)
+      (pc: (SosADL.SosADL.BinaryExpression (Some l__max) (Some "*") (Some r__max)) <= max)
+    ,
+      expression node (SosADL.SosADL.BinaryExpression (Some l) (Some "*") (Some r))
+      has type (SosADL.SosADL.RangeType (Some min) (Some max)) in Gamma
+
 
 (** %\todo{%The typing rules for [*], [/] and [mod] needs to be
 written.%}% *)
