@@ -114,6 +114,7 @@ import org.archware.sosadl.validation.typing.proof.Type_expression;
 import org.archware.sosadl.validation.typing.proof.Type_expression_node;
 import org.archware.sosadl.validation.typing.proof.Type_expression_Add;
 import org.archware.sosadl.validation.typing.proof.Type_expression_IntegerValue;
+import org.archware.sosadl.validation.typing.proof.Type_expression_Mul;
 import org.archware.sosadl.validation.typing.proof.Type_expression_Not;
 import org.archware.sosadl.validation.typing.proof.Type_expression_Opposite;
 import org.archware.sosadl.validation.typing.proof.Type_expression_Same;
@@ -337,11 +338,11 @@ public class SosADLValidator extends AbstractSosADLValidator {
 					(g, e, p1, p2) -> p2.getB())
 	};
 	
-	private static BinaryTypeInfo<?, ?>[] binaryTypeInformations = new BinaryTypeInfo[] {
+	private BinaryTypeInfo<?, ?, ?>[] binaryTypeInformations = new BinaryTypeInfo[] {
 			new BinaryTypeInfo<>("+",
 					RangeType.class, "range type", () -> createRangeType(0, 0),
 					RangeType.class, "range type", () -> createRangeType(0, 0),
-					(g, e, p1, p2, p3, p4) -> createType_expression_Add(g,
+					(g, e, p1, p2, p3, p4, r) -> createType_expression_Add(g,
 							e.getLeft(), p1.getB(), p2.getB().getVmin(), p2.getB().getVmax(),
 							e.getRight(), p3.getB(), p4.getB().getVmin(), p4.getB().getVmax(),
 							p1.getA(), p2.getA(), p3.getA(), p4.getA()),
@@ -351,14 +352,61 @@ public class SosADLValidator extends AbstractSosADLValidator {
 			new BinaryTypeInfo<>("-",
 					RangeType.class, "range type", () -> createRangeType(0, 0),
 					RangeType.class, "range type", () -> createRangeType(0, 0),
-					(g, e, p1, p2, p3, p4) -> createType_expression_Sub(g,
+					(g, e, p1, p2, p3, p4, r) -> createType_expression_Sub(g,
 							e.getLeft(), p1.getB(), p2.getB().getVmin(), p2.getB().getVmax(),
 							e.getRight(), p3.getB(), p4.getB().getVmin(), p4.getB().getVmax(),
 							p1.getA(), p2.getA(), p3.getA(), p4.getA()),
 					(g, e, p1, p2, p3, p4) -> createRangeType(
 							createBinaryExpression(EcoreUtil.copy(p2.getB().getVmin()), "-", EcoreUtil.copy(p4.getB().getVmax())),
-							createBinaryExpression(EcoreUtil.copy(p2.getB().getVmax()), "-", EcoreUtil.copy(p4.getB().getVmin()))))
+							createBinaryExpression(EcoreUtil.copy(p2.getB().getVmax()), "-", EcoreUtil.copy(p4.getB().getVmin())))),
+			new BinaryTypeInfo<>("*",
+					RangeType.class, "range type", () -> createRangeType(0, 0),
+					RangeType.class, "range type", () -> createRangeType(0, 0),
+					// TODO
+					(g, e, p1, p2, p3, p4, r) -> {
+						Expression c1 = createBinaryExpression(EcoreUtil.copy(p2.getB().getVmin()), "*", EcoreUtil.copy(p4.getB().getVmin()));
+						Expression c2 = createBinaryExpression(EcoreUtil.copy(p2.getB().getVmin()), "*", EcoreUtil.copy(p4.getB().getVmax()));
+						Expression c3 = createBinaryExpression(EcoreUtil.copy(p2.getB().getVmax()), "*", EcoreUtil.copy(p4.getB().getVmin()));
+						Expression c4 = createBinaryExpression(EcoreUtil.copy(p2.getB().getVmax()), "*", EcoreUtil.copy(p4.getB().getVmax()));
+						return createType_expression_Mul(g,
+								e.getLeft(), p1.getB(), p2.getB().getVmin(), p2.getB().getVmax(),
+								e.getRight(), p3.getB(), p4.getB().getVmin(), p4.getB().getVmax(),
+								r.getVmin(), r.getVmax(), p1.getA(), p2.getA(), p3.getA(), p4.getA(),
+								expression_le(r.getVmin(), c1),
+								expression_le(r.getVmin(), c2),
+								expression_le(r.getVmin(), c3),
+								expression_le(r.getVmin(), c4),
+								expression_le(c1, r.getVmax()),
+								expression_le(c2, r.getVmax()),
+								expression_le(c3, r.getVmax()),
+								expression_le(c4, r.getVmax()));
+					},
+					(g, e, p1, p2, p3, p4) -> {
+						Expression c1 = createBinaryExpression(EcoreUtil.copy(p2.getB().getVmin()), "*", EcoreUtil.copy(p4.getB().getVmin()));
+						Expression c2 = createBinaryExpression(EcoreUtil.copy(p2.getB().getVmin()), "*", EcoreUtil.copy(p4.getB().getVmax()));
+						Expression c3 = createBinaryExpression(EcoreUtil.copy(p2.getB().getVmax()), "*", EcoreUtil.copy(p4.getB().getVmin()));
+						Expression c4 = createBinaryExpression(EcoreUtil.copy(p2.getB().getVmax()), "*", EcoreUtil.copy(p4.getB().getVmax()));
+						Expression mi = EcoreUtil.copy(min(min(c1, c2), min(c3, c4)));
+						Expression ma = EcoreUtil.copy(max(max(c1, c2), max(c3, c4)));
+						return createRangeType(mi, ma);
+						}),
 	};
+	
+	private static Expression min(Expression l, Expression r) {
+		if(InterpInZ.le(l, r)) {
+			return l;
+		} else {
+			return r;
+		}
+	}
+	
+	private static Expression max(Expression l, Expression r) {
+		if(InterpInZ.le(r, l)) {
+			return l;
+		} else {
+			return r;
+		}
+	}
 	
 	private <T extends DataType> Pair<Type_expression_node, DataType> typeUnaryExpression(Environment gamma, UnaryExpression e, UnaryTypeInfo<T> i) {
 		Pair<Type_expression, DataType> p1 = type_expression(gamma, e.getRight());
@@ -366,12 +414,13 @@ public class SosADLValidator extends AbstractSosADLValidator {
 		return new Pair<>(saveProof(e, i.getCreateProofTerm().apply(gamma, e, p1, p2)), saveType(e, i.getCreateType().apply(gamma, e, p1, p2)));
 	}
 	
-	private <L extends DataType, R extends DataType> Pair<Type_expression_node, DataType> typeBinaryExpression(Environment gamma, BinaryExpression e, BinaryTypeInfo<L, R> i) {
+	private <L extends DataType, R extends DataType, X extends DataType> Pair<Type_expression_node, DataType> typeBinaryExpression(Environment gamma, BinaryExpression e, BinaryTypeInfo<L, R, X> i) {
 		Pair<Type_expression, DataType> p1 = type_expression(gamma, e.getLeft());
 		Pair<Subtype, L> p2 = smallestSuperType(i.getlClass(), i.getlLabel(), i.getlIfNone().get(), gamma, p1.getB(), e, SosADLPackage.Literals.BINARY_EXPRESSION__LEFT);
 		Pair<Type_expression, DataType> p3 = type_expression(gamma, e.getRight());
 		Pair<Subtype, R> p4 = smallestSuperType(i.getrClass(), i.getrLabel(), i.getrIfNone().get(), gamma, p3.getB(), e, SosADLPackage.Literals.BINARY_EXPRESSION__RIGHT);
-		return new Pair<>(saveProof(e, i.createProofTerm.apply(gamma, e, p1, p2, p3, p4)), saveType(e, i.createType.apply(gamma, e, p1, p2, p3, p4)));
+		X r = i.createType.apply(gamma, e, p1, p2, p3, p4);
+		return new Pair<>(saveProof(e, i.createProofTerm.apply(gamma, e, p1, p2, p3, p4, r)), saveType(e, r));
 	}
 
 	private Pair<Type_expression, DataType> type_expression(Environment gamma, Expression e) {
@@ -394,7 +443,7 @@ public class SosADLValidator extends AbstractSosADLValidator {
 			error("Unknown unary operator", e, SosADLPackage.Literals.UNARY_EXPRESSION__OP);
 			return new Pair<>(null, SosADLFactory.eINSTANCE.createBooleanType());
 		} else if(e instanceof BinaryExpression) {
-			for(BinaryTypeInfo<? extends DataType, ? extends DataType> i: binaryTypeInformations) {
+			for(BinaryTypeInfo<? extends DataType, ? extends DataType, ? extends DataType> i: binaryTypeInformations) {
 				if(((BinaryExpression)e).getOp().equals(i.getOperator())) {
 					return typeBinaryExpression(gamma, (BinaryExpression)e, i);
 				}
@@ -530,6 +579,20 @@ public class SosADLValidator extends AbstractSosADLValidator {
 			return new VariableEnvContent(p, t);
 		}
 	}
+	
+	private Expression_le expression_le(Expression l, Expression r) {
+		if(isConstExprOrError(l) && isConstExprOrError(r) && InterpInZ.le(l, r)) {
+			return createIn_Z(l, InterpInZ.eval(l), r, InterpInZ.eval(r), createReflexivity(), createReflexivity(), createReflexivity());
+		} else {
+			if(isConstExprNoError(l) && isConstExprNoError(r)) {
+				error("The lower bound must be smaller than the upper bound", l, null);
+				error("The upper bound must be greated than the lower bound", r, null);
+			} else {
+				error("Type error", l, null);
+			}
+			return null;
+		}
+	}
 
 	private Type_datatype type_datatype(Environment gamma, DataType type) {
 		saveEnvironment(type, gamma);
@@ -549,14 +612,12 @@ public class SosADLValidator extends AbstractSosADLValidator {
 					type_datatype(gamma, ((SequenceType)type).getType())));
 		}
 		// type_RangeType_trivial
-		else if(type instanceof RangeType && ((RangeType)type).getVmin() != null && ((RangeType)type).getVmax() != null && !containsSomeNull(constexpr_expression(((RangeType)type).getVmin())) && !containsSomeNull(constexpr_expression(((RangeType)type).getVmax())) && InterpInZ.le(((RangeType)type).getVmin(), ((RangeType)type).getVmax())) {
+		else if(type instanceof RangeType && ((RangeType)type).getVmin() != null
+				&& ((RangeType)type).getVmax() != null) {
 			saveMin(type, InterpInZ.eval(((RangeType)type).getVmin()));
 			saveMax(type, InterpInZ.eval(((RangeType)type).getVmax()));
 			return saveProof(type, createType_RangeType_trivial(gamma, ((RangeType)type).getVmin(), ((RangeType)type).getVmax(),
-					createIn_Z(((RangeType)type).getVmin(),
-							InterpInZ.eval(((RangeType)type).getVmin()), ((RangeType)type).getVmax(),
-							InterpInZ.eval(((RangeType)type).getVmax()),
-							createReflexivity(), createReflexivity(), createReflexivity())));
+					expression_le(((RangeType)type).getVmin(), ((RangeType)type).getVmax())));
 		}
 		// type_BooleanType:
 		else if(type instanceof BooleanType) {
@@ -575,10 +636,10 @@ public class SosADLValidator extends AbstractSosADLValidator {
 			} else if(type instanceof RangeType && ((RangeType)type).getVmin() != null && ((RangeType)type).getVmax() != null && !containsSomeNull(constexpr_expression(((RangeType)type).getVmin())) && !containsSomeNull(constexpr_expression(((RangeType)type).getVmax())) && InterpInZ.gt(((RangeType)type).getVmin(), ((RangeType)type).getVmax())) {
 				error("The lower bound of the range is greater than the upper bound", type, null);
 			} else if(type instanceof RangeType && ((RangeType)type).getVmin() != null && ((RangeType)type).getVmax() != null) {
-				if(containsSomeNull(constexpr_expression(((RangeType)type).getVmin()))) {
+				if(!isConstExprNoError(((RangeType)type).getVmin())) {
 					error("The lower bound of the range is not a constant integer", type, SosADLPackage.Literals.RANGE_TYPE__VMIN);
 				}
-				if(containsSomeNull(constexpr_expression(((RangeType)type).getVmax()))) {
+				if(!isConstExprNoError(((RangeType)type).getVmax())) {
 					error("The upper bound of the range is not a constant integer", type, SosADLPackage.Literals.RANGE_TYPE__VMAX);
 				}
 			} else if(type instanceof RangeType) {
@@ -597,6 +658,51 @@ public class SosADLValidator extends AbstractSosADLValidator {
 	private Pair<Mutually<FieldDecl, Ex<DataType, And<Equality, Type_datatype>>>, Environment> type_fields(
 			Environment gamma, EList<FieldDecl> fields) {
 		return proveMutually(gamma, fields, this::type_field, "(fun _ => None)", (x) -> null, "(fun _ => None)", (x) -> null);
+	}
+
+	private boolean isConstExprOrError(Expression e) {
+		return isConstExpr(e, this::error);
+	}
+
+	private boolean isConstExprNoError(Expression e) {
+		return isConstExpr(e, (a,b,c) -> {});
+	}
+
+	private boolean isConstExpr(Expression e, TriConsumer<String, EObject, EStructuralFeature> trigger) {
+		// constexpr_IntegerValue:
+		if(e instanceof IntegerValue) {
+			return true;
+		}
+		// constexpr_Opposite:
+		else if(e instanceof UnaryExpression && ((UnaryExpression)e).getOp() != null && ((UnaryExpression)e).getOp().equals("-") && ((UnaryExpression)e).getRight() != null) {
+			return isConstExpr(((UnaryExpression)e).getRight(), trigger);
+		}
+		// constexpr_Same:
+		else if(e instanceof UnaryExpression && ((UnaryExpression)e).getOp() != null && ((UnaryExpression)e).getOp().equals("+") && ((UnaryExpression)e).getRight() != null) {
+			return isConstExpr(((UnaryExpression)e).getRight(), trigger);
+		}
+		// constexpr_Add:
+		else if(e instanceof BinaryExpression && ((BinaryExpression)e).getOp() != null && ((BinaryExpression)e).getOp().equals("+") && ((BinaryExpression)e).getLeft() != null && ((BinaryExpression)e).getRight() != null) {
+			return isConstExpr(((BinaryExpression)e).getLeft(), trigger) & isConstExpr(((BinaryExpression)e).getRight(), trigger);
+		}
+		// constexpr_Sub:
+		else if(e instanceof BinaryExpression && ((BinaryExpression)e).getOp() != null && ((BinaryExpression)e).getOp().equals("-") && ((BinaryExpression)e).getLeft() != null && ((BinaryExpression)e).getRight() != null) {
+			return isConstExpr(((BinaryExpression)e).getLeft(), trigger) & isConstExpr(((BinaryExpression)e).getRight(), trigger);
+		}
+		// constexpr_Mul:
+		else if(e instanceof BinaryExpression && ((BinaryExpression)e).getOp() != null && ((BinaryExpression)e).getOp().equals("*") && ((BinaryExpression)e).getLeft() != null && ((BinaryExpression)e).getRight() != null) {
+			return isConstExpr(((BinaryExpression)e).getLeft(), trigger) & isConstExpr(((BinaryExpression)e).getRight(), trigger);
+		}
+		// constexpr_Div:
+		else if(e instanceof BinaryExpression && ((BinaryExpression)e).getOp() != null && ((BinaryExpression)e).getOp().equals("/") && ((BinaryExpression)e).getLeft() != null && ((BinaryExpression)e).getRight() != null) {
+			return isConstExpr(((BinaryExpression)e).getLeft(), trigger) & isConstExpr(((BinaryExpression)e).getRight(), trigger);
+		}
+		// constexpr_Mod:
+		else if(e instanceof BinaryExpression && ((BinaryExpression)e).getOp() != null && ((BinaryExpression)e).getOp().equals("mod") && ((BinaryExpression)e).getLeft() != null && ((BinaryExpression)e).getRight() != null) {
+			return isConstExpr(((BinaryExpression)e).getLeft(), trigger) & isConstExpr(((BinaryExpression)e).getRight(), trigger);
+		} else {
+			return false;
+		}
 	}
 
 	private Constexpr_expression constexpr_expression(Expression e) {
@@ -1059,6 +1165,14 @@ public class SosADLValidator extends AbstractSosADLValidator {
 			Expression r, DataType r__tau, Expression r__min, Expression r__max, Type_expression p1, Subtype p2,
 			Type_expression p3, Subtype p4) {
 		return new Type_expression_Sub(gamma, l, l__tau, l__min, l__max, r, r__tau, r__min, r__max, p1, p2, p3, p4);
+	}
+	
+	private static Type_expression_node createType_expression_Mul(Environment gamma, Expression l, DataType l__tau, Expression l__min, Expression l__max,
+			Expression r, DataType r__tau, Expression r__min, Expression r__max, Expression min, Expression max,
+			Type_expression p1, Subtype p2, Type_expression p3, Subtype p4, Expression_le p5, Expression_le p6,
+			Expression_le p7, Expression_le p8, Expression_le p9, Expression_le pa, Expression_le pb,
+			Expression_le pc) {
+		return new Type_expression_Mul(gamma, l, l__tau, l__min, l__max, r, r__tau, r__min, r__max, min, max, p1, p2, p3, p4, p5, p6, p7, p8, p9, pa, pb, pc);
 	}
 
 	private static Subtype createSubtype_refl(Environment gamma, DataType t) {

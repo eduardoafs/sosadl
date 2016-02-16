@@ -643,7 +643,7 @@ with type_expression_node: env -> SosADL.SosADL.t_Expression -> SosADL.SosADL.t_
       has type (SosADL.SosADL.RangeType (Some (SosADL.SosADL.BinaryExpression (Some l__min) (Some "-") (Some r__max)))
                               (Some (SosADL.SosADL.BinaryExpression (Some l__max) (Some "-") (Some r__min)))) in Gamma
 
-| type_expression_Mul_trivial:
+| type_expression_Mul:
     forall
       (Gamma: env)
       (l: SosADL.SosADL.t_Expression)

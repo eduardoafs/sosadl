@@ -9,7 +9,7 @@ import org.archware.sosadl.validation.typing.proof.Subtype;
 import org.archware.sosadl.validation.typing.proof.Type_expression;
 import org.archware.sosadl.validation.typing.proof.Type_expression_node;
 
-public class BinaryTypeInfo<L extends DataType, R extends DataType> {
+public class BinaryTypeInfo<L extends DataType, R extends DataType, X extends DataType> {
 	public final String operator;
 	public final Class<L> lClass;
 	public final String lLabel;
@@ -17,13 +17,13 @@ public class BinaryTypeInfo<L extends DataType, R extends DataType> {
 	public final Class<R> rClass;
 	public final String rLabel;
 	public final Supplier<R> rIfNone;
-	public final HexaFunction<Environment, BinaryExpression, Pair<Type_expression, DataType>, Pair<Subtype, L>, Pair<Type_expression, DataType>, Pair<Subtype, R>, Type_expression_node> createProofTerm;
-	public final HexaFunction<Environment, BinaryExpression, Pair<Type_expression, DataType>, Pair<Subtype, L>, Pair<Type_expression, DataType>, Pair<Subtype, R>, DataType> createType;
+	public final HeptaFunction<Environment, BinaryExpression, Pair<Type_expression, DataType>, Pair<Subtype, L>, Pair<Type_expression, DataType>, Pair<Subtype, R>, X, Type_expression_node> createProofTerm;
+	public final HexaFunction<Environment, BinaryExpression, Pair<Type_expression, DataType>, Pair<Subtype, L>, Pair<Type_expression, DataType>, Pair<Subtype, R>, X> createType;
 
 	public BinaryTypeInfo(String operator, Class<L> lClass, String lLabel, Supplier<L> lIfNone, Class<R> rClass,
 			String rLabel, Supplier<R> rIfNone,
-			HexaFunction<Environment, BinaryExpression, Pair<Type_expression, DataType>, Pair<Subtype, L>, Pair<Type_expression, DataType>, Pair<Subtype, R>, Type_expression_node> createProofTerm,
-			HexaFunction<Environment, BinaryExpression, Pair<Type_expression, DataType>, Pair<Subtype, L>, Pair<Type_expression, DataType>, Pair<Subtype, R>, DataType> createType) {
+			HeptaFunction<Environment, BinaryExpression, Pair<Type_expression, DataType>, Pair<Subtype, L>, Pair<Type_expression, DataType>, Pair<Subtype, R>, X, Type_expression_node> createProofTerm,
+			HexaFunction<Environment, BinaryExpression, Pair<Type_expression, DataType>, Pair<Subtype, L>, Pair<Type_expression, DataType>, Pair<Subtype, R>, X> createType) {
 		super();
 		this.operator = operator;
 		this.lClass = lClass;
@@ -64,11 +64,11 @@ public class BinaryTypeInfo<L extends DataType, R extends DataType> {
 		return rIfNone;
 	}
 
-	public HexaFunction<Environment, BinaryExpression, Pair<Type_expression, DataType>, Pair<Subtype, L>, Pair<Type_expression, DataType>, Pair<Subtype, R>, Type_expression_node> getCreateProofTerm() {
+	public HeptaFunction<Environment, BinaryExpression, Pair<Type_expression, DataType>, Pair<Subtype, L>, Pair<Type_expression, DataType>, Pair<Subtype, R>, X, Type_expression_node> getCreateProofTerm() {
 		return createProofTerm;
 	}
 
-	public HexaFunction<Environment, BinaryExpression, Pair<Type_expression, DataType>, Pair<Subtype, L>, Pair<Type_expression, DataType>, Pair<Subtype, R>, DataType> getCreateType() {
+	public HexaFunction<Environment, BinaryExpression, Pair<Type_expression, DataType>, Pair<Subtype, L>, Pair<Type_expression, DataType>, Pair<Subtype, R>, X> getCreateType() {
 		return createType;
 	}
 
