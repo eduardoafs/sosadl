@@ -4,7 +4,7 @@ import org.archware.sosadl.sosADL.DataType;
 import org.archware.sosadl.sosADL.Expression;
 import org.archware.sosadl.validation.typing.Environment;
 
-public class Type_expression_Add implements Type_expression {
+public class Type_expression_Add implements Type_expression_node {
 	@Mandatory private final Environment gamma;
 	
 	@Mandatory private final Expression l;

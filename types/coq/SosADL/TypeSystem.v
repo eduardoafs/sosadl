@@ -358,6 +358,7 @@ Reserved Notation "'mediatorblock' m 'well' 'typed' 'in' Gamma" (at level 200, G
 Reserved Notation "'architecture' a 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
 Reserved Notation "'architectureblock' a 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
 Reserved Notation "'expression' e 'has' 'type' t 'in' Gamma" (at level 200, no associativity, Gamma at level 1).
+Reserved Notation "'expression' 'node' e 'has' 'type' t 'in' Gamma" (at level 200, no associativity, Gamma at level 1).
 Reserved Notation "'gate' g 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
 Reserved Notation "'duty' d 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
 Reserved Notation "'archbehavior' b 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
@@ -528,16 +529,24 @@ where "'type' t 'well' 'typed' 'in' Gamma" := (type_datatype Gamma t)
  *)
 
 Inductive type_expression: env -> SosADL.SosADL.t_Expression -> SosADL.SosADL.t_DataType -> Prop :=
+| type_expression_and_type:
+    forall
+      (Gamma: env)
+      (e: SosADL.SosADL.t_Expression)
+      (t: SosADL.SosADL.t_DataType)
+      (p1: expression node e has type t in Gamma)
+      (p2: type t well typed in Gamma)
+    ,
+      expression e has type t in Gamma
+
+with type_expression_node: env -> SosADL.SosADL.t_Expression -> SosADL.SosADL.t_DataType -> Prop :=
+                      
 | type_expression_IntegerValue:
     forall
       (Gamma: env)
       (v: BinInt.Z)
-      (p: type (SosADL.SosADL.RangeType
-                  (Some (SosADL.SosADL.IntegerValue (Some v)))
-                  (Some (SosADL.SosADL.IntegerValue (Some v))))
-               well typed in Gamma)
     ,
-      expression (SosADL.SosADL.IntegerValue (Some v))
+      expression node (SosADL.SosADL.IntegerValue (Some v))
       has type (SosADL.SosADL.RangeType
                   (Some (SosADL.SosADL.IntegerValue (Some v)))
                   (Some (SosADL.SosADL.IntegerValue (Some v)))) in Gamma
@@ -552,7 +561,7 @@ Inductive type_expression: env -> SosADL.SosADL.t_Expression -> SosADL.SosADL.t_
       (p1: expression e has type tau in Gamma)
       (p2: tau </ (SosADL.SosADL.RangeType (Some min) (Some max)) under Gamma)
     ,
-      expression (SosADL.SosADL.UnaryExpression (Some "-") (Some e))
+      expression node (SosADL.SosADL.UnaryExpression (Some "-") (Some e))
                  has type (SosADL.SosADL.RangeType
                              (Some (SosADL.SosADL.UnaryExpression (Some "-") (Some max)))
                              (Some (SosADL.SosADL.UnaryExpression (Some "-") (Some min)))) in Gamma
@@ -567,7 +576,7 @@ Inductive type_expression: env -> SosADL.SosADL.t_Expression -> SosADL.SosADL.t_
       (p1: expression e has type tau in Gamma)
       (p2: tau </ (SosADL.SosADL.RangeType (Some min) (Some max)) under Gamma)
     ,
-      expression (SosADL.SosADL.UnaryExpression (Some "+") (Some e))
+      expression node (SosADL.SosADL.UnaryExpression (Some "+") (Some e))
       has type (SosADL.SosADL.RangeType (Some min) (Some max)) in Gamma
 
 
@@ -579,7 +588,7 @@ Inductive type_expression: env -> SosADL.SosADL.t_Expression -> SosADL.SosADL.t_
       (p1: expression e has type tau in Gamma)
       (p2: tau </ SosADL.SosADL.BooleanType under Gamma)
     ,
-      expression (SosADL.SosADL.UnaryExpression (Some "not") (Some e)) has type SosADL.SosADL.BooleanType in Gamma
+      expression node (SosADL.SosADL.UnaryExpression (Some "not") (Some e)) has type SosADL.SosADL.BooleanType in Gamma
 
 | type_expression_Add:
     forall
@@ -597,7 +606,7 @@ Inductive type_expression: env -> SosADL.SosADL.t_Expression -> SosADL.SosADL.t_
       (p3: expression r has type r__tau in Gamma)
       (p4: r__tau </ (SosADL.SosADL.RangeType (Some r__min) (Some r__max)) under Gamma)
     ,
-      expression (SosADL.SosADL.BinaryExpression (Some l) (Some "+") (Some r))
+      expression node (SosADL.SosADL.BinaryExpression (Some l) (Some "+") (Some r))
       has type (SosADL.SosADL.RangeType (Some (SosADL.SosADL.BinaryExpression (Some l__min) (Some "+") (Some r__min)))
                               (Some (SosADL.SosADL.BinaryExpression (Some l__max) (Some "+") (Some r__max)))) in Gamma
 
@@ -761,6 +770,7 @@ declaration of a data type containing some functions (methods).%}% *)
 and [Quantify] are not handled yet.%}% *)
 
 where "'expression' e 'has' 'type' t 'in' Gamma" := (type_expression Gamma e t)
+and "'expression' 'node' e 'has' 'type' t 'in' Gamma" := (type_expression_node Gamma e t)
 .
 
 

@@ -67,7 +67,11 @@ class XtendGeneratorGenerator extends MyAbstractGenerator {
 			}
 
 			def generateZ(int i) {
-				return Integer.toString(i)
+				if (i >= 0) {
+					return Integer.toString(i)
+				} else {
+					return «"'''(«"»Integer.toString(i)«"»)'''"»
+				}
 			}
 
 			def generatestring(String i) «"'''"»"«"«"»i»"«"'''"»

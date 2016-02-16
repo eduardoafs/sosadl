@@ -7,17 +7,18 @@ import org.archware.sosadl.sosADL.UnaryExpression;
 import org.archware.sosadl.validation.typing.Environment;
 import org.archware.sosadl.validation.typing.proof.Subtype;
 import org.archware.sosadl.validation.typing.proof.Type_expression;
+import org.archware.sosadl.validation.typing.proof.Type_expression_node;
 
 public class UnaryTypeInfo<T extends DataType> {
 	public final String operator;
 	public final Class<T> clazz;
 	public final String label;
 	public final Supplier<T> ifNone;
-	public final TetraFunction<Environment, UnaryExpression, Pair<Type_expression, DataType>, Pair<Subtype, T>, Type_expression> createProofTerm;
+	public final TetraFunction<Environment, UnaryExpression, Pair<Type_expression, DataType>, Pair<Subtype, T>, Type_expression_node> createProofTerm;
 	public final TetraFunction<Environment, UnaryExpression, Pair<Type_expression, DataType>, Pair<Subtype, T>, DataType> createType;
 
 	public UnaryTypeInfo(String operator, Class<T> clazz, String label, Supplier<T> ifNone,
-			TetraFunction<Environment, UnaryExpression, Pair<Type_expression, DataType>, Pair<Subtype, T>, Type_expression> createProofTerm,
+			TetraFunction<Environment, UnaryExpression, Pair<Type_expression, DataType>, Pair<Subtype, T>, Type_expression_node> createProofTerm,
 			TetraFunction<Environment, UnaryExpression, Pair<Type_expression, DataType>, Pair<Subtype, T>, DataType> createType) {
 		super();
 		this.operator = operator;
@@ -39,7 +40,7 @@ public class UnaryTypeInfo<T extends DataType> {
 	public Supplier<T> getIfNone() {
 		return ifNone;
 	}
-	public TetraFunction<Environment, UnaryExpression, Pair<Type_expression, DataType>, Pair<Subtype, T>, Type_expression> getCreateProofTerm() {
+	public TetraFunction<Environment, UnaryExpression, Pair<Type_expression, DataType>, Pair<Subtype, T>, Type_expression_node> getCreateProofTerm() {
 		return createProofTerm;
 	}
 	public TetraFunction<Environment, UnaryExpression, Pair<Type_expression, DataType>, Pair<Subtype, T>, DataType> getCreateType() {

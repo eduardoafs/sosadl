@@ -110,11 +110,13 @@ import org.archware.sosadl.validation.typing.proof.Type_datatype;
 import org.archware.sosadl.validation.typing.proof.Type_datatypeDecl;
 import org.archware.sosadl.validation.typing.proof.Type_entityBlock;
 import org.archware.sosadl.validation.typing.proof.Type_expression;
+import org.archware.sosadl.validation.typing.proof.Type_expression_node;
 import org.archware.sosadl.validation.typing.proof.Type_expression_Add;
 import org.archware.sosadl.validation.typing.proof.Type_expression_IntegerValue;
 import org.archware.sosadl.validation.typing.proof.Type_expression_Not;
 import org.archware.sosadl.validation.typing.proof.Type_expression_Opposite;
 import org.archware.sosadl.validation.typing.proof.Type_expression_Same;
+import org.archware.sosadl.validation.typing.proof.Type_expression_and_type;
 import org.archware.sosadl.validation.typing.proof.Type_function;
 import org.archware.sosadl.validation.typing.proof.Type_gate;
 import org.archware.sosadl.validation.typing.proof.Type_mediator;
@@ -149,7 +151,17 @@ public class SosADLValidator extends AbstractSosADLValidator {
 //	}
 
 	@Check
-	public Type_sosADL type_sosADL(SosADL file) {
+	public void typecheck(SosADL file) {
+		try {
+			type_sosADL(file);
+		} catch(Throwable t) {
+			t.printStackTrace();
+			error("Bug in the type checker", file, null);
+			throw t;
+		}
+	}
+	
+	private Type_sosADL type_sosADL(SosADL file) {
 		// type_SosADL:
 		if(file.getContent() != null) {
 			return saveProof(file, createType_SosADL(file.getImports(), file.getContent(), type_unit(Environment.empty(), file.getContent())));
@@ -336,13 +348,13 @@ public class SosADLValidator extends AbstractSosADLValidator {
 							createBinaryExpression(EcoreUtil.copy(p2.getB().getVmax()), "+", EcoreUtil.copy(p4.getB().getVmax()))))
 	};
 	
-	private <T extends DataType> Pair<Type_expression, DataType> typeUnaryExpression(Environment gamma, UnaryExpression e, UnaryTypeInfo<T> i) {
+	private <T extends DataType> Pair<Type_expression_node, DataType> typeUnaryExpression(Environment gamma, UnaryExpression e, UnaryTypeInfo<T> i) {
 		Pair<Type_expression, DataType> p1 = type_expression(gamma, e.getRight());
 		Pair<Subtype, T> p2 = smallestSuperType(i.getClazz(), i.getLabel(), i.getIfNone().get(), gamma, p1.getB(), e, SosADLPackage.Literals.UNARY_EXPRESSION__RIGHT);
 		return new Pair<>(saveProof(e, i.getCreateProofTerm().apply(gamma, e, p1, p2)), saveType(e, i.getCreateType().apply(gamma, e, p1, p2)));
 	}
 	
-	private <L extends DataType, R extends DataType> Pair<Type_expression, DataType> typeBinaryExpression(Environment gamma, BinaryExpression e, BinaryTypeInfo<L, R> i) {
+	private <L extends DataType, R extends DataType> Pair<Type_expression_node, DataType> typeBinaryExpression(Environment gamma, BinaryExpression e, BinaryTypeInfo<L, R> i) {
 		Pair<Type_expression, DataType> p1 = type_expression(gamma, e.getLeft());
 		Pair<Subtype, L> p2 = smallestSuperType(i.getlClass(), i.getlLabel(), i.getlIfNone().get(), gamma, p1.getB(), e, SosADLPackage.Literals.BINARY_EXPRESSION__LEFT);
 		Pair<Type_expression, DataType> p3 = type_expression(gamma, e.getRight());
@@ -350,21 +362,17 @@ public class SosADLValidator extends AbstractSosADLValidator {
 		return new Pair<>(saveProof(e, i.createProofTerm.apply(gamma, e, p1, p2, p3, p4)), saveType(e, i.createType.apply(gamma, e, p1, p2, p3, p4)));
 	}
 
-	
 	private Pair<Type_expression, DataType> type_expression(Environment gamma, Expression e) {
+		Pair<Type_expression_node, DataType> p1 = type_expression_node(gamma, e);
+		return new Pair<>(createType_expression_and_type(gamma, e, p1.getB(), p1.getA(), type_datatype(gamma, p1.getB())), p1.getB());
+	}
+	
+	private Pair<Type_expression_node, DataType> type_expression_node(Environment gamma, Expression e) {
 		saveEnvironment(e, gamma);
 		if(e instanceof IntegerValue) {
-			try {
 			DataType t = createRangeType(EcoreUtil.copy(e), EcoreUtil.copy(e));
-			return new Pair<>(saveProof(e, createType_expression_IntegerValue(gamma, BigInteger.valueOf(((IntegerValue) e).getAbsInt()),
-					type_datatype(gamma, t))),
+			return new Pair<>(saveProof(e, createType_expression_IntegerValue(gamma, BigInteger.valueOf(((IntegerValue) e).getAbsInt()))),
 					saveType(e, t));
-			} catch (Throwable t) {
-				t.printStackTrace();
-				error("Type error", e, null);
-				return new Pair<>(null, SosADLFactory.eINSTANCE.createBooleanType());
-			}
-			// TODO add "type (returned type) is well typed in gamma", for sanity check
 		} else if(e instanceof UnaryExpression) {
 			for(UnaryTypeInfo<? extends DataType> i : unaryTypeInformations) {
 				if(((UnaryExpression)e).getOp().equals(i.getOperator())) {
@@ -515,7 +523,8 @@ public class SosADLValidator extends AbstractSosADLValidator {
 		saveEnvironment(type, gamma);
 		// type_NamedType:
 		if(type instanceof NamedType && ((NamedType)type).getName() != null && gamma.get(((NamedType)type).getName()) != null && gamma.get(((NamedType)type).getName()) instanceof TypeEnvContent && ((TypeEnvContent)gamma.get(((NamedType)type).getName())).getDataTypeDecl() != null) {
-			return saveProof(type, createType_NamedType(gamma, ((NamedType)type).getName(), ((TypeEnvContent)gamma.get(((NamedType)type).getName())).getDataTypeDecl(), createEx_intro(((TypeEnvContent)gamma.get(((NamedType)type).getName())).getMethods(), createReflexivity())));
+			return saveProof(type, createType_NamedType(gamma, ((NamedType)type).getName(), ((TypeEnvContent)gamma.get(((NamedType)type).getName())).getDataTypeDecl(),
+					createEx_intro(((TypeEnvContent)gamma.get(((NamedType)type).getName())).getMethods(), createReflexivity())));
 		}
 		// type_TupleType:
 		else if(type instanceof TupleType) {
@@ -524,13 +533,20 @@ public class SosADLValidator extends AbstractSosADLValidator {
 		}
 		// type_SequenceType:
 		else if(type instanceof SequenceType && ((SequenceType)type).getType() != null) {
-			return saveProof(type, createType_SequenceType(gamma, ((SequenceType)type).getType(), type_datatype(gamma, ((SequenceType)type).getType())));
+			return saveProof(type, createType_SequenceType(gamma, ((SequenceType)type).getType(),
+					type_datatype(gamma, ((SequenceType)type).getType())));
 		}
 		// type_RangeType_trivial
 		else if(type instanceof RangeType && ((RangeType)type).getVmin() != null && ((RangeType)type).getVmax() != null && !containsSomeNull(constexpr_expression(((RangeType)type).getVmin())) && !containsSomeNull(constexpr_expression(((RangeType)type).getVmax())) && InterpInZ.le(((RangeType)type).getVmin(), ((RangeType)type).getVmax())) {
 			saveMin(type, InterpInZ.eval(((RangeType)type).getVmin()));
 			saveMax(type, InterpInZ.eval(((RangeType)type).getVmax()));
-			return saveProof(type, createType_RangeType_trivial(gamma, ((RangeType)type).getVmin(), ((RangeType)type).getVmax(), constexpr_expression(((RangeType)type).getVmin()), constexpr_expression(((RangeType)type).getVmax()), createIn_Z(((RangeType)type).getVmin(), InterpInZ.eval(((RangeType)type).getVmin()), ((RangeType)type).getVmax(), InterpInZ.eval(((RangeType)type).getVmax()), createReflexivity(), createReflexivity(), createReflexivity())));
+			return saveProof(type, createType_RangeType_trivial(gamma, ((RangeType)type).getVmin(), ((RangeType)type).getVmax(),
+					constexpr_expression(((RangeType)type).getVmin()),
+					constexpr_expression(((RangeType)type).getVmax()),
+					createIn_Z(((RangeType)type).getVmin(),
+							InterpInZ.eval(((RangeType)type).getVmin()), ((RangeType)type).getVmax(),
+							InterpInZ.eval(((RangeType)type).getVmax()),
+							createReflexivity(), createReflexivity(), createReflexivity())));
 		} else {
 			if(type instanceof NamedType && ((NamedType)type).getName() != null && gamma.get(((NamedType)type).getName()) != null && gamma.get(((NamedType)type).getName()) instanceof TypeEnvContent && ((TypeEnvContent)gamma.get(((NamedType)type).getName())).getDataTypeDecl() == null) {
 				error("No type declaration named `" + gamma.get(((NamedType)type).getName()) + "'", type, null);
@@ -549,7 +565,7 @@ public class SosADLValidator extends AbstractSosADLValidator {
 					error("The lower bound of the range is not a constant integer", type, SosADLPackage.Literals.RANGE_TYPE__VMIN);
 				}
 				if(containsSomeNull(constexpr_expression(((RangeType)type).getVmax()))) {
-					error("The upper bound of the range is not a constant integer", type, SosADLPackage.Literals.RANGE_TYPE__VMIN);
+					error("The upper bound of the range is not a constant integer", type, SosADLPackage.Literals.RANGE_TYPE__VMAX);
 				}
 			} else if(type instanceof RangeType) {
 				error("The range must have a lower bound and an upper bound", type, null);
@@ -869,10 +885,15 @@ public class SosADLValidator extends AbstractSosADLValidator {
 		return new Type_FunctionDecl_Method(gamma, dataName, dataTypeName, dataTypeDecl, dataTypeMethods, name, params, gammap, rettype, vals, gammav, retexpr, tau, gamma1, p1, p2, p3, p4, p5, p6, p7);
 	}
 	
-	private static Type_expression createType_expression_IntegerValue(Environment gamma, BigInteger v, Type_datatype p) {
-		return new Type_expression_IntegerValue(gamma, v, p);
+	private static Type_expression_node createType_expression_IntegerValue(Environment gamma, BigInteger v) {
+		return new Type_expression_IntegerValue(gamma, v);
 	}
-	
+
+	private static Type_expression createType_expression_and_type(Environment gamma, Expression e,
+			DataType t, Type_expression_node p1, Type_datatype p2) {
+		return new Type_expression_and_type(gamma, e, t, p1, p2);
+	}
+
 	private static Expression_le createIn_Z(Expression l, BigInteger zl, Expression r, BigInteger zr, Equality p1, Equality p2, Equality p3) {
 		return new In_Z(l, zl, r, zr, p1, p2, p3);
 	}
@@ -995,21 +1016,21 @@ public class SosADLValidator extends AbstractSosADLValidator {
 		return ret;
 	}
 	
-	private static Type_expression createType_expression_Same(Environment gamma, Expression e, DataType tau, Expression min,
+	private static Type_expression_node createType_expression_Same(Environment gamma, Expression e, DataType tau, Expression min,
 			Expression max, Type_expression p1, Subtype p2) {
 		return new Type_expression_Same(gamma, e, tau, min, max, p1, p2);
 	}
 	
-	private static Type_expression createType_expression_Opposite(Environment gamma, Expression e, DataType tau, Expression min,
+	private static Type_expression_node createType_expression_Opposite(Environment gamma, Expression e, DataType tau, Expression min,
 			Expression max, Type_expression p1, Subtype p2) {
 		return new Type_expression_Opposite(gamma, e, tau, min, max, p1, p2);
 	}
 	
-	private static Type_expression createType_expression_Not(Environment gamma, Expression e, DataType tau, Type_expression p1, Subtype p2) {
+	private static Type_expression_node createType_expression_Not(Environment gamma, Expression e, DataType tau, Type_expression p1, Subtype p2) {
 		return new Type_expression_Not(gamma, e, tau, p1, p2);
 	}
 	
-	private static Type_expression createType_expression_Add(Environment gamma, Expression l, DataType l__tau, Expression l__min, Expression l__max,
+	private static Type_expression_node createType_expression_Add(Environment gamma, Expression l, DataType l__tau, Expression l__min, Expression l__max,
 			Expression r, DataType r__tau, Expression r__min, Expression r__max, Type_expression p1, Subtype p2,
 			Type_expression p3, Subtype p4) {
 		return new Type_expression_Add(gamma, l, l__tau, l__min, l__max, r, r__tau, r__min, r__max, p1, p2, p3, p4);

@@ -139,7 +139,13 @@ class TypingProofGenerator implements IGenerator {
 	}
 	
 	def dispatch generatorFunction(Integer content) { return coqGenerator.generateZ(content) }
-	def dispatch generatorFunction(BigInteger content) { return content.toString }
+	def dispatch generatorFunction(BigInteger content) {
+		if(content.signum < 0) {
+			return '''(«content.toString»)'''
+		} else {
+			return content.toString
+		}
+	}
 	def dispatch generatorFunction(String content) { return coqGenerator.generatestring(content) }
 	def dispatch generatorFunction(Boolean content) { return coqGenerator.generatebool(content) }
 	def dispatch generatorFunction(Quantifier content) { return coqGenerator.generateQuantifier(content) }
