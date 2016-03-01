@@ -40,7 +40,6 @@ import org.archware.sosadl.sosADL.SystemDecl
 import org.archware.sosadl.sosADL.TupleElement
 import org.archware.sosadl.sosADL.Unit
 import org.archware.sosadl.sosADL.Valuing
-import org.archware.sosadl.sosADL.generator.CoqGenerator
 import org.archware.sosadl.validation.SosADLValidator
 import org.archware.sosadl.validation.typing.Environment
 import org.archware.sosadl.validation.typing.impl.CellEnvironmentImpl
@@ -59,6 +58,8 @@ import org.archware.sosadl.validation.typing.impl.VariableEnvContent
 import org.archware.sosadl.validation.typing.EnvContent
 import org.archware.sosadl.validation.typing.proof.CoqLiteral
 import org.archware.sosadl.validation.typing.impl.EnvironmentImpl
+import org.archware.sosadl.sosADL.generator.Factorizor
+import org.archware.sosadl.sosADL.generator.FactorizingCoqGenerator
 
 /**
  * Generates code from your model files on save.
@@ -66,7 +67,12 @@ import org.archware.sosadl.validation.typing.impl.EnvironmentImpl
  * see http://www.eclipse.org/Xtext/documentation.html#TutorialCodeGeneration
  */
 class TypingProofGenerator implements IGenerator {
-	var coqGenerator = new CoqGenerator
+	var factorizor = new Factorizor
+	var coqGenerator = new FactorizingCoqGenerator(factorizor)
+	
+	def _hook(CharSequence s) {
+		return factorizor.hook(s);
+	}
 
 	override void doGenerate(Resource resource, IFileSystemAccess fsa) {
 
@@ -76,26 +82,34 @@ class TypingProofGenerator implements IGenerator {
 		}
 	}
 	
-	def generate(SosADL s) '''
-	Require Import SosADL.Environment.
-	Require Import SosADL.TypeSystem.
-	Require Import SosADL.SosADL.
-	Require Import SosADL.Interpretation.
-	Require Import String.
-	Require Import List.
-	Require Import BinInt.
-	
-	Import ListNotations.
-	
-	Local Open Scope list_scope.
-	Local Open Scope string_scope.
-	Local Open Scope Z_scope.
-	
-	Axiom admitted: forall (A: Prop), A.
-	
-	Definition well_typed: SoSADL («coqGenerator.generatet_SosADL(s)») well typed :=
-	«generateProofOf(s)».
-	'''
+	def generate(SosADL s) {
+		var term = coqGenerator.generatet_SosADL(s)
+		var proof = generateProofOf(s)
+		return '''
+			Require Import SosADL.Environment.
+			Require Import SosADL.TypeSystem.
+			Require Import SosADL.SosADL.
+			Require Import SosADL.Interpretation.
+			Require Import String.
+			Require Import List.
+			Require Import BinInt.
+			
+			Import ListNotations.
+			
+			Local Open Scope list_scope.
+			Local Open Scope string_scope.
+			Local Open Scope Z_scope.
+			
+			Axiom admitted: forall (A: Prop), A.
+			
+			«FOR i : factorizor.definitions»
+				Definition «i.getA()» := «i.getB()».
+
+		    «ENDFOR»
+			Definition well_typed: SoSADL («term») well typed :=
+			«proof».
+			''';
+	}
 	
 	def generateProofOf(SosADL s) {
 		generateProof(SosADLValidator.getProof(s) as ProofTerm)
@@ -106,7 +120,7 @@ class TypingProofGenerator implements IGenerator {
 		return '''(«clazz.ctorName»
 		    «FOR i : clazz.declaredFields»
       			«processField(p, clazz, i)»
-    		«ENDFOR»)'''
+      			«ENDFOR»)'''
 	}
 	
 	def processField(ProofTerm p, Class<?> clazz, Field f) {
@@ -141,9 +155,9 @@ class TypingProofGenerator implements IGenerator {
 	def dispatch generatorFunction(Integer content) { return coqGenerator.generateZ(content) }
 	def dispatch generatorFunction(BigInteger content) {
 		if(content.signum < 0) {
-			return '''(«content.toString»)'''
+			return _hook('''(«content.toString»)''')
 		} else {
-			return content.toString
+			return _hook(content.toString)
 		}
 	}
 	def dispatch generatorFunction(String content) { return coqGenerator.generatestring(content) }
@@ -188,13 +202,21 @@ class TypingProofGenerator implements IGenerator {
 	def dispatch generatorFunction(Environment content) { return '''(«generateEnvironment(content)»)''' }
 	def dispatch generatorFunction(EnvContent content) { return generateEnvContent(content) }
 	
-	def dispatch CharSequence generateEnvironment(CellEnvironmentImpl env) '''{| key := "«env.name»"; value := «env.info.generateEnvContent» |} :: «env.parent.generateEnvironment»'''
+	def dispatch CharSequence generateEnvironment(CellEnvironmentImpl env) {
+		return _hook('''{| key := "«env.name»"; value := «env.info.generateEnvContent» |} :: «env.parent.generateEnvironment»''');
+	}
 	def dispatch generateEnvironment(EnvironmentImpl env) '''[]'''
 	def dispatch generateEnvironment(Environment env) { throw new UnsupportedOperationException }
 	
-	def dispatch generateEnvContent(SystemEnvContent c) '''(ESystem «coqGenerator.generatet_SystemDecl(c.systemDecl)»)'''
-	def dispatch generateEnvContent(TypeEnvContent c) '''(EType «coqGenerator.generatet_DataTypeDecl(c.dataTypeDecl)» «coqGenerator._generateL(c.methods, [ f | coqGenerator.generatet_FunctionDecl(f)])»)'''
-	def dispatch generateEnvContent(VariableEnvContent c) '''(EVariable «coqGenerator.generatet_DataType(c.type)»)'''
+	def dispatch generateEnvContent(SystemEnvContent c) {
+		return _hook('''(ESystem «coqGenerator.generatet_SystemDecl(c.systemDecl)»)''');
+	}
+	def dispatch generateEnvContent(TypeEnvContent c) {
+		return _hook('''(EType «coqGenerator.generatet_DataTypeDecl(c.dataTypeDecl)» «coqGenerator._generateL(c.methods, [ f | coqGenerator.generatet_FunctionDecl(f)])»)''');
+	}
+	def dispatch generateEnvContent(VariableEnvContent c) {
+		return _hook('''(EVariable «coqGenerator.generatet_DataType(c.type)»)''');
+	}
 	
 	static def ctorName(Class<?> clazz) {
 		if(clazz.isAnnotationPresent(CoqConstructor)) {

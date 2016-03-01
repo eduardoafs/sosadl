@@ -82,12 +82,13 @@ import org.archware.sosadl.sosADL.SoS
 
 @Generated(value = "sosADL")
 class CoqGenerator {
+	def _hook(CharSequence x) { return x; }
 
 	def <T> _generateO(T t, Function1<? super T, ? extends CharSequence> gen) {
 		if (t == null) {
 			return "None"
 		} else {
-			return '''(Some «gen.apply(t)»)'''
+			return _hook('''(Some «gen.apply(t)»)''')
 		}
 	}
 
@@ -95,7 +96,7 @@ class CoqGenerator {
 		if (l.empty) {
 			return '''[]'''
 		} else {
-			return '''[«l.map(gen).join("; ")»]'''
+			return _hook('''[«l.map(gen).join("; ")»]''')
 		}
 	}
 
@@ -109,13 +110,13 @@ class CoqGenerator {
 
 	def generateZ(int i) {
 		if (i >= 0) {
-			return Integer.toString(i)
+			return _hook(Integer.toString(i))
 		} else {
-			return '''(«Integer.toString(i)»)'''
+			return _hook('''(«Integer.toString(i)»)''')
 		}
 	}
 
-	def generatestring(String i) '''"«i»"'''
+	def generatestring(String i) { return _hook('''"«i»"'''); }
 
 	def generateQuantifier(Quantifier n) {
 		switch (n) {
@@ -173,169 +174,169 @@ class CoqGenerator {
 		}
 	}
 
-	def dispatch CharSequence generatet_ActionSuite(ReceiveAction n) '''(ReceiveAction «_generateO(n.getVariable(), [generatestring])»)'''
+	def dispatch CharSequence generatet_ActionSuite(ReceiveAction n) { return _hook('''(ReceiveAction «_generateO(n.getVariable(), [generatestring])»)'''); }
 	
-	def dispatch CharSequence generatet_ActionSuite(SendAction n) '''(SendAction «_generateO(n.getExpression(), [generatet_Expression])»)'''
+	def dispatch CharSequence generatet_ActionSuite(SendAction n) { return _hook('''(SendAction «_generateO(n.getExpression(), [generatet_Expression])»)'''); }
 	
-	def CharSequence generatet_ArchBehaviorDecl(ArchBehaviorDecl n) '''(ArchBehaviorDecl «_generateO(n.getName(), [generatestring])» «_generateL(n.getConstituents(), [generatet_Constituent])» «_generateO(n.getBindings(), [generatet_Expression])»)'''
+	def CharSequence generatet_ArchBehaviorDecl(ArchBehaviorDecl n) { return _hook('''(ArchBehaviorDecl «_generateO(n.getName(), [generatestring])» «_generateL(n.getConstituents(), [generatet_Constituent])» «_generateO(n.getBindings(), [generatet_Expression])»)'''); }
 	
-	def CharSequence generatet_ArchitectureDecl(ArchitectureDecl n) '''(ArchitectureDecl «_generateO(n.getName(), [generatestring])» «_generateL(n.getParameters(), [generatet_FormalParameter])» «_generateL(n.getDatatypes(), [generatet_DataTypeDecl])» «_generateL(n.getGates(), [generatet_GateDecl])» «_generateO(n.getBehavior(), [generatet_ArchBehaviorDecl])» «_generateO(n.getAssertion(), [generatet_AssertionDecl])»)'''
+	def CharSequence generatet_ArchitectureDecl(ArchitectureDecl n) { return _hook('''(ArchitectureDecl «_generateO(n.getName(), [generatestring])» «_generateL(n.getParameters(), [generatet_FormalParameter])» «_generateL(n.getDatatypes(), [generatet_DataTypeDecl])» «_generateL(n.getGates(), [generatet_GateDecl])» «_generateO(n.getBehavior(), [generatet_ArchBehaviorDecl])» «_generateO(n.getAssertion(), [generatet_AssertionDecl])»)'''); }
 	
-	def dispatch CharSequence generatet_Assert(AskAssertion n) '''(Assert_AskAssertion «_generateO(n.getName(), [generatestring])» «_generateO(n.getExpression(), [generatet_Expression])»)'''
+	def dispatch CharSequence generatet_Assert(AskAssertion n) { return _hook('''(Assert_AskAssertion «_generateO(n.getName(), [generatestring])» «_generateO(n.getExpression(), [generatet_Expression])»)'''); }
 	
-	def dispatch CharSequence generatet_Assert(TellAssertion n) '''(Assert_TellAssertion «_generateO(n.getName(), [generatestring])» «_generateO(n.getExpression(), [generatet_Expression])»)'''
+	def dispatch CharSequence generatet_Assert(TellAssertion n) { return _hook('''(Assert_TellAssertion «_generateO(n.getName(), [generatestring])» «_generateO(n.getExpression(), [generatet_Expression])»)'''); }
 	
-	def CharSequence generatet_AssertionDecl(AssertionDecl n) '''(AssertionDecl «_generateO(n.getName(), [generatestring])» «_generateO(n.getBody(), [generatet_Protocol])»)'''
+	def CharSequence generatet_AssertionDecl(AssertionDecl n) { return _hook('''(AssertionDecl «_generateO(n.getName(), [generatestring])» «_generateO(n.getBody(), [generatet_Protocol])»)'''); }
 	
-	def CharSequence generatet_Behavior(Behavior n) '''(Behavior «_generateL(n.getStatements(), [generatet_BehaviorStatement])»)'''
+	def CharSequence generatet_Behavior(Behavior n) { return _hook('''(Behavior «_generateL(n.getStatements(), [generatet_BehaviorStatement])»)'''); }
 	
-	def CharSequence generatet_BehaviorDecl(BehaviorDecl n) '''(BehaviorDecl «_generateO(n.getName(), [generatestring])» «_generateO(n.getBody(), [generatet_Behavior])»)'''
+	def CharSequence generatet_BehaviorDecl(BehaviorDecl n) { return _hook('''(BehaviorDecl «_generateO(n.getName(), [generatestring])» «_generateO(n.getBody(), [generatet_Behavior])»)'''); }
 	
-	def dispatch CharSequence generatet_BehaviorStatement(Action n) '''(Action «_generateO(n.getComplexName(), [generatet_ComplexName])» «_generateO(n.getSuite(), [generatet_ActionSuite])»)'''
+	def dispatch CharSequence generatet_BehaviorStatement(Action n) { return _hook('''(Action «_generateO(n.getComplexName(), [generatet_ComplexName])» «_generateO(n.getSuite(), [generatet_ActionSuite])»)'''); }
 	
-	def dispatch CharSequence generatet_BehaviorStatement(AskAssertion n) '''(BehaviorStatement_AskAssertion «_generateO(n.getName(), [generatestring])» «_generateO(n.getExpression(), [generatet_Expression])»)'''
+	def dispatch CharSequence generatet_BehaviorStatement(AskAssertion n) { return _hook('''(BehaviorStatement_AskAssertion «_generateO(n.getName(), [generatestring])» «_generateO(n.getExpression(), [generatet_Expression])»)'''); }
 	
-	def dispatch CharSequence generatet_BehaviorStatement(ChooseBehavior n) '''(ChooseBehavior «_generateL(n.getBranches(), [generatet_Behavior])»)'''
+	def dispatch CharSequence generatet_BehaviorStatement(ChooseBehavior n) { return _hook('''(ChooseBehavior «_generateL(n.getBranches(), [generatet_Behavior])»)'''); }
 	
-	def dispatch CharSequence generatet_BehaviorStatement(DoExpr n) '''(BehaviorStatement_DoExpr «_generateO(n.getExpression(), [generatet_Expression])»)'''
+	def dispatch CharSequence generatet_BehaviorStatement(DoExpr n) { return _hook('''(BehaviorStatement_DoExpr «_generateO(n.getExpression(), [generatet_Expression])»)'''); }
 	
-	def dispatch CharSequence generatet_BehaviorStatement(Done n) '''BehaviorStatement_Done'''
+	def dispatch CharSequence generatet_BehaviorStatement(Done n) { return _hook('''BehaviorStatement_Done'''); }
 	
-	def dispatch CharSequence generatet_BehaviorStatement(ForEachBehavior n) '''(ForEachBehavior «_generateO(n.getVariable(), [generatestring])» «_generateO(n.getSetOfValues(), [generatet_Expression])» «_generateO(n.getRepeated(), [generatet_Behavior])»)'''
+	def dispatch CharSequence generatet_BehaviorStatement(ForEachBehavior n) { return _hook('''(ForEachBehavior «_generateO(n.getVariable(), [generatestring])» «_generateO(n.getSetOfValues(), [generatet_Expression])» «_generateO(n.getRepeated(), [generatet_Behavior])»)'''); }
 	
-	def dispatch CharSequence generatet_BehaviorStatement(IfThenElseBehavior n) '''(IfThenElseBehavior «_generateO(n.getCondition(), [generatet_Expression])» «_generateO(n.getIfTrue(), [generatet_Behavior])» «_generateO(n.getIfFalse(), [generatet_Behavior])»)'''
+	def dispatch CharSequence generatet_BehaviorStatement(IfThenElseBehavior n) { return _hook('''(IfThenElseBehavior «_generateO(n.getCondition(), [generatet_Expression])» «_generateO(n.getIfTrue(), [generatet_Behavior])» «_generateO(n.getIfFalse(), [generatet_Behavior])»)'''); }
 	
-	def dispatch CharSequence generatet_BehaviorStatement(RecursiveCall n) '''(RecursiveCall «_generateL(n.getParameters(), [generatet_Expression])»)'''
+	def dispatch CharSequence generatet_BehaviorStatement(RecursiveCall n) { return _hook('''(RecursiveCall «_generateL(n.getParameters(), [generatet_Expression])»)'''); }
 	
-	def dispatch CharSequence generatet_BehaviorStatement(RepeatBehavior n) '''(RepeatBehavior «_generateO(n.getRepeated(), [generatet_Behavior])»)'''
+	def dispatch CharSequence generatet_BehaviorStatement(RepeatBehavior n) { return _hook('''(RepeatBehavior «_generateO(n.getRepeated(), [generatet_Behavior])»)'''); }
 	
-	def dispatch CharSequence generatet_BehaviorStatement(TellAssertion n) '''(BehaviorStatement_TellAssertion «_generateO(n.getName(), [generatestring])» «_generateO(n.getExpression(), [generatet_Expression])»)'''
+	def dispatch CharSequence generatet_BehaviorStatement(TellAssertion n) { return _hook('''(BehaviorStatement_TellAssertion «_generateO(n.getName(), [generatestring])» «_generateO(n.getExpression(), [generatet_Expression])»)'''); }
 	
-	def dispatch CharSequence generatet_BehaviorStatement(Valuing n) '''(BehaviorStatement_Valuing «_generateO(n.getVariable(), [generatestring])» «_generateO(n.getType(), [generatet_DataType])» «_generateO(n.getExpression(), [generatet_Expression])»)'''
+	def dispatch CharSequence generatet_BehaviorStatement(Valuing n) { return _hook('''(BehaviorStatement_Valuing «_generateO(n.getVariable(), [generatestring])» «_generateO(n.getType(), [generatet_DataType])» «_generateO(n.getExpression(), [generatet_Expression])»)'''); }
 	
-	def dispatch CharSequence generatet_Binding(Quantify n) '''(Binding_Quantify «_generateO(n.getQuantifier(), [generateQuantifier])» «_generateL(n.getElements(), [generatet_ElementInConstituent])» «_generateO(n.getBindings(), [generatet_Expression])»)'''
+	def dispatch CharSequence generatet_Binding(Quantify n) { return _hook('''(Binding_Quantify «_generateO(n.getQuantifier(), [generateQuantifier])» «_generateL(n.getElements(), [generatet_ElementInConstituent])» «_generateO(n.getBindings(), [generatet_Expression])»)'''); }
 	
-	def dispatch CharSequence generatet_Binding(Relay n) '''(Binding_Relay «_generateO(n.getConnLeft(), [generatet_ComplexName])» «_generateO(n.getConnRight(), [generatet_ComplexName])»)'''
+	def dispatch CharSequence generatet_Binding(Relay n) { return _hook('''(Binding_Relay «_generateO(n.getConnLeft(), [generatet_ComplexName])» «_generateO(n.getConnRight(), [generatet_ComplexName])»)'''); }
 	
-	def dispatch CharSequence generatet_Binding(Unify n) '''(Binding_Unify «_generateO(n.getMultLeft(), [generateMultiplicity])» «_generateO(n.getConnLeft(), [generatet_ComplexName])» «_generateO(n.getMultRight(), [generateMultiplicity])» «_generateO(n.getConnRight(), [generatet_ComplexName])»)'''
+	def dispatch CharSequence generatet_Binding(Unify n) { return _hook('''(Binding_Unify «_generateO(n.getMultLeft(), [generateMultiplicity])» «_generateO(n.getConnLeft(), [generatet_ComplexName])» «_generateO(n.getMultRight(), [generateMultiplicity])» «_generateO(n.getConnRight(), [generatet_ComplexName])»)'''); }
 	
-	def CharSequence generatet_ComplexName(ComplexName n) '''(ComplexName «_generateL(n.getName(), [generatestring])»)'''
+	def CharSequence generatet_ComplexName(ComplexName n) { return _hook('''(ComplexName «_generateL(n.getName(), [generatestring])»)'''); }
 	
-	def CharSequence generatet_Connection(Connection n) '''(Connection «_generateO(n.isEnvironment(), [generatebool])» «_generateO(n.getName(), [generatestring])» «_generateO(n.getMode(), [generateModeType])» «_generateO(n.getValueType(), [generatet_DataType])»)'''
+	def CharSequence generatet_Connection(Connection n) { return _hook('''(Connection «_generateO(n.isEnvironment(), [generatebool])» «_generateO(n.getName(), [generatestring])» «_generateO(n.getMode(), [generateModeType])» «_generateO(n.getValueType(), [generatet_DataType])»)'''); }
 	
-	def CharSequence generatet_Constituent(Constituent n) '''(Constituent «_generateO(n.getName(), [generatestring])» «_generateO(n.getValue(), [generatet_Expression])»)'''
+	def CharSequence generatet_Constituent(Constituent n) { return _hook('''(Constituent «_generateO(n.getName(), [generatestring])» «_generateO(n.getValue(), [generatet_Expression])»)'''); }
 	
-	def dispatch CharSequence generatet_ConstructedValue(Sequence n) '''(ConstructedValue_Sequence «_generateL(n.getElements(), [generatet_Expression])»)'''
+	def dispatch CharSequence generatet_ConstructedValue(Sequence n) { return _hook('''(ConstructedValue_Sequence «_generateL(n.getElements(), [generatet_Expression])»)'''); }
 	
-	def dispatch CharSequence generatet_ConstructedValue(Tuple n) '''(ConstructedValue_Tuple «_generateL(n.getElements(), [generatet_TupleElement])»)'''
+	def dispatch CharSequence generatet_ConstructedValue(Tuple n) { return _hook('''(ConstructedValue_Tuple «_generateL(n.getElements(), [generatet_TupleElement])»)'''); }
 	
-	def dispatch CharSequence generatet_DataType(BooleanType n) '''BooleanType'''
+	def dispatch CharSequence generatet_DataType(BooleanType n) { return _hook('''BooleanType'''); }
 	
-	def dispatch CharSequence generatet_DataType(ConnectionType n) '''(ConnectionType «_generateO(n.getMode(), [generateModeType])» «_generateO(n.getType(), [generatet_DataType])»)'''
+	def dispatch CharSequence generatet_DataType(ConnectionType n) { return _hook('''(ConnectionType «_generateO(n.getMode(), [generateModeType])» «_generateO(n.getType(), [generatet_DataType])»)'''); }
 	
-	def dispatch CharSequence generatet_DataType(IntegerType n) '''IntegerType'''
+	def dispatch CharSequence generatet_DataType(IntegerType n) { return _hook('''IntegerType'''); }
 	
-	def dispatch CharSequence generatet_DataType(NamedType n) '''(NamedType «_generateO(n.getName(), [generatestring])»)'''
+	def dispatch CharSequence generatet_DataType(NamedType n) { return _hook('''(NamedType «_generateO(n.getName(), [generatestring])»)'''); }
 	
-	def dispatch CharSequence generatet_DataType(RangeType n) '''(RangeType «_generateO(n.getVmin(), [generatet_Expression])» «_generateO(n.getVmax(), [generatet_Expression])»)'''
+	def dispatch CharSequence generatet_DataType(RangeType n) { return _hook('''(RangeType «_generateO(n.getVmin(), [generatet_Expression])» «_generateO(n.getVmax(), [generatet_Expression])»)'''); }
 	
-	def dispatch CharSequence generatet_DataType(SequenceType n) '''(SequenceType «_generateO(n.getType(), [generatet_DataType])»)'''
+	def dispatch CharSequence generatet_DataType(SequenceType n) { return _hook('''(SequenceType «_generateO(n.getType(), [generatet_DataType])»)'''); }
 	
-	def dispatch CharSequence generatet_DataType(TupleType n) '''(TupleType «_generateL(n.getFields(), [generatet_FieldDecl])»)'''
+	def dispatch CharSequence generatet_DataType(TupleType n) { return _hook('''(TupleType «_generateL(n.getFields(), [generatet_FieldDecl])»)'''); }
 	
-	def CharSequence generatet_DataTypeDecl(DataTypeDecl n) '''(DataTypeDecl «_generateO(n.getName(), [generatestring])» «_generateO(n.getDatatype(), [generatet_DataType])» «_generateL(n.getFunctions(), [generatet_FunctionDecl])»)'''
+	def CharSequence generatet_DataTypeDecl(DataTypeDecl n) { return _hook('''(DataTypeDecl «_generateO(n.getName(), [generatestring])» «_generateO(n.getDatatype(), [generatet_DataType])» «_generateL(n.getFunctions(), [generatet_FunctionDecl])»)'''); }
 	
-	def CharSequence generatet_DutyDecl(DutyDecl n) '''(DutyDecl «_generateO(n.getName(), [generatestring])» «_generateL(n.getConnections(), [generatet_Connection])» «_generateO(n.getAssertion(), [generatet_AssertionDecl])» «_generateO(n.getProtocol(), [generatet_ProtocolDecl])»)'''
+	def CharSequence generatet_DutyDecl(DutyDecl n) { return _hook('''(DutyDecl «_generateO(n.getName(), [generatestring])» «_generateL(n.getConnections(), [generatet_Connection])» «_generateO(n.getAssertion(), [generatet_AssertionDecl])» «_generateO(n.getProtocol(), [generatet_ProtocolDecl])»)'''); }
 	
-	def CharSequence generatet_ElementInConstituent(ElementInConstituent n) '''(ElementInConstituent «_generateO(n.getVariable(), [generatestring])» «_generateO(n.getConstituent(), [generatestring])»)'''
+	def CharSequence generatet_ElementInConstituent(ElementInConstituent n) { return _hook('''(ElementInConstituent «_generateO(n.getVariable(), [generatestring])» «_generateO(n.getConstituent(), [generatestring])»)'''); }
 	
-	def CharSequence generatet_EntityBlock(EntityBlock n) '''(EntityBlock «_generateL(n.getDatatypes(), [generatet_DataTypeDecl])» «_generateL(n.getFunctions(), [generatet_FunctionDecl])» «_generateL(n.getSystems(), [generatet_SystemDecl])» «_generateL(n.getMediators(), [generatet_MediatorDecl])» «_generateL(n.getArchitectures(), [generatet_ArchitectureDecl])»)'''
+	def CharSequence generatet_EntityBlock(EntityBlock n) { return _hook('''(EntityBlock «_generateL(n.getDatatypes(), [generatet_DataTypeDecl])» «_generateL(n.getFunctions(), [generatet_FunctionDecl])» «_generateL(n.getSystems(), [generatet_SystemDecl])» «_generateL(n.getMediators(), [generatet_MediatorDecl])» «_generateL(n.getArchitectures(), [generatet_ArchitectureDecl])»)'''); }
 	
-	def dispatch CharSequence generatet_Expression(Any n) '''Any'''
+	def dispatch CharSequence generatet_Expression(Any n) { return _hook('''Any'''); }
 	
-	def dispatch CharSequence generatet_Expression(BinaryExpression n) '''(BinaryExpression «_generateO(n.getLeft(), [generatet_Expression])» «_generateO(n.getOp(), [generatestring])» «_generateO(n.getRight(), [generatet_Expression])»)'''
+	def dispatch CharSequence generatet_Expression(BinaryExpression n) { return _hook('''(BinaryExpression «_generateO(n.getLeft(), [generatet_Expression])» «_generateO(n.getOp(), [generatestring])» «_generateO(n.getRight(), [generatet_Expression])»)'''); }
 	
-	def dispatch CharSequence generatet_Expression(CallExpression n) '''(CallExpression «_generateO(n.getFunction(), [generatestring])» «_generateL(n.getParameters(), [generatet_Expression])»)'''
+	def dispatch CharSequence generatet_Expression(CallExpression n) { return _hook('''(CallExpression «_generateO(n.getFunction(), [generatestring])» «_generateL(n.getParameters(), [generatet_Expression])»)'''); }
 	
-	def dispatch CharSequence generatet_Expression(Field n) '''(Field «_generateO(n.getObject(), [generatet_Expression])» «_generateO(n.getField(), [generatestring])»)'''
+	def dispatch CharSequence generatet_Expression(Field n) { return _hook('''(Field «_generateO(n.getObject(), [generatet_Expression])» «_generateO(n.getField(), [generatestring])»)'''); }
 	
-	def dispatch CharSequence generatet_Expression(IdentExpression n) '''(IdentExpression «_generateO(n.getIdent(), [generatestring])»)'''
+	def dispatch CharSequence generatet_Expression(IdentExpression n) { return _hook('''(IdentExpression «_generateO(n.getIdent(), [generatestring])»)'''); }
 	
-	def dispatch CharSequence generatet_Expression(IntegerValue n) '''(IntegerValue «_generateO(n.getAbsInt(), [generateZ])»)'''
+	def dispatch CharSequence generatet_Expression(IntegerValue n) { return _hook('''(IntegerValue «_generateO(n.getAbsInt(), [generateZ])»)'''); }
 	
-	def dispatch CharSequence generatet_Expression(Map n) '''(Map «_generateO(n.getObject(), [generatet_Expression])» «_generateO(n.getVariable(), [generatestring])» «_generateO(n.getExpression(), [generatet_Expression])»)'''
+	def dispatch CharSequence generatet_Expression(Map n) { return _hook('''(Map «_generateO(n.getObject(), [generatet_Expression])» «_generateO(n.getVariable(), [generatestring])» «_generateO(n.getExpression(), [generatet_Expression])»)'''); }
 	
-	def dispatch CharSequence generatet_Expression(MethodCall n) '''(MethodCall «_generateO(n.getObject(), [generatet_Expression])» «_generateO(n.getMethod(), [generatestring])» «_generateL(n.getParameters(), [generatet_Expression])»)'''
+	def dispatch CharSequence generatet_Expression(MethodCall n) { return _hook('''(MethodCall «_generateO(n.getObject(), [generatet_Expression])» «_generateO(n.getMethod(), [generatestring])» «_generateL(n.getParameters(), [generatet_Expression])»)'''); }
 	
-	def dispatch CharSequence generatet_Expression(Quantify n) '''(Expression_Quantify «_generateO(n.getQuantifier(), [generateQuantifier])» «_generateL(n.getElements(), [generatet_ElementInConstituent])» «_generateO(n.getBindings(), [generatet_Expression])»)'''
+	def dispatch CharSequence generatet_Expression(Quantify n) { return _hook('''(Expression_Quantify «_generateO(n.getQuantifier(), [generateQuantifier])» «_generateL(n.getElements(), [generatet_ElementInConstituent])» «_generateO(n.getBindings(), [generatet_Expression])»)'''); }
 	
-	def dispatch CharSequence generatet_Expression(Relay n) '''(Expression_Relay «_generateO(n.getConnLeft(), [generatet_ComplexName])» «_generateO(n.getConnRight(), [generatet_ComplexName])»)'''
+	def dispatch CharSequence generatet_Expression(Relay n) { return _hook('''(Expression_Relay «_generateO(n.getConnLeft(), [generatet_ComplexName])» «_generateO(n.getConnRight(), [generatet_ComplexName])»)'''); }
 	
-	def dispatch CharSequence generatet_Expression(Select n) '''(Select «_generateO(n.getObject(), [generatet_Expression])» «_generateO(n.getVariable(), [generatestring])» «_generateO(n.getCondition(), [generatet_Expression])»)'''
+	def dispatch CharSequence generatet_Expression(Select n) { return _hook('''(Select «_generateO(n.getObject(), [generatet_Expression])» «_generateO(n.getVariable(), [generatestring])» «_generateO(n.getCondition(), [generatet_Expression])»)'''); }
 	
-	def dispatch CharSequence generatet_Expression(Sequence n) '''(Expression_Sequence «_generateL(n.getElements(), [generatet_Expression])»)'''
+	def dispatch CharSequence generatet_Expression(Sequence n) { return _hook('''(Expression_Sequence «_generateL(n.getElements(), [generatet_Expression])»)'''); }
 	
-	def dispatch CharSequence generatet_Expression(Tuple n) '''(Expression_Tuple «_generateL(n.getElements(), [generatet_TupleElement])»)'''
+	def dispatch CharSequence generatet_Expression(Tuple n) { return _hook('''(Expression_Tuple «_generateL(n.getElements(), [generatet_TupleElement])»)'''); }
 	
-	def dispatch CharSequence generatet_Expression(UnaryExpression n) '''(UnaryExpression «_generateO(n.getOp(), [generatestring])» «_generateO(n.getRight(), [generatet_Expression])»)'''
+	def dispatch CharSequence generatet_Expression(UnaryExpression n) { return _hook('''(UnaryExpression «_generateO(n.getOp(), [generatestring])» «_generateO(n.getRight(), [generatet_Expression])»)'''); }
 	
-	def dispatch CharSequence generatet_Expression(Unify n) '''(Expression_Unify «_generateO(n.getMultLeft(), [generateMultiplicity])» «_generateO(n.getConnLeft(), [generatet_ComplexName])» «_generateO(n.getMultRight(), [generateMultiplicity])» «_generateO(n.getConnRight(), [generatet_ComplexName])»)'''
+	def dispatch CharSequence generatet_Expression(Unify n) { return _hook('''(Expression_Unify «_generateO(n.getMultLeft(), [generateMultiplicity])» «_generateO(n.getConnLeft(), [generatet_ComplexName])» «_generateO(n.getMultRight(), [generateMultiplicity])» «_generateO(n.getConnRight(), [generatet_ComplexName])»)'''); }
 	
-	def dispatch CharSequence generatet_Expression(UnobservableValue n) '''UnobservableValue'''
+	def dispatch CharSequence generatet_Expression(UnobservableValue n) { return _hook('''UnobservableValue'''); }
 	
-	def CharSequence generatet_FieldDecl(FieldDecl n) '''(FieldDecl «_generateO(n.getName(), [generatestring])» «_generateO(n.getType(), [generatet_DataType])»)'''
+	def CharSequence generatet_FieldDecl(FieldDecl n) { return _hook('''(FieldDecl «_generateO(n.getName(), [generatestring])» «_generateO(n.getType(), [generatet_DataType])»)'''); }
 	
-	def CharSequence generatet_FormalParameter(FormalParameter n) '''(FormalParameter «_generateO(n.getName(), [generatestring])» «_generateO(n.getType(), [generatet_DataType])»)'''
+	def CharSequence generatet_FormalParameter(FormalParameter n) { return _hook('''(FormalParameter «_generateO(n.getName(), [generatestring])» «_generateO(n.getType(), [generatet_DataType])»)'''); }
 	
-	def CharSequence generatet_FunctionDecl(FunctionDecl n) '''(FunctionDecl «_generateO(n.getData(), [generatet_FormalParameter])» «_generateO(n.getName(), [generatestring])» «_generateL(n.getParameters(), [generatet_FormalParameter])» «_generateO(n.getType(), [generatet_DataType])» «_generateL(n.getValuing(), [generatet_Valuing])» «_generateO(n.getExpression(), [generatet_Expression])»)'''
+	def CharSequence generatet_FunctionDecl(FunctionDecl n) { return _hook('''(FunctionDecl «_generateO(n.getData(), [generatet_FormalParameter])» «_generateO(n.getName(), [generatestring])» «_generateL(n.getParameters(), [generatet_FormalParameter])» «_generateO(n.getType(), [generatet_DataType])» «_generateL(n.getValuing(), [generatet_Valuing])» «_generateO(n.getExpression(), [generatet_Expression])»)'''); }
 	
-	def CharSequence generatet_GateDecl(GateDecl n) '''(GateDecl «_generateO(n.getName(), [generatestring])» «_generateL(n.getConnections(), [generatet_Connection])» «_generateO(n.getProtocol(), [generatet_ProtocolDecl])»)'''
+	def CharSequence generatet_GateDecl(GateDecl n) { return _hook('''(GateDecl «_generateO(n.getName(), [generatestring])» «_generateL(n.getConnections(), [generatet_Connection])» «_generateO(n.getProtocol(), [generatet_ProtocolDecl])»)'''); }
 	
-	def CharSequence generatet_Import(Import n) '''(Import «_generateO(n.getImportedLibrary(), [generatestring])»)'''
+	def CharSequence generatet_Import(Import n) { return _hook('''(Import «_generateO(n.getImportedLibrary(), [generatestring])»)'''); }
 	
-	def CharSequence generatet_MediatorDecl(MediatorDecl n) '''(MediatorDecl «_generateO(n.getName(), [generatestring])» «_generateL(n.getParameters(), [generatet_FormalParameter])» «_generateL(n.getDatatypes(), [generatet_DataTypeDecl])» «_generateL(n.getDuties(), [generatet_DutyDecl])» «_generateO(n.getBehavior(), [generatet_BehaviorDecl])» «_generateO(n.getAssumption(), [generatet_AssertionDecl])» «_generateO(n.getAssertion(), [generatet_AssertionDecl])»)'''
+	def CharSequence generatet_MediatorDecl(MediatorDecl n) { return _hook('''(MediatorDecl «_generateO(n.getName(), [generatestring])» «_generateL(n.getParameters(), [generatet_FormalParameter])» «_generateL(n.getDatatypes(), [generatet_DataTypeDecl])» «_generateL(n.getDuties(), [generatet_DutyDecl])» «_generateO(n.getBehavior(), [generatet_BehaviorDecl])» «_generateO(n.getAssumption(), [generatet_AssertionDecl])» «_generateO(n.getAssertion(), [generatet_AssertionDecl])»)'''); }
 	
-	def CharSequence generatet_Protocol(Protocol n) '''(Protocol «_generateL(n.getStatements(), [generatet_ProtocolStatement])»)'''
+	def CharSequence generatet_Protocol(Protocol n) { return _hook('''(Protocol «_generateL(n.getStatements(), [generatet_ProtocolStatement])»)'''); }
 	
-	def dispatch CharSequence generatet_ProtocolActionSuite(ReceiveAnyProtocolAction n) '''ReceiveAnyProtocolAction'''
+	def dispatch CharSequence generatet_ProtocolActionSuite(ReceiveAnyProtocolAction n) { return _hook('''ReceiveAnyProtocolAction'''); }
 	
-	def dispatch CharSequence generatet_ProtocolActionSuite(ReceiveProtocolAction n) '''(ReceiveProtocolAction «_generateO(n.getVariable(), [generatestring])»)'''
+	def dispatch CharSequence generatet_ProtocolActionSuite(ReceiveProtocolAction n) { return _hook('''(ReceiveProtocolAction «_generateO(n.getVariable(), [generatestring])»)'''); }
 	
-	def dispatch CharSequence generatet_ProtocolActionSuite(SendProtocolAction n) '''(SendProtocolAction «_generateO(n.getExpression(), [generatet_Expression])»)'''
+	def dispatch CharSequence generatet_ProtocolActionSuite(SendProtocolAction n) { return _hook('''(SendProtocolAction «_generateO(n.getExpression(), [generatet_Expression])»)'''); }
 	
-	def CharSequence generatet_ProtocolDecl(ProtocolDecl n) '''(ProtocolDecl «_generateO(n.getName(), [generatestring])» «_generateO(n.getBody(), [generatet_Protocol])»)'''
+	def CharSequence generatet_ProtocolDecl(ProtocolDecl n) { return _hook('''(ProtocolDecl «_generateO(n.getName(), [generatestring])» «_generateO(n.getBody(), [generatet_Protocol])»)'''); }
 	
-	def dispatch CharSequence generatet_ProtocolStatement(AnyAction n) '''AnyAction'''
+	def dispatch CharSequence generatet_ProtocolStatement(AnyAction n) { return _hook('''AnyAction'''); }
 	
-	def dispatch CharSequence generatet_ProtocolStatement(AskAssertion n) '''(ProtocolStatement_AskAssertion «_generateO(n.getName(), [generatestring])» «_generateO(n.getExpression(), [generatet_Expression])»)'''
+	def dispatch CharSequence generatet_ProtocolStatement(AskAssertion n) { return _hook('''(ProtocolStatement_AskAssertion «_generateO(n.getName(), [generatestring])» «_generateO(n.getExpression(), [generatet_Expression])»)'''); }
 	
-	def dispatch CharSequence generatet_ProtocolStatement(ChooseProtocol n) '''(ChooseProtocol «_generateL(n.getBranches(), [generatet_Protocol])»)'''
+	def dispatch CharSequence generatet_ProtocolStatement(ChooseProtocol n) { return _hook('''(ChooseProtocol «_generateL(n.getBranches(), [generatet_Protocol])»)'''); }
 	
-	def dispatch CharSequence generatet_ProtocolStatement(DoExpr n) '''(ProtocolStatement_DoExpr «_generateO(n.getExpression(), [generatet_Expression])»)'''
+	def dispatch CharSequence generatet_ProtocolStatement(DoExpr n) { return _hook('''(ProtocolStatement_DoExpr «_generateO(n.getExpression(), [generatet_Expression])»)'''); }
 	
-	def dispatch CharSequence generatet_ProtocolStatement(Done n) '''ProtocolStatement_Done'''
+	def dispatch CharSequence generatet_ProtocolStatement(Done n) { return _hook('''ProtocolStatement_Done'''); }
 	
-	def dispatch CharSequence generatet_ProtocolStatement(ForEachProtocol n) '''(ForEachProtocol «_generateO(n.getVariable(), [generatestring])» «_generateO(n.getSetOfValues(), [generatet_Expression])» «_generateO(n.getRepeated(), [generatet_Protocol])»)'''
+	def dispatch CharSequence generatet_ProtocolStatement(ForEachProtocol n) { return _hook('''(ForEachProtocol «_generateO(n.getVariable(), [generatestring])» «_generateO(n.getSetOfValues(), [generatet_Expression])» «_generateO(n.getRepeated(), [generatet_Protocol])»)'''); }
 	
-	def dispatch CharSequence generatet_ProtocolStatement(IfThenElseProtocol n) '''(IfThenElseProtocol «_generateO(n.getCondition(), [generatet_Expression])» «_generateO(n.getIfTrue(), [generatet_Protocol])» «_generateO(n.getIfFalse(), [generatet_Protocol])»)'''
+	def dispatch CharSequence generatet_ProtocolStatement(IfThenElseProtocol n) { return _hook('''(IfThenElseProtocol «_generateO(n.getCondition(), [generatet_Expression])» «_generateO(n.getIfTrue(), [generatet_Protocol])» «_generateO(n.getIfFalse(), [generatet_Protocol])»)'''); }
 	
-	def dispatch CharSequence generatet_ProtocolStatement(ProtocolAction n) '''(ProtocolAction «_generateO(n.getComplexName(), [generatet_ComplexName])» «_generateO(n.getSuite(), [generatet_ProtocolActionSuite])»)'''
+	def dispatch CharSequence generatet_ProtocolStatement(ProtocolAction n) { return _hook('''(ProtocolAction «_generateO(n.getComplexName(), [generatet_ComplexName])» «_generateO(n.getSuite(), [generatet_ProtocolActionSuite])»)'''); }
 	
-	def dispatch CharSequence generatet_ProtocolStatement(RepeatProtocol n) '''(RepeatProtocol «_generateO(n.getRepeated(), [generatet_Protocol])»)'''
+	def dispatch CharSequence generatet_ProtocolStatement(RepeatProtocol n) { return _hook('''(RepeatProtocol «_generateO(n.getRepeated(), [generatet_Protocol])»)'''); }
 	
-	def dispatch CharSequence generatet_ProtocolStatement(TellAssertion n) '''(ProtocolStatement_TellAssertion «_generateO(n.getName(), [generatestring])» «_generateO(n.getExpression(), [generatet_Expression])»)'''
+	def dispatch CharSequence generatet_ProtocolStatement(TellAssertion n) { return _hook('''(ProtocolStatement_TellAssertion «_generateO(n.getName(), [generatestring])» «_generateO(n.getExpression(), [generatet_Expression])»)'''); }
 	
-	def dispatch CharSequence generatet_ProtocolStatement(Valuing n) '''(ProtocolStatement_Valuing «_generateO(n.getVariable(), [generatestring])» «_generateO(n.getType(), [generatet_DataType])» «_generateO(n.getExpression(), [generatet_Expression])»)'''
+	def dispatch CharSequence generatet_ProtocolStatement(Valuing n) { return _hook('''(ProtocolStatement_Valuing «_generateO(n.getVariable(), [generatestring])» «_generateO(n.getType(), [generatet_DataType])» «_generateO(n.getExpression(), [generatet_Expression])»)'''); }
 	
-	def CharSequence generatet_SosADL(SosADL n) '''(SosADL «_generateL(n.getImports(), [generatet_Import])» «_generateO(n.getContent(), [generatet_Unit])»)'''
+	def CharSequence generatet_SosADL(SosADL n) { return _hook('''(SosADL «_generateL(n.getImports(), [generatet_Import])» «_generateO(n.getContent(), [generatet_Unit])»)'''); }
 	
-	def CharSequence generatet_SystemDecl(SystemDecl n) '''(SystemDecl «_generateO(n.getName(), [generatestring])» «_generateL(n.getParameters(), [generatet_FormalParameter])» «_generateL(n.getDatatypes(), [generatet_DataTypeDecl])» «_generateL(n.getGates(), [generatet_GateDecl])» «_generateO(n.getBehavior(), [generatet_BehaviorDecl])» «_generateO(n.getAssertion(), [generatet_AssertionDecl])»)'''
+	def CharSequence generatet_SystemDecl(SystemDecl n) { return _hook('''(SystemDecl «_generateO(n.getName(), [generatestring])» «_generateL(n.getParameters(), [generatet_FormalParameter])» «_generateL(n.getDatatypes(), [generatet_DataTypeDecl])» «_generateL(n.getGates(), [generatet_GateDecl])» «_generateO(n.getBehavior(), [generatet_BehaviorDecl])» «_generateO(n.getAssertion(), [generatet_AssertionDecl])»)'''); }
 	
-	def CharSequence generatet_TupleElement(TupleElement n) '''(TupleElement «_generateO(n.getLabel(), [generatestring])» «_generateO(n.getValue(), [generatet_Expression])»)'''
+	def CharSequence generatet_TupleElement(TupleElement n) { return _hook('''(TupleElement «_generateO(n.getLabel(), [generatestring])» «_generateO(n.getValue(), [generatet_Expression])»)'''); }
 	
-	def dispatch CharSequence generatet_Unit(Library n) '''(Library «_generateO(n.getName(), [generatestring])» «_generateO(n.getDecls(), [generatet_EntityBlock])»)'''
+	def dispatch CharSequence generatet_Unit(Library n) { return _hook('''(Library «_generateO(n.getName(), [generatestring])» «_generateO(n.getDecls(), [generatet_EntityBlock])»)'''); }
 	
-	def dispatch CharSequence generatet_Unit(SoS n) '''(SoS «_generateO(n.getName(), [generatestring])» «_generateO(n.getDecls(), [generatet_EntityBlock])»)'''
+	def dispatch CharSequence generatet_Unit(SoS n) { return _hook('''(SoS «_generateO(n.getName(), [generatestring])» «_generateO(n.getDecls(), [generatet_EntityBlock])»)'''); }
 	
-	def CharSequence generatet_Valuing(Valuing n) '''(Valuing_Valuing «_generateO(n.getVariable(), [generatestring])» «_generateO(n.getType(), [generatet_DataType])» «_generateO(n.getExpression(), [generatet_Expression])»)'''
+	def CharSequence generatet_Valuing(Valuing n) { return _hook('''(Valuing_Valuing «_generateO(n.getVariable(), [generatestring])» «_generateO(n.getType(), [generatet_DataType])» «_generateO(n.getExpression(), [generatet_Expression])»)'''); }
 }
