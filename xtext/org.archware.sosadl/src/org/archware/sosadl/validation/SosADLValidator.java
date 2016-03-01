@@ -14,6 +14,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -87,6 +88,14 @@ import org.archware.sosadl.validation.typing.proof.Optionally;
 import org.archware.sosadl.validation.typing.proof.Optionally_None;
 import org.archware.sosadl.validation.typing.proof.Optionally_Some;
 import org.archware.sosadl.validation.typing.proof.ProofTerm;
+import org.archware.sosadl.validation.typing.proof.Range_modulo_max;
+import org.archware.sosadl.validation.typing.proof.Range_modulo_max_neg;
+import org.archware.sosadl.validation.typing.proof.Range_modulo_max_pos;
+import org.archware.sosadl.validation.typing.proof.Range_modulo_max_zero;
+import org.archware.sosadl.validation.typing.proof.Range_modulo_min;
+import org.archware.sosadl.validation.typing.proof.Range_modulo_min_neg;
+import org.archware.sosadl.validation.typing.proof.Range_modulo_min_pos;
+import org.archware.sosadl.validation.typing.proof.Range_modulo_min_zero;
 import org.archware.sosadl.validation.typing.proof.Simple_increment;
 import org.archware.sosadl.validation.typing.proof.Simple_increment_step;
 import org.archware.sosadl.validation.typing.proof.Subtype;
@@ -113,12 +122,25 @@ import org.archware.sosadl.validation.typing.proof.Type_entityBlock;
 import org.archware.sosadl.validation.typing.proof.Type_expression;
 import org.archware.sosadl.validation.typing.proof.Type_expression_node;
 import org.archware.sosadl.validation.typing.proof.Type_expression_Add;
+import org.archware.sosadl.validation.typing.proof.Type_expression_And;
+import org.archware.sosadl.validation.typing.proof.Type_expression_Diff;
+import org.archware.sosadl.validation.typing.proof.Type_expression_Div_neg;
+import org.archware.sosadl.validation.typing.proof.Type_expression_Div_pos;
+import org.archware.sosadl.validation.typing.proof.Type_expression_Equal;
+import org.archware.sosadl.validation.typing.proof.Type_expression_Ge;
+import org.archware.sosadl.validation.typing.proof.Type_expression_Gt;
+import org.archware.sosadl.validation.typing.proof.Type_expression_Implies;
 import org.archware.sosadl.validation.typing.proof.Type_expression_IntegerValue;
+import org.archware.sosadl.validation.typing.proof.Type_expression_Le;
+import org.archware.sosadl.validation.typing.proof.Type_expression_Lt;
+import org.archware.sosadl.validation.typing.proof.Type_expression_Mod;
 import org.archware.sosadl.validation.typing.proof.Type_expression_Mul;
 import org.archware.sosadl.validation.typing.proof.Type_expression_Not;
 import org.archware.sosadl.validation.typing.proof.Type_expression_Opposite;
+import org.archware.sosadl.validation.typing.proof.Type_expression_Or;
 import org.archware.sosadl.validation.typing.proof.Type_expression_Same;
 import org.archware.sosadl.validation.typing.proof.Type_expression_Sub;
+import org.archware.sosadl.validation.typing.proof.Type_expression_Xor;
 import org.archware.sosadl.validation.typing.proof.Type_expression_and_type;
 import org.archware.sosadl.validation.typing.proof.Type_function;
 import org.archware.sosadl.validation.typing.proof.Type_gate;
@@ -334,7 +356,7 @@ public class SosADLValidator extends AbstractSosADLValidator {
 					(g, e, p1, p2) -> createRangeType(createOpposite(EcoreUtil.copy(p2.getB().getVmax())),
 							createOpposite(EcoreUtil.copy(p2.getB().getVmax())))),
 			new UnaryTypeInfo<>("not", BooleanType.class, "boolean type", () -> createBooleanType(),
-					(g, e, p1, p2) -> createType_expression_Not(g, e, p1.getB(), p1.getA(), p2.getA()),
+					(g, e, p1, p2) -> createType_expression_Not(g, e.getRight(), p1.getB(), p1.getA(), p2.getA()),
 					(g, e, p1, p2) -> p2.getB())
 	};
 	
@@ -348,7 +370,8 @@ public class SosADLValidator extends AbstractSosADLValidator {
 							p1.getA(), p2.getA(), p3.getA(), p4.getA()),
 					(g, e, p1, p2, p3, p4) -> createRangeType(
 							createBinaryExpression(EcoreUtil.copy(p2.getB().getVmin()), "+", EcoreUtil.copy(p4.getB().getVmin())),
-							createBinaryExpression(EcoreUtil.copy(p2.getB().getVmax()), "+", EcoreUtil.copy(p4.getB().getVmax())))),
+							createBinaryExpression(EcoreUtil.copy(p2.getB().getVmax()), "+", EcoreUtil.copy(p4.getB().getVmax()))),
+					() -> createRangeType(0, 0)),
 			new BinaryTypeInfo<>("-",
 					RangeType.class, "range type", () -> createRangeType(0, 0),
 					RangeType.class, "range type", () -> createRangeType(0, 0),
@@ -358,11 +381,11 @@ public class SosADLValidator extends AbstractSosADLValidator {
 							p1.getA(), p2.getA(), p3.getA(), p4.getA()),
 					(g, e, p1, p2, p3, p4) -> createRangeType(
 							createBinaryExpression(EcoreUtil.copy(p2.getB().getVmin()), "-", EcoreUtil.copy(p4.getB().getVmax())),
-							createBinaryExpression(EcoreUtil.copy(p2.getB().getVmax()), "-", EcoreUtil.copy(p4.getB().getVmin())))),
+							createBinaryExpression(EcoreUtil.copy(p2.getB().getVmax()), "-", EcoreUtil.copy(p4.getB().getVmin()))),
+					() -> createRangeType(0, 0)),
 			new BinaryTypeInfo<>("*",
 					RangeType.class, "range type", () -> createRangeType(0, 0),
 					RangeType.class, "range type", () -> createRangeType(0, 0),
-					// TODO
 					(g, e, p1, p2, p3, p4, r) -> {
 						Expression c1 = createBinaryExpression(EcoreUtil.copy(p2.getB().getVmin()), "*", EcoreUtil.copy(p4.getB().getVmin()));
 						Expression c2 = createBinaryExpression(EcoreUtil.copy(p2.getB().getVmin()), "*", EcoreUtil.copy(p4.getB().getVmax()));
@@ -389,8 +412,277 @@ public class SosADLValidator extends AbstractSosADLValidator {
 						Expression mi = EcoreUtil.copy(min(min(c1, c2), min(c3, c4)));
 						Expression ma = EcoreUtil.copy(max(max(c1, c2), max(c3, c4)));
 						return createRangeType(mi, ma);
-						}),
+						},
+					() -> createRangeType(0, 0)),
+			new BinaryTypeInfo<>("/",
+					RangeType.class, "range type", () -> createRangeType(0, 0),
+					RangeType.class, "range type", () -> createRangeType(0, 0),
+					(g, e, p1, p2, p3, p4, r) -> {
+						if(isLe(createIntegerValue(1), p4.getB().getVmin())) {
+							Expression c1 = createBinaryExpression(EcoreUtil.copy(p2.getB().getVmin()), "/", EcoreUtil.copy(p4.getB().getVmin()));
+							Expression c2 = createBinaryExpression(EcoreUtil.copy(p2.getB().getVmin()), "/", EcoreUtil.copy(p4.getB().getVmax()));
+							Expression c3 = createBinaryExpression(EcoreUtil.copy(p2.getB().getVmax()), "/", EcoreUtil.copy(p4.getB().getVmin()));
+							Expression c4 = createBinaryExpression(EcoreUtil.copy(p2.getB().getVmax()), "/", EcoreUtil.copy(p4.getB().getVmax()));
+							return createType_expression_Div_pos(g,
+									e.getLeft(), p1.getB(), p2.getB().getVmin(), p2.getB().getVmax(),
+									e.getRight(), p3.getB(), p4.getB().getVmin(), p4.getB().getVmax(),
+									r.getVmin(), r.getVmax(), p1.getA(), p2.getA(), p3.getA(), p4.getA(),
+									expression_le(createIntegerValue(1), p4.getB().getVmin()),
+									expression_le(r.getVmin(), c1),
+									expression_le(r.getVmin(), c2),
+									expression_le(r.getVmin(), c3),
+									expression_le(r.getVmin(), c4),
+									expression_le(c1, r.getVmax()),
+									expression_le(c2, r.getVmax()),
+									expression_le(c3, r.getVmax()),
+									expression_le(c4, r.getVmax()));
+						} else if (isLe(p4.getB().getVmax(), createOpposite(createIntegerValue(1)))) {
+							Expression c1 = createBinaryExpression(EcoreUtil.copy(p2.getB().getVmin()), "/", EcoreUtil.copy(p4.getB().getVmin()));
+							Expression c2 = createBinaryExpression(EcoreUtil.copy(p2.getB().getVmin()), "/", EcoreUtil.copy(p4.getB().getVmax()));
+							Expression c3 = createBinaryExpression(EcoreUtil.copy(p2.getB().getVmax()), "/", EcoreUtil.copy(p4.getB().getVmin()));
+							Expression c4 = createBinaryExpression(EcoreUtil.copy(p2.getB().getVmax()), "/", EcoreUtil.copy(p4.getB().getVmax()));
+							return createType_expression_Div_neg(g,
+									e.getLeft(), p1.getB(), p2.getB().getVmin(), p2.getB().getVmax(),
+									e.getRight(), p3.getB(), p4.getB().getVmin(), p4.getB().getVmax(),
+									r.getVmin(), r.getVmax(), p1.getA(), p2.getA(), p3.getA(), p4.getA(),
+									expression_le(p4.getB().getVmax(), createOpposite(createIntegerValue(1))),
+									expression_le(r.getVmin(), c1),
+									expression_le(r.getVmin(), c2),
+									expression_le(r.getVmin(), c3),
+									expression_le(r.getVmin(), c4),
+									expression_le(c1, r.getVmax()),
+									expression_le(c2, r.getVmax()),
+									expression_le(c3, r.getVmax()),
+									expression_le(c4, r.getVmax()));
+						} else {
+							error("The divisor must be different from 0", e.getRight(), null);
+							return null;
+						}
+					},
+					(g, e, p1, p2, p3, p4) -> {
+						if(isLe(createIntegerValue(1), p4.getB().getVmin()) || isLe(p4.getB().getVmax(), createOpposite(createIntegerValue(1)))) {
+							Expression c1 = createBinaryExpression(EcoreUtil.copy(p2.getB().getVmin()), "/", EcoreUtil.copy(p4.getB().getVmin()));
+							Expression c2 = createBinaryExpression(EcoreUtil.copy(p2.getB().getVmin()), "/", EcoreUtil.copy(p4.getB().getVmax()));
+							Expression c3 = createBinaryExpression(EcoreUtil.copy(p2.getB().getVmax()), "/", EcoreUtil.copy(p4.getB().getVmin()));
+							Expression c4 = createBinaryExpression(EcoreUtil.copy(p2.getB().getVmax()), "/", EcoreUtil.copy(p4.getB().getVmax()));
+							Expression mi = EcoreUtil.copy(min(min(c1, c2), min(c3, c4)));
+							Expression ma = EcoreUtil.copy(max(max(c1, c2), max(c3, c4)));
+							return createRangeType(mi, ma);
+						} else {
+							error("The divisor must be different from 0", e.getRight(), null);
+							return null;
+						}
+					},
+					() -> createRangeType(0, 0)),
+			new BinaryTypeInfo<>("mod",
+					RangeType.class, "range type", () -> createRangeType(0, 0),
+					RangeType.class, "range type", () -> createRangeType(0, 0),
+					(g, e, p1, p2, p3, p4, r) -> {
+						Range_modulo_min min = range_modulo_min(
+								p2.getB().getVmin(), p2.getB().getVmax(),
+								p4.getB().getVmin(), p4.getB().getVmax(),
+								() -> createRange_modulo_min_pos(p2.getB().getVmin(), p2.getB().getVmax(),
+										p4.getB().getVmin(), p4.getB().getVmax(),
+										r.getVmin(),
+										expression_le(createIntegerValue(1), p4.getB().getVmin()),
+										expression_le(r.getVmin(), createBinaryExpression(createIntegerValue(1), "-", EcoreUtil.copy(p4.getB().getVmax())))),
+								() -> createRange_modulo_min_zero(p2.getB().getVmin(), p2.getB().getVmax(),
+										p4.getB().getVmin(), p4.getB().getVmax(),
+										r.getVmin(),
+										expression_le(createIntegerValue(0), p2.getB().getVmin()),
+										expression_le(r.getVmin(), createIntegerValue(0))),
+								() -> createRange_modulo_min_neg(p2.getB().getVmin(), p2.getB().getVmax(),
+										p4.getB().getVmin(), p4.getB().getVmax(),
+										r.getVmin(),
+										expression_le(p4.getB().getVmax(), createOpposite(createIntegerValue(1))),
+										expression_le(r.getVmin(), createBinaryExpression(EcoreUtil.copy(p4.getB().getVmin()), "+", createIntegerValue(1)))),
+								() -> { error("The divisor must be different from 0", e.getRight(), null); return null; });
+						if(min != null) {
+							Range_modulo_max max = range_modulo_max(
+									p2.getB().getVmin(), p2.getB().getVmax(),
+									p4.getB().getVmin(), p4.getB().getVmax(),
+									() -> createRange_modulo_max_pos(p2.getB().getVmin(), p2.getB().getVmax(),
+											p4.getB().getVmin(), p4.getB().getVmax(),
+											r.getVmax(),
+											expression_le(createIntegerValue(1), p4.getB().getVmin()),
+											expression_le(createBinaryExpression(EcoreUtil.copy(p4.getB().getVmax()), "-", createIntegerValue(1)), r.getVmax())),
+									() -> createRange_modulo_max_zero(p2.getB().getVmin(), p2.getB().getVmax(),
+											p4.getB().getVmin(), p4.getB().getVmax(),
+											r.getVmax(),
+											expression_le(p2.getB().getVmax(), createIntegerValue(0)),
+											expression_le(createIntegerValue(0), r.getVmax())),
+									() -> createRange_modulo_max_neg(p2.getB().getVmin(), p2.getB().getVmax(),
+											p4.getB().getVmin(), p4.getB().getVmax(),
+											r.getVmax(),
+											expression_le(p4.getB().getVmax(), createOpposite(createIntegerValue(1))),
+											expression_le(createBinaryExpression(createIntegerValue(1), "-", EcoreUtil.copy(p4.getB().getVmin())), r.getVmax())),
+									() -> { error("The divisor must be different from 0", e.getRight(), null); return null; });
+							if(max != null) {
+								return createType_expression_Mod(g,
+										e.getLeft(), p1.getB(), p2.getB().getVmin(), p2.getB().getVmax(),
+										e.getRight(), p3.getB(), p4.getB().getVmin(), p4.getB().getVmax(),
+										r.getVmin(), r.getVmax(),
+										p1.getA(), p2.getA(), p3.getA(), p4.getA(), min, max);
+							} else {
+								return null;
+							}
+						} else {
+							return null;
+						}
+					},
+					(g, e, p1, p2, p3, p4) -> {
+						Expression min = range_modulo_min(
+								p2.getB().getVmin(), p2.getB().getVmax(),
+								p4.getB().getVmin(), p4.getB().getVmax(),
+								() -> createBinaryExpression(createIntegerValue(1), "-", EcoreUtil.copy(p4.getB().getVmax())),
+								() -> createIntegerValue(0),
+								() -> createBinaryExpression(EcoreUtil.copy(p4.getB().getVmin()), "+", createIntegerValue(1)),
+								() -> { error("The divisor must be different from 0", e.getRight(), null); return null; });
+						if(min != null) {
+							Expression max = range_modulo_max(
+									p2.getB().getVmin(), p2.getB().getVmax(),
+									p4.getB().getVmin(), p4.getB().getVmax(),
+									() -> createBinaryExpression(EcoreUtil.copy(p4.getB().getVmax()), "-", createIntegerValue(1)),
+									() -> createIntegerValue(0),
+									() -> createBinaryExpression(createIntegerValue(1), "-", EcoreUtil.copy(p4.getB().getVmin())),
+									() -> { error("The divisor must be different from 0", e.getRight(), null); return null; });
+							if(max != null) {
+								return createRangeType(min, max);
+							} else {
+								return null;
+							}
+						} else {
+							return null;
+						}
+					},
+					() -> createRangeType(0, 0)),
+			new BinaryTypeInfo<>("implies",
+					BooleanType.class, "boolean type", () -> createBooleanType(),
+					BooleanType.class, "boolean type", () -> createBooleanType(),
+					(g, e, p1, p2, p3, p4, r) -> createType_expression_Implies(g,
+							e.getLeft(), p1.getB(),
+							e.getRight(), p3.getB(),
+							p1.getA(), p2.getA(), p3.getA(), p4.getA()),
+					(g, e, p1, p2, p3, p4) -> createBooleanType(),
+					() -> createBooleanType()),
+			new BinaryTypeInfo<>("or",
+					BooleanType.class, "boolean type", () -> createBooleanType(),
+					BooleanType.class, "boolean type", () -> createBooleanType(),
+					(g, e, p1, p2, p3, p4, r) -> createType_expression_Or(g,
+							e.getLeft(), p1.getB(),
+							e.getRight(), p3.getB(),
+							p1.getA(), p2.getA(), p3.getA(), p4.getA()),
+					(g, e, p1, p2, p3, p4) -> createBooleanType(),
+					() -> createBooleanType()),
+			new BinaryTypeInfo<>("xor",
+					BooleanType.class, "boolean type", () -> createBooleanType(),
+					BooleanType.class, "boolean type", () -> createBooleanType(),
+					(g, e, p1, p2, p3, p4, r) -> createType_expression_Xor(g,
+							e.getLeft(), p1.getB(),
+							e.getRight(), p3.getB(),
+							p1.getA(), p2.getA(), p3.getA(), p4.getA()),
+					(g, e, p1, p2, p3, p4) -> createBooleanType(),
+					() -> createBooleanType()),
+			new BinaryTypeInfo<>("and",
+					BooleanType.class, "boolean type", () -> createBooleanType(),
+					BooleanType.class, "boolean type", () -> createBooleanType(),
+					(g, e, p1, p2, p3, p4, r) -> createType_expression_And(g,
+							e.getLeft(), p1.getB(),
+							e.getRight(), p3.getB(),
+							p1.getA(), p2.getA(), p3.getA(), p4.getA()),
+					(g, e, p1, p2, p3, p4) -> createBooleanType(),
+					() -> createBooleanType()),
+			new BinaryTypeInfo<>("=",
+					RangeType.class, "range type", () -> createRangeType(0, 0),
+					RangeType.class, "range type", () -> createRangeType(0, 0),
+					(g, e, p1, p2, p3, p4, r) -> createType_expression_Equal(g,
+							e.getLeft(), p1.getB(), p2.getB().getVmin(), p2.getB().getVmax(),
+							e.getRight(), p3.getB(), p4.getB().getVmin(), p4.getB().getVmax(),
+							p1.getA(), p2.getA(), p3.getA(), p4.getA()),
+					(g, e, p1, p2, p3, p4) -> createBooleanType(),
+					() -> createBooleanType()),
+			new BinaryTypeInfo<>("<>",
+					RangeType.class, "range type", () -> createRangeType(0, 0),
+					RangeType.class, "range type", () -> createRangeType(0, 0),
+					(g, e, p1, p2, p3, p4, r) -> createType_expression_Diff(g,
+							e.getLeft(), p1.getB(), p2.getB().getVmin(), p2.getB().getVmax(),
+							e.getRight(), p3.getB(), p4.getB().getVmin(), p4.getB().getVmax(),
+							p1.getA(), p2.getA(), p3.getA(), p4.getA()),
+					(g, e, p1, p2, p3, p4) -> createBooleanType(),
+					() -> createBooleanType()),
+			new BinaryTypeInfo<>("<",
+					RangeType.class, "range type", () -> createRangeType(0, 0),
+					RangeType.class, "range type", () -> createRangeType(0, 0),
+					(g, e, p1, p2, p3, p4, r) -> createType_expression_Lt(g,
+							e.getLeft(), p1.getB(), p2.getB().getVmin(), p2.getB().getVmax(),
+							e.getRight(), p3.getB(), p4.getB().getVmin(), p4.getB().getVmax(),
+							p1.getA(), p2.getA(), p3.getA(), p4.getA()),
+					(g, e, p1, p2, p3, p4) -> createBooleanType(),
+					() -> createBooleanType()),
+			new BinaryTypeInfo<>("<=",
+					RangeType.class, "range type", () -> createRangeType(0, 0),
+					RangeType.class, "range type", () -> createRangeType(0, 0),
+					(g, e, p1, p2, p3, p4, r) -> createType_expression_Le(g,
+							e.getLeft(), p1.getB(), p2.getB().getVmin(), p2.getB().getVmax(),
+							e.getRight(), p3.getB(), p4.getB().getVmin(), p4.getB().getVmax(),
+							p1.getA(), p2.getA(), p3.getA(), p4.getA()),
+					(g, e, p1, p2, p3, p4) -> createBooleanType(),
+					() -> createBooleanType()),
+			new BinaryTypeInfo<>(">",
+					RangeType.class, "range type", () -> createRangeType(0, 0),
+					RangeType.class, "range type", () -> createRangeType(0, 0),
+					(g, e, p1, p2, p3, p4, r) -> createType_expression_Gt(g,
+							e.getLeft(), p1.getB(), p2.getB().getVmin(), p2.getB().getVmax(),
+							e.getRight(), p3.getB(), p4.getB().getVmin(), p4.getB().getVmax(),
+							p1.getA(), p2.getA(), p3.getA(), p4.getA()),
+					(g, e, p1, p2, p3, p4) -> createBooleanType(),
+					() -> createBooleanType()),
+			new BinaryTypeInfo<>(">=",
+					RangeType.class, "range type", () -> createRangeType(0, 0),
+					RangeType.class, "range type", () -> createRangeType(0, 0),
+					(g, e, p1, p2, p3, p4, r) -> createType_expression_Ge(g,
+							e.getLeft(), p1.getB(), p2.getB().getVmin(), p2.getB().getVmax(),
+							e.getRight(), p3.getB(), p4.getB().getVmin(), p4.getB().getVmax(),
+							p1.getA(), p2.getA(), p3.getA(), p4.getA()),
+					(g, e, p1, p2, p3, p4) -> createBooleanType(),
+					() -> createBooleanType()),
 	};
+	
+	private <T> T range_modulo_min(Expression lmin, Expression lmax, Expression rmin, Expression rmax, Supplier<T> pos, Supplier<T> zero, Supplier<T> neg, Supplier<T> divByZero) {
+		if(isLe(createIntegerValue(1), rmin)) {
+			if(isLe(createIntegerValue(0), lmin)) {
+				return zero.get();
+			} else {
+				return pos.get();
+			}
+		} else if(isLe(rmax, createOpposite(createIntegerValue(1)))) {
+			if(isLe(createIntegerValue(0), lmin)) {
+				return zero.get();
+			} else {
+				return neg.get();
+			}
+		} else {
+			return divByZero.get();
+		}
+	}
+	
+	private <T> T range_modulo_max(Expression lmin, Expression lmax, Expression rmin, Expression rmax, Supplier<T> pos, Supplier<T> zero, Supplier<T> neg, Supplier<T> divByZero) {
+		if(isLe(createIntegerValue(1), rmin)) {
+			if(isLe(lmax, createIntegerValue(0))) {
+				return zero.get();
+			} else {
+				return pos.get();
+			}
+		} else if(isLe(rmax, createOpposite(createIntegerValue(1)))) {
+			if(isLe(lmax, createIntegerValue(0))) {
+				return zero.get();
+			} else {
+				return neg.get();
+			}
+		} else {
+			return divByZero.get();
+		}
+	}
 	
 	private static Expression min(Expression l, Expression r) {
 		if(InterpInZ.le(l, r)) {
@@ -420,7 +712,11 @@ public class SosADLValidator extends AbstractSosADLValidator {
 		Pair<Type_expression, DataType> p3 = type_expression(gamma, e.getRight());
 		Pair<Subtype, R> p4 = smallestSuperType(i.getrClass(), i.getrLabel(), i.getrIfNone().get(), gamma, p3.getB(), e, SosADLPackage.Literals.BINARY_EXPRESSION__RIGHT);
 		X r = i.createType.apply(gamma, e, p1, p2, p3, p4);
-		return new Pair<>(saveProof(e, i.createProofTerm.apply(gamma, e, p1, p2, p3, p4, r)), saveType(e, r));
+		if(r != null) {
+			return new Pair<>(saveProof(e, i.createProofTerm.apply(gamma, e, p1, p2, p3, p4, r)), saveType(e, r));
+		} else {
+			return new Pair<>(null, i.createDefault.get());
+		}
 	}
 
 	private Pair<Type_expression, DataType> type_expression(Environment gamma, Expression e) {
@@ -434,7 +730,7 @@ public class SosADLValidator extends AbstractSosADLValidator {
 			DataType t = createRangeType(EcoreUtil.copy(e), EcoreUtil.copy(e));
 			return new Pair<>(saveProof(e, createType_expression_IntegerValue(gamma, BigInteger.valueOf(((IntegerValue) e).getAbsInt()))),
 					saveType(e, t));
-		} else if(e instanceof UnaryExpression) {
+		} else if(e instanceof UnaryExpression && ((UnaryExpression)e).getOp() != null && ((UnaryExpression)e).getRight() != null) {
 			for(UnaryTypeInfo<? extends DataType> i : unaryTypeInformations) {
 				if(((UnaryExpression)e).getOp().equals(i.getOperator())) {
 					return typeUnaryExpression(gamma, (UnaryExpression)e, i);
@@ -442,7 +738,7 @@ public class SosADLValidator extends AbstractSosADLValidator {
 			}
 			error("Unknown unary operator", e, SosADLPackage.Literals.UNARY_EXPRESSION__OP);
 			return new Pair<>(null, SosADLFactory.eINSTANCE.createBooleanType());
-		} else if(e instanceof BinaryExpression) {
+		} else if(e instanceof BinaryExpression && ((BinaryExpression)e).getLeft() != null && ((BinaryExpression)e).getOp() != null && ((BinaryExpression)e).getRight() != null) {
 			for(BinaryTypeInfo<? extends DataType, ? extends DataType, ? extends DataType> i: binaryTypeInformations) {
 				if(((BinaryExpression)e).getOp().equals(i.getOperator())) {
 					return typeBinaryExpression(gamma, (BinaryExpression)e, i);
@@ -452,7 +748,26 @@ public class SosADLValidator extends AbstractSosADLValidator {
 			return new Pair<>(null, SosADLFactory.eINSTANCE.createBooleanType());
 		} else {
 			// TODO
-			error("Type error", e, null);
+			if(e instanceof UnaryExpression) {
+				if(((UnaryExpression)e).getRight() == null) {
+					error("The unary operator must have a right operand", e, SosADLPackage.Literals.UNARY_EXPRESSION__RIGHT);
+				}
+				if(((UnaryExpression)e).getOp() == null) {
+					error("The unary expression must have an operator", e, SosADLPackage.Literals.UNARY_EXPRESSION__OP);
+				}
+			} else if(e instanceof BinaryExpression) {
+				if(((BinaryExpression)e).getLeft() == null) {
+					error("The binary operator must have a left operand", e, SosADLPackage.Literals.BINARY_EXPRESSION__LEFT);
+				}
+				if(((BinaryExpression)e).getOp() == null) {
+					error("The binary operator must have an operator", e, SosADLPackage.Literals.BINARY_EXPRESSION__OP);
+				}
+				if(((BinaryExpression)e).getRight() == null) {
+					error("The binary operator must have a right operand", e, SosADLPackage.Literals.BINARY_EXPRESSION__RIGHT);
+				}
+			} else {
+				error("Type error", e, null);
+			}
 			return new Pair<>(null, SosADLFactory.eINSTANCE.createBooleanType());
 		}
 	}
@@ -581,17 +896,21 @@ public class SosADLValidator extends AbstractSosADLValidator {
 	}
 	
 	private Expression_le expression_le(Expression l, Expression r) {
-		if(isConstExprOrError(l) && isConstExprOrError(r) && InterpInZ.le(l, r)) {
+		if(isLe(l, r)) {
 			return createIn_Z(l, InterpInZ.eval(l), r, InterpInZ.eval(r), createReflexivity(), createReflexivity(), createReflexivity());
 		} else {
 			if(isConstExprNoError(l) && isConstExprNoError(r)) {
 				error("The lower bound must be smaller than the upper bound", l, null);
-				error("The upper bound must be greated than the lower bound", r, null);
+				error("The upper bound must be greater than the lower bound", r, null);
 			} else {
 				error("Type error", l, null);
 			}
 			return null;
 		}
+	}
+
+	private boolean isLe(Expression l, Expression r) {
+		return isConstExprOrError(l) && isConstExprOrError(r) && InterpInZ.le(l, r);
 	}
 
 	private Type_datatype type_datatype(Environment gamma, DataType type) {
@@ -613,7 +932,8 @@ public class SosADLValidator extends AbstractSosADLValidator {
 		}
 		// type_RangeType_trivial
 		else if(type instanceof RangeType && ((RangeType)type).getVmin() != null
-				&& ((RangeType)type).getVmax() != null) {
+				&& ((RangeType)type).getVmax() != null
+				&& isLe(((RangeType)type).getVmin(), ((RangeType)type).getVmax())) {
 			saveMin(type, InterpInZ.eval(((RangeType)type).getVmin()));
 			saveMax(type, InterpInZ.eval(((RangeType)type).getVmax()));
 			return saveProof(type, createType_RangeType_trivial(gamma, ((RangeType)type).getVmin(), ((RangeType)type).getVmax(),
@@ -1110,20 +1430,29 @@ public class SosADLValidator extends AbstractSosADLValidator {
 		r.setVmax(max);
 		return r;
 	}
+	
+	@SuppressWarnings("unused")
+	private static RangeType createRangeType(int min, Expression max) {
+		return createRangeType(createIntegerValue(min), max);
+	}
+
+	@SuppressWarnings("unused")
+	private static RangeType createRangeType(Expression min, int max) {
+		return createRangeType(min, createIntegerValue(max));
+	}
 
 	private static RangeType createRangeType(int min, int max) {
-		RangeType r = SosADLFactory.eINSTANCE.createRangeType();
-		IntegerValue vmin = SosADLFactory.eINSTANCE.createIntegerValue();
-		vmin.setAbsInt(min);
-		r.setVmin(vmin);
-		IntegerValue vmax = SosADLFactory.eINSTANCE.createIntegerValue();
-		vmin.setAbsInt(max);
-		r.setVmax(vmax);
-		return r;
+		return createRangeType(createIntegerValue(min), createIntegerValue(max));
 	}
 	
 	private static BooleanType createBooleanType() {
 		return SosADLFactory.eINSTANCE.createBooleanType();
+	}
+	
+	private static Expression createIntegerValue(int v) {
+		IntegerValue r = SosADLFactory.eINSTANCE.createIntegerValue();
+		r.setAbsInt(v);
+		return r;
 	}
 	
 	private static Expression createOpposite(Expression e) {
@@ -1173,6 +1502,114 @@ public class SosADLValidator extends AbstractSosADLValidator {
 			Expression_le p7, Expression_le p8, Expression_le p9, Expression_le pa, Expression_le pb,
 			Expression_le pc) {
 		return new Type_expression_Mul(gamma, l, l__tau, l__min, l__max, r, r__tau, r__min, r__max, min, max, p1, p2, p3, p4, p5, p6, p7, p8, p9, pa, pb, pc);
+	}
+	
+	private static Type_expression_node createType_expression_Div_pos(Environment gamma, Expression l, DataType l__tau, Expression l__min, Expression l__max,
+			Expression r, DataType r__tau, Expression r__min, Expression r__max, Expression min, Expression max,
+			Type_expression p1, Subtype p2, Type_expression p3, Subtype p4, Expression_le p5, Expression_le p6,
+			Expression_le p7, Expression_le p8, Expression_le p9, Expression_le pa, Expression_le pb,
+			Expression_le pc, Expression_le pd) {
+		return new Type_expression_Div_pos(gamma, l, l__tau, l__min, l__max, r, r__tau, r__min, r__max, min, max, p1, p2, p3, p4, p5, p6, p7, p8, p9, pa, pb, pc, pd);
+	}
+	
+	private static Type_expression_node createType_expression_Div_neg(Environment gamma, Expression l, DataType l__tau, Expression l__min, Expression l__max,
+			Expression r, DataType r__tau, Expression r__min, Expression r__max, Expression min, Expression max,
+			Type_expression p1, Subtype p2, Type_expression p3, Subtype p4, Expression_le p5, Expression_le p6,
+			Expression_le p7, Expression_le p8, Expression_le p9, Expression_le pa, Expression_le pb,
+			Expression_le pc, Expression_le pd) {
+		return new Type_expression_Div_neg(gamma, l, l__tau, l__min, l__max, r, r__tau, r__min, r__max, min, max, p1, p2, p3, p4, p5, p6, p7, p8, p9, pa, pb, pc, pd);
+	}
+
+	private static Type_expression_node createType_expression_Mod(Environment gamma, Expression l, DataType l__tau, Expression l__min, Expression l__max,
+			Expression r, DataType r__tau, Expression r__min, Expression r__max, Expression min, Expression max,
+			Type_expression p1, Subtype p2, Type_expression p3, Subtype p4, Range_modulo_min p5, Range_modulo_max p6) {
+		return new Type_expression_Mod(gamma, l, l__tau, l__min, l__max, r, r__tau, r__min, r__max, min, max, p1, p2, p3, p4, p5, p6);
+	}
+	
+	private static Type_expression_node createType_expression_Implies(Environment gamma, Expression l, DataType l__tau, Expression r, DataType r__tau,
+			Type_expression p1, Subtype p2, Type_expression p3, Subtype p4) {
+		return new Type_expression_Implies(gamma, l, l__tau, r, r__tau, p1, p2, p3, p4);
+	}
+	
+	private static Type_expression_node createType_expression_Or(Environment gamma, Expression l, DataType l__tau, Expression r, DataType r__tau,
+			Type_expression p1, Subtype p2, Type_expression p3, Subtype p4) {
+		return new Type_expression_Or(gamma, l, l__tau, r, r__tau, p1, p2, p3, p4);
+	}
+	
+	private static Type_expression_node createType_expression_Xor(Environment gamma, Expression l, DataType l__tau, Expression r, DataType r__tau,
+			Type_expression p1, Subtype p2, Type_expression p3, Subtype p4) {
+		return new Type_expression_Xor(gamma, l, l__tau, r, r__tau, p1, p2, p3, p4);
+	}
+	
+	private static Type_expression_node createType_expression_And(Environment gamma, Expression l, DataType l__tau, Expression r, DataType r__tau,
+			Type_expression p1, Subtype p2, Type_expression p3, Subtype p4) {
+		return new Type_expression_And(gamma, l, l__tau, r, r__tau, p1, p2, p3, p4);
+	}
+	
+	private static Type_expression_node createType_expression_Equal(Environment gamma, Expression l, DataType l__tau, Expression l__min, Expression l__max,
+			Expression r, DataType r__tau, Expression r__min, Expression r__max, Type_expression p1, Subtype p2,
+			Type_expression p3, Subtype p4) {
+		return new Type_expression_Equal(gamma, l, l__tau, l__min, l__max, r, r__tau, r__min, r__max, p1, p2, p3, p4);
+	}
+	
+	private static Type_expression_node createType_expression_Diff(Environment gamma, Expression l, DataType l__tau, Expression l__min, Expression l__max,
+			Expression r, DataType r__tau, Expression r__min, Expression r__max, Type_expression p1, Subtype p2,
+			Type_expression p3, Subtype p4) {
+		return new Type_expression_Diff(gamma, l, l__tau, l__min, l__max, r, r__tau, r__min, r__max, p1, p2, p3, p4);
+	}
+	
+	private static Type_expression_node createType_expression_Lt(Environment gamma, Expression l, DataType l__tau, Expression l__min, Expression l__max,
+			Expression r, DataType r__tau, Expression r__min, Expression r__max, Type_expression p1, Subtype p2,
+			Type_expression p3, Subtype p4) {
+		return new Type_expression_Lt(gamma, l, l__tau, l__min, l__max, r, r__tau, r__min, r__max, p1, p2, p3, p4);
+	}
+	
+	private static Type_expression_node createType_expression_Le(Environment gamma, Expression l, DataType l__tau, Expression l__min, Expression l__max,
+			Expression r, DataType r__tau, Expression r__min, Expression r__max, Type_expression p1, Subtype p2,
+			Type_expression p3, Subtype p4) {
+		return new Type_expression_Le(gamma, l, l__tau, l__min, l__max, r, r__tau, r__min, r__max, p1, p2, p3, p4);
+	}
+	
+	private static Type_expression_node createType_expression_Gt(Environment gamma, Expression l, DataType l__tau, Expression l__min, Expression l__max,
+			Expression r, DataType r__tau, Expression r__min, Expression r__max, Type_expression p1, Subtype p2,
+			Type_expression p3, Subtype p4) {
+		return new Type_expression_Gt(gamma, l, l__tau, l__min, l__max, r, r__tau, r__min, r__max, p1, p2, p3, p4);
+	}
+	
+	private static Type_expression_node createType_expression_Ge(Environment gamma, Expression l, DataType l__tau, Expression l__min, Expression l__max,
+			Expression r, DataType r__tau, Expression r__min, Expression r__max, Type_expression p1, Subtype p2,
+			Type_expression p3, Subtype p4) {
+		return new Type_expression_Ge(gamma, l, l__tau, l__min, l__max, r, r__tau, r__min, r__max, p1, p2, p3, p4);
+	}
+	
+	private static Range_modulo_min createRange_modulo_min_pos(Expression lmin, Expression lmax, Expression rmin, Expression rmax, Expression min, Expression_le p1,
+			Expression_le p2) {
+		return new Range_modulo_min_pos(lmin, lmax, rmin, rmax, min, p1, p2);
+	}
+	
+	private static Range_modulo_min createRange_modulo_min_zero(Expression lmin, Expression lmax, Expression rmin, Expression rmax, Expression min, Expression_le p1,
+			Expression_le p2) {
+		return new Range_modulo_min_zero(lmin, lmax, rmin, rmax, min, p1, p2);
+	}
+	
+	private static Range_modulo_min createRange_modulo_min_neg(Expression lmin, Expression lmax, Expression rmin, Expression rmax, Expression min, Expression_le p1,
+			Expression_le p2) {
+		return new Range_modulo_min_neg(lmin, lmax, rmin, rmax, min, p1, p2);
+	}
+
+	private static Range_modulo_max createRange_modulo_max_pos(Expression lmin, Expression lmax, Expression rmin, Expression rmax, Expression min, Expression_le p1,
+			Expression_le p2) {
+		return new Range_modulo_max_pos(lmin, lmax, rmin, rmax, min, p1, p2);
+	}
+	
+	private static Range_modulo_max createRange_modulo_max_zero(Expression lmin, Expression lmax, Expression rmin, Expression rmax, Expression min, Expression_le p1,
+			Expression_le p2) {
+		return new Range_modulo_max_zero(lmin, lmax, rmin, rmax, min, p1, p2);
+	}
+	
+	private static Range_modulo_max createRange_modulo_max_neg(Expression lmin, Expression lmax, Expression rmin, Expression rmax, Expression min, Expression_le p1,
+			Expression_le p2) {
+		return new Range_modulo_max_neg(lmin, lmax, rmin, rmax, min, p1, p2);
 	}
 
 	private static Subtype createSubtype_refl(Environment gamma, DataType t) {

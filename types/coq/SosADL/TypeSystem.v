@@ -4,6 +4,7 @@ Require SosADL.SosADL.
 Require Import SosADL.Environment.
 Require Import SosADL.Utils.
 Require Import SosADL.Interpretation.
+Require Import BinInt.
 
 (** printing Delta $\Delta$ #&Delta;# *)
 (** printing Phi $\Phi$ #&Phi;# *)
@@ -457,15 +458,6 @@ Inductive constexpr_expression: SosADL.SosADL.t_Expression -> Prop :=
 where "'expression' e 'is' 'constant' 'integer'" := (constexpr_expression e)
 .
 
-Lemma interpInZ_implies_constexpr: forall e f (H: interp_in_Z e = Interpreted f), expression e is constant integer.
-Proof.
-  intros.
-  assert (exists f, interp_in_Z e = Interpreted f) as I by (exists f; auto).
-  clear f H.
-  revert e I.
-  apply interp_in_Z_ind; intros; constructor; auto.
-Qed.
-
 (** ** Data types *)
 
 Inductive type_datatype: env -> SosADL.SosADL.t_DataType -> Prop :=
@@ -537,9 +529,90 @@ where "'type' t 'well' 'typed' 'in' Gamma" := (type_datatype Gamma t)
 (**
  ** Expression
 
-%\note{%This set of rules is restricted to computable expressions. This means that [any] and unifications are excluded from these rules.%}%
+Before running into the type system for expressions, we first introduce some definitions and properties about interval arithmetic.
 
  *)
+
+Inductive range_modulo_min: SosADL.SosADL.t_Expression -> SosADL.SosADL.t_Expression -> SosADL.SosADL.t_Expression -> SosADL.SosADL.t_Expression -> SosADL.SosADL.t_Expression -> Prop :=
+| range_modulo_min_pos:
+    forall
+      (lmin: SosADL.SosADL.t_Expression)
+      (lmax: SosADL.SosADL.t_Expression)
+      (rmin: SosADL.SosADL.t_Expression)
+      (rmax: SosADL.SosADL.t_Expression)
+      (min: SosADL.SosADL.t_Expression)
+      (p1: (SosADL.SosADL.IntegerValue (Some 1%Z)) <= rmin)
+      (p2: min <= (SosADL.SosADL.BinaryExpression (Some (SosADL.SosADL.IntegerValue (Some 1%Z))) (Some "-") (Some rmax)))
+    ,
+      range_modulo_min lmin lmax rmin rmax min
+
+| range_modulo_min_zero:
+    forall
+      (lmin: SosADL.SosADL.t_Expression)
+      (lmax: SosADL.SosADL.t_Expression)
+      (rmin: SosADL.SosADL.t_Expression)
+      (rmax: SosADL.SosADL.t_Expression)
+      (min: SosADL.SosADL.t_Expression)
+      (p1: (SosADL.SosADL.IntegerValue (Some 0%Z)) <= lmin)
+      (p2: min <= (SosADL.SosADL.IntegerValue (Some 0%Z)))
+    ,
+      range_modulo_min lmin lmax rmin rmax min
+
+| range_modulo_min_neg:
+    forall
+      (lmin: SosADL.SosADL.t_Expression)
+      (lmax: SosADL.SosADL.t_Expression)
+      (rmin: SosADL.SosADL.t_Expression)
+      (rmax: SosADL.SosADL.t_Expression)
+      (min: SosADL.SosADL.t_Expression)
+      (p1: rmax <= (SosADL.SosADL.UnaryExpression (Some "-") (Some (SosADL.SosADL.IntegerValue (Some 1%Z)))))
+      (p2: min <= (SosADL.SosADL.BinaryExpression (Some rmin) (Some "+") (Some (SosADL.SosADL.IntegerValue (Some 1%Z)))))
+    ,
+      range_modulo_min lmin lmax rmin rmax min
+.
+
+Inductive range_modulo_max: SosADL.SosADL.t_Expression -> SosADL.SosADL.t_Expression -> SosADL.SosADL.t_Expression -> SosADL.SosADL.t_Expression -> SosADL.SosADL.t_Expression -> Prop :=
+| range_modulo_max_pos:
+    forall
+      (lmin: SosADL.SosADL.t_Expression)
+      (lmax: SosADL.SosADL.t_Expression)
+      (rmin: SosADL.SosADL.t_Expression)
+      (rmax: SosADL.SosADL.t_Expression)
+      (max: SosADL.SosADL.t_Expression)
+      (p1: (SosADL.SosADL.IntegerValue (Some 1%Z)) <= rmin)
+      (p2: (SosADL.SosADL.BinaryExpression (Some rmax) (Some "-") (Some (SosADL.SosADL.IntegerValue (Some 1%Z)))) <= max)
+    ,
+      range_modulo_max lmin lmax rmin rmax max
+
+| range_modulo_max_zero:
+    forall
+      (lmin: SosADL.SosADL.t_Expression)
+      (lmax: SosADL.SosADL.t_Expression)
+      (rmin: SosADL.SosADL.t_Expression)
+      (rmax: SosADL.SosADL.t_Expression)
+      (max: SosADL.SosADL.t_Expression)
+      (p1: lmax <= (SosADL.SosADL.IntegerValue (Some 0%Z)))
+      (p2: (SosADL.SosADL.IntegerValue (Some 0%Z)) <= max)
+    ,
+      range_modulo_max lmin lmax rmin rmax max
+
+| range_modulo_max_neg:
+    forall
+      (lmin: SosADL.SosADL.t_Expression)
+      (lmax: SosADL.SosADL.t_Expression)
+      (rmin: SosADL.SosADL.t_Expression)
+      (rmax: SosADL.SosADL.t_Expression)
+      (max: SosADL.SosADL.t_Expression)
+      (p1: rmax <= (SosADL.SosADL.UnaryExpression (Some "-") (Some (SosADL.SosADL.IntegerValue (Some 1%Z)))))
+      (p2: (SosADL.SosADL.BinaryExpression (Some (SosADL.SosADL.IntegerValue (Some 1%Z))) (Some "-") (Some rmin)) <= max)
+    ,
+      range_modulo_max lmin lmax rmin rmax max
+.
+
+(*
+%\note{%This set of rules is restricted to computable expressions. This means that [any] and unifications are excluded from these rules. It indeed seems reasonnable,
+at least as a first step, that [any] is allowed solely in the protocols and assertions. %}%
+*)
 
 Inductive type_expression: env -> SosADL.SosADL.t_Expression -> SosADL.SosADL.t_DataType -> Prop :=
 | type_expression_and_type:
@@ -672,45 +745,244 @@ with type_expression_node: env -> SosADL.SosADL.t_Expression -> SosADL.SosADL.t_
       expression node (SosADL.SosADL.BinaryExpression (Some l) (Some "*") (Some r))
       has type (SosADL.SosADL.RangeType (Some min) (Some max)) in Gamma
 
+| type_expression_Div_pos:
+    forall
+      (Gamma: env)
+      (l: SosADL.SosADL.t_Expression)
+      (l__tau: SosADL.SosADL.t_DataType)
+      (l__min: SosADL.SosADL.t_Expression)
+      (l__max: SosADL.SosADL.t_Expression)
+      (r: SosADL.SosADL.t_Expression)
+      (r__tau: SosADL.SosADL.t_DataType)
+      (r__min: SosADL.SosADL.t_Expression)
+      (r__max: SosADL.SosADL.t_Expression)
+      (min: SosADL.SosADL.t_Expression)
+      (max: SosADL.SosADL.t_Expression)
+      (p1: expression l has type l__tau in Gamma)
+      (p2: l__tau </ (SosADL.SosADL.RangeType (Some l__min) (Some l__max)) under Gamma)
+      (p3: expression r has type r__tau in Gamma)
+      (p4: r__tau </ (SosADL.SosADL.RangeType (Some r__min) (Some r__max)) under Gamma)
+      (p5: (SosADL.SosADL.IntegerValue (Some 1%Z)) <= r__min)
+      (p6: min <= (SosADL.SosADL.BinaryExpression (Some l__min) (Some "/") (Some r__min)))
+      (p7: min <= (SosADL.SosADL.BinaryExpression (Some l__min) (Some "/") (Some r__max)))
+      (p8: min <= (SosADL.SosADL.BinaryExpression (Some l__max) (Some "/") (Some r__min)))
+      (p9: min <= (SosADL.SosADL.BinaryExpression (Some l__max) (Some "/") (Some r__max)))
+      (pa: (SosADL.SosADL.BinaryExpression (Some l__min) (Some "/") (Some r__min)) <= max)
+      (pb: (SosADL.SosADL.BinaryExpression (Some l__min) (Some "/") (Some r__max)) <= max)
+      (pc: (SosADL.SosADL.BinaryExpression (Some l__max) (Some "/") (Some r__min)) <= max)
+      (pd: (SosADL.SosADL.BinaryExpression (Some l__max) (Some "/") (Some r__max)) <= max)
+    ,
+      expression node (SosADL.SosADL.BinaryExpression (Some l) (Some "/") (Some r))
+      has type (SosADL.SosADL.RangeType (Some min) (Some max)) in Gamma
 
-(** %\todo{%The typing rules for [*], [/] and [mod] needs to be
-written.%}% *)
+| type_expression_Div_neg:
+    forall
+      (Gamma: env)
+      (l: SosADL.SosADL.t_Expression)
+      (l__tau: SosADL.SosADL.t_DataType)
+      (l__min: SosADL.SosADL.t_Expression)
+      (l__max: SosADL.SosADL.t_Expression)
+      (r: SosADL.SosADL.t_Expression)
+      (r__tau: SosADL.SosADL.t_DataType)
+      (r__min: SosADL.SosADL.t_Expression)
+      (r__max: SosADL.SosADL.t_Expression)
+      (min: SosADL.SosADL.t_Expression)
+      (max: SosADL.SosADL.t_Expression)
+      (p1: expression l has type l__tau in Gamma)
+      (p2: l__tau </ (SosADL.SosADL.RangeType (Some l__min) (Some l__max)) under Gamma)
+      (p3: expression r has type r__tau in Gamma)
+      (p4: r__tau </ (SosADL.SosADL.RangeType (Some r__min) (Some r__max)) under Gamma)
+      (p5: (r__max <= (SosADL.SosADL.UnaryExpression (Some "-") (Some (SosADL.SosADL.IntegerValue (Some 1%Z))))))
+      (p6: min <= (SosADL.SosADL.BinaryExpression (Some l__min) (Some "/") (Some r__min)))
+      (p7: min <= (SosADL.SosADL.BinaryExpression (Some l__min) (Some "/") (Some r__max)))
+      (p8: min <= (SosADL.SosADL.BinaryExpression (Some l__max) (Some "/") (Some r__min)))
+      (p9: min <= (SosADL.SosADL.BinaryExpression (Some l__max) (Some "/") (Some r__max)))
+      (pa: (SosADL.SosADL.BinaryExpression (Some l__min) (Some "/") (Some r__min)) <= max)
+      (pb: (SosADL.SosADL.BinaryExpression (Some l__min) (Some "/") (Some r__max)) <= max)
+      (pc: (SosADL.SosADL.BinaryExpression (Some l__max) (Some "/") (Some r__min)) <= max)
+      (pd: (SosADL.SosADL.BinaryExpression (Some l__max) (Some "/") (Some r__max)) <= max)
+    ,
+      expression node (SosADL.SosADL.BinaryExpression (Some l) (Some "/") (Some r))
+      has type (SosADL.SosADL.RangeType (Some min) (Some max)) in Gamma
 
-                                                                    (*
+| type_expression_Mod:
+    forall
+      (Gamma: env)
+      (l: SosADL.SosADL.t_Expression)
+      (l__tau: SosADL.SosADL.t_DataType)
+      (l__min: SosADL.SosADL.t_Expression)
+      (l__max: SosADL.SosADL.t_Expression)
+      (r: SosADL.SosADL.t_Expression)
+      (r__tau: SosADL.SosADL.t_DataType)
+      (r__min: SosADL.SosADL.t_Expression)
+      (r__max: SosADL.SosADL.t_Expression)
+      (min: SosADL.SosADL.t_Expression)
+      (max: SosADL.SosADL.t_Expression)
+      (p1: expression l has type l__tau in Gamma)
+      (p2: l__tau </ (SosADL.SosADL.RangeType (Some l__min) (Some l__max)) under Gamma)
+      (p3: expression r has type r__tau in Gamma)
+      (p4: r__tau </ (SosADL.SosADL.RangeType (Some r__min) (Some r__max)) under Gamma)
+      (p5: range_modulo_min l__min l__max r__min r__max min)
+      (p6: range_modulo_max l__min l__max r__min r__max max)
+    ,
+      expression node (SosADL.SosADL.BinaryExpression (Some l) (Some "mod") (Some r))
+      has type (SosADL.SosADL.RangeType (Some min) (Some max)) in Gamma
+
 | type_expression_Implies:
-   forall Gamma l r,
-     (expression l has type SosADL.SosADL.BooleanType in Gamma)
-     /\ (expression r has type SosADL.SosADL.BooleanType in Gamma)
-     ->
-     expression (SosADL.SosADL.BinaryExpression (Some l) (Some "implies") (Some r)) has type SosADL.SosADL.BooleanType in Gamma
+    forall (Gamma: env)
+      (l: SosADL.SosADL.t_Expression)
+      (l__tau: SosADL.SosADL.t_DataType)
+      (r: SosADL.SosADL.t_Expression)
+      (r__tau: SosADL.SosADL.t_DataType)
+      (p1: expression l has type l__tau in Gamma)
+      (p2: l__tau </ SosADL.SosADL.BooleanType under Gamma)
+      (p3: expression r has type r__tau in Gamma)
+      (p4: r__tau </ SosADL.SosADL.BooleanType under Gamma)
+    ,
+     expression node (SosADL.SosADL.BinaryExpression (Some l) (Some "implies") (Some r)) has type SosADL.SosADL.BooleanType in Gamma
 
 | type_expression_Or:
-   forall Gamma l r,
-     (expression l has type SosADL.SosADL.BooleanType in Gamma)
-     /\ (expression r has type SosADL.SosADL.BooleanType in Gamma)
-     ->
-     expression (SosADL.SosADL.BinaryExpression (Some l) (Some "or") (Some r)) has type SosADL.SosADL.BooleanType in Gamma
+    forall (Gamma: env)
+      (l: SosADL.SosADL.t_Expression)
+      (l__tau: SosADL.SosADL.t_DataType)
+      (r: SosADL.SosADL.t_Expression)
+      (r__tau: SosADL.SosADL.t_DataType)
+      (p1: expression l has type l__tau in Gamma)
+      (p2: l__tau </ SosADL.SosADL.BooleanType under Gamma)
+      (p3: expression r has type r__tau in Gamma)
+      (p4: r__tau </ SosADL.SosADL.BooleanType under Gamma)
+    ,
+     expression node (SosADL.SosADL.BinaryExpression (Some l) (Some "or") (Some r)) has type SosADL.SosADL.BooleanType in Gamma
 
 | type_expression_Xor:
-   forall Gamma l r,
-     (expression l has type SosADL.SosADL.BooleanType in Gamma)
-     /\ (expression r has type SosADL.SosADL.BooleanType in Gamma)
-     ->
-     expression (SosADL.SosADL.BinaryExpression (Some l) (Some "xor") (Some r)) has type SosADL.SosADL.BooleanType in Gamma
+    forall (Gamma: env)
+      (l: SosADL.SosADL.t_Expression)
+      (l__tau: SosADL.SosADL.t_DataType)
+      (r: SosADL.SosADL.t_Expression)
+      (r__tau: SosADL.SosADL.t_DataType)
+      (p1: expression l has type l__tau in Gamma)
+      (p2: l__tau </ SosADL.SosADL.BooleanType under Gamma)
+      (p3: expression r has type r__tau in Gamma)
+      (p4: r__tau </ SosADL.SosADL.BooleanType under Gamma)
+    ,
+     expression node (SosADL.SosADL.BinaryExpression (Some l) (Some "xor") (Some r)) has type SosADL.SosADL.BooleanType in Gamma
 
 | type_expression_And:
-   forall Gamma l r,
-     (expression l has type SosADL.SosADL.BooleanType in Gamma)
-     /\ (expression r has type SosADL.SosADL.BooleanType in Gamma)
-     ->
-     expression (SosADL.SosADL.BinaryExpression (Some l) (Some "and") (Some r)) has type SosADL.SosADL.BooleanType in Gamma
+    forall (Gamma: env)
+      (l: SosADL.SosADL.t_Expression)
+      (l__tau: SosADL.SosADL.t_DataType)
+      (r: SosADL.SosADL.t_Expression)
+      (r__tau: SosADL.SosADL.t_DataType)
+      (p1: expression l has type l__tau in Gamma)
+      (p2: l__tau </ SosADL.SosADL.BooleanType under Gamma)
+      (p3: expression r has type r__tau in Gamma)
+      (p4: r__tau </ SosADL.SosADL.BooleanType under Gamma)
+    ,
+     expression node (SosADL.SosADL.BinaryExpression (Some l) (Some "and") (Some r)) has type SosADL.SosADL.BooleanType in Gamma
 
 | type_expression_Equal:
-    forall Gamma l l__min l__max r r__min r__max,
-      (expression l has type (SosADL.SosADL.RangeType (Some l__min) (Some l__max)) in Gamma)
-      /\ (expression r has type (SosADL.SosADL.RangeType (Some r__min) (Some r__max)) in Gamma)
-      ->
-      expression (SosADL.SosADL.BinaryExpression (Some l) (Some "=") (Some r)) has type SosADL.SosADL.BooleanType in Gamma
+    forall (Gamma: env)
+      (l: SosADL.SosADL.t_Expression)
+      (l__tau: SosADL.SosADL.t_DataType)
+      (l__min: SosADL.SosADL.t_Expression)
+      (l__max: SosADL.SosADL.t_Expression)
+      (r: SosADL.SosADL.t_Expression)
+      (r__tau: SosADL.SosADL.t_DataType)
+      (r__min: SosADL.SosADL.t_Expression)
+      (r__max: SosADL.SosADL.t_Expression)
+      (p1: expression l has type l__tau in Gamma)
+      (p2: l__tau </ SosADL.SosADL.RangeType (Some l__min) (Some l__max) under Gamma)
+      (p3: expression r has type r__tau in Gamma)
+      (p4: r__tau </ SosADL.SosADL.RangeType (Some r__min) (Some r__max) under Gamma)
+    ,
+      expression node (SosADL.SosADL.BinaryExpression (Some l) (Some "=") (Some r)) has type SosADL.SosADL.BooleanType in Gamma
+
+| type_expression_Diff:
+    forall (Gamma: env)
+      (l: SosADL.SosADL.t_Expression)
+      (l__tau: SosADL.SosADL.t_DataType)
+      (l__min: SosADL.SosADL.t_Expression)
+      (l__max: SosADL.SosADL.t_Expression)
+      (r: SosADL.SosADL.t_Expression)
+      (r__tau: SosADL.SosADL.t_DataType)
+      (r__min: SosADL.SosADL.t_Expression)
+      (r__max: SosADL.SosADL.t_Expression)
+      (p1: expression l has type l__tau in Gamma)
+      (p2: l__tau </ SosADL.SosADL.RangeType (Some l__min) (Some l__max) under Gamma)
+      (p3: expression r has type r__tau in Gamma)
+      (p4: r__tau </ SosADL.SosADL.RangeType (Some r__min) (Some r__max) under Gamma)
+    ,
+      expression node (SosADL.SosADL.BinaryExpression (Some l) (Some "<>") (Some r)) has type SosADL.SosADL.BooleanType in Gamma
+
+| type_expression_Lt:
+    forall (Gamma: env)
+      (l: SosADL.SosADL.t_Expression)
+      (l__tau: SosADL.SosADL.t_DataType)
+      (l__min: SosADL.SosADL.t_Expression)
+      (l__max: SosADL.SosADL.t_Expression)
+      (r: SosADL.SosADL.t_Expression)
+      (r__tau: SosADL.SosADL.t_DataType)
+      (r__min: SosADL.SosADL.t_Expression)
+      (r__max: SosADL.SosADL.t_Expression)
+      (p1: expression l has type l__tau in Gamma)
+      (p2: l__tau </ SosADL.SosADL.RangeType (Some l__min) (Some l__max) under Gamma)
+      (p3: expression r has type r__tau in Gamma)
+      (p4: r__tau </ SosADL.SosADL.RangeType (Some r__min) (Some r__max) under Gamma)
+    ,
+      expression node (SosADL.SosADL.BinaryExpression (Some l) (Some "<") (Some r)) has type SosADL.SosADL.BooleanType in Gamma
+
+| type_expression_Le:
+    forall (Gamma: env)
+      (l: SosADL.SosADL.t_Expression)
+      (l__tau: SosADL.SosADL.t_DataType)
+      (l__min: SosADL.SosADL.t_Expression)
+      (l__max: SosADL.SosADL.t_Expression)
+      (r: SosADL.SosADL.t_Expression)
+      (r__tau: SosADL.SosADL.t_DataType)
+      (r__min: SosADL.SosADL.t_Expression)
+      (r__max: SosADL.SosADL.t_Expression)
+      (p1: expression l has type l__tau in Gamma)
+      (p2: l__tau </ SosADL.SosADL.RangeType (Some l__min) (Some l__max) under Gamma)
+      (p3: expression r has type r__tau in Gamma)
+      (p4: r__tau </ SosADL.SosADL.RangeType (Some r__min) (Some r__max) under Gamma)
+    ,
+      expression node (SosADL.SosADL.BinaryExpression (Some l) (Some "<=") (Some r)) has type SosADL.SosADL.BooleanType in Gamma
+
+| type_expression_Gt:
+    forall (Gamma: env)
+      (l: SosADL.SosADL.t_Expression)
+      (l__tau: SosADL.SosADL.t_DataType)
+      (l__min: SosADL.SosADL.t_Expression)
+      (l__max: SosADL.SosADL.t_Expression)
+      (r: SosADL.SosADL.t_Expression)
+      (r__tau: SosADL.SosADL.t_DataType)
+      (r__min: SosADL.SosADL.t_Expression)
+      (r__max: SosADL.SosADL.t_Expression)
+      (p1: expression l has type l__tau in Gamma)
+      (p2: l__tau </ SosADL.SosADL.RangeType (Some l__min) (Some l__max) under Gamma)
+      (p3: expression r has type r__tau in Gamma)
+      (p4: r__tau </ SosADL.SosADL.RangeType (Some r__min) (Some r__max) under Gamma)
+    ,
+      expression node (SosADL.SosADL.BinaryExpression (Some l) (Some ">") (Some r)) has type SosADL.SosADL.BooleanType in Gamma
+
+| type_expression_Ge:
+    forall (Gamma: env)
+      (l: SosADL.SosADL.t_Expression)
+      (l__tau: SosADL.SosADL.t_DataType)
+      (l__min: SosADL.SosADL.t_Expression)
+      (l__max: SosADL.SosADL.t_Expression)
+      (r: SosADL.SosADL.t_Expression)
+      (r__tau: SosADL.SosADL.t_DataType)
+      (r__min: SosADL.SosADL.t_Expression)
+      (r__max: SosADL.SosADL.t_Expression)
+      (p1: expression l has type l__tau in Gamma)
+      (p2: l__tau </ SosADL.SosADL.RangeType (Some l__min) (Some l__max) under Gamma)
+      (p3: expression r has type r__tau in Gamma)
+      (p4: r__tau </ SosADL.SosADL.RangeType (Some r__min) (Some r__max) under Gamma)
+    ,
+      expression node (SosADL.SosADL.BinaryExpression (Some l) (Some ">=") (Some r)) has type SosADL.SosADL.BooleanType in Gamma
+
+(*
 
 | type_expression_Diff:
     forall Gamma l l__min l__max r r__min r__max,
