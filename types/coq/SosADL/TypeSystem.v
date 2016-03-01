@@ -982,50 +982,13 @@ with type_expression_node: env -> SosADL.SosADL.t_Expression -> SosADL.SosADL.t_
     ,
       expression node (SosADL.SosADL.BinaryExpression (Some l) (Some ">=") (Some r)) has type SosADL.SosADL.BooleanType in Gamma
 
-(*
-
-| type_expression_Diff:
-    forall Gamma l l__min l__max r r__min r__max,
-      (expression l has type (SosADL.SosADL.RangeType (Some l__min) (Some l__max)) in Gamma)
-      /\ (expression r has type (SosADL.SosADL.RangeType (Some r__min) (Some r__max)) in Gamma)
-      ->
-      expression (SosADL.SosADL.BinaryExpression (Some l) (Some "<>") (Some r)) has type SosADL.SosADL.BooleanType in Gamma
-
-| type_expression_Lt:
-    forall Gamma l l__min l__max r r__min r__max,
-      (expression l has type (SosADL.SosADL.RangeType (Some l__min) (Some l__max)) in Gamma)
-      /\ (expression r has type (SosADL.SosADL.RangeType (Some r__min) (Some r__max)) in Gamma)
-      ->
-      expression (SosADL.SosADL.BinaryExpression (Some l) (Some "<") (Some r)) has type SosADL.SosADL.BooleanType in Gamma
-
-| type_expression_Le:
-    forall Gamma l l__min l__max r r__min r__max,
-      (expression l has type (SosADL.SosADL.RangeType (Some l__min) (Some l__max)) in Gamma)
-      /\ (expression r has type (SosADL.SosADL.RangeType (Some r__min) (Some r__max)) in Gamma)
-      ->
-      expression (SosADL.SosADL.BinaryExpression (Some l) (Some "<=") (Some r)) has type SosADL.SosADL.BooleanType in Gamma
-
-| type_expression_Gt:
-    forall Gamma l l__min l__max r r__min r__max,
-      (expression l has type (SosADL.SosADL.RangeType (Some l__min) (Some l__max)) in Gamma)
-      /\ (expression r has type (SosADL.SosADL.RangeType (Some r__min) (Some r__max)) in Gamma)
-      ->
-      expression (SosADL.SosADL.BinaryExpression (Some l) (Some ">") (Some r)) has type SosADL.SosADL.BooleanType in Gamma
-
-| type_expression_Ge:
-    forall Gamma l l__min l__max r r__min r__max,
-      (expression l has type (SosADL.SosADL.RangeType (Some l__min) (Some l__max)) in Gamma)
-      /\ (expression r has type (SosADL.SosADL.RangeType (Some r__min) (Some r__max)) in Gamma)
-      ->
-      expression (SosADL.SosADL.BinaryExpression (Some l) (Some ">=") (Some r)) has type SosADL.SosADL.BooleanType in Gamma
-
 | type_expression_Ident:
-    forall Gamma x tau tau__e,
-      (contains Gamma x (EVariable tau))
-      /\ (tau </ tau__e under Gamma)
-      ->
-      expression (SosADL.SosADL.IdentExpression (Some x)) has type tau__e in Gamma
-*)
+    forall (Gamma: env)
+      (x: string)
+      (tau: SosADL.SosADL.t_DataType)
+      (p: contains Gamma x (EVariable tau))
+    ,
+      expression node (SosADL.SosADL.IdentExpression (Some x)) has type tau in Gamma
 
 (** %\note{%The rule [type_expression_MethodCall] assumes that the
 type of the [this] parameter is a named type, hence refering to the

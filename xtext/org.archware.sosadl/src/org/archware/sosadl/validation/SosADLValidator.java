@@ -32,6 +32,7 @@ import org.archware.sosadl.sosADL.FieldDecl;
 import org.archware.sosadl.sosADL.FormalParameter;
 import org.archware.sosadl.sosADL.FunctionDecl;
 import org.archware.sosadl.sosADL.GateDecl;
+import org.archware.sosadl.sosADL.IdentExpression;
 import org.archware.sosadl.sosADL.Import;
 import org.archware.sosadl.sosADL.IntegerValue;
 import org.archware.sosadl.sosADL.Library;
@@ -129,6 +130,7 @@ import org.archware.sosadl.validation.typing.proof.Type_expression_Div_pos;
 import org.archware.sosadl.validation.typing.proof.Type_expression_Equal;
 import org.archware.sosadl.validation.typing.proof.Type_expression_Ge;
 import org.archware.sosadl.validation.typing.proof.Type_expression_Gt;
+import org.archware.sosadl.validation.typing.proof.Type_expression_Ident;
 import org.archware.sosadl.validation.typing.proof.Type_expression_Implies;
 import org.archware.sosadl.validation.typing.proof.Type_expression_IntegerValue;
 import org.archware.sosadl.validation.typing.proof.Type_expression_Le;
@@ -352,9 +354,9 @@ public class SosADLValidator extends AbstractSosADLValidator {
 					(g, e, p1, p2) -> p2.getB()),
 			new UnaryTypeInfo<>("-", RangeType.class, "range type", () -> createRangeType(0,0),
 					(g, e, p1, p2) ->  createType_expression_Opposite(g, ((UnaryExpression)e).getRight(), p1.getB(),
-							p2.getB().getVmax(), p2.getB().getVmax(), p1.getA(), p2.getA()),
+							p2.getB().getVmin(), p2.getB().getVmax(), p1.getA(), p2.getA()),
 					(g, e, p1, p2) -> createRangeType(createOpposite(EcoreUtil.copy(p2.getB().getVmax())),
-							createOpposite(EcoreUtil.copy(p2.getB().getVmax())))),
+							createOpposite(EcoreUtil.copy(p2.getB().getVmin())))),
 			new UnaryTypeInfo<>("not", BooleanType.class, "boolean type", () -> createBooleanType(),
 					(g, e, p1, p2) -> createType_expression_Not(g, e.getRight(), p1.getB(), p1.getA(), p2.getA()),
 					(g, e, p1, p2) -> p2.getB())
@@ -746,6 +748,12 @@ public class SosADLValidator extends AbstractSosADLValidator {
 			}
 			error("Unknown binary operator", e, SosADLPackage.Literals.BINARY_EXPRESSION__OP);
 			return new Pair<>(null, SosADLFactory.eINSTANCE.createBooleanType());
+		} else if (e instanceof IdentExpression && ((IdentExpression)e).getIdent() != null
+				&& gamma.get(((IdentExpression)e).getIdent()) != null
+				&& gamma.get(((IdentExpression)e).getIdent()) instanceof VariableEnvContent) {
+			DataType t = ((VariableEnvContent)gamma.get(((IdentExpression)e).getIdent())).getType();
+			return new Pair<>(saveProof(e, createType_expression_Ident(gamma, ((IdentExpression)e).getIdent(), t, createReflexivity())),
+					saveType(e, t));
 		} else {
 			// TODO
 			if(e instanceof UnaryExpression) {
@@ -764,6 +772,16 @@ public class SosADLValidator extends AbstractSosADLValidator {
 				}
 				if(((BinaryExpression)e).getRight() == null) {
 					error("The binary operator must have a right operand", e, SosADLPackage.Literals.BINARY_EXPRESSION__RIGHT);
+				}
+			} else if(e instanceof IdentExpression) {
+				if(((IdentExpression)e).getIdent() == null) {
+					error("The identifier must refer to a name", e, SosADLPackage.Literals.IDENT_EXPRESSION__IDENT);
+				} else if(gamma.get(((IdentExpression)e).getIdent()) == null) {
+					error("The name `" + ((IdentExpression)e).getIdent() + "' is undefined in this context", e, SosADLPackage.Literals.IDENT_EXPRESSION__IDENT);
+				} else if(!(gamma.get(((IdentExpression)e).getIdent()) instanceof VariableEnvContent)) {
+					error("The name `" + ((IdentExpression)e).getIdent() + "' does not refer to a variable in this context", e, SosADLPackage.Literals.IDENT_EXPRESSION__IDENT);
+				} else {
+					error("Type error", e, null);
 				}
 			} else {
 				error("Type error", e, null);
@@ -1580,6 +1598,10 @@ public class SosADLValidator extends AbstractSosADLValidator {
 			Expression r, DataType r__tau, Expression r__min, Expression r__max, Type_expression p1, Subtype p2,
 			Type_expression p3, Subtype p4) {
 		return new Type_expression_Ge(gamma, l, l__tau, l__min, l__max, r, r__tau, r__min, r__max, p1, p2, p3, p4);
+	}
+	
+	private static Type_expression_node createType_expression_Ident(Environment gamma, String x, DataType tau, Equality p) {
+		return new Type_expression_Ident(gamma, x, tau, p);
 	}
 	
 	private static Range_modulo_min createRange_modulo_min_pos(Expression lmin, Expression lmax, Expression rmin, Expression rmax, Expression min, Expression_le p1,
