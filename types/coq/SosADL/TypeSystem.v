@@ -155,12 +155,17 @@ Inductive subtype: env -> SosADL.SosADL.t_DataType -> SosADL.SosADL.t_DataType -
     ,
       t </ t under Gamma
 
-(*
 | subtype_range:
-    forall Gamma lmi lma rmi rma,
-      rmi <= lmi /\ lma <= rma
-      -> (SosADL.SosADL.RangeType (Some lmi) (Some lma)) </ (SosADL.SosADL.RangeType (Some rmi) (Some rma)) under Gamma
- *)
+    forall
+      (Gamma: env)
+      (lmi: SosADL.SosADL.t_Expression)
+      (lma: SosADL.SosADL.t_Expression)
+      (rmi: SosADL.SosADL.t_Expression)
+      (rma: SosADL.SosADL.t_Expression)
+      (p1: rmi <= lmi)
+      (p2: lma <= rma)
+    ,
+      (SosADL.SosADL.RangeType (Some lmi) (Some lma)) </ (SosADL.SosADL.RangeType (Some rmi) (Some rma)) under Gamma
 
 | subtype_unfold_left:
     forall
@@ -175,7 +180,6 @@ Inductive subtype: env -> SosADL.SosADL.t_DataType -> SosADL.SosADL.t_DataType -
     ,
       (SosADL.SosADL.NamedType (Some l)) </ r under Gamma
 
-(*
 | subtype_unfold_right:
     forall
       (Gamma: env)
@@ -188,7 +192,7 @@ Inductive subtype: env -> SosADL.SosADL.t_DataType -> SosADL.SosADL.t_DataType -
       (p2: l </ def under Gamma)
     ,
       l </ (SosADL.SosADL.NamedType (Some r)) under Gamma
-*)
+
 
 (*
 | subtype_tuple:

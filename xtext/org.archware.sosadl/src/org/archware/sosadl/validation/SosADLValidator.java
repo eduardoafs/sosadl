@@ -19,6 +19,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.archware.sosadl.attributed.AttributeAdapter;
+import org.archware.sosadl.generator.SosADLPrettyPrinterGenerator;
 import org.archware.sosadl.sosADL.ArchitectureDecl;
 import org.archware.sosadl.sosADL.AssertionDecl;
 import org.archware.sosadl.sosADL.BehaviorDecl;
@@ -100,8 +101,10 @@ import org.archware.sosadl.validation.typing.proof.Range_modulo_min_zero;
 import org.archware.sosadl.validation.typing.proof.Simple_increment;
 import org.archware.sosadl.validation.typing.proof.Simple_increment_step;
 import org.archware.sosadl.validation.typing.proof.Subtype;
+import org.archware.sosadl.validation.typing.proof.Subtype_range;
 import org.archware.sosadl.validation.typing.proof.Subtype_refl;
 import org.archware.sosadl.validation.typing.proof.Subtype_unfold_left;
+import org.archware.sosadl.validation.typing.proof.Subtype_unfold_right;
 import org.archware.sosadl.validation.typing.proof.Type_BooleanType;
 import org.archware.sosadl.validation.typing.proof.Type_DataTypeDecl_def;
 import org.archware.sosadl.validation.typing.proof.Type_EntityBlock_whole;
@@ -302,7 +305,7 @@ public class SosADLValidator extends AbstractSosADLValidator {
 					f.getExpression(), p5.getB(),
 					gamma1,
 					createReflexivity(), type_datatype(gamma, f.getType()), p3.getA(), p4.getA(), p5.getA(),
-					subtype(gamma, p5.getB(), f.getType()), createReflexivity())),
+					subtype(gamma, p5.getB(), f.getType(), f, SosADLPackage.Literals.FUNCTION_DECL__EXPRESSION), createReflexivity())),
 				gamma1);
 		} else {
 			if(f.getExpression() == null) {
@@ -342,9 +345,98 @@ public class SosADLValidator extends AbstractSosADLValidator {
 		}
 	}
 
-	private Subtype subtype(Environment gamma, DataType a, DataType b) {
-		// TODO Auto-generated method stub
-		return null;
+	private Subtype subtype(Environment gamma, DataType a, DataType b, EObject target, EStructuralFeature targetForError) {
+		if(EcoreUtil.equals(a, b)) {
+			return createSubtype_refl(gamma, a);
+		} else if(a instanceof NamedType
+				&& gamma.get(((NamedType)a).getName()) != null
+				&& gamma.get(((NamedType)a).getName()) instanceof TypeEnvContent
+				&& ((TypeEnvContent)gamma.get(((NamedType)a).getName())).getDataTypeDecl().getName() != null
+				&& ((TypeEnvContent)gamma.get(((NamedType)a).getName())).getDataTypeDecl().getName().equals(((NamedType)a).getName())
+				&& ((TypeEnvContent)gamma.get(((NamedType)a).getName())).getDataTypeDecl().getDatatype() != null) {
+			return createSubtype_unfold_left(gamma, ((NamedType)a).getName(),
+					((TypeEnvContent)gamma.get(((NamedType)a).getName())).getDataTypeDecl().getDatatype(),
+					((TypeEnvContent)gamma.get(((NamedType)a).getName())).getDataTypeDecl().getFunctions(),
+					((TypeEnvContent)gamma.get(((NamedType)a).getName())).getMethods(),
+					b, createReflexivity(),
+					subtype(gamma, ((TypeEnvContent)gamma.get(((NamedType)a).getName())).getDataTypeDecl().getDatatype(), b, target, targetForError));
+		} else if(b instanceof NamedType
+				&& gamma.get(((NamedType)b).getName()) != null
+				&& gamma.get(((NamedType)b).getName()) instanceof TypeEnvContent
+				&& ((TypeEnvContent)gamma.get(((NamedType)b).getName())).getDataTypeDecl().getName() != null
+				&& ((TypeEnvContent)gamma.get(((NamedType)b).getName())).getDataTypeDecl().getName().equals(((NamedType)b).getName())
+				&& ((TypeEnvContent)gamma.get(((NamedType)b).getName())).getDataTypeDecl().getDatatype() != null) {
+			return createSubtype_unfold_right(gamma, a,
+					((NamedType)b).getName(),
+					((TypeEnvContent)gamma.get(((NamedType)b).getName())).getDataTypeDecl().getDatatype(),
+					((TypeEnvContent)gamma.get(((NamedType)b).getName())).getDataTypeDecl().getFunctions(),
+					((TypeEnvContent)gamma.get(((NamedType)b).getName())).getMethods(),
+					createReflexivity(),
+					subtype(gamma, a, ((TypeEnvContent)gamma.get(((NamedType)b).getName())).getDataTypeDecl().getDatatype(), target, targetForError));
+		} else if(a instanceof RangeType && b instanceof RangeType
+				&& ((RangeType)a).getVmin() != null && ((RangeType)a).getVmax() != null
+				&& ((RangeType)b).getVmin() != null && ((RangeType)b).getVmax() != null
+				&& isLe(((RangeType)b).getVmin(), ((RangeType)a).getVmin())
+				&& isLe(((RangeType)a).getVmax(), ((RangeType)b).getVmax())) {
+			return createSubtype_range(gamma,
+					((RangeType)a).getVmin(), ((RangeType)a).getVmax(),
+					((RangeType)b).getVmin(), ((RangeType)b).getVmax(),
+					expression_le(((RangeType)b).getVmin(), ((RangeType)a).getVmin()),
+					expression_le(((RangeType)a).getVmax(), ((RangeType)b).getVmax()));
+			// TODO range type inclusion
+		} else {
+			if(a instanceof NamedType) {
+				errorForNamedType(labelFor(b), "to", gamma, (NamedType)a, target, targetForError);
+			}
+			if(b instanceof NamedType) {
+				errorForNamedType(labelFor(a), "from", gamma, (NamedType)b, target, targetForError);
+			}
+			if(a instanceof RangeType && b instanceof RangeType) {
+				RangeType ra = (RangeType)a;
+				RangeType rb = (RangeType)b;
+				if(ra.getVmin() == null) {
+					error("The range type must have a lower bound", target, targetForError);
+				}
+				if(ra.getVmax() == null) {
+					error("The range type must have an upper bound", target, targetForError);
+				}
+				if(rb.getVmin() == null) {
+					error("The range type must have a lower bound", target, targetForError);
+				}
+				if(rb.getVmax() == null) {
+					error("The range type must have an upper bound", target, targetForError);
+				}
+				if(ra.getVmin() != null && ra.getVmax() != null
+					&& rb.getVmin() != null && rb.getVmax() != null
+					&& !(isLe(rb.getVmin(), ra.getVmin())
+							&& isLe(ra.getVmax(), rb.getVmax()))) {
+					SosADLPrettyPrinterGenerator pp = new SosADLPrettyPrinterGenerator();
+					error("The range [" + pp.compile(ra.getVmin()) + " = " + InterpInZ.eval(ra.getVmin()) + ".. "
+					+ pp.compile(ra.getVmax()) + " = " + InterpInZ.eval(ra.getVmax())
+					+ "] is not included in [" + pp.compile(rb.getVmin()) + " = " + InterpInZ.eval(rb.getVmin())
+					+ " .. " + pp.compile(rb.getVmax()) + " = " + InterpInZ.eval(rb.getVmax()) + "]",
+							target, targetForError);
+				}
+			}
+			if((!(a instanceof NamedType) && !(b instanceof NamedType))
+					&& !(a instanceof RangeType && b instanceof RangeType)) {
+				error("Cannot convert from " + labelFor(a) + " to " + labelFor(b), target, targetForError);
+			}
+			// TODO Auto-generated method stub
+			return null;
+		}
+	}
+	
+	private static String labelFor(DataType t) {
+		if(t instanceof BooleanType) {
+			return "boolean type";
+		} else if(t instanceof RangeType) {
+			return "range type";
+		} else if(t instanceof NamedType) {
+			return ((NamedType)t).getName();
+		} else {
+			return "unknown type";
+		}
 	}
 
 	private static UnaryTypeInfo<?>[] unaryTypeInformations = new UnaryTypeInfo[] {
@@ -806,19 +898,7 @@ public class SosADLValidator extends AbstractSosADLValidator {
 					p2.getB(), createReflexivity(), p2.getA()), p2.getB());
 		} else {
 			if(t instanceof NamedType) {
-				if(((NamedType)t).getName() == null) {
-					error("The named type must have a name", targetForError, forError);
-				} else if (gamma.get(((NamedType)t).getName()) == null) {
-					error("The named type `" + ((NamedType)t).getName() + "' is undefined in this context", targetForError, forError);
-				} else if (!(gamma.get(((NamedType)t).getName()) instanceof TypeEnvContent)) {
-					error("The name `" + ((NamedType)t).getName() + "' must be a type declaration", targetForError, forError);
-				} else if (((TypeEnvContent)gamma.get(((NamedType)t).getName())).getDataTypeDecl().getName() == null || !((TypeEnvContent)gamma.get(((NamedType)t).getName())).getDataTypeDecl().getName().equals(((NamedType)t).getName())) {
-					error("The name `" + ((NamedType)t).getName() + "' does not match the declaration `" + ((TypeEnvContent)gamma.get(((NamedType)t).getName())).getDataTypeDecl().getName() + "'", targetForError, forError);
-				} else if (((TypeEnvContent)gamma.get(((NamedType)t).getName())).getDataTypeDecl().getDatatype() == null) {
-					error("The type `" + ((NamedType)t).getName() + "', whose definition is opaque, cannot be converted to a " + label, targetForError, forError);
-				} else {
-					error("Type error", targetForError, forError);
-				}
+				errorForNamedType(label, "to", gamma, (NamedType)t, targetForError, forError);
 			} else if(t instanceof BooleanType) {
 				error("A boolean type cannot be converted to a " + label, targetForError, forError);
 			} else if(t instanceof SequenceType) {
@@ -831,6 +911,23 @@ public class SosADLValidator extends AbstractSosADLValidator {
 				error("Type error", targetForError, forError);
 			}
 			return new Pair<>(null, ifNone);
+		}
+	}
+
+	private void errorForNamedType(String label, String tofrom, Environment gamma, NamedType t, EObject targetForError,
+			EStructuralFeature forError) {
+		if(t.getName() == null) {
+			error("The named type must have a name", targetForError, forError);
+		} else if (gamma.get(t.getName()) == null) {
+			error("The named type `" + t.getName() + "' is undefined in this context", targetForError, forError);
+		} else if (!(gamma.get(t.getName()) instanceof TypeEnvContent)) {
+			error("The name `" + t.getName() + "' must be a type declaration", targetForError, forError);
+		} else if (((TypeEnvContent)gamma.get(t.getName())).getDataTypeDecl().getName() == null || !((TypeEnvContent)gamma.get(t.getName())).getDataTypeDecl().getName().equals(t.getName())) {
+			error("The name `" + t.getName() + "' does not match the declaration `" + ((TypeEnvContent)gamma.get(t.getName())).getDataTypeDecl().getName() + "'", targetForError, forError);
+		} else if (((TypeEnvContent)gamma.get(t.getName())).getDataTypeDecl().getDatatype() == null) {
+			error("The type `" + t.getName() + "' cannot be converted " + tofrom + " a " + label + " because its definition is opaque", targetForError, forError);
+		} else {
+			error("Type error", targetForError, forError);
 		}
 	}
 
@@ -1642,5 +1739,16 @@ public class SosADLValidator extends AbstractSosADLValidator {
 			EList<FunctionDecl> funs, EList<FunctionDecl> methods, DataType r, Equality p1,
 			Subtype p2) {
 		return new Subtype_unfold_left(gamma, l, def, funs, methods, r, p1, p2);
+	}
+
+	private static Subtype createSubtype_unfold_right(Environment gamma, DataType l, String r, DataType def,
+			EList<FunctionDecl> funs, EList<FunctionDecl> methods, Equality p1,
+			Subtype p2) {
+		return new Subtype_unfold_right(gamma, l, r, def, funs, methods, p1, p2);
+	}
+	
+	private static Subtype createSubtype_range(Environment gamma, Expression lmi, Expression lma, Expression rmi, Expression rma,
+			Expression_le p1, Expression_le p2) {
+		return new Subtype_range(gamma, lmi, lma, rmi, rma, p1, p2);
 	}
 }
