@@ -1049,6 +1049,20 @@ with type_expression_node: env -> SosADL.SosADL.t_Expression -> SosADL.SosADL.t_
  definition, the type checker can freely choose any such method
  declaration.%}% *)
 
+(**
+%\note{%Because of the [subtype_refl] rule, the following code is well-typed.%}%
+<<
+library testDone is {
+  datatype type0 {
+    function (x : type0) :: f() : integer {0..0} is { return 0 }
+  }
+  datatype type0 {
+    function (x : type0) :: h() : integer {0 .. 0} is { return x::f() }
+  }
+}
+>>
+*)
+
 | type_expression_MethodCall:
     forall (Gamma: env)
       (self: SosADL.SosADL.t_Expression)

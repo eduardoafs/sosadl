@@ -14,6 +14,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -264,34 +265,15 @@ public class SosADLValidator extends AbstractSosADLValidator {
 	}
 	
 	private boolean isSubtype(Environment gamma, DataType a, DataType b) {
-		if(EcoreUtil.equals(a, b)) {
-			return true;
-		} else if(a instanceof NamedType
-				&& gamma.get(((NamedType)a).getName()) != null
-				&& gamma.get(((NamedType)a).getName()) instanceof TypeEnvContent
-				&& ((TypeEnvContent)gamma.get(((NamedType)a).getName())).getDataTypeDecl().getName() != null
-				&& ((TypeEnvContent)gamma.get(((NamedType)a).getName())).getDataTypeDecl().getName().equals(((NamedType)a).getName())
-				&& ((TypeEnvContent)gamma.get(((NamedType)a).getName())).getDataTypeDecl().getDatatype() != null) {
-			return isSubtype(gamma, ((TypeEnvContent)gamma.get(((NamedType)a).getName())).getDataTypeDecl().getDatatype(), b);
-		} else if(b instanceof NamedType
-				&& gamma.get(((NamedType)b).getName()) != null
-				&& gamma.get(((NamedType)b).getName()) instanceof TypeEnvContent
-				&& ((TypeEnvContent)gamma.get(((NamedType)b).getName())).getDataTypeDecl().getName() != null
-				&& ((TypeEnvContent)gamma.get(((NamedType)b).getName())).getDataTypeDecl().getName().equals(((NamedType)b).getName())
-				&& ((TypeEnvContent)gamma.get(((NamedType)b).getName())).getDataTypeDecl().getDatatype() != null) {
-			return isSubtype(gamma, a, ((TypeEnvContent)gamma.get(((NamedType)b).getName())).getDataTypeDecl().getDatatype());
-		} else if(a instanceof RangeType && b instanceof RangeType
-				&& ((RangeType)a).getVmin() != null && ((RangeType)a).getVmax() != null
-				&& ((RangeType)b).getVmin() != null && ((RangeType)b).getVmax() != null
-				&& isLe(((RangeType)b).getVmin(), ((RangeType)a).getVmin())
-				&& isLe(((RangeType)a).getVmax(), ((RangeType)b).getVmax())) {
-			return true;
-		} else {
-			return false;
-		}
+		Subtype p = subtype(gamma, a, b, (m) -> {});
+		return !containsSomeNull(p);
 	}
 
 	private Subtype subtype(Environment gamma, DataType a, DataType b, EObject target, EStructuralFeature targetForError) {
+		return subtype(gamma, a, b, (m) -> error(m, target, targetForError));
+	}
+
+	private Subtype subtype(Environment gamma, DataType a, DataType b, Consumer<String> error) {
 		if(EcoreUtil.equals(a, b)) {
 			return createSubtype_refl(gamma, a);
 		} else if(a instanceof NamedType
@@ -305,7 +287,7 @@ public class SosADLValidator extends AbstractSosADLValidator {
 					((TypeEnvContent)gamma.get(((NamedType)a).getName())).getDataTypeDecl().getFunctions(),
 					((TypeEnvContent)gamma.get(((NamedType)a).getName())).getMethods(),
 					b, createReflexivity(),
-					subtype(gamma, ((TypeEnvContent)gamma.get(((NamedType)a).getName())).getDataTypeDecl().getDatatype(), b, target, targetForError));
+					subtype(gamma, ((TypeEnvContent)gamma.get(((NamedType)a).getName())).getDataTypeDecl().getDatatype(), b, error));
 		} else if(b instanceof NamedType
 				&& gamma.get(((NamedType)b).getName()) != null
 				&& gamma.get(((NamedType)b).getName()) instanceof TypeEnvContent
@@ -318,7 +300,7 @@ public class SosADLValidator extends AbstractSosADLValidator {
 					((TypeEnvContent)gamma.get(((NamedType)b).getName())).getDataTypeDecl().getFunctions(),
 					((TypeEnvContent)gamma.get(((NamedType)b).getName())).getMethods(),
 					createReflexivity(),
-					subtype(gamma, a, ((TypeEnvContent)gamma.get(((NamedType)b).getName())).getDataTypeDecl().getDatatype(), target, targetForError));
+					subtype(gamma, a, ((TypeEnvContent)gamma.get(((NamedType)b).getName())).getDataTypeDecl().getDatatype(), error));
 		} else if(a instanceof RangeType && b instanceof RangeType
 				&& ((RangeType)a).getVmin() != null && ((RangeType)a).getVmax() != null
 				&& ((RangeType)b).getVmin() != null && ((RangeType)b).getVmax() != null
@@ -331,41 +313,40 @@ public class SosADLValidator extends AbstractSosADLValidator {
 					expression_le(((RangeType)a).getVmax(), ((RangeType)b).getVmax()));
 		} else {
 			if(a instanceof NamedType) {
-				errorForNamedType(labelFor(b), "to", gamma, (NamedType)a, target, targetForError);
+				errorForNamedType(labelFor(b), "to", gamma, (NamedType)a, error);
 			}
 			if(b instanceof NamedType) {
-				errorForNamedType(labelFor(a), "from", gamma, (NamedType)b, target, targetForError);
+				errorForNamedType(labelFor(a), "from", gamma, (NamedType)b, error);
 			}
 			if(a instanceof RangeType && b instanceof RangeType) {
 				RangeType ra = (RangeType)a;
 				RangeType rb = (RangeType)b;
 				if(ra.getVmin() == null) {
-					error("The range type must have a lower bound", target, targetForError);
+					error.accept("The range type must have a lower bound");
 				}
 				if(ra.getVmax() == null) {
-					error("The range type must have an upper bound", target, targetForError);
+					error.accept("The range type must have an upper bound");
 				}
 				if(rb.getVmin() == null) {
-					error("The range type must have a lower bound", target, targetForError);
+					error.accept("The range type must have a lower bound");
 				}
 				if(rb.getVmax() == null) {
-					error("The range type must have an upper bound", target, targetForError);
+					error.accept("The range type must have an upper bound");
 				}
 				if(ra.getVmin() != null && ra.getVmax() != null
 					&& rb.getVmin() != null && rb.getVmax() != null
 					&& !(isLe(rb.getVmin(), ra.getVmin())
 							&& isLe(ra.getVmax(), rb.getVmax()))) {
 					SosADLPrettyPrinterGenerator pp = new SosADLPrettyPrinterGenerator();
-					error("The range [" + pp.compile(ra.getVmin()) + " = " + InterpInZ.eval(ra.getVmin()) + ".. "
+					error.accept("The range [" + pp.compile(ra.getVmin()) + " = " + InterpInZ.eval(ra.getVmin()) + ".. "
 					+ pp.compile(ra.getVmax()) + " = " + InterpInZ.eval(ra.getVmax())
 					+ "] is not included in [" + pp.compile(rb.getVmin()) + " = " + InterpInZ.eval(rb.getVmin())
-					+ " .. " + pp.compile(rb.getVmax()) + " = " + InterpInZ.eval(rb.getVmax()) + "]",
-							target, targetForError);
+					+ " .. " + pp.compile(rb.getVmax()) + " = " + InterpInZ.eval(rb.getVmax()) + "]");
 				}
 			}
 			if((!(a instanceof NamedType) && !(b instanceof NamedType))
 					&& !(a instanceof RangeType && b instanceof RangeType)) {
-				error("Cannot convert from " + labelFor(a) + " to " + labelFor(b), target, targetForError);
+				error.accept("Cannot convert from " + labelFor(a) + " to " + labelFor(b));
 			}
 			// TODO Auto-generated method stub
 			return null;
@@ -775,8 +756,11 @@ public class SosADLValidator extends AbstractSosADLValidator {
 	}
 
 	private Pair<Type_expression, DataType> type_expression(Environment gamma, Expression e) {
+		saveEnvironment(e, gamma);
 		Pair<Type_expression_node, DataType> p1 = type_expression_node(gamma, e);
 		if(p1.getA() != null && p1.getB() != null) {
+			saveProof(e, p1.getA());
+			saveType(e, p1.getB());
 			return new Pair<>(createType_expression_and_type(gamma, e, p1.getB(), p1.getA(), type_datatype(gamma, p1.getB())), p1.getB());
 		} else {
 			return new Pair<>(null, null);
@@ -809,6 +793,7 @@ public class SosADLValidator extends AbstractSosADLValidator {
 				&& gamma.get(((IdentExpression)e).getIdent()) != null
 				&& gamma.get(((IdentExpression)e).getIdent()) instanceof VariableEnvContent) {
 			DataType t = ((VariableEnvContent)gamma.get(((IdentExpression)e).getIdent())).getType();
+			saveBinder(e, ((VariableEnvContent)gamma.get(((IdentExpression)e).getIdent())).getBinder());
 			return new Pair<>(saveProof(e, createType_expression_Ident(gamma, ((IdentExpression)e).getIdent(), t, createReflexivity())),
 					saveType(e, t));
 		} else if(e instanceof MethodCall) {
@@ -841,7 +826,8 @@ public class SosADLValidator extends AbstractSosADLValidator {
 							.findFirst();
 					if(method.isPresent()) {
 						IntPair<Pair<TypeEnvContent,IntPair<FunctionDecl>>> m = method.get();
-						return new Pair<>(createType_expression_MethodCall(gamma, mc.getObject(), self.getB(),
+						saveBinder(e, m.getB().getB().getB());
+						return new Pair<>(saveProof(e,createType_expression_MethodCall(gamma, mc.getObject(), self.getB(),
 									m.getB().getA().getDataTypeDecl(), m.getB().getB().getB().getData().getType(),
 									m.getB().getA().getMethods(),
 									mc.getMethod(),
@@ -862,8 +848,8 @@ public class SosADLValidator extends AbstractSosADLValidator {
 															createEx_intro(tp.getB(),
 																	createConj(tp.getA(),
 																			subtype(gamma, tp.getB(), fp.getType(), mc, null)))));
-												})),
-								m.getB().getB().getB().getType());
+												}))),
+								saveType(e, m.getB().getB().getB().getType()));
 					} else {
 						error("No applicable method named `" + mc.getMethod() + "'", e, SosADLPackage.Literals.METHOD_CALL__METHOD);
 						return new Pair<>(null, null);
@@ -942,21 +928,24 @@ public class SosADLValidator extends AbstractSosADLValidator {
 			return new Pair<>(null, ifNone);
 		}
 	}
-
 	private void errorForNamedType(String label, String tofrom, Environment gamma, NamedType t, EObject targetForError,
 			EStructuralFeature forError) {
+		errorForNamedType(label, tofrom, gamma, t, (s) -> error(s, targetForError, forError));
+	}
+
+	private void errorForNamedType(String label, String tofrom, Environment gamma, NamedType t, Consumer<String> error) {
 		if(t.getName() == null) {
-			error("The named type must have a name", targetForError, forError);
+			error.accept("The named type must have a name");
 		} else if (gamma.get(t.getName()) == null) {
-			error("The named type `" + t.getName() + "' is undefined in this context", targetForError, forError);
+			error.accept("The named type `" + t.getName() + "' is undefined in this context");
 		} else if (!(gamma.get(t.getName()) instanceof TypeEnvContent)) {
-			error("The name `" + t.getName() + "' must be a type declaration", targetForError, forError);
+			error.accept("The name `" + t.getName() + "' must be a type declaration");
 		} else if (((TypeEnvContent)gamma.get(t.getName())).getDataTypeDecl().getName() == null || !((TypeEnvContent)gamma.get(t.getName())).getDataTypeDecl().getName().equals(t.getName())) {
-			error("The name `" + t.getName() + "' does not match the declaration `" + ((TypeEnvContent)gamma.get(t.getName())).getDataTypeDecl().getName() + "'", targetForError, forError);
+			error.accept("The name `" + t.getName() + "' does not match the declaration `" + ((TypeEnvContent)gamma.get(t.getName())).getDataTypeDecl().getName() + "'");
 		} else if (((TypeEnvContent)gamma.get(t.getName())).getDataTypeDecl().getDatatype() == null) {
-			error("The type `" + t.getName() + "' cannot be converted " + tofrom + " a " + label + " because its definition is opaque", targetForError, forError);
+			error.accept("The type `" + t.getName() + "' cannot be converted " + tofrom + " a " + label + " because its definition is opaque");
 		} else {
-			error("Type error", targetForError, forError);
+			error.accept("Type error");
 		}
 	}
 
@@ -1298,6 +1287,7 @@ public class SosADLValidator extends AbstractSosADLValidator {
 	public static final String MIN = "Min";
 	public static final String MAX = "Max";
 	public static final String TYPE = "Type";
+	public static final String BINDER = "Binder";
 
 	public static DataType saveType(EObject eObject, DataType t) {
 		AttributeAdapter.adapterOf(eObject).putAttribute(TYPE, t);
@@ -1327,6 +1317,14 @@ public class SosADLValidator extends AbstractSosADLValidator {
 
 	public static Object getProof(EObject eObject) {
 		return AttributeAdapter.adapterOf(eObject).getAttribute(PROOF);
+	}
+	
+	public static void saveBinder(EObject target, EObject binder) {
+		AttributeAdapter.adapterOf(target).putAttribute(BINDER, binder);
+	}
+	
+	public static Object getBinder(EObject eObject) {
+		return AttributeAdapter.adapterOf(eObject).getAttribute(BINDER);
 	}
 	
 	private static Environment augment_env(Environment gamma, String name, EnvContent content) {
@@ -1402,22 +1400,26 @@ public class SosADLValidator extends AbstractSosADLValidator {
 		return list.size() == set.size();
 	}
 
-	private boolean containsSomeNull(Object o) {
-		for(Field f : o.getClass().getDeclaredFields()) {
-			if(!f.isAnnotationPresent(Eluded.class) && f.isAnnotationPresent(Mandatory.class) && ProofTerm.class.isAssignableFrom(f.getType())) {
-				try {
-					Method getter = o.getClass().getMethod("get" + StringExtensions.toFirstUpper(f.getName()));
-					Object i = getter.invoke(o);
-					if(i == null) {
-						return true;
-					} else if(containsSomeNull(i)) {
-						return true;
+	private static boolean containsSomeNull(Object o) {
+		if(o == null) {
+			return true;
+		} else {
+			for(Field f : o.getClass().getDeclaredFields()) {
+				if(!f.isAnnotationPresent(Eluded.class) && f.isAnnotationPresent(Mandatory.class) && ProofTerm.class.isAssignableFrom(f.getType())) {
+					try {
+						Method getter = o.getClass().getMethod("get" + StringExtensions.toFirstUpper(f.getName()));
+						Object i = getter.invoke(o);
+						if(i == null) {
+							return true;
+						} else if(containsSomeNull(i)) {
+							return true;
+						}
+					} catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
 					}
-				} catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
 				}
 			}
+			return false;
 		}
-		return false;
 	}
 	
 	private static Type_sosADL createType_SosADL(EList<Import> i, Unit d, Type_unit p) {
