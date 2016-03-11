@@ -1,4 +1,4 @@
-package org.archware.sosadl.validation;
+package org.archware.utils;
 
 @FunctionalInterface
 public interface TetraFunction<S1, S2, S3, S4, R> {

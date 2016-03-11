@@ -1,4 +1,4 @@
-package org.archware.sosadl.validation;
+package org.archware.utils;
 
 @FunctionalInterface
 public interface TriFunction<S1, S2, S3, R> {

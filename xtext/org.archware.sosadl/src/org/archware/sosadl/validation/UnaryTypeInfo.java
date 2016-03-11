@@ -8,6 +8,8 @@ import org.archware.sosadl.validation.typing.Environment;
 import org.archware.sosadl.validation.typing.proof.Subtype;
 import org.archware.sosadl.validation.typing.proof.Type_expression;
 import org.archware.sosadl.validation.typing.proof.Type_expression_node;
+import org.archware.utils.Pair;
+import org.archware.utils.TetraFunction;
 
 public class UnaryTypeInfo<T extends DataType> {
 	public final String operator;

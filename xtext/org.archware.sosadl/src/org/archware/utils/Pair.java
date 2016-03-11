@@ -1,4 +1,4 @@
-package org.archware.sosadl.validation;
+package org.archware.utils;
 
 public final class Pair<A, B> {
 	public final A a;

@@ -1,4 +1,5 @@
 Require Import String.
+Require Import ZArith.
 
 (**
 * Environment *)
@@ -13,6 +14,7 @@ Module Type Env.
   Axiom get: forall {A: Set}, environment A -> string -> option A.
   Axiom set: forall {A: Set}, environment A -> string -> A -> environment A.
   Axiom merge: forall {A: Set}, environment A -> environment A -> environment A.
+  Axiom binds: forall {A: Set}, environment A -> A -> Prop.
 End Env.
 
 Require Import List.
@@ -40,6 +42,58 @@ Module ListBasedEnv <: Env.
       | [] => l
       | i :: tl => merge (set l (key i) (value i)) tl
     end.
+
+  Fixpoint binds' {A: Set} (l: environment A) (x: A) {struct l}: Prop :=
+    match l with
+    | [] => False
+    | i :: tl => (value i = x) \/ binds' tl x
+    end.
+
+  Definition binds'' {A: Set} (l: environment A) (x: A) :=
+    exists (i: nat), match nth_error l i with
+              | Some p => Some (value p)
+              | None => None
+              end = Some x.
+
+  Lemma binds''_ok: forall A (l: environment A) x, binds' l x -> binds'' l x.
+  Proof.
+    intros. induction l.
+    - destruct H.
+    - destruct H as [ L | H ].
+      + exists 0. rewrite <- L. reflexivity.
+      + destruct (IHl H) as [ i P ].
+        exists (S i). apply P.
+  Qed.
+
+  Lemma binds'_ok: forall A (l: environment A) x, binds'' l x -> binds' l x.
+  Proof.
+    intros. destruct H as [ i P ]. revert l P.
+    induction i; intros.
+    - destruct l.
+      + discriminate.
+      + left. inversion P. reflexivity.
+    - destruct l.
+      + discriminate.
+      + right. apply (IHi l P).
+  Qed.
+
+  Definition binds {A: Set} (l: environment A) (x: A) :=
+    exists (i: Z), match nth_error l (Z.to_nat i) with
+              | Some p => Some (value p)
+              | None => None
+              end = Some x.
+
+  Lemma binds''_ok': forall A (l: environment A) x, binds l x -> binds'' l x.
+  Proof.
+    intros. destruct H as [ i H ].
+    exists (Z.to_nat i). apply H.
+  Qed.
+
+  Lemma binds_ok: forall A (l: environment A) x, binds'' l x -> binds l x.
+  Proof.
+    intros. destruct H as [ z H ].
+    exists (Z.of_nat z). rewrite Znat.Nat2Z.id. apply H.
+  Qed.
 End ListBasedEnv.
 
 Export ListBasedEnv.

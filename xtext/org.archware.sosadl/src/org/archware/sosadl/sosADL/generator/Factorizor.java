@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import org.archware.sosadl.validation.Pair;
+import org.archware.utils.Pair;
 
 public class Factorizor {
 	private static final int THRESHOLD = 16;

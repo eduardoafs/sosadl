@@ -8,6 +8,9 @@ import org.archware.sosadl.validation.typing.Environment;
 import org.archware.sosadl.validation.typing.proof.Subtype;
 import org.archware.sosadl.validation.typing.proof.Type_expression;
 import org.archware.sosadl.validation.typing.proof.Type_expression_node;
+import org.archware.utils.HeptaFunction;
+import org.archware.utils.HexaFunction;
+import org.archware.utils.Pair;
 
 public class BinaryTypeInfo<L extends DataType, R extends DataType, X extends DataType> {
 	public final String operator;

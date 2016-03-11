@@ -121,11 +121,60 @@ Definition build_duty_env d :=
 (** The following notations is a shortcut to look for a method in a
 data type declaration.  *)
 
-Notation "'method' m 'defined' 'in' d 'with' 'parameters' f 'returns' r" :=
-  (List.Exists (fun fd => SosADL.SosADL.FunctionDecl_name fd = Some m
-                         /\ SosADL.SosADL.FunctionDecl_parameters fd = f
-                         /\ SosADL.SosADL.FunctionDecl_type fd = Some r)
-               (SosADL.SosADL.DataTypeDecl_functions d))
+Definition method_defined'
+           (m: string)
+           (l: list SosADL.SosADL.t_FunctionDecl)
+           (tau: SosADL.SosADL.t_DataType)
+           (f: list SosADL.SosADL.t_FormalParameter)
+           (r: SosADL.SosADL.t_DataType)
+  := List.Exists (fun fd =>
+                    match SosADL.SosADL.FunctionDecl_data fd with
+                    | Some fp => SosADL.SosADL.FormalParameter_type fp
+                    | None => None
+                    end = Some tau
+                    /\ SosADL.SosADL.FunctionDecl_name fd = Some m
+                    /\ SosADL.SosADL.FunctionDecl_parameters fd = f
+                    /\ SosADL.SosADL.FunctionDecl_type fd = Some r)
+                 l.
+
+Definition method_defined''
+           (m: string)
+           (l: list SosADL.SosADL.t_FunctionDecl)
+           (tau: SosADL.SosADL.t_DataType)
+           (f: list SosADL.SosADL.t_FormalParameter)
+           (r: SosADL.SosADL.t_DataType)
+  := exists (i: nat), match List.nth_error l i with
+               | Some fd =>
+                 match SosADL.SosADL.FunctionDecl_data fd with
+                 | Some fp => SosADL.SosADL.FormalParameter_type fp
+                 | None => None
+                 end = Some tau
+                 /\ SosADL.SosADL.FunctionDecl_name fd = Some m
+                 /\ SosADL.SosADL.FunctionDecl_parameters fd = f
+                 /\ SosADL.SosADL.FunctionDecl_type fd = Some r
+               | None => False
+               end.
+
+Definition method_defined
+           (m: string)
+           (l: list SosADL.SosADL.t_FunctionDecl)
+           (tau: SosADL.SosADL.t_DataType)
+           (f: list SosADL.SosADL.t_FormalParameter)
+           (r: SosADL.SosADL.t_DataType)
+  := exists (i: Z), match List.nth_error l (Z.to_nat i) with
+               | Some fd =>
+                 match SosADL.SosADL.FunctionDecl_data fd with
+                 | Some fp => SosADL.SosADL.FormalParameter_type fp
+                 | None => None
+                 end = Some tau
+                 /\ SosADL.SosADL.FunctionDecl_name fd = Some m
+                 /\ SosADL.SosADL.FunctionDecl_parameters fd = f
+                 /\ SosADL.SosADL.FunctionDecl_type fd = Some r
+               | None => False
+               end.
+
+Notation "'method' m 'defined' 'in' d 'with' tau 'parameters' f 'returns' r" :=
+  (method_defined m d tau f r)
     (at level 200, no associativity).
 
 (** [field_has_type] is a predicate to look for a field in a list of
@@ -994,25 +1043,35 @@ with type_expression_node: env -> SosADL.SosADL.t_Expression -> SosADL.SosADL.t_
     ,
       expression node (SosADL.SosADL.IdentExpression (Some x)) has type tau in Gamma
 
-(** %\note{%The rule [type_expression_MethodCall] assumes that the
-type of the [this] parameter is a named type, hence refering to the
-declaration of a data type containing some functions (methods).%}% *)
-
-                                                                               (* TODO
+(** %\note{%According to the current implementation of environment, the
+ rule [type_expression_MethodCall] accept any method declaration with
+ the correct name and compatible parameter and [self] types. With this
+ definition, the type checker can freely choose any such method
+ declaration.%}% *)
 
 | type_expression_MethodCall:
-    forall Gamma this tau tauDecl name formalparams params ret,
-      (expression this has type (SosADL.SosADL.NamedType (Some tau)) in Gamma)
-      /\ (contains Gamma tau (EType tauDecl))
-      /\ (method name defined in tauDecl with parameters formalparams returns ret)
-      /\ (for each fp p of formalparams params,
-         (exists t, SosADL.SosADL.FormalParameter_type fp = Some t
-               /\ (exists tp, (expression p has type tp in Gamma)
-                        /\ tp </ t under Gamma)))
-      ->
-      expression (SosADL.SosADL.MethodCall (Some this) (Some name) params) has type ret in Gamma
+    forall (Gamma: env)
+      (self: SosADL.SosADL.t_Expression)
+      (t: SosADL.SosADL.t_DataType)
+      (typeDecl: SosADL.SosADL.t_DataTypeDecl)
+      (tau: SosADL.SosADL.t_DataType)
+      (methods: list SosADL.SosADL.t_FunctionDecl)
+      (name: string)
+      (formalparams: list SosADL.SosADL.t_FormalParameter)
+      (ret: SosADL.SosADL.t_DataType)
+      (params: list SosADL.SosADL.t_Expression)
+      (p1: expression self has type t in Gamma)
+      (p2: binds Gamma (EType typeDecl methods))
+      (p4: t </ tau under Gamma)
+      (p5: method name defined in methods with tau parameters formalparams returns ret)
+      (p6: for each fp p of formalparams params,
+           (exists t, SosADL.SosADL.FormalParameter_type fp = Some t
+                 /\ (exists tp, (expression p has type tp in Gamma)
+                          /\ tp </ t under Gamma)))
+    ,
+      expression node (SosADL.SosADL.MethodCall (Some self) (Some name) params) has type ret in Gamma
 
-*)
+
 
                                                                     (*
 | type_expression_Tuple:

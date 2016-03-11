@@ -10,6 +10,7 @@ import java.math.BigInteger;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.BiFunction;
@@ -38,6 +39,7 @@ import org.archware.sosadl.sosADL.Import;
 import org.archware.sosadl.sosADL.IntegerValue;
 import org.archware.sosadl.sosADL.Library;
 import org.archware.sosadl.sosADL.MediatorDecl;
+import org.archware.sosadl.sosADL.MethodCall;
 import org.archware.sosadl.sosADL.NamedType;
 import org.archware.sosadl.sosADL.RangeType;
 import org.archware.sosadl.sosADL.SequenceType;
@@ -58,108 +60,20 @@ import org.archware.sosadl.validation.typing.impl.SystemEnvContent;
 import org.archware.sosadl.validation.typing.impl.TypeEnvContent;
 import org.archware.sosadl.validation.typing.impl.VariableEnvContent;
 import org.archware.sosadl.validation.typing.interp.InterpInZ;
-import org.archware.sosadl.validation.typing.proof.And;
-import org.archware.sosadl.validation.typing.proof.Conj;
-import org.archware.sosadl.validation.typing.proof.Constexpr_Add;
-import org.archware.sosadl.validation.typing.proof.Constexpr_Div;
-import org.archware.sosadl.validation.typing.proof.Constexpr_IntegerValue;
-import org.archware.sosadl.validation.typing.proof.Constexpr_Mod;
-import org.archware.sosadl.validation.typing.proof.Constexpr_Mul;
-import org.archware.sosadl.validation.typing.proof.Constexpr_Opposite;
-import org.archware.sosadl.validation.typing.proof.Constexpr_Same;
-import org.archware.sosadl.validation.typing.proof.Constexpr_Sub;
-import org.archware.sosadl.validation.typing.proof.Constexpr_expression;
-import org.archware.sosadl.validation.typing.proof.Eluded;
-import org.archware.sosadl.validation.typing.proof.Eq_refl;
-import org.archware.sosadl.validation.typing.proof.Equality;
-import org.archware.sosadl.validation.typing.proof.Ex;
-import org.archware.sosadl.validation.typing.proof.Ex_intro;
-import org.archware.sosadl.validation.typing.proof.Expression_le;
-import org.archware.sosadl.validation.typing.proof.Forall;
-import org.archware.sosadl.validation.typing.proof.Forall_cons;
-import org.archware.sosadl.validation.typing.proof.Forall_nil;
-import org.archware.sosadl.validation.typing.proof.In_Z;
-import org.archware.sosadl.validation.typing.proof.Incrementally;
-import org.archware.sosadl.validation.typing.proof.Incrementally_cons;
-import org.archware.sosadl.validation.typing.proof.Incrementally_nil;
-import org.archware.sosadl.validation.typing.proof.Mandatory;
-import org.archware.sosadl.validation.typing.proof.Mutually;
-import org.archware.sosadl.validation.typing.proof.Mutually_all;
-import org.archware.sosadl.validation.typing.proof.Mutually_all_explicit;
-import org.archware.sosadl.validation.typing.proof.Optionally;
-import org.archware.sosadl.validation.typing.proof.Optionally_None;
-import org.archware.sosadl.validation.typing.proof.Optionally_Some;
-import org.archware.sosadl.validation.typing.proof.ProofTerm;
-import org.archware.sosadl.validation.typing.proof.Range_modulo_max;
-import org.archware.sosadl.validation.typing.proof.Range_modulo_max_neg;
-import org.archware.sosadl.validation.typing.proof.Range_modulo_max_pos;
-import org.archware.sosadl.validation.typing.proof.Range_modulo_max_zero;
-import org.archware.sosadl.validation.typing.proof.Range_modulo_min;
-import org.archware.sosadl.validation.typing.proof.Range_modulo_min_neg;
-import org.archware.sosadl.validation.typing.proof.Range_modulo_min_pos;
-import org.archware.sosadl.validation.typing.proof.Range_modulo_min_zero;
-import org.archware.sosadl.validation.typing.proof.Simple_increment;
-import org.archware.sosadl.validation.typing.proof.Simple_increment_step;
-import org.archware.sosadl.validation.typing.proof.Subtype;
-import org.archware.sosadl.validation.typing.proof.Subtype_range;
-import org.archware.sosadl.validation.typing.proof.Subtype_refl;
-import org.archware.sosadl.validation.typing.proof.Subtype_unfold_left;
-import org.archware.sosadl.validation.typing.proof.Subtype_unfold_right;
-import org.archware.sosadl.validation.typing.proof.Type_BooleanType;
-import org.archware.sosadl.validation.typing.proof.Type_DataTypeDecl_def;
-import org.archware.sosadl.validation.typing.proof.Type_EntityBlock_whole;
-import org.archware.sosadl.validation.typing.proof.Type_FunctionDecl_Method;
-import org.archware.sosadl.validation.typing.proof.Type_Library;
-import org.archware.sosadl.validation.typing.proof.Type_NamedType;
-import org.archware.sosadl.validation.typing.proof.Type_RangeType_trivial;
-import org.archware.sosadl.validation.typing.proof.Type_SequenceType;
-import org.archware.sosadl.validation.typing.proof.Type_SoS;
-import org.archware.sosadl.validation.typing.proof.Type_SosADL;
-import org.archware.sosadl.validation.typing.proof.Type_SystemDecl;
-import org.archware.sosadl.validation.typing.proof.Type_TupleType;
-import org.archware.sosadl.validation.typing.proof.Type_architecture;
-import org.archware.sosadl.validation.typing.proof.Type_assertion;
-import org.archware.sosadl.validation.typing.proof.Type_behavior;
-import org.archware.sosadl.validation.typing.proof.Type_datatype;
-import org.archware.sosadl.validation.typing.proof.Type_datatypeDecl;
-import org.archware.sosadl.validation.typing.proof.Type_entityBlock;
-import org.archware.sosadl.validation.typing.proof.Type_expression;
-import org.archware.sosadl.validation.typing.proof.Type_expression_node;
-import org.archware.sosadl.validation.typing.proof.Type_expression_Add;
-import org.archware.sosadl.validation.typing.proof.Type_expression_And;
-import org.archware.sosadl.validation.typing.proof.Type_expression_Diff;
-import org.archware.sosadl.validation.typing.proof.Type_expression_Div_neg;
-import org.archware.sosadl.validation.typing.proof.Type_expression_Div_pos;
-import org.archware.sosadl.validation.typing.proof.Type_expression_Equal;
-import org.archware.sosadl.validation.typing.proof.Type_expression_Ge;
-import org.archware.sosadl.validation.typing.proof.Type_expression_Gt;
-import org.archware.sosadl.validation.typing.proof.Type_expression_Ident;
-import org.archware.sosadl.validation.typing.proof.Type_expression_Implies;
-import org.archware.sosadl.validation.typing.proof.Type_expression_IntegerValue;
-import org.archware.sosadl.validation.typing.proof.Type_expression_Le;
-import org.archware.sosadl.validation.typing.proof.Type_expression_Lt;
-import org.archware.sosadl.validation.typing.proof.Type_expression_Mod;
-import org.archware.sosadl.validation.typing.proof.Type_expression_Mul;
-import org.archware.sosadl.validation.typing.proof.Type_expression_Not;
-import org.archware.sosadl.validation.typing.proof.Type_expression_Opposite;
-import org.archware.sosadl.validation.typing.proof.Type_expression_Or;
-import org.archware.sosadl.validation.typing.proof.Type_expression_Same;
-import org.archware.sosadl.validation.typing.proof.Type_expression_Sub;
-import org.archware.sosadl.validation.typing.proof.Type_expression_Xor;
-import org.archware.sosadl.validation.typing.proof.Type_expression_and_type;
-import org.archware.sosadl.validation.typing.proof.Type_function;
-import org.archware.sosadl.validation.typing.proof.Type_gate;
-import org.archware.sosadl.validation.typing.proof.Type_mediator;
-import org.archware.sosadl.validation.typing.proof.Type_sosADL;
-import org.archware.sosadl.validation.typing.proof.Type_system;
-import org.archware.sosadl.validation.typing.proof.Type_unit;
-import org.archware.sosadl.validation.typing.proof.Type_valuing;
+import org.archware.sosadl.validation.typing.proof.*;
+import org.archware.utils.IntPair;
+import org.archware.utils.ListUtils;
+import org.archware.utils.Pair;
+import org.archware.utils.StreamUtils;
+import org.archware.utils.TriConsumer;
+import org.archware.utils.TriFunction;
 import org.eclipse.emf.common.util.ECollections;
 import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.xtext.validation.Check;
+import org.eclipse.xtext.xbase.lib.ListExtensions;
 import org.eclipse.xtext.xbase.lib.StringExtensions;
 
 /**
@@ -297,16 +211,20 @@ public class SosADLValidator extends AbstractSosADLValidator {
 			Pair<Type_expression, DataType> p5 = type_expression(p4.getB(), f.getExpression());
 			Environment gamma1 = gamma.put(((NamedType)f.getData().getType()).getName(),
 					((TypeEnvContent)gamma.get(((NamedType)f.getData().getType()).getName())).addMethod(f));
-			return new Pair<>(saveProof(f, createType_FunctionDecl_Method(gamma, f.getData().getName(),
-					((NamedType)f.getData().getType()).getName(),
-					((TypeEnvContent)gamma.get(((NamedType)f.getData().getType()).getName())).getDataTypeDecl(),
-					((TypeEnvContent)gamma.get(((NamedType)f.getData().getType()).getName())).getMethods(),
-					f.getName(), f.getParameters(), p3.getB(), f.getType(), f.getValuing(), p4.getB(),
-					f.getExpression(), p5.getB(),
-					gamma1,
-					createReflexivity(), type_datatype(gamma, f.getType()), p3.getA(), p4.getA(), p5.getA(),
-					subtype(gamma, p5.getB(), f.getType(), f, SosADLPackage.Literals.FUNCTION_DECL__EXPRESSION), createReflexivity())),
-				gamma1);
+			if(p5.getA() != null && p5.getB() != null) {
+				return new Pair<>(saveProof(f, createType_FunctionDecl_Method(gamma, f.getData().getName(),
+						((NamedType)f.getData().getType()).getName(),
+						((TypeEnvContent)gamma.get(((NamedType)f.getData().getType()).getName())).getDataTypeDecl(),
+						((TypeEnvContent)gamma.get(((NamedType)f.getData().getType()).getName())).getMethods(),
+						f.getName(), f.getParameters(), p3.getB(), f.getType(), f.getValuing(), p4.getB(),
+						f.getExpression(), p5.getB(),
+						gamma1,
+						createReflexivity(), type_datatype(gamma, f.getType()), p3.getA(), p4.getA(), p5.getA(),
+						subtype(gamma, p5.getB(), f.getType(), f, SosADLPackage.Literals.FUNCTION_DECL__EXPRESSION), createReflexivity())),
+					gamma1);
+			} else {
+				return new Pair<>(null, gamma1);
+			}
 		} else {
 			if(f.getExpression() == null) {
 				error("The function must contain an expression", f, SosADLPackage.Literals.FUNCTION_DECL__EXPRESSION);
@@ -342,6 +260,34 @@ public class SosADLValidator extends AbstractSosADLValidator {
 				}
 			}
 			return new Pair<>(null, gamma);
+		}
+	}
+	
+	private boolean isSubtype(Environment gamma, DataType a, DataType b) {
+		if(EcoreUtil.equals(a, b)) {
+			return true;
+		} else if(a instanceof NamedType
+				&& gamma.get(((NamedType)a).getName()) != null
+				&& gamma.get(((NamedType)a).getName()) instanceof TypeEnvContent
+				&& ((TypeEnvContent)gamma.get(((NamedType)a).getName())).getDataTypeDecl().getName() != null
+				&& ((TypeEnvContent)gamma.get(((NamedType)a).getName())).getDataTypeDecl().getName().equals(((NamedType)a).getName())
+				&& ((TypeEnvContent)gamma.get(((NamedType)a).getName())).getDataTypeDecl().getDatatype() != null) {
+			return isSubtype(gamma, ((TypeEnvContent)gamma.get(((NamedType)a).getName())).getDataTypeDecl().getDatatype(), b);
+		} else if(b instanceof NamedType
+				&& gamma.get(((NamedType)b).getName()) != null
+				&& gamma.get(((NamedType)b).getName()) instanceof TypeEnvContent
+				&& ((TypeEnvContent)gamma.get(((NamedType)b).getName())).getDataTypeDecl().getName() != null
+				&& ((TypeEnvContent)gamma.get(((NamedType)b).getName())).getDataTypeDecl().getName().equals(((NamedType)b).getName())
+				&& ((TypeEnvContent)gamma.get(((NamedType)b).getName())).getDataTypeDecl().getDatatype() != null) {
+			return isSubtype(gamma, a, ((TypeEnvContent)gamma.get(((NamedType)b).getName())).getDataTypeDecl().getDatatype());
+		} else if(a instanceof RangeType && b instanceof RangeType
+				&& ((RangeType)a).getVmin() != null && ((RangeType)a).getVmax() != null
+				&& ((RangeType)b).getVmin() != null && ((RangeType)b).getVmax() != null
+				&& isLe(((RangeType)b).getVmin(), ((RangeType)a).getVmin())
+				&& isLe(((RangeType)a).getVmax(), ((RangeType)b).getVmax())) {
+			return true;
+		} else {
+			return false;
 		}
 	}
 
@@ -383,7 +329,6 @@ public class SosADLValidator extends AbstractSosADLValidator {
 					((RangeType)b).getVmin(), ((RangeType)b).getVmax(),
 					expression_le(((RangeType)b).getVmin(), ((RangeType)a).getVmin()),
 					expression_le(((RangeType)a).getVmax(), ((RangeType)b).getVmax()));
-			// TODO range type inclusion
 		} else {
 			if(a instanceof NamedType) {
 				errorForNamedType(labelFor(b), "to", gamma, (NamedType)a, target, targetForError);
@@ -796,26 +741,46 @@ public class SosADLValidator extends AbstractSosADLValidator {
 	
 	private <T extends DataType> Pair<Type_expression_node, DataType> typeUnaryExpression(Environment gamma, UnaryExpression e, UnaryTypeInfo<T> i) {
 		Pair<Type_expression, DataType> p1 = type_expression(gamma, e.getRight());
-		Pair<Subtype, T> p2 = smallestSuperType(i.getClazz(), i.getLabel(), i.getIfNone().get(), gamma, p1.getB(), e, SosADLPackage.Literals.UNARY_EXPRESSION__RIGHT);
-		return new Pair<>(saveProof(e, i.getCreateProofTerm().apply(gamma, e, p1, p2)), saveType(e, i.getCreateType().apply(gamma, e, p1, p2)));
+		if(p1.getA() != null && p1.getB() != null) {
+			Pair<Subtype, T> p2 = smallestSuperType(i.getClazz(), i.getLabel(), i.getIfNone().get(), gamma, p1.getB(), e, SosADLPackage.Literals.UNARY_EXPRESSION__RIGHT);
+			if(p2.getA() != null && p2.getB() != null) {
+				return new Pair<>(saveProof(e, i.getCreateProofTerm().apply(gamma, e, p1, p2)), saveType(e, i.getCreateType().apply(gamma, e, p1, p2)));
+			} else {
+				return new Pair<>(null, null);
+			}
+		} else {
+			return new Pair<>(null, null);
+		}
 	}
 	
 	private <L extends DataType, R extends DataType, X extends DataType> Pair<Type_expression_node, DataType> typeBinaryExpression(Environment gamma, BinaryExpression e, BinaryTypeInfo<L, R, X> i) {
 		Pair<Type_expression, DataType> p1 = type_expression(gamma, e.getLeft());
-		Pair<Subtype, L> p2 = smallestSuperType(i.getlClass(), i.getlLabel(), i.getlIfNone().get(), gamma, p1.getB(), e, SosADLPackage.Literals.BINARY_EXPRESSION__LEFT);
 		Pair<Type_expression, DataType> p3 = type_expression(gamma, e.getRight());
-		Pair<Subtype, R> p4 = smallestSuperType(i.getrClass(), i.getrLabel(), i.getrIfNone().get(), gamma, p3.getB(), e, SosADLPackage.Literals.BINARY_EXPRESSION__RIGHT);
-		X r = i.createType.apply(gamma, e, p1, p2, p3, p4);
-		if(r != null) {
-			return new Pair<>(saveProof(e, i.createProofTerm.apply(gamma, e, p1, p2, p3, p4, r)), saveType(e, r));
+		if(p1.getA() != null && p1.getB() != null && p3.getA() != null && p3.getB() != null) {
+			Pair<Subtype, L> p2 = smallestSuperType(i.getlClass(), i.getlLabel(), i.getlIfNone().get(), gamma, p1.getB(), e, SosADLPackage.Literals.BINARY_EXPRESSION__LEFT);
+			Pair<Subtype, R> p4 = smallestSuperType(i.getrClass(), i.getrLabel(), i.getrIfNone().get(), gamma, p3.getB(), e, SosADLPackage.Literals.BINARY_EXPRESSION__RIGHT);
+			if(p2.getA() != null && p2.getB() != null && p4.getA() != null && p4.getB() != null) {
+				X r = i.createType.apply(gamma, e, p1, p2, p3, p4);
+				if(r != null) {
+					return new Pair<>(saveProof(e, i.createProofTerm.apply(gamma, e, p1, p2, p3, p4, r)), saveType(e, r));
+				} else {
+					return new Pair<>(null, null);
+				}
+			} else {
+				return new Pair<>(null, null);
+			}
 		} else {
-			return new Pair<>(null, i.createDefault.get());
+			return new Pair<>(null, null);
 		}
 	}
 
 	private Pair<Type_expression, DataType> type_expression(Environment gamma, Expression e) {
 		Pair<Type_expression_node, DataType> p1 = type_expression_node(gamma, e);
-		return new Pair<>(createType_expression_and_type(gamma, e, p1.getB(), p1.getA(), type_datatype(gamma, p1.getB())), p1.getB());
+		if(p1.getA() != null && p1.getB() != null) {
+			return new Pair<>(createType_expression_and_type(gamma, e, p1.getB(), p1.getA(), type_datatype(gamma, p1.getB())), p1.getB());
+		} else {
+			return new Pair<>(null, null);
+		}
 	}
 	
 	private Pair<Type_expression_node, DataType> type_expression_node(Environment gamma, Expression e) {
@@ -839,13 +804,77 @@ public class SosADLValidator extends AbstractSosADLValidator {
 				}
 			}
 			error("Unknown binary operator", e, SosADLPackage.Literals.BINARY_EXPRESSION__OP);
-			return new Pair<>(null, SosADLFactory.eINSTANCE.createBooleanType());
+			return new Pair<>(null, null);
 		} else if (e instanceof IdentExpression && ((IdentExpression)e).getIdent() != null
 				&& gamma.get(((IdentExpression)e).getIdent()) != null
 				&& gamma.get(((IdentExpression)e).getIdent()) instanceof VariableEnvContent) {
 			DataType t = ((VariableEnvContent)gamma.get(((IdentExpression)e).getIdent())).getType();
 			return new Pair<>(saveProof(e, createType_expression_Ident(gamma, ((IdentExpression)e).getIdent(), t, createReflexivity())),
 					saveType(e, t));
+		} else if(e instanceof MethodCall) {
+			MethodCall mc = (MethodCall)e;
+			if (mc.getMethod() != null) {
+				Pair<Type_expression, DataType> self = type_expression(gamma, mc.getObject());
+				List<Pair<Expression,Pair<Type_expression, DataType>>> params = ListExtensions.map(mc.getParameters(), (p) -> new Pair<>(p, type_expression(gamma, p)));
+				if(self.getA() != null && params.stream().allMatch((p) -> p.getA() != null && p.getB() != null)) {
+					Stream<IntPair<TypeEnvContent>> indexedTypes = 
+							StreamUtils.indexed(gamma.stream())
+						.flatMap((i) -> {
+							if (i.getB() instanceof TypeEnvContent) {
+								return Stream.of(new IntPair<>(i.getA(), (TypeEnvContent)i.getB()));
+							} else {
+								return Stream.empty();
+							}
+						});
+					Stream<IntPair<TypeEnvContent>> compatibleIndexedTypes = 
+							indexedTypes
+							.filter((i) -> isSubtype(gamma, self.getB(),
+									createNamedType(i.getB().getDataTypeDecl().getName())));
+					Optional<IntPair<Pair<TypeEnvContent,IntPair<FunctionDecl>>>> method =
+							compatibleIndexedTypes
+							.flatMap((i) -> StreamUtils.indexed(i.getB().getMethods().stream())
+									.filter((m) -> m.getB().getName().equals(mc.getMethod()))
+									.filter((m) -> params.size() == m.getB().getParameters().size())
+									.filter((m) -> StreamUtils.zip(params.stream().map(Pair::getB), m.getB().getParameters().stream())
+											.allMatch((p) -> isSubtype(gamma, p.getA().getB(), p.getB().getType())))
+									.map((m) -> new IntPair<>(i.getA(), new Pair<>(i.getB(), m))))
+							.findFirst();
+					if(method.isPresent()) {
+						IntPair<Pair<TypeEnvContent,IntPair<FunctionDecl>>> m = method.get();
+						return new Pair<>(createType_expression_MethodCall(gamma, mc.getObject(), self.getB(),
+									m.getB().getA().getDataTypeDecl(), m.getB().getB().getB().getData().getType(),
+									m.getB().getA().getMethods(),
+									mc.getMethod(),
+									m.getB().getB().getB().getParameters(),
+									m.getB().getB().getB().getType(),
+									mc.getParameters(),
+									self.getA(),
+									createEx_intro(BigInteger.valueOf(m.getA()), createReflexivity()),
+									subtype(gamma, self.getB(), m.getB().getB().getB().getData().getType(), mc, null),
+									createEx_intro(BigInteger.valueOf(m.getB().getB().getA()),
+											createConj(createReflexivity(), createConj(createReflexivity(), createConj(createReflexivity(), createReflexivity())))),
+									proveForall2(m.getB().getB().getB().getParameters(),
+											mc.getParameters(),
+											(fp,p) -> {
+												Pair<Type_expression, DataType> tp = ListUtils.assoc(params, p);
+												return createEx_intro(fp.getType(),
+													createConj(createReflexivity(),
+															createEx_intro(tp.getB(),
+																	createConj(tp.getA(),
+																			subtype(gamma, tp.getB(), fp.getType(), mc, null)))));
+												})),
+								m.getB().getB().getB().getType());
+					} else {
+						error("No applicable method named `" + mc.getMethod() + "'", e, SosADLPackage.Literals.METHOD_CALL__METHOD);
+						return new Pair<>(null, null);
+					}
+				} else {
+					return new Pair<>(null, null);
+				}
+			} else {
+				error("A method name must be provided", e, SosADLPackage.Literals.METHOD_CALL__METHOD);
+				return new Pair<>(null, SosADLFactory.eINSTANCE.createBooleanType());
+			}
 		} else {
 			// TODO
 			if(e instanceof UnaryExpression) {
@@ -878,7 +907,7 @@ public class SosADLValidator extends AbstractSosADLValidator {
 			} else {
 				error("Type error", e, null);
 			}
-			return new Pair<>(null, SosADLFactory.eINSTANCE.createBooleanType());
+			return new Pair<>(null, null);
 		}
 	}
 
@@ -1199,6 +1228,15 @@ public class SosADLValidator extends AbstractSosADLValidator {
 			return createForall_nil();
 		} else {
 			return createForall_cons(l.get(0), prover.apply(l.get(0)), proveForall(cdr(l), prover));
+		}
+	}
+	
+	private static <T1 extends EObject, T2 extends EObject, P extends ProofTerm> Forall2<T1,T2,P> proveForall2(
+			List<? extends T1> l, List<? extends T2> m, BiFunction<T1, T2, ? extends P> prover) {
+		if(l.isEmpty() && m.isEmpty()) {
+			return createForall2_nil();
+		} else {
+			return createForall2_cons(l.get(0), m.get(0), prover.apply(l.get(0), m.get(0)), proveForall2(cdr(l), cdr(m), prover));
 		}
 	}
 	
@@ -1534,6 +1572,14 @@ public class SosADLValidator extends AbstractSosADLValidator {
 	private static <T, P> Forall<T,P> createForall_cons(T t, P p1, Forall<T,P> p2) {
 		return new Forall_cons<>(t, p1, p2);
 	}
+	
+	private static <A,B,P> Forall2<A,B,P> createForall2_nil() {
+		return new Forall2_nil<>();
+	}
+	
+	private static <A,B,P> Forall2<A,B,P> createForall2_cons(A x, B y, P p1, Forall2<A,B,P> p2) {
+		return new Forall2_cons<A, B, P>(x, y, p1, p2);
+	}
 
 	private static Equality createReflexivity() {
 		return new Eq_refl();
@@ -1562,6 +1608,12 @@ public class SosADLValidator extends AbstractSosADLValidator {
 	
 	private static BooleanType createBooleanType() {
 		return SosADLFactory.eINSTANCE.createBooleanType();
+	}
+	
+	private static NamedType createNamedType(String name) {
+		NamedType t = SosADLFactory.eINSTANCE.createNamedType();
+		t.setName(name);
+		return t;
 	}
 	
 	private static Expression createIntegerValue(int v) {
@@ -1699,6 +1751,14 @@ public class SosADLValidator extends AbstractSosADLValidator {
 	
 	private static Type_expression_node createType_expression_Ident(Environment gamma, String x, DataType tau, Equality p) {
 		return new Type_expression_Ident(gamma, x, tau, p);
+	}
+	
+	private static Type_expression_node createType_expression_MethodCall(Environment gamma, Expression self, DataType t, DataTypeDecl typeDecl,
+			DataType tau, EList<FunctionDecl> methods, String name, EList<FormalParameter> formalparams, DataType ret,
+			EList<Expression> params, Type_expression p1, Ex<BigInteger, Equality> p2, Subtype p4,
+			Ex<BigInteger, And<Equality, And<Equality, And<Equality, Equality>>>> p5,
+			Forall2<FormalParameter, Expression, Ex<DataType, And<Equality, Ex<DataType, And<Type_expression, Subtype>>>>> p6) {
+		return new Type_expression_MethodCall(gamma, self, t, typeDecl, tau, methods, name, formalparams, ret, params, p1, p2, p4, p5, p6);
 	}
 	
 	private static Range_modulo_min createRange_modulo_min_pos(Expression lmin, Expression lmax, Expression rmin, Expression rmax, Expression min, Expression_le p1,

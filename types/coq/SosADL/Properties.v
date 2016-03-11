@@ -138,3 +138,34 @@ Proof.
       * generalize (Zrem_lt_neg_neg _ _ H0 H). omega.
       * generalize (Zrem_lt_pos_neg _ _ H0 H). omega.
 Qed.
+
+Lemma method_defined''_ok: forall m l tau f r, method_defined' m l tau f r -> method_defined'' m l tau f r.
+Proof.
+  intros. induction H.
+  - exists 0. apply H.
+  - destruct IHExists as [ i IH ].
+    exists (S i). apply IH.
+Qed.
+
+Lemma method_defined'_ok: forall m l tau f r, method_defined'' m l tau f r -> method_defined' m l tau f r.
+Proof.
+  intros. destruct H as [ i H]. revert l H. induction i; intros.
+  - destruct l.
+    + contradiction.
+    + apply Exists_cons_hd. apply H.
+  - destruct l.
+    + contradiction.
+    + apply Exists_cons_tl. apply (IHi l H).
+Qed.
+
+Lemma method_defined''_ok': forall m l tau f r, method_defined m l tau f r -> method_defined'' m l tau f r.
+Proof.
+  intros. destruct H as [ z H ].
+  exists (Z.to_nat z). apply H.
+Qed.
+
+Lemma method_defined_ok: forall m l tau f r, method_defined'' m l tau f r -> method_defined m l tau f r.
+Proof.
+  intros. destruct H as [ i H ].
+  exists (Z.of_nat i). rewrite Znat.Nat2Z.id. apply H.
+Qed.
