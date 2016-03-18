@@ -7,6 +7,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.math.BigInteger;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -49,6 +50,8 @@ import org.archware.sosadl.sosADL.SosADL;
 import org.archware.sosadl.sosADL.SosADLFactory;
 import org.archware.sosadl.sosADL.SosADLPackage;
 import org.archware.sosadl.sosADL.SystemDecl;
+import org.archware.sosadl.sosADL.Tuple;
+import org.archware.sosadl.sosADL.TupleElement;
 import org.archware.sosadl.sosADL.TupleType;
 import org.archware.sosadl.sosADL.UnaryExpression;
 import org.archware.sosadl.sosADL.Unit;
@@ -74,6 +77,7 @@ import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.xtext.validation.Check;
+import org.eclipse.xtext.xbase.lib.CollectionExtensions;
 import org.eclipse.xtext.xbase.lib.ListExtensions;
 import org.eclipse.xtext.xbase.lib.StringExtensions;
 
@@ -859,7 +863,35 @@ public class SosADLValidator extends AbstractSosADLValidator {
 				}
 			} else {
 				error("A method name must be provided", e, SosADLPackage.Literals.METHOD_CALL__METHOD);
-				return new Pair<>(null, SosADLFactory.eINSTANCE.createBooleanType());
+				return new Pair<>(null, null);
+			}
+		} else if(e instanceof Tuple) {
+			Tuple t = (Tuple)e;
+			List<Pair<TupleElement, Pair<Type_expression, DataType>>> elts = ListExtensions.map(t.getElements(), (f) -> new Pair<>(f, type_expression(gamma, f.getValue())));
+			if(noDuplicate(t.getElements().stream().map((f) -> f.getLabel()))) {
+				if(elts.stream().allMatch((p) -> p.getA() != null && p.getB() != null)) {
+					List<Pair<TupleElement, Pair<Type_expression, FieldDecl>>> elts2 = ListExtensions.map(elts, (f) -> new Pair<>(f.getA(), new Pair<>(f.getB().getA(), createFieldDecl(f.getA().getLabel(), f.getB().getB()))));
+					TupleType tt = createTupleType(elts2.stream().map((f) -> f.getB().getB()));
+					Forall2<TupleElement, FieldDecl, Ex<Expression, And<Equality,Ex<DataType,And<Equality,Type_expression>>>>> p3 = proveForall2(elts2,
+							(x) -> x.getA(),
+							(x) -> x.getB().getB(),
+							(x) -> createEx_intro(x.getA().getValue(),
+									createConj(createReflexivity(),
+											createEx_intro(x.getB().getB().getType(),
+													createConj(createReflexivity(), x.getB().getA())))));
+					Type_expression_node p = createType_expression_Tuple(gamma, t.getElements(), tt.getFields(),
+							createReflexivity(),
+							proveForall2(t.getElements(), tt.getFields(), (x,y) -> createReflexivity()),
+							p3);
+					return new Pair<>(saveProof(e, p), saveType(e, tt));
+				} else {
+					return new Pair<>(null, null);
+				}
+			} else {
+				t.getElements().stream().filter((p) -> t.getElements().stream().map((x) -> x.getLabel())
+						.filter((n) -> n.equals(p.getLabel())).count() >= 2)
+				.forEach((f) -> error("Multiple fields named `" + f.getLabel() + "'", f, null));
+				return new Pair<>(null, null);
 			}
 		} else {
 			// TODO
@@ -1226,6 +1258,18 @@ public class SosADLValidator extends AbstractSosADLValidator {
 			return createForall2_nil();
 		} else {
 			return createForall2_cons(l.get(0), m.get(0), prover.apply(l.get(0), m.get(0)), proveForall2(cdr(l), cdr(m), prover));
+		}
+	}
+	
+	private static <T, T1 extends EObject, T2 extends EObject, P extends ProofTerm> Forall2<T1,T2,P> proveForall2(
+			List<T> zipped, Function<T, T1> left, Function<T, T2> right, Function<T, P> prover) {
+		if(zipped.isEmpty()) {
+			return createForall2_nil();
+		} else {
+			return createForall2_cons(left.apply(zipped.get(0)),
+					right.apply(zipped.get(0)),
+					prover.apply(zipped.get(0)),
+					proveForall2(cdr(zipped), left, right, prover));
 		}
 	}
 	
@@ -1639,6 +1683,30 @@ public class SosADLValidator extends AbstractSosADLValidator {
 		return ret;
 	}
 	
+	@SuppressWarnings("unused")
+	private static TupleType createTupleType(Iterable<FieldDecl> fields) {
+		return createTupleType(fields.iterator());
+	}
+	
+	private static TupleType createTupleType(Iterator<FieldDecl> fields) {
+		TupleType ret = SosADLFactory.eINSTANCE.createTupleType();
+		while(fields.hasNext()) {
+			ret.getFields().add(fields.next());
+		}
+		return ret;
+	}
+
+	private static TupleType createTupleType(Stream<FieldDecl> fields) {
+		return createTupleType(fields.iterator());
+	}
+	
+	private static FieldDecl createFieldDecl(String name, DataType t) {
+		FieldDecl f = SosADLFactory.eINSTANCE.createFieldDecl();
+		f.setName(name);
+		f.setType(t);
+		return f;
+	}
+
 	private static Type_expression_node createType_expression_Same(Environment gamma, Expression e, DataType tau, Expression min,
 			Expression max, Type_expression p1, Subtype p2) {
 		return new Type_expression_Same(gamma, e, tau, min, max, p1, p2);
@@ -1761,6 +1829,12 @@ public class SosADLValidator extends AbstractSosADLValidator {
 			Ex<BigInteger, And<Equality, And<Equality, And<Equality, Equality>>>> p5,
 			Forall2<FormalParameter, Expression, Ex<DataType, And<Equality, Ex<DataType, And<Type_expression, Subtype>>>>> p6) {
 		return new Type_expression_MethodCall(gamma, self, t, typeDecl, tau, methods, name, formalparams, ret, params, p1, p2, p4, p5, p6);
+	}
+	
+	private static Type_expression_node createType_expression_Tuple(Environment gamma, EList<TupleElement> elts, EList<FieldDecl> typ, Equality p1,
+			Forall2<TupleElement, FieldDecl, Equality> p2,
+			Forall2<TupleElement, FieldDecl, Ex<Expression, And<Equality, Ex<DataType, And<Equality, Type_expression>>>>> p3) {
+		return new Type_expression_Tuple(gamma, elts, typ, p1, p2, p3);
 	}
 	
 	private static Range_modulo_min createRange_modulo_min_pos(Expression lmin, Expression lmax, Expression rmin, Expression rmax, Expression min, Expression_le p1,

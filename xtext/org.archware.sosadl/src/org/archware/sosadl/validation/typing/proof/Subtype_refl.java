@@ -21,5 +21,4 @@ public class Subtype_refl implements Subtype {
 	public DataType getT() {
 		return t;
 	}
-
 }

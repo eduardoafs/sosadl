@@ -1086,22 +1086,23 @@ library testDone is {
       expression node (SosADL.SosADL.MethodCall (Some self) (Some name) params) has type ret in Gamma
 
 
-
-                                                                    (*
 | type_expression_Tuple:
-    forall Gamma elts typ,
-      (values (SosADL.SosADL.TupleElement_label x) for x of elts are distinct according to option_string_dec)
-      /\ (for each e tau of elts typ,
-         SosADL.SosADL.TupleElement_label e = SosADL.SosADL.FieldDecl_name tau)
-      /\ (for each e tau of elts typ,
-         (exists e',
+    forall (Gamma: env)
+      (elts: list SosADL.SosADL.t_TupleElement)
+      (typ: list SosADL.SosADL.t_FieldDecl)
+      (p1: values (SosADL.SosADL.TupleElement_label x) for x of elts are distinct according to option_string_dec)
+      (p2: for each e f of elts typ,
+         SosADL.SosADL.TupleElement_label e = SosADL.SosADL.FieldDecl_name f)
+      (p3: for each e f of elts typ,
+         (exists (e': SosADL.SosADL.t_Expression),
             SosADL.SosADL.TupleElement_value e = Some e'
-            /\ exists tau',
-                SosADL.SosADL.FieldDecl_type tau = Some tau'
-                /\ expression e' has type tau' in Gamma))
-      ->
-      expression (SosADL.SosADL.Expression_Tuple elts) has type (SosADL.SosADL.TupleType typ) in Gamma
+            /\ exists (f': SosADL.SosADL.t_DataType),
+                SosADL.SosADL.FieldDecl_type f = Some f'
+                /\ expression e' has type f' in Gamma))
+    ,
+      expression node (SosADL.SosADL.Tuple elts) has type (SosADL.SosADL.TupleType typ) in Gamma
 
+(*
 | type_expression_Sequence:
     forall Gamma elts tau,
       (for each e of elts, expression e has type tau in Gamma)

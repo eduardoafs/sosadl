@@ -75,10 +75,6 @@ with t_Connection: Set :=
 with t_Constituent: Set :=
 | Constituent: option string -> option t_Expression ->  t_Constituent
 
-with t_ConstructedValue: Set :=
-| ConstructedValue_Sequence: list t_Expression ->  t_ConstructedValue
-| ConstructedValue_Tuple: list t_TupleElement ->  t_ConstructedValue
-
 with t_DataType: Set :=
 | BooleanType: t_DataType
 | ConnectionType: option ModeType -> option t_DataType ->  t_DataType
@@ -112,8 +108,8 @@ with t_Expression: Set :=
 | Expression_Quantify: option Quantifier -> list t_ElementInConstituent -> option t_Expression ->  t_Expression
 | Expression_Relay: option t_ComplexName -> option t_ComplexName ->  t_Expression
 | Select: option t_Expression -> option string -> option t_Expression ->  t_Expression
-| Expression_Sequence: list t_Expression ->  t_Expression
-| Expression_Tuple: list t_TupleElement ->  t_Expression
+| Sequence: list t_Expression ->  t_Expression
+| Tuple: list t_TupleElement ->  t_Expression
 | UnaryExpression: option string -> option t_Expression ->  t_Expression
 | Expression_Unify: option Multiplicity -> option t_ComplexName -> option Multiplicity -> option t_ComplexName ->  t_Expression
 | UnobservableValue: t_Expression

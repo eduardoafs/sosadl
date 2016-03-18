@@ -248,7 +248,7 @@ IntegerValue:
 	absInt=INT // INT == ('0'..'9')+ rend une valeur ecore::EInt;
 ;
 
-ConstructedValue:
+ConstructedValue returns Expression:
 	{Tuple} 'tuple' '{' elements+=TupleElement (',' elements+=TupleElement)* '}'
 	| {Sequence} 'sequence' '{' (elements+=Expression (',' elements+=Expression)*)? '}'
 ;

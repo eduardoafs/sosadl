@@ -16,7 +16,6 @@ import org.archware.sosadl.sosADL.Binding
 import org.archware.sosadl.sosADL.ComplexName
 import org.archware.sosadl.sosADL.Connection
 import org.archware.sosadl.sosADL.Constituent
-import org.archware.sosadl.sosADL.ConstructedValue
 import org.archware.sosadl.sosADL.DataType
 import org.archware.sosadl.sosADL.DataTypeDecl
 import org.archware.sosadl.sosADL.DutyDecl
@@ -176,7 +175,6 @@ class TypingProofGenerator implements IGenerator {
 	def dispatch generatorFunction(ComplexName content) { return coqGenerator.generatet_ComplexName(content) }
 	def dispatch generatorFunction(Connection content) { return coqGenerator.generatet_Connection(content) }
 	def dispatch generatorFunction(Constituent content) { return coqGenerator.generatet_Constituent(content) }
-	def dispatch generatorFunction(ConstructedValue content) { return coqGenerator.generatet_ConstructedValue(content) }
 	def dispatch generatorFunction(DataType content) { return coqGenerator.generatet_DataType(content) }
 	def dispatch generatorFunction(DataTypeDecl content) { return coqGenerator.generatet_DataTypeDecl(content) }
 	def dispatch generatorFunction(DutyDecl content) { return coqGenerator.generatet_DutyDecl(content) }

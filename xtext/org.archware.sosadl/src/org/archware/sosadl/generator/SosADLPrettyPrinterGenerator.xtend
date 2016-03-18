@@ -462,13 +462,6 @@ class SosADLPrettyPrinterGenerator implements IGenerator {
 	
 	def compile(Any a)'''any'''
 	
-	def compile(ConstructedValue c)'''«
-      IF c instanceof Tuple»«
-        (c as Tuple).compile»«
-      ELSEIF c instanceof Sequence»«
-        (c as Sequence).compile»«
-      ENDIF»'''
-	
 	def compile(Tuple t)'''tuple{«t.elements.map[compile].join(", ")»}'''
 	
 	def compile(TupleElement t)'''«t.label»=«t.value.compile»'''
