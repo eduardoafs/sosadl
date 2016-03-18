@@ -169,3 +169,113 @@ Proof.
   intros. destruct H as [ i H ].
   exists (Z.of_nat i). rewrite Znat.Nat2Z.id. apply H.
 Qed.
+
+Lemma field_type_correct: forall l n t, field_type l n = Some t -> field_has_type l n t.
+Proof.
+  intros. revert H.
+  induction l.
+  - discriminate.
+  - destruct a. destruct o.
+    + simpl. intros. destruct (string_dec n s).
+      * subst. apply First_Field.
+      * apply Next_Field. auto.
+    + intros. apply Next_Field. auto. 
+Qed.
+
+Lemma distinct_tl: forall {A: Set}  f (hd: A) tl,
+    (values (f x) for x of (hd :: tl) are distinct according to option_string_dec)
+    -> values (f x) for x of tl are distinct according to option_string_dec.
+Proof.
+  simpl. unfold has_no_dup.
+  intros. revert H. case (NoDup_dec _ option_string_dec (f hd :: map (fun x => f x) tl)).
+  - intros I H. inversion I.
+    case (NoDup_dec _ option_string_dec (map (fun x => f x) tl)).
+    + reflexivity.
+    + contradiction.
+  - discriminate.
+Qed.
+
+Lemma distinct_hd: forall {A: Set} f (hd: A) tl,
+    (values (f x) for x of (hd :: tl) are distinct according to option_string_dec)
+    -> forall x, In x tl -> f x <> f hd.
+Proof.
+  simpl. unfold has_no_dup.
+  intros. revert H. case (NoDup_dec _ option_string_dec (f hd :: map (fun x => f x) tl)).
+  - intros. clear H. intro.
+    apply in_map with (f:=fun x => f x) in H0.
+    remember (f x) as fx.
+    remember (f hd) as fh.
+    remember (map (fun x => f x) tl) as ft.
+    clear Heqfx Heqft Heqfh. subst fx.
+    revert H0.
+    destruct (NoDup_cons_iff fh ft) as [ H _ ].
+    destruct (H n) as [ I _ ].
+    apply I.
+  - discriminate.
+Qed.
+
+Lemma field_type_other: forall h r n t, field_type r n = Some t -> SosADL.SosADL.FieldDecl_name h <> (Some n) -> field_type (h :: r) n = Some t.
+Proof.
+  intros. destruct h. destruct o.
+  - simpl in H0. simpl. case (string_dec n s).
+    + intro. elimtype False. subst. apply H0. reflexivity.
+    + auto.
+  - simpl. auto.
+Qed.
+
+Lemma field_type_some: forall r n t, field_type r n = Some t -> exists f, In f r /\ SosADL.SosADL.FieldDecl_name f = Some n.
+Proof.
+  intros r n t. induction r.
+  - discriminate.
+  - simpl. case_eq a. destruct o. intro.
+    + destruct (string_dec n s).
+      * exists a. { split.
+               - left. auto.
+               - subst. reflexivity. }
+      * intros. { destruct (IHr H0) as [ f [ p1 p2 ] ].
+                  exists f. split.
+                  - right. auto.
+                  - auto. }
+    + intros. destruct (IHr H0) as [ f [ p1 p2 ] ].
+      exists f. split.
+      * right. auto.
+      * auto.
+Qed.
+
+Lemma field_type_complete:
+  forall l n t
+    (ND: values (SosADL.SosADL.FieldDecl_name x) for x of l are distinct according to option_string_dec)
+  ,
+    field_has_type l n t -> field_type l n = Some t.
+Proof.
+  intros. induction H.
+  - simpl. destruct (string_dec n n).
+    + reflexivity.
+    + elimtype False. apply n0. reflexivity.
+  - assert (field_type r n = Some t) by ( apply IHfield_has_type; eapply distinct_tl; apply ND ).
+    apply field_type_other.
+    + auto.
+    + destruct (field_type_some _ _ _ H0) as [ x [ I J ] ].
+      rewrite <- J.
+      intro X. symmetry in X. revert X.
+      eapply distinct_hd.
+      * apply ND.
+      * auto.
+Qed.
+
+Lemma field_has_type_in: forall l n t, field_has_type l n t -> In (SosADL.SosADL.FieldDecl (Some n) (Some t)) l.
+Proof.
+  intros. induction H.
+  - left. reflexivity.
+  - right. auto.
+Qed.
+
+Lemma field_has_type_in': forall l n t, In (SosADL.SosADL.FieldDecl (Some n) (Some t)) l -> field_has_type l n t.
+Proof.
+  intros l n t.
+  induction l.
+  - intro. destruct H.
+  - intro. destruct H as [ H | H ].
+    + subst. apply First_Field.
+    + apply Next_Field. auto.
+Qed.

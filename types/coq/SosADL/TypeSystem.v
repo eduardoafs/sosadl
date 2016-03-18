@@ -184,7 +184,15 @@ Inductive field_has_type: list SosADL.SosADL.t_FieldDecl -> string -> SosADL.Sos
 | First_Field: forall n t r, field_has_type (SosADL.SosADL.FieldDecl (Some n) (Some t) :: r) n t
 | Next_Field: forall n t h r, field_has_type r n t -> field_has_type (h :: r) n t.
 
-Hypothesis names_of_expression: SosADL.SosADL.t_Expression -> list string.
+Fixpoint field_type (l: list SosADL.SosADL.t_FieldDecl) (n: string) {struct l}: option SosADL.SosADL.t_DataType :=
+  match l with
+  | nil => None
+  | (SosADL.SosADL.FieldDecl (Some f) r) :: tl => if string_dec n f then r else field_type tl n
+  | _ :: tl => field_type tl n
+  end.
+
+(*Hypothesis names_of_expression: SosADL.SosADL.t_Expression -> list string.*)
+
 (**
 %
 \def\todo#1{{\color{red}TODO: #1}}
@@ -530,7 +538,7 @@ Inductive type_datatype: env -> SosADL.SosADL.t_DataType -> Prop :=
       (p1: @mutually _ (fun gamma f _ =>
                           exists t, SosADL.SosADL.FieldDecl_type f = Some t
                                     /\ type t well typed in Gamma)
-                     (fun _ => None)
+                     SosADL.SosADL.FieldDecl_name
                      (fun _ => None)
                      Gamma fields Gamma)
 (*                     
@@ -1102,6 +1110,17 @@ library testDone is {
     ,
       expression node (SosADL.SosADL.Tuple elts) has type (SosADL.SosADL.TupleType typ) in Gamma
 
+| type_expression_Field:
+    forall (Gamma: env)
+      (self: SosADL.SosADL.t_Expression)
+      (tau: list SosADL.SosADL.t_FieldDecl)
+      (name: string)
+      (tau__f: SosADL.SosADL.t_DataType)
+      (p1: expression self has type (SosADL.SosADL.TupleType tau) in Gamma)
+      (p2: field_type tau name = Some tau__f)
+    ,
+      expression node (SosADL.SosADL.Field (Some self) (Some name)) has type tau__f in Gamma
+
 (*
 | type_expression_Sequence:
     forall Gamma elts tau,
@@ -1122,13 +1141,6 @@ library testDone is {
       /\ (expression e has type SosADL.SosADL.BooleanType in Gamma [| x <- EVariable tau |])
       ->
       expression (SosADL.SosADL.Select (Some coll) (Some x) (Some e)) has type (SosADL.SosADL.SequenceType (Some tau)) in Gamma
-
-| type_expression_Field:
-    forall Gamma this tau name tau__f,
-      (expression this has type (SosADL.SosADL.TupleType tau) in Gamma)
-      /\ field_has_type tau name tau__f
-      ->
-      expression (SosADL.SosADL.Field (Some this) (Some name)) has type tau__f in Gamma
 *)
 
 (** %\todo{%[CallExpression], [UnobservableValue], [Unify], [Relay]

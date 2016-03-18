@@ -7,7 +7,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.math.BigInteger;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -77,7 +76,6 @@ import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.xtext.validation.Check;
-import org.eclipse.xtext.xbase.lib.CollectionExtensions;
 import org.eclipse.xtext.xbase.lib.ListExtensions;
 import org.eclipse.xtext.xbase.lib.StringExtensions;
 
@@ -893,6 +891,40 @@ public class SosADLValidator extends AbstractSosADLValidator {
 				.forEach((f) -> error("Multiple fields named `" + f.getLabel() + "'", f, null));
 				return new Pair<>(null, null);
 			}
+		} else if(e instanceof org.archware.sosadl.sosADL.Field) {
+			org.archware.sosadl.sosADL.Field f = (org.archware.sosadl.sosADL.Field) e;
+			if(f.getField() != null && f.getObject() != null) {
+				Pair<Type_expression, DataType> p1 = type_expression(gamma, f.getObject());
+				if(p1.getA() != null && p1.getB() != null) {
+					if(p1.getB() instanceof TupleType) {
+						TupleType tt = (TupleType) p1.getB();
+						Optional<FieldDecl> fd = tt.getFields().stream().filter((d) -> f.getField().equals(d.getName())).findFirst();
+						if(fd.isPresent()) {
+							FieldDecl d = fd.get();
+							return new Pair<>(saveProof(e, createType_expression_Field(gamma,
+									f.getObject(), tt.getFields(), f.getField(),
+									d.getType(), p1.getA(), createReflexivity())),
+									saveType(e, d.getType()));
+						} else {
+							error("The tuple has no field named `" + f.getField() + "'", e, SosADLPackage.Literals.FIELD__FIELD);
+							return new Pair<>(null, null);
+						}
+					} else {
+						error("The expression must be a tuple", e, SosADLPackage.Literals.FIELD__OBJECT);
+						return new Pair<>(null, null);
+					}
+				} else {
+					return new Pair<>(null, null);
+				}
+			} else {
+				if(f.getField() == null) {
+					error("A field name must be provided", f, SosADLPackage.Literals.FIELD__FIELD);
+				}
+				if(f.getObject() == null) {
+					error("An object expression must be provided", f, SosADLPackage.Literals.FIELD__OBJECT);
+				}
+				return new Pair<>(null, null);
+			}
 		} else {
 			// TODO
 			if(e instanceof UnaryExpression) {
@@ -1142,7 +1174,7 @@ public class SosADLValidator extends AbstractSosADLValidator {
 
 	private Pair<Mutually<FieldDecl, Ex<DataType, And<Equality, Type_datatype>>>, Environment> type_fields(
 			Environment gamma, EList<FieldDecl> fields) {
-		return proveMutually(gamma, fields, this::type_field, "(fun _ => None)", (x) -> null, "(fun _ => None)", (x) -> null);
+		return proveMutually(gamma, fields, this::type_field, "SosADL.SosADL.FieldDecl_name", FieldDecl::getName, "(fun _ => None)", (x) -> null);
 	}
 
 	private boolean isConstExprOrError(Expression e) {
@@ -1835,6 +1867,11 @@ public class SosADLValidator extends AbstractSosADLValidator {
 			Forall2<TupleElement, FieldDecl, Equality> p2,
 			Forall2<TupleElement, FieldDecl, Ex<Expression, And<Equality, Ex<DataType, And<Equality, Type_expression>>>>> p3) {
 		return new Type_expression_Tuple(gamma, elts, typ, p1, p2, p3);
+	}
+	
+	private static Type_expression_node createType_expression_Field(Environment gamma, Expression self, EList<FieldDecl> tau, String name,
+			DataType tau__f, Type_expression p1, Equality p2) {
+		return new Type_expression_Field(gamma, self, tau, name, tau__f, p1, p2);
 	}
 	
 	private static Range_modulo_min createRange_modulo_min_pos(Expression lmin, Expression lmax, Expression rmin, Expression rmax, Expression min, Expression_le p1,
