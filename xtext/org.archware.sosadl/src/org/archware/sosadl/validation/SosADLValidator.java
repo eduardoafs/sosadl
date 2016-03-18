@@ -867,7 +867,7 @@ public class SosADLValidator extends AbstractSosADLValidator {
 			Tuple t = (Tuple)e;
 			List<Pair<TupleElement, Pair<Type_expression, DataType>>> elts = ListExtensions.map(t.getElements(), (f) -> new Pair<>(f, type_expression(gamma, f.getValue())));
 			if(noDuplicate(t.getElements().stream().map((f) -> f.getLabel()))) {
-				if(elts.stream().allMatch((p) -> p.getA() != null && p.getB() != null)) {
+				if(elts.stream().allMatch((p) -> p.getB().getA() != null && p.getB().getB() != null)) {
 					List<Pair<TupleElement, Pair<Type_expression, FieldDecl>>> elts2 = ListExtensions.map(elts, (f) -> new Pair<>(f.getA(), new Pair<>(f.getB().getA(), createFieldDecl(f.getA().getLabel(), f.getB().getB()))));
 					TupleType tt = createTupleType(elts2.stream().map((f) -> f.getB().getB()));
 					Forall2<TupleElement, FieldDecl, Ex<Expression, And<Equality,Ex<DataType,And<Equality,Type_expression>>>>> p3 = proveForall2(elts2,
