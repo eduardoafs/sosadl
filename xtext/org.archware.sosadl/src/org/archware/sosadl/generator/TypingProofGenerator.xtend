@@ -39,7 +39,6 @@ import org.archware.sosadl.sosADL.SystemDecl
 import org.archware.sosadl.sosADL.TupleElement
 import org.archware.sosadl.sosADL.Unit
 import org.archware.sosadl.sosADL.Valuing
-import org.archware.sosadl.validation.SosADLValidator
 import org.archware.sosadl.validation.typing.Environment
 import org.archware.sosadl.validation.typing.impl.CellEnvironmentImpl
 import org.archware.sosadl.validation.typing.impl.SystemEnvContent
@@ -59,6 +58,7 @@ import org.archware.sosadl.validation.typing.proof.CoqLiteral
 import org.archware.sosadl.validation.typing.impl.EnvironmentImpl
 import org.archware.sosadl.sosADL.generator.Factorizor
 import org.archware.sosadl.sosADL.generator.FactorizingCoqGenerator
+import org.archware.sosadl.validation.typing.TypeChecker
 
 /**
  * Generates code from your model files on save.
@@ -111,7 +111,7 @@ class TypingProofGenerator implements IGenerator {
 	}
 	
 	def generateProofOf(SosADL s) {
-		generateProof(SosADLValidator.getProof(s) as ProofTerm)
+		generateProof(TypeChecker.getProof(s) as ProofTerm)
 	}
 	
 	def CharSequence generateProof(ProofTerm p) {
