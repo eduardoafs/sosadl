@@ -299,6 +299,30 @@ public class TypeChecker extends AccumulatingValidator {
 					((RangeType)b).getVmin(), ((RangeType)b).getVmax(),
 					expression_le(((RangeType)b).getVmin(), ((RangeType)a).getVmin()),
 					expression_le(((RangeType)a).getVmax(), ((RangeType)b).getVmax()));
+		} else if(a instanceof TupleType && b instanceof TupleType) {
+			TupleType l = (TupleType) a;
+			TupleType r = (TupleType) b;
+			List<Pair<Optional<FieldDecl>, FieldDecl>> fields = ListExtensions.map(r.getFields(), (f) -> new Pair<>(l.getFields().stream().filter((g) -> f.getName().equals(g.getName())).findFirst(), f));
+			if(fields.stream().allMatch((p) -> p.getA().isPresent())) {
+				Forall<FieldDecl, Ex<String, And<Equality, Ex<DataType, And<Equality, Ex<DataType, And<Equality, Subtype>>>>>>> p1 = proveForall(r.getFields(), (fr) -> {
+					String n = fr.getName();
+					DataType tr = fr.getType();
+					FieldDecl fl = rassoc(fields, fr).get();
+					DataType tl = fl.getType();
+					Subtype p = subtype(gamma, tl, tr, error);
+					return createEx_intro(n, createConj(createReflexivity(),
+							createEx_intro(tr, createConj(createReflexivity(),
+									createEx_intro(tl, createConj(createReflexivity(), p))))));
+				});
+				return createSubtype_tuple(gamma, l.getFields(), r.getFields(), p1);
+			} else {
+				error.accept("Some fields are missing: "
+				+ fields.stream().filter((p) -> !p.getA().isPresent())
+				.map((p) -> p.getB().getName())
+				.sorted()
+				.collect(Collectors.joining(" ")));
+				return null;
+			}
 		} else {
 			if(a instanceof NamedType) {
 				errorForNamedType(labelFor(b), "to", gamma, (NamedType)a, error);
@@ -333,7 +357,8 @@ public class TypeChecker extends AccumulatingValidator {
 				}
 			}
 			if((!(a instanceof NamedType) && !(b instanceof NamedType))
-					&& !(a instanceof RangeType && b instanceof RangeType)) {
+					&& !(a instanceof RangeType && b instanceof RangeType)
+					&& !(a instanceof TupleType && b instanceof TupleType)) {
 				error.accept("Cannot convert from " + labelFor(a) + " to " + labelFor(b));
 			}
 			// TODO Auto-generated method stub
@@ -348,6 +373,8 @@ public class TypeChecker extends AccumulatingValidator {
 			return "range type";
 		} else if(t instanceof NamedType) {
 			return ((NamedType)t).getName();
+		} else if(t instanceof TupleType) {
+			return "tuple type";
 		} else {
 			return "unknown type";
 		}
@@ -1439,6 +1466,25 @@ public class TypeChecker extends AccumulatingValidator {
 			r = f.apply(x, r);
 		}
 		return r;
+	}
+	
+	@SuppressWarnings("unused")
+	private static <A,B> B assoc(List<Pair<A,B>> l, A a) {
+		for(Pair<A,B> i: l) {
+			if(i.getA() == a) {
+				return i.getB();
+			}
+		}
+		return null;
+	}
+	
+	private static <A,B> A rassoc(List<Pair<A,B>> l, B b) {
+		for(Pair<A,B> i: l) {
+			if(i.getB() == b) {
+				return i.getA();
+			}
+		}
+		return null;
 	}
 	
 	private static <T> boolean noDuplicate(Stream<T> s) {

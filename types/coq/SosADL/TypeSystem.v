@@ -251,20 +251,21 @@ Inductive subtype: env -> SosADL.SosADL.t_DataType -> SosADL.SosADL.t_DataType -
       l </ (SosADL.SosADL.NamedType (Some r)) under Gamma
 
 
-(*
 | subtype_tuple:
-    forall Gamma l r,
-      (for each f of r,
-       exists n,
-         SosADL.SosADL.FieldDecl_name f = Some n
-         /\ exists tr,
-             SosADL.SosADL.FieldDecl_type f = Some tr
-             /\ exists tl, field_has_type l n tl
-                     /\ (tl </ tr under Gamma))
-      ->
+    forall (Gamma: env)
+      (l: list SosADL.SosADL.t_FieldDecl)
+      (r: list SosADL.SosADL.t_FieldDecl)
+      (p1: for each f of r,
+           exists n,
+             SosADL.SosADL.FieldDecl_name f = Some n
+             /\ exists tr,
+               SosADL.SosADL.FieldDecl_type f = Some tr
+               /\ exists tl, field_type l n = Some tl
+                       /\ (tl </ tr under Gamma))
+    ,
       (SosADL.SosADL.TupleType l) </ (SosADL.SosADL.TupleType r) under Gamma
-*)
-(** %\todo{%TBD%}% *)
+
+(** %\todo{%[subtype_sequence]%}% *)
 
 where "t1 </ t2 'under' Gamma" := (subtype Gamma t1 t2)
 .
