@@ -265,7 +265,13 @@ Inductive subtype: env -> SosADL.SosADL.t_DataType -> SosADL.SosADL.t_DataType -
     ,
       (SosADL.SosADL.TupleType l) </ (SosADL.SosADL.TupleType r) under Gamma
 
-(** %\todo{%[subtype_sequence]%}% *)
+| subtype_sequence:
+    forall (Gamma: env)
+      (l: SosADL.SosADL.t_DataType)
+      (r: SosADL.SosADL.t_DataType)
+      (p1: l </ r under Gamma)
+    ,
+      (SosADL.SosADL.SequenceType (Some l)) </ (SosADL.SosADL.SequenceType (Some r)) under Gamma
 
 where "t1 </ t2 'under' Gamma" := (subtype Gamma t1 t2)
 .
