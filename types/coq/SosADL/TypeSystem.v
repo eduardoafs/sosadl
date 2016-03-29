@@ -1128,13 +1128,17 @@ library testDone is {
     ,
       expression node (SosADL.SosADL.Field (Some self) (Some name)) has type tau__f in Gamma
 
-(*
 | type_expression_Sequence:
-    forall Gamma elts tau,
-      (for each e of elts, expression e has type tau in Gamma)
-      ->
-      expression (SosADL.SosADL.Expression_Sequence elts) has type (SosADL.SosADL.SequenceType (Some tau)) in Gamma
+    forall (Gamma: env)
+      (elts: list SosADL.SosADL.t_Expression)
+      (tau: SosADL.SosADL.t_DataType)
+      (p1: for each e of elts,
+           exists t, (expression e has type t in Gamma)
+                /\ t </ tau under Gamma)
+    ,
+      expression node (SosADL.SosADL.Sequence elts) has type (SosADL.SosADL.SequenceType (Some tau)) in Gamma
 
+(*
 | type_expression_Map:
     forall Gamma coll tau x e tau__e,
       (expression coll has type (SosADL.SosADL.SequenceType (Some tau)) in Gamma)
@@ -1692,7 +1696,7 @@ where "'unit' u 'well' 'typed' 'in' Gamma" := (type_unit Gamma u)
  *)
 
 Inductive type_sosADL: SosADL.SosADL.t_SosADL -> Prop :=
-| type_SosADL:
+| type_SosADL_file:
     forall (i: list SosADL.SosADL.t_Import)
            (d: SosADL.SosADL.t_Unit)
            (p: unit d well typed in empty)

@@ -43,6 +43,7 @@ import org.archware.sosadl.sosADL.MediatorDecl;
 import org.archware.sosadl.sosADL.MethodCall;
 import org.archware.sosadl.sosADL.NamedType;
 import org.archware.sosadl.sosADL.RangeType;
+import org.archware.sosadl.sosADL.Sequence;
 import org.archware.sosadl.sosADL.SequenceType;
 import org.archware.sosadl.sosADL.SoS;
 import org.archware.sosadl.sosADL.SosADL;
@@ -97,7 +98,7 @@ public class TypeChecker extends AccumulatingValidator {
 	private Type_sosADL type_sosADL(SosADL file) {
 		// type_SosADL:
 		if(file.getContent() != null) {
-			return saveProof(file, createType_SosADL(file.getImports(), file.getContent(), type_unit(Environment.empty(), file.getContent())));
+			return saveProof(file, createType_SosADL_file(file.getImports(), file.getContent(), type_unit(Environment.empty(), file.getContent())));
 		} else {
 			error("The file must contains a unit", file, null);
 			return null;
@@ -882,7 +883,7 @@ public class TypeChecker extends AccumulatingValidator {
 				error("A method name must be provided", e, SosADLPackage.Literals.METHOD_CALL__METHOD);
 				return new Pair<>(null, null);
 			}
-		} else if(e instanceof Tuple) {
+		} else if(e instanceof Tuple && ((Tuple)e).getElements() != null && ((Tuple)e).getElements().stream().allMatch((x) -> x != null)) {
 			Tuple t = (Tuple)e;
 			List<Pair<TupleElement, Pair<Type_expression, DataType>>> elts = ListExtensions.map(t.getElements(), (f) -> new Pair<>(f, type_expression(gamma, f.getValue())));
 			if(noDuplicate(t.getElements().stream().map((f) -> f.getLabel()))) {
@@ -908,6 +909,15 @@ public class TypeChecker extends AccumulatingValidator {
 				t.getElements().stream().filter((p) -> t.getElements().stream().map((x) -> x.getLabel())
 						.filter((n) -> n.equals(p.getLabel())).count() >= 2)
 				.forEach((f) -> error("Multiple fields named `" + f.getLabel() + "'", f, null));
+				return new Pair<>(null, null);
+			}
+		} else if(e instanceof Sequence && ((Sequence)e).getElements() != null && ((Sequence)e).getElements().stream().allMatch((x) -> x != null)) {
+			Sequence s = (Sequence) e;
+			List<Pair<Expression, Pair<Type_expression, DataType>>> elts = ListExtensions.map(((Sequence) e).getElements(), (x) -> new Pair<>(x, type_expression(gamma, x)));
+			if(elts.stream().allMatch((x) -> x.getB() != null && x.getB().getA() != null && x.getB().getB() != null)) {
+				// TODO introduire les variables de type pour prendre en compte la séquence vide
+				return new Pair<>(null, null);
+			} else {
 				return new Pair<>(null, null);
 			}
 		} else if(e instanceof org.archware.sosadl.sosADL.Field) {
@@ -1536,8 +1546,8 @@ public class TypeChecker extends AccumulatingValidator {
 		}
 	}
 	
-	private static Type_sosADL createType_SosADL(EList<Import> i, Unit d, Type_unit p) {
-		return new Type_SosADL(i, d, p);
+	private static Type_sosADL createType_SosADL_file(EList<Import> i, Unit d, Type_unit p) {
+		return new Type_SosADL_file(i, d, p);
 	}
 	
 	private static Type_unit createType_SoS(Environment gamma, String n, EntityBlock e, Type_entityBlock p) {
