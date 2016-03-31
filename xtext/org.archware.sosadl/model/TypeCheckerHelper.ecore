@@ -16,6 +16,10 @@
         unique="false" upperBound="-1" eType="#//TypeVariable"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="solver" lowerBound="1"
         eType="#//Solver" transient="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="concernedObject" lowerBound="1"
+        eType="ecore:EClass http://www.eclipse.org/emf/2002/Ecore#//EObject"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="concernedStructuralFeature"
+        eType="ecore:EClass http://www.eclipse.org/emf/2002/Ecore#//EStructuralFeature"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EDataType" name="Observer" instanceTypeName="java.util.function.Consumer&lt;org.archware.sosadl.tv.typeCheckerHelper.TypeVariable>"
       serializable="false"/>

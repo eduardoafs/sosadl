@@ -12,6 +12,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.Stack;
 import java.util.TreeSet;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -56,6 +57,8 @@ import org.archware.sosadl.sosADL.TupleType;
 import org.archware.sosadl.sosADL.UnaryExpression;
 import org.archware.sosadl.sosADL.Unit;
 import org.archware.sosadl.sosADL.Valuing;
+import org.archware.sosadl.tv.typeCheckerHelper.TypeCheckerHelperPackage;
+import org.archware.sosadl.tv.typeCheckerHelper.TypeVariable;
 import org.archware.sosadl.validation.AccumulatingValidator;
 import org.archware.sosadl.validation.typing.impl.ArchitectureEnvContent;
 import org.archware.sosadl.validation.typing.impl.MediatorEnvContent;
@@ -120,14 +123,49 @@ import org.eclipse.xtext.xbase.lib.StringExtensions;
  * </ul>
  */
 public class TypeChecker extends AccumulatingValidator {
+	private List<TypeVariable> typeVariables = new LinkedList<>();
 	
 	public void typecheck(SosADL file) {
 		try {
 			type_sosADL(file);
+			solveConstraints();
 		} catch(Throwable t) {
 			t.printStackTrace();
 			error("Bug in the type checker", file, null);
 			throw t;
+		}
+	}
+	
+	private void solveConstraints() {
+		for(TypeVariable i: typeVariables) {
+			if(!i.eIsSet(TypeCheckerHelperPackage.Literals.TYPE_VARIABLE__SUBSTITUTE)) {
+				Stack<TypeVariable> pending = new Stack<>();
+				pending.push(i);
+				while(!pending.isEmpty()) {
+					TypeVariable j = pending.peek();
+					boolean hasDependencies = false;
+					for(TypeVariable k : j.getDependencies()) {
+						if(!k.eIsSet(TypeCheckerHelperPackage.Literals.TYPE_VARIABLE__SUBSTITUTE)) {
+							if(pending.contains(k)) {
+								error("Dependency cycle between interval constraints", k.getConcernedObject(), k.eContainingFeature());
+								return;
+							}
+							pending.push(k);
+							hasDependencies = true;
+						}
+					}
+					if(!hasDependencies) {
+						TypeVariable k = pending.pop();
+						if(k != j) {
+							throw new AssertionError();
+						}
+						k.setSubstitute(k.getSolver().apply(k));
+						if(k.eIsSet(TypeCheckerHelperPackage.Literals.TYPE_VARIABLE__DELAYED_TASK)) {
+							k.getDelayedTask().accept(k);
+						}
+					}
+				}
+			}
 		}
 	}
 	
