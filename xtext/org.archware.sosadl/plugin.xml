@@ -21,4 +21,12 @@
             genModel="model/Environment.genmodel"/>
    </extension>
 
+   <extension point="org.eclipse.emf.ecore.generated_package">
+      <!-- @generated TypeCheckerHelper -->
+      <package
+            uri="http://www-archware.irisa.fr/sosadl/TypeCheckerHelper"
+            class="org.archware.sosadl.tv.typeCheckerHelper.TypeCheckerHelperPackage"
+            genModel="model/TypeCheckerHelper.genmodel"/>
+   </extension>
+
 </plugin>
