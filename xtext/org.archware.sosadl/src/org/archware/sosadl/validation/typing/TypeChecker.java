@@ -79,9 +79,45 @@ import org.eclipse.xtext.xbase.lib.ListExtensions;
 import org.eclipse.xtext.xbase.lib.StringExtensions;
 
 /**
- * Custom validation rules. 
- *
- * see http://www.eclipse.org/Xtext/documentation.html#validation
+ * Implementation of the type system
+ * 
+ * Like stated by the name of the class, a type checker for SoSADL.
+ * The entry point of the type checker is the unique public method {@link #typecheck(SosADL)}.
+ * This implementation also builds a proof term that can be later checked against against the type system, e.g., using some proof assistant like Coq.
+ * 
+ * The type checker is implemented following the structure of the type system.
+ * Namely, each type judgment is implemented by a method that attempts to prove that judgment.
+ * This method selects the appropriate typing rule, and (recursively) call the other methods to prove the premises of the rule.
+ * The parameters of such a method are the input used to drive the selection of the right typing rule.
+ * In most of the cases, the parameters are the (abstract syntax) subtree to type check as well as the local typing environment.
+ * Each such function builds and returns the reified proof term for the judgment it has proved.
+ * 
+ * Specific cases occurs:
+ * <ul>
+ * <li>For some judgments, several prover may coexist depending on the context.
+ *     This is typically the case of the <code>subtype</code> judgment. See, e.g.,
+ *     {@link #smallestSuperType(Class, String, DataType, Environment, DataType, EObject, EStructuralFeature)} and
+ *     {@link #subtype(Environment, DataType, DataType, Consumer)}.</li>
+ * <li>For some judgments, the method computes synthesized attributes, which are thus returned in addition to the proof term.
+ *     These methods typically return {@link Pair} objects.
+ *     This is typically the case of the <code>type_expression</code> and <code>type_expression_node> judgments.
+ *     See, e.g., {@link #type_expression(Environment, Expression)} or
+ *     {@link #type_expression_node(Environment, Expression)}.</li>
+ * </ul>
+ * 
+ * The behavior when a method fails to prove the corresponding judgments is not homogeneous.
+ * Most of the methods simply return a {@literal null} proof term, possibly wrapped in a {@link Pair} object when appropriate.
+ * Some methods wrap the returned proof term in an {@link Optional} object.
+ * The behavior will be later homogenized.
+ * 
+ * The implementation is stateful in that, according to the inherited {@link AccumulatingValidator} class, it accumulates error messages for later reporting.
+ * The type checker is thus not bound to any specific error reporting mechanism or framework.
+ * 
+ * For future evolutions, the following items should be looked at in order to improve the handling of interval types:
+ * <ul>
+ * <li>Kaucher arithmetic</li>
+ * <li>Abstract interpretation techniques</li>
+ * </ul>
  */
 public class TypeChecker extends AccumulatingValidator {
 	
