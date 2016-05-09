@@ -3,7 +3,7 @@
  */
 package org.archware.sosadl.generator
 
-import java.lang.reflect.Field
+import java.math.BigInteger
 import org.archware.sosadl.sosADL.ActionSuite
 import org.archware.sosadl.sosADL.ArchBehaviorDecl
 import org.archware.sosadl.sosADL.ArchitectureDecl
@@ -39,26 +39,26 @@ import org.archware.sosadl.sosADL.SystemDecl
 import org.archware.sosadl.sosADL.TupleElement
 import org.archware.sosadl.sosADL.Unit
 import org.archware.sosadl.sosADL.Valuing
+import org.archware.sosadl.sosADL.generator.FactorizingCoqGenerator
+import org.archware.sosadl.sosADL.generator.Factorizor
+import org.archware.sosadl.validation.typing.EnvContent
 import org.archware.sosadl.validation.typing.Environment
+import org.archware.sosadl.validation.typing.TypeChecker
 import org.archware.sosadl.validation.typing.impl.CellEnvironmentImpl
+import org.archware.sosadl.validation.typing.impl.EnvironmentImpl
 import org.archware.sosadl.validation.typing.impl.SystemEnvContent
 import org.archware.sosadl.validation.typing.impl.TypeEnvContent
-import org.archware.sosadl.validation.typing.proof.CoqConstructor
-import org.archware.sosadl.validation.typing.proof.Eluded
-import org.archware.sosadl.validation.typing.proof.Mandatory
+import org.archware.sosadl.validation.typing.impl.VariableEnvContent
 import org.archware.sosadl.validation.typing.proof.ProofTerm
-import org.eclipse.emf.common.util.EList
+import org.archware.sosadl.validation.typing.proof.fields.EludedField
+import org.archware.sosadl.validation.typing.proof.fields.ListField
+import org.archware.sosadl.validation.typing.proof.fields.MandatoryField
+import org.archware.sosadl.validation.typing.proof.fields.OptionalField
 import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.xtext.generator.IFileSystemAccess
 import org.eclipse.xtext.generator.IGenerator
-import java.math.BigInteger
-import org.archware.sosadl.validation.typing.impl.VariableEnvContent
-import org.archware.sosadl.validation.typing.EnvContent
-import org.archware.sosadl.validation.typing.proof.CoqLiteral
-import org.archware.sosadl.validation.typing.impl.EnvironmentImpl
-import org.archware.sosadl.sosADL.generator.Factorizor
-import org.archware.sosadl.sosADL.generator.FactorizingCoqGenerator
-import org.archware.sosadl.validation.typing.TypeChecker
+import java.util.Optional
+import org.archware.sosadl.validation.typing.proof.fields.FieldDescriptor
 
 /**
  * Generates code from your model files on save.
@@ -115,41 +115,27 @@ class TypingProofGenerator implements IGenerator {
 	}
 	
 	def CharSequence generateProof(ProofTerm p) {
-		var clazz = p.class
-		return '''(«clazz.ctorName»
-		    «FOR i : clazz.declaredFields»
-      			«processField(p, clazz, i)»
+		return '''(«p.constructorName»
+		    «FOR i : p.declaredFields»
+      			«processFieldDbg(i)»
       			«ENDFOR»)'''
 	}
 	
-	def processField(ProofTerm p, Class<?> clazz, Field f) {
-		if(f.isAnnotationPresent(Eluded)) {
-			return '''_'''
-		} else {
-			var mandatory = f.isAnnotationPresent(Mandatory)
-			var literal = f.isAnnotationPresent(CoqLiteral)
-			var content = getByGetter(p, clazz, f)
-			return processAny(mandatory, literal, content)
+	def orAdmitted(Optional<CharSequence> x) { return x.orElse('''(admitted _)''') }
+	
+	def processFieldDbg(FieldDescriptor f) {
+		try
+			return f.processField
+		catch(Throwable t) {
+			var msg = "field: " + f.field.toGenericString
+			throw new IllegalArgumentException(msg, t)
 		}
 	}
 	
-	def CharSequence processAny(boolean mandatory, boolean literal, Object content) {
-		if(mandatory && content == null) {
-			return '''(admitted _)'''
-		} else if(content instanceof EList<?>) {
-			return coqGenerator._generateL(content as EList<?>, [x | processAny(true, literal, x)])
-		} else {
-			var genfun = [Object x | generatorFunction(x) as CharSequence]
-			if(literal) {
-				genfun = [Object x | x as CharSequence ]
-			}
-			if(mandatory) {
-				return genfun.apply(content)
-			} else {
-				return coqGenerator._generateO(content, genfun)
-			}
-		}
-	}
+	def dispatch processField(EludedField f) '''_'''
+	def dispatch processField(ListField f) { return coqGenerator._generateL(f.get[x | x.generatorFunction], [orAdmitted]) }
+	def dispatch processField(MandatoryField f) { return f.get[Object x | x.generatorFunction].orAdmitted }
+	def dispatch processField(OptionalField f) { return coqGenerator._generateO(f.get[generatorFunction].orElse(null), [x | x]) }
 	
 	def dispatch generatorFunction(Integer content) { return coqGenerator.generateZ(content) }
 	def dispatch generatorFunction(BigInteger content) {
@@ -214,23 +200,5 @@ class TypingProofGenerator implements IGenerator {
 	}
 	def dispatch generateEnvContent(VariableEnvContent c) {
 		return _hook('''(EVariable «coqGenerator.generatet_DataType(c.type)»)''');
-	}
-	
-	static def ctorName(Class<?> clazz) {
-		if(clazz.isAnnotationPresent(CoqConstructor)) {
-			return clazz.getAnnotation(CoqConstructor).value
-		} else {
-			return clazz.simpleName.toFirstLower
-		}
-	}
-	
-	static def getGetterFor(Class<?> clazz, Field f) {
-		var getterName = "get" + f.name.toFirstUpper
-		return clazz.getMethod(getterName)
-	}
-	
-	static def getByGetter(Object o, Class<?> clazz, Field f) {
-		var getter = getGetterFor(clazz, f)
-		return getter.invoke(o)
 	}
 }
