@@ -59,6 +59,7 @@ import org.eclipse.xtext.generator.IFileSystemAccess
 import org.eclipse.xtext.generator.IGenerator
 import java.util.Optional
 import org.archware.sosadl.validation.typing.proof.fields.FieldDescriptor
+import org.archware.sosadl.tv.typeCheckerHelper.TypeVariable
 
 /**
  * Generates code from your model files on save.
@@ -161,6 +162,7 @@ class TypingProofGenerator implements IGenerator {
 	def dispatch generatorFunction(ComplexName content) { return coqGenerator.generatet_ComplexName(content) }
 	def dispatch generatorFunction(Connection content) { return coqGenerator.generatet_Connection(content) }
 	def dispatch generatorFunction(Constituent content) { return coqGenerator.generatet_Constituent(content) }
+	def dispatch CharSequence generatorFunction(TypeVariable content) { return content.substitute.generatorFunction }
 	def dispatch generatorFunction(DataType content) { return coqGenerator.generatet_DataType(content) }
 	def dispatch generatorFunction(DataTypeDecl content) { return coqGenerator.generatet_DataTypeDecl(content) }
 	def dispatch generatorFunction(DutyDecl content) { return coqGenerator.generatet_DutyDecl(content) }

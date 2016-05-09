@@ -672,7 +672,7 @@ Inductive range_modulo_max: SosADL.SosADL.t_Expression -> SosADL.SosADL.t_Expres
       (rmax: SosADL.SosADL.t_Expression)
       (max: SosADL.SosADL.t_Expression)
       (p1: rmax <= (SosADL.SosADL.UnaryExpression (Some "-") (Some (SosADL.SosADL.IntegerValue (Some 1%Z)))))
-      (p2: (SosADL.SosADL.BinaryExpression (Some (SosADL.SosADL.IntegerValue (Some 1%Z))) (Some "-") (Some rmin)) <= max)
+      (p2: (SosADL.SosADL.BinaryExpression (Some (SosADL.SosADL.UnaryExpression (Some "-") (Some (SosADL.SosADL.IntegerValue (Some 1%Z))))) (Some "-") (Some rmin)) <= max)
     ,
       range_modulo_max lmin lmax rmin rmax max
 .

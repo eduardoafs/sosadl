@@ -26,7 +26,10 @@ Qed.
 Ltac Zbool_to_cmp :=
   repeat match goal with
          | H: ((_ <=? _)%Z = true) |- _ => apply Zbool.Zle_bool_imp_le in H
-         end.
+         end;
+  try match goal with
+      | |- ((_ <=? _)%Z = true) => apply Zle_imp_le_bool
+      end.
 
 Ltac interp_to_Zle :=
   repeat match goal with
@@ -127,7 +130,7 @@ Proof.
       generalize (Zquot.Zrem_lt_neg _ _ H H0).
       omega.
   - interp_to_Zle. Zbool_to_cmp.
-    assert (zl = (1 - zl0)%Z) by (unfold interp_in_Z in *; rewrite p0 in p12; inversion p12; auto). subst. clear p12.
+    assert (zl = ((-1) - zl0)%Z) by (unfold interp_in_Z in *; rewrite p0 in p12; inversion p12; auto). subst. clear p12.
     inversion p15. subst. clear p15.
     apply In_Z with (zl := (Z.rem zr2 zr0)) (zr := zr3).
     + auto_rewrite.
@@ -137,6 +140,326 @@ Proof.
       destruct (Z.le_ge_cases zr2 0%Z).
       * generalize (Zrem_lt_neg_neg _ _ H0 H). omega.
       * generalize (Zrem_lt_pos_neg _ _ H0 H). omega.
+Qed.
+
+Lemma deinterp_in_Z: forall a b n, (a <=? b)%Z = true -> interp_in_Z n = Interpreted b -> (SosADL.SosADL.IntegerValue (Some a)) <= n.
+Proof.
+  intros.
+  apply In_Z with (zl := a) (zr := b); auto.
+Qed.
+
+Lemma deinterp_in_Z': forall a b n, (b <=? a)%Z = true -> interp_in_Z n = Interpreted b -> n <= (SosADL.SosADL.IntegerValue (Some a)).
+Proof.
+  intros.
+  apply In_Z with (zl := b) (zr := a); auto.
+Qed.
+
+Ltac simpl_in_Z :=
+  repeat match goal with
+             | H: interp_in_Z (SosADL.SosADL.IntegerValue _) = Interpreted _ |- _ => inversion H; subst; clear H
+             | H: interp_in_Z (SosADL.SosADL.UnaryExpression _ (Some (SosADL.SosADL.IntegerValue _))) = Interpreted _ |- _ => inversion H; subst; clear H
+             | H1: interp_in_Z (SosADL.SosADL.BinaryExpression (Some (SosADL.IntegerValue (Some ?l))) (Some "-") (Some ?v)) = Interpreted ?x,
+                   H2: interp_in_Z ?v = Interpreted ?r
+               |- _ => assert ((l - r)%Z = x) by (unfold interp_in_Z in *; rewrite H2 in H1; inversion H1; auto);
+                     subst; clear H1
+             | H1: interp_in_Z (SosADL.SosADL.BinaryExpression (Some (SosADL.SosADL.UnaryExpression (Some "-") (Some (SosADL.IntegerValue (Some ?l))))) (Some "-") (Some ?v)) = Interpreted ?x,
+                   H2: interp_in_Z ?v = Interpreted ?r
+               |- _ => assert (((-l) - r)%Z = x) by (unfold interp_in_Z in *; rewrite H2 in H1; inversion H1; auto);
+                     subst; clear H1
+             | H1: interp_in_Z (SosADL.SosADL.BinaryExpression (Some ?v) (Some "+") (Some (SosADL.IntegerValue (Some ?l)))) = Interpreted ?x,
+                   H2: interp_in_Z ?v = Interpreted ?r
+               |- _ => assert ((r + l)%Z = x) by (unfold interp_in_Z in *; rewrite H2 in H1; inversion H1; auto);
+                     subst; clear H1
+             | H1: interp_in_Z (SosADL.SosADL.BinaryExpression (Some ?v) (Some "-") (Some (SosADL.IntegerValue (Some ?l)))) = Interpreted ?x,
+                   H2: interp_in_Z ?v = Interpreted ?r
+               |- _ => assert ((r - l)%Z = x) by (unfold interp_in_Z in *; rewrite H2 in H1; inversion H1; auto);
+                     subst; clear H1
+         end.
+
+Lemma range_modulo_min_best_pos_pos: forall lmin lmax rmin rmax
+                             (H1: (SosADL.SosADL.IntegerValue (Some 1%Z)) <= rmin)
+                             (H2: lmin <= lmax)
+                             (H3: rmin <= rmax)
+                             (H4: (SosADL.SosADL.IntegerValue (Some 0%Z)) <= lmin)
+                             min
+                             (H5: range_modulo_min lmin lmax rmin rmax min),
+    min <= SosADL.SosADL.IntegerValue (Some 0%Z).
+Proof.
+  intros.
+  destruct H5.
+  - interp_to_Zle.
+    simpl_in_Z.
+    apply In_Z with (zl := zl) (zr := 0%Z); auto.
+    Zbool_to_cmp.
+    omega.
+  - auto.
+  - elimtype False. clear - H1 H3 p1.
+    interp_to_Zle.
+    simpl_in_Z.
+    Zbool_to_cmp.
+    omega.
+Qed.
+
+Lemma range_modulo_min_best_neg_pos: forall lmin lmax rmin rmax zlmin
+                             (H1: (SosADL.SosADL.IntegerValue (Some 1%Z)) <= rmin)
+                             (H2: lmin <= lmax)
+                             (H3: rmin <= rmax)
+                             (H4: interp_in_Z lmin = Interpreted zlmin)
+                             (H5: (0 <=? zlmin)%Z = false)
+                             min
+                             (H': range_modulo_min lmin lmax rmin rmax min),
+    min <= (SosADL.SosADL.BinaryExpression (Some (SosADL.SosADL.IntegerValue (Some 1%Z))) (Some "-") (Some rmax)).
+Proof.
+  intros. destruct H'.
+  - auto.
+  - elimtype False. clear - H4 H5 p1.
+    interp_to_Zle.
+    simpl_in_Z.
+    rewrite H5 in p3.
+    discriminate.
+  - elimtype False.
+    clear - H1 H3 p1.
+    interp_to_Zle.
+    simpl_in_Z.
+    Zbool_to_cmp.
+    omega.
+Qed.
+
+Lemma range_modulo_min_best_pos: forall lmin lmax rmin rmax
+                             (H1: (SosADL.SosADL.IntegerValue (Some 1%Z)) <= rmin)
+                             (H2: lmin <= lmax)
+                             (H3: rmin <= rmax),
+    exists min, range_modulo_min lmin lmax rmin rmax min
+           /\ forall min', range_modulo_min lmin lmax rmin rmax min' -> min' <= min.
+Proof.
+  intros.
+  inversion H2. subst.
+  case_eq ((0 <=? zl)%Z); intro.
+  - exists (SosADL.SosADL.IntegerValue (Some 0%Z)).
+    split.
+    + apply range_modulo_min_zero.
+      * apply In_Z with (zl := 0%Z) (zr := zl); auto; reflexivity.
+      * apply In_Z with (zl := 0%Z) (zr := 0%Z); auto.
+    + eapply deinterp_in_Z in H; eauto.
+      apply range_modulo_min_best_pos_pos; auto.
+  - exists (SosADL.SosADL.BinaryExpression (Some (SosADL.SosADL.IntegerValue (Some 1%Z))) (Some "-") (Some rmax)).
+    split.
+    + apply range_modulo_min_pos.
+      * interp_to_Zle. simpl_in_Z.
+        apply In_Z with (zl := 1%Z) (zr := zr2); auto.
+      * interp_to_Zle. simpl_in_Z.
+        apply In_Z with (zl := (1 - zr0)%Z) (zr := (1 - zr0)%Z); try auto_rewrite; apply Zle_bool_refl.
+    + eapply range_modulo_min_best_neg_pos; eauto.
+Qed.
+
+Lemma range_modulo_min_best_pos_neg: forall lmin lmax rmin rmax
+                             (H1: rmax <= (SosADL.SosADL.UnaryExpression (Some "-") (Some (SosADL.SosADL.IntegerValue (Some 1%Z)))))
+                             (H2: lmin <= lmax)
+                             (H3: rmin <= rmax)
+                             (H4: (SosADL.SosADL.IntegerValue (Some 0%Z)) <= lmin)
+                             min
+                             (H5: range_modulo_min lmin lmax rmin rmax min),
+    min <= SosADL.SosADL.IntegerValue (Some 0%Z).
+Proof.
+  intros. destruct H5.
+  - elimtype False. clear - H1 H3 p1.
+    interp_to_Zle. simpl_in_Z.
+    Zbool_to_cmp.
+    omega.
+  - auto.
+  - interp_to_Zle. simpl_in_Z.
+    apply In_Z with (zl := zl) (zr := 0%Z); auto.
+    Zbool_to_cmp.
+    omega.
+Qed.
+
+Lemma range_modulo_min_best_neg_neg: forall lmin lmax rmin rmax zlmin
+                             (H1: rmax <= (SosADL.SosADL.UnaryExpression (Some "-") (Some (SosADL.SosADL.IntegerValue (Some 1%Z)))))
+                             (H2: lmin <= lmax)
+                             (H3: rmin <= rmax)
+                             (H4: interp_in_Z lmin = Interpreted zlmin)
+                             (H5: (0 <=? zlmin)%Z = false)
+                             min
+                             (H': range_modulo_min lmin lmax rmin rmax min),
+    min <= (SosADL.SosADL.BinaryExpression (Some rmin) (Some "+") (Some (SosADL.SosADL.IntegerValue (Some 1%Z)))).
+Proof.
+  intros. destruct H'.
+  - interp_to_Zle. simpl_in_Z.
+    apply In_Z with (zl := zl) (zr := (zl1 + 1)%Z); auto; auto_rewrite.
+    Zbool_to_cmp.
+    omega.
+  - elimtype False. clear - H4 H5 p1.
+    interp_to_Zle. simpl_in_Z.
+    rewrite H5 in p3.
+    discriminate.
+  - auto.
+Qed.
+
+Lemma range_modulo_min_best_neg: forall lmin lmax rmin rmax
+                             (H1: rmax <= (SosADL.SosADL.UnaryExpression (Some "-") (Some (SosADL.SosADL.IntegerValue (Some 1%Z)))))
+                             (H2: lmin <= lmax)
+                             (H3: rmin <= rmax),
+    exists min, range_modulo_min lmin lmax rmin rmax min
+           /\ forall min', range_modulo_min lmin lmax rmin rmax min' -> min' <= min.
+Proof.
+  intros.
+  inversion H2. subst.
+  case_eq ((0 <=? zl)%Z); intro.
+  - exists (SosADL.SosADL.IntegerValue (Some 0%Z)).
+    split.
+    + apply range_modulo_min_zero.
+      * apply In_Z with (zl := 0%Z) (zr := zl); auto; reflexivity.
+      * apply In_Z with (zl := 0%Z) (zr := 0%Z); auto.
+    + eapply deinterp_in_Z in H; eauto.
+      apply range_modulo_min_best_pos_neg; auto.
+  - exists (SosADL.SosADL.BinaryExpression (Some rmin) (Some "+") (Some (SosADL.SosADL.IntegerValue (Some 1%Z)))).
+    split.
+    + apply range_modulo_min_neg.
+      * interp_to_Zle. simpl_in_Z.
+        apply In_Z with (zl := zl2) (zr := (-1)%Z); auto.
+      * interp_to_Zle. simpl_in_Z.
+        apply In_Z with (zl := (zl0 + 1)%Z) (zr := (zl0 + 1)%Z); try auto_rewrite; apply Zle_bool_refl.
+    + eapply range_modulo_min_best_neg_neg; eauto.
+Qed.
+
+Lemma range_modulo_max_best_neg_pos: forall lmin lmax rmin rmax
+                             (H1: (SosADL.SosADL.IntegerValue (Some 1%Z)) <= rmin)
+                             (H2: lmin <= lmax)
+                             (H3: rmin <= rmax)
+                             (H4: lmax <= SosADL.SosADL.IntegerValue (Some 0%Z))
+                             max
+                             (H': range_modulo_max lmin lmax rmin rmax max),
+    SosADL.SosADL.IntegerValue (Some 0%Z) <= max.
+Proof.
+  intros. destruct H'.
+  - interp_to_Zle. simpl_in_Z.
+    apply In_Z with (zl := 0%Z) (zr := zr); auto.
+    Zbool_to_cmp.
+    omega.
+  - auto.
+  - elimtype False. clear - H1 H3 p1.
+    interp_to_Zle. simpl_in_Z.
+    Zbool_to_cmp.
+    omega.
+Qed.
+
+Lemma range_modulo_max_best_neg_neg: forall lmin lmax rmin rmax
+                             (H1: rmax <= SosADL.SosADL.UnaryExpression (Some "-") (Some (SosADL.SosADL.IntegerValue (Some 1%Z))))
+                             (H2: lmin <= lmax)
+                             (H3: rmin <= rmax)
+                             (H4: lmax <= SosADL.SosADL.IntegerValue (Some 0%Z))
+                             max
+                             (H': range_modulo_max lmin lmax rmin rmax max),
+    SosADL.SosADL.IntegerValue (Some 0%Z) <= max.
+Proof.
+  intros. destruct H'.
+  - elimtype False. clear - H1 H3 p1.
+    interp_to_Zle. simpl_in_Z.
+    Zbool_to_cmp.
+    omega.
+  - auto.
+  - interp_to_Zle. simpl_in_Z.
+    apply In_Z with (zl := 0%Z) (zr := zr); auto.
+    Zbool_to_cmp.
+    omega.
+Qed.
+
+Lemma range_modulo_max_best_pos_pos: forall lmin lmax rmin rmax zlmax
+                             (H1: (SosADL.SosADL.IntegerValue (Some 1%Z)) <= rmin)
+                             (H2: lmin <= lmax)
+                             (H3: rmin <= rmax)
+                             (H4: interp_in_Z lmax = Interpreted zlmax)
+                             (H5: (zlmax <=? 0)%Z = false)
+                             max
+                             (H': range_modulo_max lmin lmax rmin rmax max),
+    (SosADL.SosADL.BinaryExpression (Some rmax) (Some "-") (Some (SosADL.SosADL.IntegerValue (Some 1%Z)))) <= max.
+Proof.
+  intros. destruct H'.
+  - auto.
+  - elimtype False. clear - H4 H5 p1.
+    interp_to_Zle. simpl_in_Z.
+    rewrite H5 in p3.
+    discriminate.
+  - interp_to_Zle. simpl_in_Z.
+    apply In_Z with (zl := (zr1 - 1)%Z) (zr := zr); try auto_rewrite.
+    Zbool_to_cmp.
+    omega.
+Qed.
+
+Lemma range_modulo_max_best_pos_neg: forall lmin lmax rmin rmax zlmax
+                             (H1: rmax <= SosADL.SosADL.UnaryExpression (Some "-") (Some (SosADL.SosADL.IntegerValue (Some 1%Z))))
+                             (H2: lmin <= lmax)
+                             (H3: rmin <= rmax)
+                             (H4: interp_in_Z lmax = Interpreted zlmax)
+                             (H5: (zlmax <=? 0)%Z = false)
+                             max
+                             (H': range_modulo_max lmin lmax rmin rmax max),
+    (SosADL.SosADL.BinaryExpression (Some (SosADL.SosADL.UnaryExpression (Some "-") (Some (SosADL.SosADL.IntegerValue (Some 1%Z))))) (Some "-") (Some rmin)) <= max.
+Proof.
+  intros. destruct H'.
+  - interp_to_Zle. simpl_in_Z.
+    apply In_Z with (zl := ((-1) - zl1)%Z) (zr := zr).
+    + auto_rewrite.
+    + auto.
+    + Zbool_to_cmp.
+      omega.
+  - elimtype False. clear - H4 H5 p1.
+    interp_to_Zle. simpl_in_Z.
+    rewrite H5 in p3.
+    discriminate.
+  - auto.
+Qed.
+
+Lemma range_modulo_max_best_pos: forall lmin lmax rmin rmax
+                             (H1: (SosADL.SosADL.IntegerValue (Some 1%Z)) <= rmin)
+                             (H2: lmin <= lmax)
+                             (H3: rmin <= rmax),
+    exists max, range_modulo_max lmin lmax rmin rmax max
+           /\ forall max', range_modulo_max lmin lmax rmin rmax max' -> max <= max'.
+Proof.
+  intros.
+  inversion H2. subst.
+  case_eq ((zr <=? 0)%Z); intro.
+  - exists (SosADL.SosADL.IntegerValue (Some 0%Z)).
+    split.
+    + apply range_modulo_max_zero.
+      * apply In_Z with (zl := zr) (zr := 0%Z); auto.
+      * apply In_Z with (zl := 0%Z) (zr := 0%Z); auto.
+    + eapply deinterp_in_Z' in H; eauto.
+      apply range_modulo_max_best_neg_pos; auto.
+  - exists (SosADL.SosADL.BinaryExpression (Some rmax) (Some "-") (Some (SosADL.SosADL.IntegerValue (Some 1%Z)))).
+    split.
+    + apply range_modulo_max_pos.
+      * auto.
+      * interp_to_Zle. simpl_in_Z.
+        apply In_Z with (zl := (zr0 - 1)%Z) (zr := (zr0 - 1)%Z); try auto_rewrite; apply Zle_bool_refl.
+    + eapply range_modulo_max_best_pos_pos; eauto.
+Qed.
+
+Lemma range_modulo_max_best_neg: forall lmin lmax rmin rmax
+                             (H1: rmax <= SosADL.SosADL.UnaryExpression (Some "-") (Some (SosADL.SosADL.IntegerValue (Some 1%Z))))
+                             (H2: lmin <= lmax)
+                             (H3: rmin <= rmax),
+    exists max, range_modulo_max lmin lmax rmin rmax max
+           /\ forall max', range_modulo_max lmin lmax rmin rmax max' -> max <= max'.
+Proof.
+  intros.
+  inversion H2. subst.
+  case_eq ((zr <=? 0)%Z); intro.
+  - exists (SosADL.SosADL.IntegerValue (Some 0%Z)).
+    split.
+    + apply range_modulo_max_zero.
+      * apply In_Z with (zl := zr) (zr := 0%Z); auto.
+      * apply In_Z with (zl := 0%Z) (zr := 0%Z); auto.
+    + eapply deinterp_in_Z' in H; eauto.
+      apply range_modulo_max_best_neg_neg; auto.
+  - exists (SosADL.SosADL.BinaryExpression (Some (SosADL.SosADL.UnaryExpression (Some "-") (Some (SosADL.SosADL.IntegerValue (Some 1%Z))))) (Some "-") (Some rmin)).
+    split.
+    + apply range_modulo_max_neg.
+      * auto.
+      * interp_to_Zle. simpl_in_Z.
+        apply In_Z with (zl := ((-1) - zl0)%Z) (zr := ((-1) - zl0)%Z); try auto_rewrite; apply Zle_bool_refl.
+    + eapply range_modulo_max_best_pos_neg; eauto.
 Qed.
 
 Lemma method_defined''_ok: forall m l tau f r, method_defined' m l tau f r -> method_defined'' m l tau f r.
