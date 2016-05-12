@@ -5,11 +5,11 @@ Require Import SosADL.Environment.
 Require Import SosADL.Utils.
 Require Import SosADL.Interpretation.
 Require Import SosADL.TypeSystem.
+Require Import SosADL.SosADLNotations.
 Require Import BinInt.
 Require Import Omega.
 Require Import ZArith.
 Require Import ZArith.Zquot.
-
 
 Local Open Scope list_scope.
 Local Open Scope string_scope.
@@ -48,112 +48,6 @@ Ltac auto_rewrite :=
          end;
   auto.
 
-Lemma range_modulo_min_ok: forall lmin l lmax rmin r rmax min
-                                  (H1: range_modulo_min lmin lmax rmin rmax min)
-                                  (H2: lmin <= l)
-                                  (H3: l <= lmax)
-                                  (H4: rmin <= r)
-                                  (H5: r <= rmax),
-    min <= (SosADL.SosADL.BinaryExpression (Some l) (Some "mod") (Some r)).
-Proof.
-  intros.
-  interp_to_Zle.
-  Zbool_to_cmp.
-  destruct H1.
-  - interp_to_Zle.
-    assert (zr3 = (1 - zr)%Z) by (unfold interp_in_Z in *; rewrite p2 in p13; inversion p13; auto).
-    subst. clear p13.
-    inversion p10. subst. clear p10.
-    apply In_Z with (zl := zl) (zr := Z.rem zr2 zr0).
-    + auto.
-    + auto_rewrite.
-    + apply Zbool.Zle_imp_le_bool.
-      Zbool_to_cmp.
-      assert ((0 < zr0)%Z) by omega.
-      destruct (Z.le_ge_cases zr2 0%Z).
-      * generalize (Zrem_lt_neg_pos _ _ H0 H). omega.
-      * generalize (Zrem_lt_pos_pos _ _ H0 H). omega.
-  - interp_to_Zle. Zbool_to_cmp.
-    apply In_Z with (zl := zl) (zr := (Z.rem zr2 zr0)).
-    + auto.
-    + auto_rewrite.
-    + apply Zbool.Zle_imp_le_bool.
-      inversion p13. subst. clear p13.
-      assert ((0 <= zr2)%Z) by omega.
-      Zquot.zero_or_not zr0.
-      generalize (Zquot.Zrem_lt_pos _ _ H H0).
-      omega.
-  - interp_to_Zle. Zbool_to_cmp.
-    apply In_Z with (zl := zl) (zr := (Z.rem zr2 zr0)).
-    + auto.
-    + auto_rewrite.
-    + apply Zbool.Zle_imp_le_bool.
-      inversion p13. rewrite p0 in H0. inversion H0. subst. clear H0 p13.
-      inversion p15. subst. clear p15.
-      assert ((zr0 < 0)%Z) by omega.
-      destruct (Z.le_ge_cases zr2 0%Z).
-      * generalize (Zrem_lt_neg_neg _ _ H0 H). omega.
-      * generalize (Zrem_lt_pos_neg _ _ H0 H). omega.
-Qed.
-
-Lemma range_modulo_max_ok: forall lmin l lmax rmin r rmax max
-                                  (H1: range_modulo_max lmin lmax rmin rmax max)
-                                  (H2: lmin <= l)
-                                  (H3: l <= lmax)
-                                  (H4: rmin <= r)
-                                  (H5: r <= rmax),
-    (SosADL.SosADL.BinaryExpression (Some l) (Some "mod") (Some r)) <= max.
-Proof.
-  intros.
-  interp_to_Zle.
-  Zbool_to_cmp.
-  destruct H1.
-  - interp_to_Zle. Zbool_to_cmp.
-    inversion p12. rewrite p2 in H0. inversion H0. subst. clear p12 H0.
-    inversion p10. subst. clear p10.
-    apply In_Z with (zl := Z.rem zr2 zr0) (zr := zr3).
-    + auto_rewrite.
-    + auto.
-    + apply Zbool.Zle_imp_le_bool.
-      assert ((0 < zr0)%Z) by omega.
-      destruct (Z.le_ge_cases zr2 0%Z).
-      * generalize (Zrem_lt_neg_pos _ _ H0 H). omega.
-      * generalize (Zrem_lt_pos_pos _ _ H0 H). omega.
-  - interp_to_Zle. Zbool_to_cmp.
-    apply In_Z with (zl := (Z.rem zr2 zr0)) (zr := zr3).
-    + auto_rewrite.
-    + auto.
-    + apply Zbool.Zle_imp_le_bool.
-      inversion p12. subst. clear p12.
-      assert ((zr2 <= 0)%Z) by omega.
-      Zquot.zero_or_not zr0.
-      generalize (Zquot.Zrem_lt_neg _ _ H H0).
-      omega.
-  - interp_to_Zle. Zbool_to_cmp.
-    assert (zl = ((-1) - zl0)%Z) by (unfold interp_in_Z in *; rewrite p0 in p12; inversion p12; auto). subst. clear p12.
-    inversion p15. subst. clear p15.
-    apply In_Z with (zl := (Z.rem zr2 zr0)) (zr := zr3).
-    + auto_rewrite.
-    + auto.
-    + apply Zbool.Zle_imp_le_bool.
-      assert ((zr0 < 0)%Z) by omega.
-      destruct (Z.le_ge_cases zr2 0%Z).
-      * generalize (Zrem_lt_neg_neg _ _ H0 H). omega.
-      * generalize (Zrem_lt_pos_neg _ _ H0 H). omega.
-Qed.
-
-Lemma deinterp_in_Z: forall a b n, (a <=? b)%Z = true -> interp_in_Z n = Interpreted b -> (SosADL.SosADL.IntegerValue (Some a)) <= n.
-Proof.
-  intros.
-  apply In_Z with (zl := a) (zr := b); auto.
-Qed.
-
-Lemma deinterp_in_Z': forall a b n, (b <=? a)%Z = true -> interp_in_Z n = Interpreted b -> n <= (SosADL.SosADL.IntegerValue (Some a)).
-Proof.
-  intros.
-  apply In_Z with (zl := b) (zr := a); auto.
-Qed.
-
 Ltac simpl_in_Z :=
   repeat match goal with
              | H: interp_in_Z (SosADL.SosADL.IntegerValue _) = Interpreted _ |- _ => inversion H; subst; clear H
@@ -174,22 +68,154 @@ Ltac simpl_in_Z :=
                    H2: interp_in_Z ?v = Interpreted ?r
                |- _ => assert ((r - l)%Z = x) by (unfold interp_in_Z in *; rewrite H2 in H1; inversion H1; auto);
                      subst; clear H1
+             | H1: interp_in_Z (SosADL.SosADL.BinaryExpression (Some ?v1) (Some "-") (Some ?v2)) = Interpreted ?x,
+                   H2: interp_in_Z ?v1 = Interpreted ?r1,
+                       H3: interp_in_Z ?v2 = Interpreted ?r2
+               |- _ => assert ((r1 - r2)%Z = x) by (unfold interp_in_Z in *; rewrite H2 in H1; rewrite H3 in H1; inversion H1; auto);
+                     subst; clear H1
+             | H1: interp_in_Z (SosADL.SosADL.BinaryExpression (Some ?v1) (Some "-") (Some (SosADL.SosADL.BinaryExpression (Some ?v2) (Some "mod") (Some ?v3)))) = Interpreted ?x,
+                   H2: interp_in_Z ?v1 = Interpreted ?r1,
+                       H3: interp_in_Z ?v2 = Interpreted ?r2,
+                           H4: interp_in_Z ?v3 = Interpreted ?r3
+               |- _ => assert ((r1 - (Z.rem r2 r3))%Z = x) by (unfold interp_in_Z in *; try rewrite H2 in H1; try rewrite H3 in H1; try rewrite H4 in H1; inversion H1; auto);
+                     subst; clear H1
+             | H1: interp_in_Z (SosADL.SosADL.BinaryExpression (Some ?v1) (Some "-") (Some (SosADL.SosADL.BinaryExpression (Some ?v1) (Some "mod") (Some ?v3)))) = Interpreted ?x,
+                   H2: interp_in_Z ?v1 = Interpreted ?r1,
+                       H4: interp_in_Z ?v3 = Interpreted ?r3
+               |- _ => assert ((r1 - (Z.rem r1 r3))%Z = x) by (unfold interp_in_Z in *; rewrite H2 in H1; rewrite H4 in H1; inversion H1; auto);
+                     subst; clear H1
+                      | H1: interp_in_Z (SosADL.SosADL.BinaryExpression (Some (SosADL.SosADL.BinaryExpression (Some ?v1) (Some "+") (Some (SosADL.SosADL.IntegerValue (Some 1%Z))))) (Some "-") (Some (SosADL.SosADL.BinaryExpression (Some ?v1) (Some "mod") (Some ?v3)))) = Interpreted ?x,
+                   H2: interp_in_Z ?v1 = Interpreted ?r1,
+                       H4: interp_in_Z ?v3 = Interpreted ?r3
+               |- _ => assert (((r1 + 1) - (Z.rem r1 r3))%Z = x) by (unfold interp_in_Z in *; rewrite H2 in H1; rewrite H4 in H1; inversion H1; auto);
+                     subst; clear H1
+                      | H1: interp_in_Z (SosADL.SosADL.UnaryExpression (Some "-") (Some ?v)) = Interpreted ?x,
+                            H2: interp_in_Z ?v = Interpreted ?r
+                        |- _ => assert ((- r)%Z = x) by (unfold interp_in_Z in *; rewrite H2 in H1; inversion H1; auto);
+                              subst; clear H1
          end.
 
+Ltac apply_in_Z :=
+  match goal with
+  | A: (interp_in_Z ?l = Interpreted ?zzl),
+       B: (interp_in_Z ?r = Interpreted ?zzr)
+    |- ?l <= ?r
+    => apply In_Z with (zl := zzl) (zr := zzr); auto
+  | A: (interp_in_Z ?l = Interpreted ?zzl)
+    |- ?l <= SosADL.SosADL.IntegerValue (Some ?zzr)
+    => apply In_Z with (zl := zzl) (zr := zzr); auto
+  | B: (interp_in_Z ?r = Interpreted ?zzr)
+    |- SosADL.SosADL.IntegerValue (Some ?zzl) <= ?r
+    => apply In_Z with (zl := zzl) (zr := zzr); auto
+  | |- SosADL.SosADL.IntegerValue (Some ?zzl) <= SosADL.SosADL.IntegerValue (Some ?zzr)
+    => apply In_Z with (zl := zzl) (zr := zzr); auto
+  | |- ?a <= ?b
+    => let za := interp_to_Z a in
+      let zb := interp_to_Z b in
+      apply In_Z with (zl := za) (zr := zb); auto; try (solve [ auto_rewrite ])
+  end.
+
+Lemma deinterp_in_Z: forall a b n, (a <=? b)%Z = true -> interp_in_Z n = Interpreted b -> (# a)%SosADL <= n.
+Proof.
+  intros.
+  apply_in_Z.
+Qed.
+
+Lemma deinterp_in_Z': forall a b n, (b <=? a)%Z = true -> interp_in_Z n = Interpreted b -> n <= (# a)%SosADL.
+Proof.
+  intros.
+  apply_in_Z.
+Qed.
+
+Lemma range_modulo_min_ok: forall lmin l lmax rmin r rmax min
+                                  (H1: range_modulo_min lmin lmax rmin rmax min)
+                                  (H2: lmin <= l)
+                                  (H3: l <= lmax)
+                                  (H4: rmin <= r)
+                                  (H5: r <= rmax),
+    min <= (l mod r)%SosADL.
+Proof.
+  intros.
+  interp_to_Zle.
+  simpl_in_Z.
+  Zbool_to_cmp.
+  destruct H1.
+  - interp_to_Zle.
+    simpl_in_Z.
+    apply_in_Z.
+    apply Zbool.Zle_imp_le_bool.
+    Zbool_to_cmp.
+    assert ((0 < zr0)%Z) by omega.
+    destruct (Z.le_ge_cases zr2 0%Z).
+    + generalize (Zrem_lt_neg_pos _ _ H0 H). omega.
+    + generalize (Zrem_lt_pos_pos _ _ H0 H). omega.
+  - interp_to_Zle. simpl_in_Z. Zbool_to_cmp.
+    apply_in_Z.
+    apply Zbool.Zle_imp_le_bool.
+    assert ((0 <= zr2)%Z) by omega.
+    Zquot.zero_or_not zr0.
+    generalize (Zquot.Zrem_lt_pos _ _ H H0).
+    omega.
+  - interp_to_Zle. simpl_in_Z.
+    Zbool_to_cmp.
+    apply_in_Z.
+    apply Zbool.Zle_imp_le_bool.
+    assert ((zr0 < 0)%Z) by omega.
+    destruct (Z.le_ge_cases zr2 0%Z).
+    + generalize (Zrem_lt_neg_neg _ _ H0 H). omega.
+    + generalize (Zrem_lt_pos_neg _ _ H0 H). omega.
+Qed.
+
+Lemma range_modulo_max_ok: forall lmin l lmax rmin r rmax max
+                                  (H1: range_modulo_max lmin lmax rmin rmax max)
+                                  (H2: lmin <= l)
+                                  (H3: l <= lmax)
+                                  (H4: rmin <= r)
+                                  (H5: r <= rmax),
+    (l mod r)%SosADL <= max.
+Proof.
+  intros.
+  interp_to_Zle.
+  simpl_in_Z.
+  Zbool_to_cmp.
+  destruct H1.
+  - interp_to_Zle. simpl_in_Z. Zbool_to_cmp.
+    apply_in_Z.
+    apply Zbool.Zle_imp_le_bool.
+    assert ((0 < zr0)%Z) by omega.
+    destruct (Z.le_ge_cases zr2 0%Z).
+    + generalize (Zrem_lt_neg_pos _ _ H0 H). omega.
+    + generalize (Zrem_lt_pos_pos _ _ H0 H). omega.
+  - interp_to_Zle. simpl_in_Z. Zbool_to_cmp.
+    apply_in_Z.
+    apply Zbool.Zle_imp_le_bool.
+    assert ((zr2 <= 0)%Z) by omega.
+    Zquot.zero_or_not zr0.
+    generalize (Zquot.Zrem_lt_neg _ _ H H0).
+    omega.
+  - interp_to_Zle. simpl_in_Z. Zbool_to_cmp.
+    apply_in_Z.
+    apply Zbool.Zle_imp_le_bool.
+    assert ((zr0 < 0)%Z) by omega.
+    destruct (Z.le_ge_cases zr2 0%Z).
+    + generalize (Zrem_lt_neg_neg _ _ H0 H). omega.
+    + generalize (Zrem_lt_pos_neg _ _ H0 H). omega.
+Qed.
+
 Lemma range_modulo_min_best_pos_pos: forall lmin lmax rmin rmax
-                             (H1: (SosADL.SosADL.IntegerValue (Some 1%Z)) <= rmin)
+                             (H1: (# 1%Z)%SosADL <= rmin)
                              (H2: lmin <= lmax)
                              (H3: rmin <= rmax)
-                             (H4: (SosADL.SosADL.IntegerValue (Some 0%Z)) <= lmin)
+                             (H4: (# 0%Z)%SosADL <= lmin)
                              min
                              (H5: range_modulo_min lmin lmax rmin rmax min),
-    min <= SosADL.SosADL.IntegerValue (Some 0%Z).
+    min <= (# 0%Z)%SosADL.
 Proof.
   intros.
   destruct H5.
   - interp_to_Zle.
     simpl_in_Z.
-    apply In_Z with (zl := zl) (zr := 0%Z); auto.
+    apply_in_Z.
     Zbool_to_cmp.
     omega.
   - auto.
@@ -201,14 +227,14 @@ Proof.
 Qed.
 
 Lemma range_modulo_min_best_neg_pos: forall lmin lmax rmin rmax zlmin
-                             (H1: (SosADL.SosADL.IntegerValue (Some 1%Z)) <= rmin)
+                             (H1: (# 1%Z)%SosADL <= rmin)
                              (H2: lmin <= lmax)
                              (H3: rmin <= rmax)
                              (H4: interp_in_Z lmin = Interpreted zlmin)
                              (H5: (0 <=? zlmin)%Z = false)
                              min
                              (H': range_modulo_min lmin lmax rmin rmax min),
-    min <= (SosADL.SosADL.BinaryExpression (Some (SosADL.SosADL.IntegerValue (Some 1%Z))) (Some "-") (Some rmax)).
+    min <= (# 1%Z - rmax)%SosADL.
 Proof.
   intros. destruct H'.
   - auto.
@@ -225,31 +251,177 @@ Proof.
     omega.
 Qed.
 
+Lemma quot_rem'' a b: (a - Z.rem a b)%Z = (b * Z.quot a b)%Z.
+Proof.
+  symmetry.
+  apply Zplus_minus_eq.
+  rewrite Z.add_comm.
+  apply Z.quot_rem'.
+Qed.
+
+Lemma rem_plus_b a b: (0 <= a*b)%Z -> Z.rem a b = Z.rem (a+b)%Z b.
+Proof.
+  intro.
+  rewrite Zplus_rem; auto.
+  rewrite Z_rem_same.
+  rewrite Z.add_0_r.
+  symmetry.
+  apply Zrem_rem.
+Qed.
+
+Lemma rem_0 a b: Z.rem (a - (Z.rem a b))%Z b = 0%Z.
+Proof.
+  apply Zrem_divides.
+  exists (a ÷ b)%Z.
+  apply quot_rem''.
+Qed.
+
+Lemma opp_sub a b: (- (a - b))%Z = (b - a)%Z.
+Proof.
+  omega.
+Qed.
+
+Lemma opp_le a b: (a <= b)%Z <-> (-b <= - a)%Z.
+Proof.
+  omega.
+Qed.
+
+Lemma add_sub a b c: (a + b - c)%Z = ((a - c) + b)%Z.
+Proof.
+  omega.
+Qed.
+
+Lemma add_sub' a b c: ((a - b) + c)%Z = (a + (c - b))%Z.
+Proof.
+  omega.
+Qed.
+
+Lemma opp_add_opp a b: (- (a + -b))%Z = (b - a)%Z.
+Proof.
+  omega.
+Qed.
+
 Lemma range_modulo_min_best_pos: forall lmin lmax rmin rmax
-                             (H1: (SosADL.SosADL.IntegerValue (Some 1%Z)) <= rmin)
+                             (H1: (# 1%Z)%SosADL <= rmin)
                              (H2: lmin <= lmax)
                              (H3: rmin <= rmax),
     exists min, range_modulo_min lmin lmax rmin rmax min
-           /\ forall min', range_modulo_min lmin lmax rmin rmax min' -> min' <= min.
+           /\ (forall min', range_modulo_min lmin lmax rmin rmax min' -> min' <= min)
+           /\ (exists l r, r <= (lmax - lmin)%SosADL ->
+                     (forall zlmin, interp_in_Z lmin = Interpreted zlmin -> (zlmin < 0)%Z -> lmin <= (- r)%SosADL) ->
+                     lmin <= l /\ l <= lmax /\ rmin <= r /\ r <= rmax
+                     /\ min <= (l mod r)%SosADL
+                     /\ (l mod r)%SosADL <= min).
 Proof.
   intros.
   inversion H2. subst.
   case_eq ((0 <=? zl)%Z); intro.
-  - exists (SosADL.SosADL.IntegerValue (Some 0%Z)).
-    split.
+  - exists (# 0%Z)%SosADL.
+    split_intro H4.
     + apply range_modulo_min_zero.
-      * apply In_Z with (zl := 0%Z) (zr := zl); auto; reflexivity.
-      * apply In_Z with (zl := 0%Z) (zr := 0%Z); auto.
-    + eapply deinterp_in_Z in H; eauto.
-      apply range_modulo_min_best_pos_pos; auto.
-  - exists (SosADL.SosADL.BinaryExpression (Some (SosADL.SosADL.IntegerValue (Some 1%Z))) (Some "-") (Some rmax)).
-    split.
+      * apply_in_Z; reflexivity.
+      * apply_in_Z.
+    + split.
+      * eapply deinterp_in_Z in H; eauto.
+        apply range_modulo_min_best_pos_pos; auto.
+      * exists (lmax - (lmax mod rmin))%SosADL.
+        exists rmin.
+        intros H5 _.
+        interp_to_Zle. simpl_in_Z.
+        { split_intro H6.
+          - apply_in_Z.
+            Zbool_to_cmp.
+            assert ((Z.rem zr2 zr3 < zr3)%Z).
+            + apply Zquot.Zrem_lt_pos_pos; omega.
+            + omega.
+          - split_intro H7.
+            + interp_to_Zle. simpl_in_Z. apply_in_Z. Zbool_to_cmp.
+              assert ((0 <= Z.rem zr2 zr3)%Z).
+              * apply Zquot.Zrem_lt_pos_pos; omega.
+              * omega.
+            + split_intro H8.
+              * interp_to_Zle. simpl_in_Z. apply_in_Z. Zbool_to_cmp. omega.
+              * { split.
+                  - apply_in_Z.
+                  - split.
+                    + eapply range_modulo_min_ok; eauto.
+                      apply_in_Z.
+                    + interp_to_Zle. simpl_in_Z.
+                      apply_in_Z. Zbool_to_cmp.
+                      rewrite rem_0.
+                      omega. } }
+  - assert (0 > zl)%Z
+      by (generalize (Zle_cases 0 zl); intro X; rewrite H in X; auto).
+    exists (# 1%Z - rmax)%SosADL.
+    split_intro H4.
     + apply range_modulo_min_pos.
       * interp_to_Zle. simpl_in_Z.
-        apply In_Z with (zl := 1%Z) (zr := zr2); auto.
+        apply_in_Z.
       * interp_to_Zle. simpl_in_Z.
-        apply In_Z with (zl := (1 - zr0)%Z) (zr := (1 - zr0)%Z); try auto_rewrite; apply Zle_bool_refl.
-    + eapply range_modulo_min_best_neg_pos; eauto.
+        apply_in_Z.
+        apply Zle_bool_refl.
+    + split.
+      * eapply range_modulo_min_best_neg_pos; eauto.
+      * exists (lmin + (# 1%Z) - lmin mod rmax)%SosADL.
+        exists rmax.
+        intros H5 H6.
+        apply Z.gt_lt in H0.
+        generalize (H6 _ p1 H0).
+        intro H7.
+        interp_to_Zle. simpl_in_Z. Zbool_to_cmp.
+        { split_intro G1.
+          - apply_in_Z. Zbool_to_cmp.
+            assert (Z.rem zl3 zr2 <= 0)%Z
+              by (apply Zquot.Zrem_lt_neg_pos; omega).
+            omega.
+          - split_intro G2.
+            + apply_in_Z. Zbool_to_cmp.
+              assert (-zr2 < Z.rem zl3 zr2)%Z
+                by (apply Zquot.Zrem_lt_neg_pos; omega).
+              omega.
+            + split_intro G3.
+              * apply_in_Z. Zbool_to_cmp. auto.
+              * { split_intro G4.
+                  - apply_in_Z. Zbool_to_cmp. reflexivity.
+                  - split.
+                    + eapply range_modulo_min_ok; eauto.
+                    + interp_to_Zle. simpl_in_Z.
+                      apply_in_Z. Zbool_to_cmp.
+                      rewrite add_sub.
+                      rewrite quot_rem''.
+                      rewrite Z.add_comm.
+                      apply opp_le.
+                      rewrite <- Z.rem_opp_l'.
+                      rewrite opp_sub.
+                      remember (- zl2)%Z as mzl2.
+                      rewrite <- (Z.opp_involutive zl2).
+                      rewrite <- Heqmzl2.
+                      rewrite Zquot_opp_l.
+                      rewrite <- Z.mul_opp_comm.
+                      rewrite Z.mul_opp_l.
+                      rewrite opp_add_opp.
+                      rewrite rem_plus_b.
+                      * rewrite add_sub'.
+                        rewrite Z.add_comm.
+                        rewrite Z.mul_comm.
+                        { rewrite Z_rem_plus.
+                          - rewrite Z.rem_small; omega.
+                          - rewrite <- (Z.mul_0_l 0%Z).
+                            apply Zmult_le_compat; try omega.
+                            remember (mzl2 ÷ zr0)%Z as a.
+                            assert (0 <= a)%Z by (subst; apply Z_quot_pos; omega).
+                            assert (0 <= a * zr0)%Z.
+                            * rewrite <- (Z.mul_0_l 0%Z).
+                              apply Zmult_le_compat; auto; try reflexivity; try omega.
+                            * omega.
+                        }
+                      * rewrite <- (Z.mul_0_l 0%Z).
+                        apply Zmult_le_compat; try omega.
+                        assert (1 <= (mzl2 ÷ zr0))%Z by (apply Zquot_le_lower_bound; omega).
+                        { assert (1 <= zr0 * (mzl2 ÷ zr0))%Z.
+                          - rewrite <- (Z.mul_1_l 1%Z).
+                            apply Zmult_le_compat; omega.
+                          - omega. } } }
 Qed.
 
 Lemma range_modulo_min_best_pos_neg: forall lmin lmax rmin rmax
@@ -300,7 +472,7 @@ Lemma range_modulo_min_best_neg: forall lmin lmax rmin rmax
                              (H2: lmin <= lmax)
                              (H3: rmin <= rmax),
     exists min, range_modulo_min lmin lmax rmin rmax min
-           /\ forall min', range_modulo_min lmin lmax rmin rmax min' -> min' <= min.
+           /\ (forall min', range_modulo_min lmin lmax rmin rmax min' -> min' <= min).
 Proof.
   intros.
   inversion H2. subst.

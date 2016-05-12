@@ -105,3 +105,21 @@ Ltac mysplit :=
   try match goal with
         | |- _ /\ _ => apply conj; mysplit
       end.
+
+Lemma split_intro_: forall {A B: Prop}, A -> (A -> B) -> A /\ B.
+Proof.
+  auto.
+Qed.
+
+Ltac split_intro_simpl :=
+  match goal with
+  | |- _ /\ _ => apply split_intro_; [ | intro ]
+  end.
+
+Ltac split_intro_named n :=
+  match goal with
+  | |- _ /\ _ => apply split_intro_; [ | intro n ]
+  end.
+
+Tactic Notation "split_intro" := split_intro_simpl.
+Tactic Notation "split_intro" ident(n) := split_intro_named n.

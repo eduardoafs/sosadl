@@ -54,6 +54,34 @@ Fixpoint interp_in_Z (e: SosADL.SosADL.t_Expression) {struct e} :=
     | _ => Failed e e
   end.
 
+Ltac interp_to_Z x :=
+  match goal with
+  | H: interp_in_Z x = Interpreted ?zx |- _ => zx
+  | _ =>
+    match x with
+    | SosADL.SosADL.IntegerValue (Some ?zx) => zx
+    | SosADL.SosADL.UnaryExpression (Some "-") (Some ?y) =>
+      let zy := interp_to_Z y in constr:(- zy)%Z
+    | SosADL.SosADL.UnaryExpression (Some "+") (Some ?y) =>
+      let zy := interp_to_Z y in zy
+    | SosADL.SosADL.BinaryExpression (Some ?a) (Some "+") (Some ?b) =>
+      let za := interp_to_Z a in
+      let zb := interp_to_Z b in constr:(za+zb)%Z
+    | SosADL.SosADL.BinaryExpression (Some ?a) (Some "-") (Some ?b) =>
+      let za := interp_to_Z a in
+      let zb := interp_to_Z b in constr:(za-zb)%Z
+    | SosADL.SosADL.BinaryExpression (Some ?a) (Some "*") (Some ?b) =>
+      let za := interp_to_Z a in
+      let zb := interp_to_Z b in constr:(za*zb)%Z
+    | SosADL.SosADL.BinaryExpression (Some ?a) (Some "/") (Some ?b) =>
+      let za := interp_to_Z a in
+      let zb := interp_to_Z b in constr:(Z.quot za zb)
+    | SosADL.SosADL.BinaryExpression (Some ?a) (Some "mod") (Some ?b) =>
+      let za := interp_to_Z a in
+      let zb := interp_to_Z b in constr:(Z.rem za zb)
+    end
+  end.
+
 Lemma interpInZ_unary o x (H: exists f, interp_in_Z (SosADL.SosADL.UnaryExpression (Some o) (Some x)) = Interpreted f):
   o = "+" \/ o = "-".
 Proof.
