@@ -9,4 +9,8 @@ public class OptionalUtils {
 		return o.map(f).orElse(ifEmpty);
 	}
 
+	public static <T> Optional<T> orElse(Optional<T> l, Optional<T> r) {
+		return l.map(Optional::of).orElse(r);
+	}
+
 }

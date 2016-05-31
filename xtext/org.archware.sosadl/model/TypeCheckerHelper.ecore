@@ -23,6 +23,6 @@
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EDataType" name="Observer" instanceTypeName="java.util.function.Consumer&lt;org.archware.sosadl.tv.typeCheckerHelper.TypeVariable>"
       serializable="false"/>
-  <eClassifiers xsi:type="ecore:EDataType" name="Solver" instanceTypeName="java.util.function.Function&lt;org.archware.sosadl.tv.typeCheckerHelper.TypeVariable, org.archware.sosadl.sosADL.DataType>"
+  <eClassifiers xsi:type="ecore:EDataType" name="Solver" instanceTypeName="java.util.function.Function&lt;org.archware.sosadl.tv.typeCheckerHelper.TypeVariable, java.util.Optional&lt;org.archware.sosadl.sosADL.DataType>>"
       serializable="false"/>
 </ecore:EPackage>

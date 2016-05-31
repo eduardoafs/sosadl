@@ -7,9 +7,11 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.math.BigInteger;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.Stack;
@@ -57,6 +59,7 @@ import org.archware.sosadl.sosADL.TupleType;
 import org.archware.sosadl.sosADL.UnaryExpression;
 import org.archware.sosadl.sosADL.Unit;
 import org.archware.sosadl.sosADL.Valuing;
+import org.archware.sosadl.tv.typeCheckerHelper.TypeCheckerHelperFactory;
 import org.archware.sosadl.tv.typeCheckerHelper.TypeCheckerHelperPackage;
 import org.archware.sosadl.tv.typeCheckerHelper.TypeVariable;
 import org.archware.sosadl.validation.AccumulatingValidator;
@@ -67,10 +70,11 @@ import org.archware.sosadl.validation.typing.impl.TypeEnvContent;
 import org.archware.sosadl.validation.typing.impl.VariableEnvContent;
 import org.archware.sosadl.validation.typing.interp.InterpInZ;
 import org.archware.sosadl.validation.typing.proof.*;
-import org.archware.utils.HeptaFunction;
 import org.archware.utils.IntPair;
 import org.archware.utils.ListUtils;
+import org.archware.utils.MapUtils;
 import org.archware.utils.NonaFunction;
+import org.archware.utils.OptionalUtils;
 import org.archware.utils.Pair;
 import org.archware.utils.StreamUtils;
 import org.archware.utils.TreDecaFunction;
@@ -168,6 +172,9 @@ public class TypeChecker extends AccumulatingValidator {
 	 */
 	private void solveConstraints() {
 		for(TypeVariable i: typeVariables) {
+			if(i.eContainer() != null) {
+				throw new AssertionError("Type variables should not be contained in any eObject");
+			}
 			if(!i.eIsSet(TypeCheckerHelperPackage.Literals.TYPE_VARIABLE__SUBSTITUTE)) {
 				Stack<TypeVariable> pending = new Stack<>();
 				pending.push(i);
@@ -189,10 +196,13 @@ public class TypeChecker extends AccumulatingValidator {
 						if(k != j) {
 							throw new AssertionError();
 						}
-						k.setSubstitute(k.getSolver().apply(k));
-						if(k.eIsSet(TypeCheckerHelperPackage.Literals.TYPE_VARIABLE__DELAYED_TASK)) {
-							k.getDelayedTask().accept(k);
-						}
+						Optional<DataType> t = k.getSolver().apply(k);
+						t.ifPresent((x) -> {
+							k.setSubstitute(x);
+							if(k.eIsSet(TypeCheckerHelperPackage.Literals.TYPE_VARIABLE__DELAYED_TASK)) {
+								k.getDelayedTask().accept(k);
+							}
+						});
 					}
 				}
 			}
@@ -519,8 +529,8 @@ public class TypeChecker extends AccumulatingValidator {
 	private final static UnaryTypeInfo<?> unopOpposite = new UnaryTypeInfo<>("-", RangeType.class, "range type", () -> createRangeType(0,0),
 			(g, e, p1, p2) ->  createType_expression_Opposite(g, ((UnaryExpression)e).getRight(), p1.getB(),
 					p2.getB().getVmin(), p2.getB().getVmax(), p1.getA(), p2.getA()),
-			(g, e, p1, p2) -> createRangeType(createOpposite(EcoreUtil.copy(p2.getB().getVmax())),
-					createOpposite(EcoreUtil.copy(p2.getB().getVmin()))));
+			(g, e, p1, p2) -> createRangeType(createOpposite(p2.getB().getVmax()),
+					createOpposite(p2.getB().getVmin())));
 	
 	private final static UnaryTypeInfo<?> unopNot = new UnaryTypeInfo<>("not", BooleanType.class, "boolean type", () -> createBooleanType(),
 			(g, e, p1, p2) -> createType_expression_Not(g, e.getRight(), p1.getB(), p1.getA(), p2.getA()),
@@ -540,8 +550,8 @@ public class TypeChecker extends AccumulatingValidator {
 					e.getRight(), p3.getB(), p4.getB().getVmin(), p4.getB().getVmax(),
 					p1.getA(), p2.getA(), p3.getA(), p4.getA()),
 			(g, e, p1, p2, p3, p4) -> createRangeType(
-					createBinaryExpression(EcoreUtil.copy(p2.getB().getVmin()), "+", EcoreUtil.copy(p4.getB().getVmin())),
-					createBinaryExpression(EcoreUtil.copy(p2.getB().getVmax()), "+", EcoreUtil.copy(p4.getB().getVmax()))));
+					createBinaryExpression(p2.getB().getVmin(), "+", p4.getB().getVmin()),
+					createBinaryExpression(p2.getB().getVmax(), "+", p4.getB().getVmax())));
 	
 	private final static BinaryTypeInfo<?, ?, ?> binopSub = new BinaryTypeInfo<>("-",
 			RangeType.class, "range type", () -> createRangeType(0, 0),
@@ -551,8 +561,8 @@ public class TypeChecker extends AccumulatingValidator {
 					e.getRight(), p3.getB(), p4.getB().getVmin(), p4.getB().getVmax(),
 					p1.getA(), p2.getA(), p3.getA(), p4.getA()),
 			(g, e, p1, p2, p3, p4) -> createRangeType(
-					createBinaryExpression(EcoreUtil.copy(p2.getB().getVmin()), "-", EcoreUtil.copy(p4.getB().getVmax())),
-					createBinaryExpression(EcoreUtil.copy(p2.getB().getVmax()), "-", EcoreUtil.copy(p4.getB().getVmin()))));
+					createBinaryExpression(p2.getB().getVmin(), "-", p4.getB().getVmax()),
+					createBinaryExpression(p2.getB().getVmax(), "-", p4.getB().getVmin())));
 	
 	private final BinaryTypeInfo<?, ?, ?> binopMul = new BinaryTypeInfo<>("*",
 			RangeType.class, "range type", () -> createRangeType(0, 0),
@@ -561,10 +571,10 @@ public class TypeChecker extends AccumulatingValidator {
 			this::binopMulBuilder);
 
 	private Type_expression_node binopMulProver(Environment g, BinaryExpression e, Pair<Type_expression, DataType> p1, Pair<Subtype, RangeType> p2, Pair<Type_expression, DataType> p3, Pair<Subtype, RangeType> p4, RangeType r) {
-		Expression c1 = createBinaryExpression(EcoreUtil.copy(p2.getB().getVmin()), "*", EcoreUtil.copy(p4.getB().getVmin()));
-		Expression c2 = createBinaryExpression(EcoreUtil.copy(p2.getB().getVmin()), "*", EcoreUtil.copy(p4.getB().getVmax()));
-		Expression c3 = createBinaryExpression(EcoreUtil.copy(p2.getB().getVmax()), "*", EcoreUtil.copy(p4.getB().getVmin()));
-		Expression c4 = createBinaryExpression(EcoreUtil.copy(p2.getB().getVmax()), "*", EcoreUtil.copy(p4.getB().getVmax()));
+		Expression c1 = createBinaryExpression(p2.getB().getVmin(), "*", p4.getB().getVmin());
+		Expression c2 = createBinaryExpression(p2.getB().getVmin(), "*", p4.getB().getVmax());
+		Expression c3 = createBinaryExpression(p2.getB().getVmax(), "*", p4.getB().getVmin());
+		Expression c4 = createBinaryExpression(p2.getB().getVmax(), "*", p4.getB().getVmax());
 		return createType_expression_Mul(g,
 				e.getLeft(), p1.getB(), p2.getB().getVmin(), p2.getB().getVmax(),
 				e.getRight(), p3.getB(), p4.getB().getVmin(), p4.getB().getVmax(),
@@ -580,12 +590,12 @@ public class TypeChecker extends AccumulatingValidator {
 	}
 
 	private RangeType binopMulBuilder(Environment g, BinaryExpression e, Pair<Type_expression, DataType> p1, Pair<Subtype, RangeType> p2, Pair<Type_expression, DataType> p3, Pair<Subtype, RangeType> p4) {
-		Expression c1 = createBinaryExpression(EcoreUtil.copy(p2.getB().getVmin()), "*", EcoreUtil.copy(p4.getB().getVmin()));
-		Expression c2 = createBinaryExpression(EcoreUtil.copy(p2.getB().getVmin()), "*", EcoreUtil.copy(p4.getB().getVmax()));
-		Expression c3 = createBinaryExpression(EcoreUtil.copy(p2.getB().getVmax()), "*", EcoreUtil.copy(p4.getB().getVmin()));
-		Expression c4 = createBinaryExpression(EcoreUtil.copy(p2.getB().getVmax()), "*", EcoreUtil.copy(p4.getB().getVmax()));
-		Expression mi = EcoreUtil.copy(min(min(c1, c2), min(c3, c4)));
-		Expression ma = EcoreUtil.copy(max(max(c1, c2), max(c3, c4)));
+		Expression c1 = createBinaryExpression(p2.getB().getVmin(), "*", p4.getB().getVmin());
+		Expression c2 = createBinaryExpression(p2.getB().getVmin(), "*", p4.getB().getVmax());
+		Expression c3 = createBinaryExpression(p2.getB().getVmax(), "*", p4.getB().getVmin());
+		Expression c4 = createBinaryExpression(p2.getB().getVmax(), "*", p4.getB().getVmax());
+		Expression mi = min(min(c1, c2), min(c3, c4));
+		Expression ma = max(max(c1, c2), max(c3, c4));
 		return createRangeType(mi, ma);
 	}
 
@@ -597,10 +607,10 @@ public class TypeChecker extends AccumulatingValidator {
 
 	private Type_expression_node binopDivProver(Environment g, BinaryExpression e, Pair<Type_expression, DataType> p1, Pair<Subtype, RangeType> p2, Pair<Type_expression, DataType> p3, Pair<Subtype, RangeType> p4, RangeType r) {
 		if(isLe(createIntegerValue(1), p4.getB().getVmin())) {
-			Expression c1 = createBinaryExpression(EcoreUtil.copy(p2.getB().getVmin()), "/", EcoreUtil.copy(p4.getB().getVmin()));
-			Expression c2 = createBinaryExpression(EcoreUtil.copy(p2.getB().getVmin()), "/", EcoreUtil.copy(p4.getB().getVmax()));
-			Expression c3 = createBinaryExpression(EcoreUtil.copy(p2.getB().getVmax()), "/", EcoreUtil.copy(p4.getB().getVmin()));
-			Expression c4 = createBinaryExpression(EcoreUtil.copy(p2.getB().getVmax()), "/", EcoreUtil.copy(p4.getB().getVmax()));
+			Expression c1 = createBinaryExpression(p2.getB().getVmin(), "/", p4.getB().getVmin());
+			Expression c2 = createBinaryExpression(p2.getB().getVmin(), "/", p4.getB().getVmax());
+			Expression c3 = createBinaryExpression(p2.getB().getVmax(), "/", p4.getB().getVmin());
+			Expression c4 = createBinaryExpression(p2.getB().getVmax(), "/", p4.getB().getVmax());
 			return createType_expression_Div_pos(g,
 					e.getLeft(), p1.getB(), p2.getB().getVmin(), p2.getB().getVmax(),
 					e.getRight(), p3.getB(), p4.getB().getVmin(), p4.getB().getVmax(),
@@ -615,10 +625,10 @@ public class TypeChecker extends AccumulatingValidator {
 					expression_le(c3, r.getVmax()),
 					expression_le(c4, r.getVmax()));
 		} else if (isLe(p4.getB().getVmax(), createOpposite(createIntegerValue(1)))) {
-			Expression c1 = createBinaryExpression(EcoreUtil.copy(p2.getB().getVmin()), "/", EcoreUtil.copy(p4.getB().getVmin()));
-			Expression c2 = createBinaryExpression(EcoreUtil.copy(p2.getB().getVmin()), "/", EcoreUtil.copy(p4.getB().getVmax()));
-			Expression c3 = createBinaryExpression(EcoreUtil.copy(p2.getB().getVmax()), "/", EcoreUtil.copy(p4.getB().getVmin()));
-			Expression c4 = createBinaryExpression(EcoreUtil.copy(p2.getB().getVmax()), "/", EcoreUtil.copy(p4.getB().getVmax()));
+			Expression c1 = createBinaryExpression(p2.getB().getVmin(), "/", p4.getB().getVmin());
+			Expression c2 = createBinaryExpression(p2.getB().getVmin(), "/", p4.getB().getVmax());
+			Expression c3 = createBinaryExpression(p2.getB().getVmax(), "/", p4.getB().getVmin());
+			Expression c4 = createBinaryExpression(p2.getB().getVmax(), "/", p4.getB().getVmax());
 			return createType_expression_Div_neg(g,
 					e.getLeft(), p1.getB(), p2.getB().getVmin(), p2.getB().getVmax(),
 					e.getRight(), p3.getB(), p4.getB().getVmin(), p4.getB().getVmax(),
@@ -640,12 +650,12 @@ public class TypeChecker extends AccumulatingValidator {
 	
 	private RangeType binopDivBuilder(Environment g, BinaryExpression e, Pair<Type_expression, DataType> p1, Pair<Subtype, RangeType> p2, Pair<Type_expression, DataType> p3, Pair<Subtype, RangeType> p4) {
 		if(isLe(createIntegerValue(1), p4.getB().getVmin()) || isLe(p4.getB().getVmax(), createOpposite(createIntegerValue(1)))) {
-			Expression c1 = createBinaryExpression(EcoreUtil.copy(p2.getB().getVmin()), "/", EcoreUtil.copy(p4.getB().getVmin()));
-			Expression c2 = createBinaryExpression(EcoreUtil.copy(p2.getB().getVmin()), "/", EcoreUtil.copy(p4.getB().getVmax()));
-			Expression c3 = createBinaryExpression(EcoreUtil.copy(p2.getB().getVmax()), "/", EcoreUtil.copy(p4.getB().getVmin()));
-			Expression c4 = createBinaryExpression(EcoreUtil.copy(p2.getB().getVmax()), "/", EcoreUtil.copy(p4.getB().getVmax()));
-			Expression mi = EcoreUtil.copy(min(min(c1, c2), min(c3, c4)));
-			Expression ma = EcoreUtil.copy(max(max(c1, c2), max(c3, c4)));
+			Expression c1 = createBinaryExpression(p2.getB().getVmin(), "/", p4.getB().getVmin());
+			Expression c2 = createBinaryExpression(p2.getB().getVmin(), "/", p4.getB().getVmax());
+			Expression c3 = createBinaryExpression(p2.getB().getVmax(), "/", p4.getB().getVmin());
+			Expression c4 = createBinaryExpression(p2.getB().getVmax(), "/", p4.getB().getVmax());
+			Expression mi = min(min(c1, c2), min(c3, c4));
+			Expression ma = max(max(c1, c2), max(c3, c4));
 			return createRangeType(mi, ma);
 		} else {
 			error("The divisor must be different from 0", e.getRight(), null);
@@ -667,7 +677,7 @@ public class TypeChecker extends AccumulatingValidator {
 						p4.getB().getVmin(), p4.getB().getVmax(),
 						r.getVmin(),
 						expression_le(createIntegerValue(1), p4.getB().getVmin()),
-						expression_le(r.getVmin(), createBinaryExpression(createIntegerValue(1), "-", EcoreUtil.copy(p4.getB().getVmax())))),
+						expression_le(r.getVmin(), createBinaryExpression(createIntegerValue(1), "-", p4.getB().getVmax()))),
 				() -> createRange_modulo_min_zero(p2.getB().getVmin(), p2.getB().getVmax(),
 						p4.getB().getVmin(), p4.getB().getVmax(),
 						r.getVmin(),
@@ -677,7 +687,7 @@ public class TypeChecker extends AccumulatingValidator {
 						p4.getB().getVmin(), p4.getB().getVmax(),
 						r.getVmin(),
 						expression_le(p4.getB().getVmax(), createOpposite(createIntegerValue(1))),
-						expression_le(r.getVmin(), createBinaryExpression(EcoreUtil.copy(p4.getB().getVmin()), "+", createIntegerValue(1)))),
+						expression_le(r.getVmin(), createBinaryExpression(p4.getB().getVmin(), "+", createIntegerValue(1)))),
 				() -> { error("The divisor must be different from 0", e.getRight(), null); return null; });
 		if(min != null) {
 			Range_modulo_max max = range_modulo_max(
@@ -687,7 +697,7 @@ public class TypeChecker extends AccumulatingValidator {
 							p4.getB().getVmin(), p4.getB().getVmax(),
 							r.getVmax(),
 							expression_le(createIntegerValue(1), p4.getB().getVmin()),
-							expression_le(createBinaryExpression(EcoreUtil.copy(p4.getB().getVmax()), "-", createIntegerValue(1)), r.getVmax())),
+							expression_le(createBinaryExpression(p4.getB().getVmax(), "-", createIntegerValue(1)), r.getVmax())),
 					() -> createRange_modulo_max_zero(p2.getB().getVmin(), p2.getB().getVmax(),
 							p4.getB().getVmin(), p4.getB().getVmax(),
 							r.getVmax(),
@@ -697,7 +707,7 @@ public class TypeChecker extends AccumulatingValidator {
 							p4.getB().getVmin(), p4.getB().getVmax(),
 							r.getVmax(),
 							expression_le(p4.getB().getVmax(), createOpposite(createIntegerValue(1))),
-							expression_le(createBinaryExpression(createOpposite(createIntegerValue(1)), "-", EcoreUtil.copy(p4.getB().getVmin())), r.getVmax())),
+							expression_le(createBinaryExpression(createOpposite(createIntegerValue(1)), "-", p4.getB().getVmin()), r.getVmax())),
 					() -> { error("The divisor must be different from 0", e.getRight(), null); return null; });
 			if(max != null) {
 				return createType_expression_Mod(g,
@@ -717,17 +727,17 @@ public class TypeChecker extends AccumulatingValidator {
 		Expression min = range_modulo_min(
 				p2.getB().getVmin(), p2.getB().getVmax(),
 				p4.getB().getVmin(), p4.getB().getVmax(),
-				() -> createBinaryExpression(createIntegerValue(1), "-", EcoreUtil.copy(p4.getB().getVmax())),
+				() -> createBinaryExpression(createIntegerValue(1), "-", p4.getB().getVmax()),
 				() -> createIntegerValue(0),
-				() -> createBinaryExpression(EcoreUtil.copy(p4.getB().getVmin()), "+", createIntegerValue(1)),
+				() -> createBinaryExpression(p4.getB().getVmin(), "+", createIntegerValue(1)),
 				() -> { error("The divisor must be different from 0", e.getRight(), null); return null; });
 		if(min != null) {
 			Expression max = range_modulo_max(
 					p2.getB().getVmin(), p2.getB().getVmax(),
 					p4.getB().getVmin(), p4.getB().getVmax(),
-					() -> createBinaryExpression(EcoreUtil.copy(p4.getB().getVmax()), "-", createIntegerValue(1)),
+					() -> createBinaryExpression(p4.getB().getVmax(), "-", createIntegerValue(1)),
 					() -> createIntegerValue(0),
-					() -> createBinaryExpression(createOpposite(createIntegerValue(1)), "-", EcoreUtil.copy(p4.getB().getVmin())),
+					() -> createBinaryExpression(createOpposite(createIntegerValue(1)), "-", p4.getB().getVmin()),
 					() -> { error("The divisor must be different from 0", e.getRight(), null); return null; });
 			if(max != null) {
 				return createRangeType(min, max);
@@ -882,7 +892,7 @@ public class TypeChecker extends AccumulatingValidator {
 		saveEnvironment(e, gamma);
 		Pair<Type_expression_node, DataType> p1 = type_expression_node(gamma, e);
 		Type_expression_node ten = p1.getA();
-		DataType t = EcoreUtil.copy(p1.getB());
+		DataType t = p1.getB();
 		if(ten != null && t != null) {
 			saveProof(e, ten);
 			saveType(e, t);
@@ -896,104 +906,112 @@ public class TypeChecker extends AccumulatingValidator {
 	private Pair<Type_expression_node, DataType> type_expression_node(Environment gamma, Expression e) {
 		saveEnvironment(e, gamma);
 		if(e instanceof IntegerValue) {
-			DataType t = createRangeType(EcoreUtil.copy(e), EcoreUtil.copy(e));
-			return new Pair<>(saveProof(e, createType_expression_IntegerValue(gamma, BigInteger.valueOf(((IntegerValue) e).getAbsInt()))),
-					saveType(e, t));
-		} else if(e instanceof UnaryExpression && ((UnaryExpression)e).getOp() != null && ((UnaryExpression)e).getRight() != null) {
-			for(UnaryTypeInfo<? extends DataType> i : unaryTypeInformations) {
-				if(((UnaryExpression)e).getOp().equals(i.getOperator())) {
-					return typeUnaryExpression(gamma, (UnaryExpression)e, i);
-				}
-			}
-			error("Unknown unary operator", e, SosADLPackage.Literals.UNARY_EXPRESSION__OP);
-			return new Pair<>(null, SosADLFactory.eINSTANCE.createBooleanType());
-		} else if(e instanceof BinaryExpression && ((BinaryExpression)e).getLeft() != null && ((BinaryExpression)e).getOp() != null && ((BinaryExpression)e).getRight() != null) {
-			for(BinaryTypeInfo<? extends DataType, ? extends DataType, ? extends DataType> i: binaryTypeInformations) {
-				if(((BinaryExpression)e).getOp().equals(i.getOperator())) {
-					return typeBinaryExpression(gamma, (BinaryExpression)e, i);
-				}
-			}
-			error("Unknown binary operator", e, SosADLPackage.Literals.BINARY_EXPRESSION__OP);
-			return new Pair<>(null, null);
-		} else if (e instanceof IdentExpression && ((IdentExpression)e).getIdent() != null
-				&& gamma.get(((IdentExpression)e).getIdent()) != null
-				&& gamma.get(((IdentExpression)e).getIdent()) instanceof VariableEnvContent) {
-			DataType t = ((VariableEnvContent)gamma.get(((IdentExpression)e).getIdent())).getType();
-			saveBinder(e, ((VariableEnvContent)gamma.get(((IdentExpression)e).getIdent())).getBinder());
-			return new Pair<>(saveProof(e, createType_expression_Ident(gamma, ((IdentExpression)e).getIdent(), t, createReflexivity())),
-					saveType(e, t));
+			return type_expression_node_IntegerValue(gamma, (IntegerValue) e);
+		} else if(e instanceof UnaryExpression) {
+			return type_expression_node_UnaryExpression(gamma, (UnaryExpression) e);
+		} else if(e instanceof BinaryExpression) {
+			return type_expression_node_BinaryExpression(gamma, (BinaryExpression) e);
+		} else if (e instanceof IdentExpression) {
+			return type_expression_node_IdentExpression(gamma, (IdentExpression)e);
 		} else if(e instanceof MethodCall) {
-			MethodCall mc = (MethodCall)e;
-			if (mc.getMethod() != null) {
-				Pair<Type_expression, DataType> self = type_expression(gamma, mc.getObject());
-				List<Pair<Expression,Pair<Type_expression, DataType>>> params = ListExtensions.map(mc.getParameters(), (p) -> new Pair<>(p, type_expression(gamma, p)));
-				if(self.getA() != null && params.stream().allMatch((p) -> p.getA() != null && p.getB() != null)) {
-					Stream<IntPair<TypeEnvContent>> indexedTypes = 
-							StreamUtils.indexed(gamma.stream())
-						.flatMap((i) -> {
-							if (i.getB() instanceof TypeEnvContent) {
-								return Stream.of(new IntPair<>(i.getA(), (TypeEnvContent)i.getB()));
-							} else {
-								return Stream.empty();
-							}
-						});
-					Stream<IntPair<TypeEnvContent>> compatibleIndexedTypes = 
-							indexedTypes
-							.filter((i) -> isSubtype(gamma, self.getB(),
-									createNamedType(i.getB().getDataTypeDecl().getName())));
-					Optional<IntPair<Pair<TypeEnvContent,IntPair<FunctionDecl>>>> method =
-							compatibleIndexedTypes
-							.flatMap((i) -> StreamUtils.indexed(i.getB().getMethods().stream())
-									.filter((m) -> m.getB().getName().equals(mc.getMethod()))
-									.filter((m) -> params.size() == m.getB().getParameters().size())
-									.filter((m) -> StreamUtils.zip(params.stream().map(Pair::getB), m.getB().getParameters().stream())
-											.allMatch((p) -> isSubtype(gamma, p.getA().getB(), p.getB().getType())))
-									.map((m) -> new IntPair<>(i.getA(), new Pair<>(i.getB(), m))))
-							.findFirst();
-					if(method.isPresent()) {
-						IntPair<Pair<TypeEnvContent,IntPair<FunctionDecl>>> m = method.get();
-						saveBinder(e, m.getB().getB().getB());
-						return new Pair<>(saveProof(e,createType_expression_MethodCall(gamma, mc.getObject(), self.getB(),
-									m.getB().getA().getDataTypeDecl(), m.getB().getB().getB().getData().getType(),
-									m.getB().getA().getMethods(),
-									mc.getMethod(),
-									m.getB().getB().getB().getParameters(),
-									m.getB().getB().getB().getType(),
-									mc.getParameters(),
-									self.getA(),
-									createEx_intro(BigInteger.valueOf(m.getA()), createReflexivity()),
-									subtype(gamma, self.getB(), m.getB().getB().getB().getData().getType(), mc, null).orElse(null),
-									createEx_intro(BigInteger.valueOf(m.getB().getB().getA()),
-											createConj(createReflexivity(), createConj(createReflexivity(), createConj(createReflexivity(), createReflexivity())))),
-									proveForall2(m.getB().getB().getB().getParameters(),
-											mc.getParameters(),
-											(fp,p) -> {
-												Pair<Type_expression, DataType> tp = ListUtils.assoc(params, p);
-												return createEx_intro(fp.getType(),
-													createConj(createReflexivity(),
-															createEx_intro(tp.getB(),
-																	createConj(tp.getA(),
-																			subtype(gamma, tp.getB(), fp.getType(), mc, null).orElse(null)))));
-												}))),
-								saveType(e, m.getB().getB().getB().getType()));
+			return type_expression_node_MethodCall(gamma, (MethodCall) e);
+		} else if(e instanceof Tuple) {
+			return type_expression_node_Tuple(gamma, (Tuple)e);
+		} else if(e instanceof Sequence) {
+			return type_expression_node_Sequence(gamma, (Sequence) e);
+		} else if(e instanceof org.archware.sosadl.sosADL.Field) {
+			return type_expression_node_Field(gamma, (org.archware.sosadl.sosADL.Field)e);
+		} else {
+			error("Type error", e, null);
+			return new Pair<>(null, null);
+		}
+	}
+
+	private Pair<Type_expression_node, DataType> type_expression_node_Field(Environment gamma, org.archware.sosadl.sosADL.Field f) {
+		if(f.getField() != null && f.getObject() != null) {
+			Pair<Type_expression, DataType> p1 = type_expression(gamma, f.getObject());
+			if(p1.getA() != null && p1.getB() != null) {
+				if(p1.getB() instanceof TupleType) {
+					TupleType tt = (TupleType) p1.getB();
+					Optional<FieldDecl> fd = tt.getFields().stream().filter((d) -> f.getField().equals(d.getName())).findFirst();
+					if(fd.isPresent()) {
+						FieldDecl d = fd.get();
+						return new Pair<>(saveProof(f, createType_expression_Field(gamma,
+								f.getObject(), tt.getFields(), f.getField(),
+								d.getType(), p1.getA(), createReflexivity())),
+								saveType(f, d.getType()));
 					} else {
-						error("No applicable method named `" + mc.getMethod() + "'", e, SosADLPackage.Literals.METHOD_CALL__METHOD);
+						error("The tuple has no field named `" + f.getField() + "'", f, SosADLPackage.Literals.FIELD__FIELD);
 						return new Pair<>(null, null);
 					}
+				} else {
+					error("The expression must be a tuple", f, SosADLPackage.Literals.FIELD__OBJECT);
+					return new Pair<>(null, null);
+				}
+			} else {
+				return new Pair<>(null, null);
+			}
+		} else {
+			if(f.getField() == null) {
+				error("A field name must be provided", f, SosADLPackage.Literals.FIELD__FIELD);
+			}
+			if(f.getObject() == null) {
+				error("An object expression must be provided", f, SosADLPackage.Literals.FIELD__OBJECT);
+			}
+			return new Pair<>(null, null);
+		}
+	}
+
+	private Pair<Type_expression_node, DataType> type_expression_node_Sequence(Environment gamma, Sequence s) {
+		if(s.getElements() == null) {
+			error("A sequence must have a list of items", s, null);
+			return new Pair<>(null, null);
+		} else if(s.getElements().stream().anyMatch((x) -> x == null)) {
+			error("All the items of the sequence must be present", s, SosADLPackage.Literals.SEQUENCE__ELEMENTS);
+			return new Pair<>(null, null);
+		} else if(!s.getElements().isEmpty()) {
+			List<Pair<Expression, Pair<Type_expression, DataType>>> elts = ListExtensions.map(s.getElements(), (x) -> new Pair<>(x, type_expression(gamma, x)));
+			if(elts.stream().allMatch((x) -> x.getB() != null && x.getB().getA() != null && x.getB().getB() != null)) {
+				Optional<DataType> itemType = elts.stream().map((x) -> x.getB().getB()).reduce((a,b) -> unionSuperType(gamma, a, b, s, SosADLPackage.Literals.SEQUENCE__ELEMENTS));
+				if(itemType.isPresent() && itemType.orElse(null) != null) {
+					DataType item = itemType.orElse(null);
+					Forall<Expression, Ex<DataType, And<Type_expression, Subtype>>> p1 = proveForall(elts, Pair::getA,
+							(p) -> createEx_intro(p.getB().getB(),
+									createConj(p.getB().getA(),
+											subtype(gamma, p.getB().getB(), item, p.getA(), null).orElse(null))));
+					return new Pair<>(saveProof(s, createType_expression_Sequence(gamma, s.getElements(), item, p1)),
+							saveType(s, createSequenceType(item)));
 				} else {
 					return new Pair<>(null, null);
 				}
 			} else {
-				error("A method name must be provided", e, SosADLPackage.Literals.METHOD_CALL__METHOD);
 				return new Pair<>(null, null);
 			}
-		} else if(e instanceof Tuple && ((Tuple)e).getElements() != null && ((Tuple)e).getElements().stream().allMatch((x) -> x != null)) {
-			Tuple t = (Tuple)e;
+		} else {
+			ProofTermPlaceHolder<Type_expression_node> ten = ProofTermPlaceHolder.create(Type_expression_node.class);
+			TypeVariable v = createFreshTypeVariable(s, null, (x) -> {
+				Optional<DataType> lb = x.getLowerBounds().stream().map(TypeChecker::getSubstitute).reduce((a,b) -> unionSuperType(gamma, a, b, s, SosADLPackage.Literals.SEQUENCE__ELEMENTS));
+				Optional<DataType> ub = x.getUpperBounds().stream().map(TypeChecker::getSubstitute).reduce((a,b) -> interSubType(gamma, a, b, s, SosADLPackage.Literals.SEQUENCE__ELEMENTS));
+				return chooseBetweenOrElse(gamma, lb, ub, Optional.of(createSequenceType(createBooleanType())), s, null);
+			},
+			(x) -> { ten.fillWith(createType_expression_Sequence(gamma, s.getElements(), getSubstitute(x), createForall_nil())); });
+			return new Pair<>(saveProof(s, ten.cast()), saveType(s, v));
+		}
+	}
+
+	private Pair<Type_expression_node, DataType> type_expression_node_Tuple(Environment gamma, Tuple t) {
+		if(t.getElements() == null) {
+			error("A tuple must have a list of elements", t, null);
+			return new Pair<>(null, null);
+		} else if(t.getElements().stream().anyMatch((x) -> x == null)) {
+			error("All the elements of the tuple must be present", t, SosADLPackage.Literals.TUPLE__ELEMENTS);
+			return new Pair<>(null, null);
+		} else {
 			List<Pair<TupleElement, Pair<Type_expression, DataType>>> elts = ListExtensions.map(t.getElements(), (f) -> new Pair<>(f, type_expression(gamma, f.getValue())));
 			if(noDuplicate(t.getElements().stream().map((f) -> f.getLabel()))) {
 				if(elts.stream().allMatch((p) -> p.getB().getA() != null && p.getB().getB() != null)) {
 					List<Pair<TupleElement, Pair<Type_expression, FieldDecl>>> elts2 = ListExtensions.map(elts, (f) -> new Pair<>(f.getA(), new Pair<>(f.getB().getA(), createFieldDecl(f.getA().getLabel(), f.getB().getB()))));
-					TupleType tt = createTupleType(elts2.stream().map((f) -> EcoreUtil.copy(f.getB().getB())));
+					TupleType tt = createTupleType(elts2.stream().map((f) -> f.getB().getB()));
 					Forall2<TupleElement, FieldDecl, Ex<Expression, And<Equality,Ex<DataType,And<Equality,Type_expression>>>>> p3 = proveForall2(elts2,
 							(x) -> x.getA(),
 							(x) -> x.getB().getB(),
@@ -1005,7 +1023,7 @@ public class TypeChecker extends AccumulatingValidator {
 							createReflexivity(),
 							proveForall2(t.getElements(), tt.getFields(), (x,y) -> createReflexivity()),
 							p3);
-					return new Pair<>(saveProof(e, p), saveType(e, tt));
+					return new Pair<>(saveProof(t, p), saveType(t, tt));
 				} else {
 					return new Pair<>(null, null);
 				}
@@ -1015,98 +1033,154 @@ public class TypeChecker extends AccumulatingValidator {
 				.forEach((f) -> error("Multiple fields named `" + f.getLabel() + "'", f, null));
 				return new Pair<>(null, null);
 			}
-		} else if(e instanceof Sequence && ((Sequence)e).getElements() != null && ((Sequence)e).getElements().stream().allMatch((x) -> x != null)) {
-			Sequence s = (Sequence) e;
-			if(s.getElements().size() >= 1) {
-			List<Pair<Expression, Pair<Type_expression, DataType>>> elts = ListExtensions.map(s.getElements(), (x) -> new Pair<>(x, type_expression(gamma, x)));
-				if(elts.stream().allMatch((x) -> x.getB() != null && x.getB().getA() != null && x.getB().getB() != null)) {
-					Optional<DataType> itemType = elts.stream().map((x) -> x.getB().getB()).reduce((a,b) -> unionSuperType(gamma, a, b, s, SosADLPackage.Literals.SEQUENCE__ELEMENTS));
-					if(itemType.isPresent() && itemType.orElse(null) != null) {
-						DataType item = itemType.orElse(null);
-						Forall<Expression, Ex<DataType, And<Type_expression, Subtype>>> p1 = proveForall(elts, Pair::getA,
-								(p) -> createEx_intro(p.getB().getB(),
-										createConj(p.getB().getA(),
-												subtype(gamma, p.getB().getB(), item, p.getA(), null).orElse(null))));
-						return new Pair<>(saveProof(e, createType_expression_Sequence(gamma, s.getElements(), item, p1)),
-								saveType(e, createSequenceType(EcoreUtil.copy(item))));
-					} else {
-						return new Pair<>(null, null);
-					}
-				} else {
-					return new Pair<>(null, null);
-				}
-			} else {
-				error("The sequence should not be empty", s, null);
-				// TODO introduire les variables de type pour prendre en compte la séquence vide
-				return new Pair<>(null, null);
-			}
-		} else if(e instanceof org.archware.sosadl.sosADL.Field) {
-			org.archware.sosadl.sosADL.Field f = (org.archware.sosadl.sosADL.Field) e;
-			if(f.getField() != null && f.getObject() != null) {
-				Pair<Type_expression, DataType> p1 = type_expression(gamma, f.getObject());
-				if(p1.getA() != null && p1.getB() != null) {
-					if(p1.getB() instanceof TupleType) {
-						TupleType tt = (TupleType) p1.getB();
-						Optional<FieldDecl> fd = tt.getFields().stream().filter((d) -> f.getField().equals(d.getName())).findFirst();
-						if(fd.isPresent()) {
-							FieldDecl d = fd.get();
-							return new Pair<>(saveProof(e, createType_expression_Field(gamma,
-									f.getObject(), tt.getFields(), f.getField(),
-									d.getType(), p1.getA(), createReflexivity())),
-									saveType(e, d.getType()));
+		}
+	}
+
+	private Pair<Type_expression_node, DataType> type_expression_node_MethodCall(Environment gamma, MethodCall mc) {
+		if (mc.getMethod() != null) {
+			Pair<Type_expression, DataType> self = type_expression(gamma, mc.getObject());
+			List<Pair<Expression,Pair<Type_expression, DataType>>> params = ListExtensions.map(mc.getParameters(), (p) -> new Pair<>(p, type_expression(gamma, p)));
+			if(self.getA() != null && params.stream().allMatch((p) -> p.getA() != null && p.getB() != null)) {
+				Stream<IntPair<TypeEnvContent>> indexedTypes = 
+						StreamUtils.indexed(gamma.stream())
+					.flatMap((i) -> {
+						if (i.getB() instanceof TypeEnvContent) {
+							return Stream.of(new IntPair<>(i.getA(), (TypeEnvContent)i.getB()));
 						} else {
-							error("The tuple has no field named `" + f.getField() + "'", e, SosADLPackage.Literals.FIELD__FIELD);
-							return new Pair<>(null, null);
+							return Stream.empty();
 						}
-					} else {
-						error("The expression must be a tuple", e, SosADLPackage.Literals.FIELD__OBJECT);
-						return new Pair<>(null, null);
-					}
+					});
+				Stream<IntPair<TypeEnvContent>> compatibleIndexedTypes = 
+						indexedTypes
+						.filter((i) -> isSubtype(gamma, self.getB(),
+								createNamedType(i.getB().getDataTypeDecl().getName())));
+				Optional<IntPair<Pair<TypeEnvContent,IntPair<FunctionDecl>>>> method =
+						compatibleIndexedTypes
+						.flatMap((i) -> StreamUtils.indexed(i.getB().getMethods().stream())
+								.filter((m) -> m.getB().getName().equals(mc.getMethod()))
+								.filter((m) -> params.size() == m.getB().getParameters().size())
+								.filter((m) -> StreamUtils.zip(params.stream().map(Pair::getB), m.getB().getParameters().stream())
+										.allMatch((p) -> isSubtype(gamma, p.getA().getB(), p.getB().getType())))
+								.map((m) -> new IntPair<>(i.getA(), new Pair<>(i.getB(), m))))
+						.findFirst();
+				if(method.isPresent()) {
+					IntPair<Pair<TypeEnvContent,IntPair<FunctionDecl>>> m = method.get();
+					saveBinder(mc, m.getB().getB().getB());
+					return new Pair<>(saveProof(mc,createType_expression_MethodCall(gamma, mc.getObject(), self.getB(),
+								m.getB().getA().getDataTypeDecl(), m.getB().getB().getB().getData().getType(),
+								m.getB().getA().getMethods(),
+								mc.getMethod(),
+								m.getB().getB().getB().getParameters(),
+								m.getB().getB().getB().getType(),
+								mc.getParameters(),
+								self.getA(),
+								createEx_intro(BigInteger.valueOf(m.getA()), createReflexivity()),
+								subtype(gamma, self.getB(), m.getB().getB().getB().getData().getType(), mc, null).orElse(null),
+								createEx_intro(BigInteger.valueOf(m.getB().getB().getA()),
+										createConj(createReflexivity(), createConj(createReflexivity(), createConj(createReflexivity(), createReflexivity())))),
+								proveForall2(m.getB().getB().getB().getParameters(),
+										mc.getParameters(),
+										(fp,p) -> {
+											Pair<Type_expression, DataType> tp = ListUtils.assoc(params, p);
+											return createEx_intro(fp.getType(),
+												createConj(createReflexivity(),
+														createEx_intro(tp.getB(),
+																createConj(tp.getA(),
+																		subtype(gamma, tp.getB(), fp.getType(), mc, null).orElse(null)))));
+											}))),
+							saveType(mc, m.getB().getB().getB().getType()));
 				} else {
+					error("No applicable method named `" + mc.getMethod() + "'", mc, SosADLPackage.Literals.METHOD_CALL__METHOD);
 					return new Pair<>(null, null);
 				}
 			} else {
-				if(f.getField() == null) {
-					error("A field name must be provided", f, SosADLPackage.Literals.FIELD__FIELD);
-				}
-				if(f.getObject() == null) {
-					error("An object expression must be provided", f, SosADLPackage.Literals.FIELD__OBJECT);
-				}
 				return new Pair<>(null, null);
 			}
 		} else {
-			// TODO
-			if(e instanceof UnaryExpression) {
-				if(((UnaryExpression)e).getRight() == null) {
-					error("The unary operator must have a right operand", e, SosADLPackage.Literals.UNARY_EXPRESSION__RIGHT);
-				}
-				if(((UnaryExpression)e).getOp() == null) {
-					error("The unary expression must have an operator", e, SosADLPackage.Literals.UNARY_EXPRESSION__OP);
-				}
-			} else if(e instanceof BinaryExpression) {
-				if(((BinaryExpression)e).getLeft() == null) {
-					error("The binary operator must have a left operand", e, SosADLPackage.Literals.BINARY_EXPRESSION__LEFT);
-				}
-				if(((BinaryExpression)e).getOp() == null) {
-					error("The binary operator must have an operator", e, SosADLPackage.Literals.BINARY_EXPRESSION__OP);
-				}
-				if(((BinaryExpression)e).getRight() == null) {
-					error("The binary operator must have a right operand", e, SosADLPackage.Literals.BINARY_EXPRESSION__RIGHT);
-				}
-			} else if(e instanceof IdentExpression) {
-				if(((IdentExpression)e).getIdent() == null) {
-					error("The identifier must refer to a name", e, SosADLPackage.Literals.IDENT_EXPRESSION__IDENT);
-				} else if(gamma.get(((IdentExpression)e).getIdent()) == null) {
-					error("The name `" + ((IdentExpression)e).getIdent() + "' is undefined in this context", e, SosADLPackage.Literals.IDENT_EXPRESSION__IDENT);
-				} else if(!(gamma.get(((IdentExpression)e).getIdent()) instanceof VariableEnvContent)) {
-					error("The name `" + ((IdentExpression)e).getIdent() + "' does not refer to a variable in this context", e, SosADLPackage.Literals.IDENT_EXPRESSION__IDENT);
-				} else {
-					error("Type error", e, null);
-				}
-			} else {
-				error("Type error", e, null);
-			}
+			error("A method name must be provided", mc, SosADLPackage.Literals.METHOD_CALL__METHOD);
 			return new Pair<>(null, null);
+		}
+	}
+
+	private Pair<Type_expression_node, DataType> type_expression_node_IdentExpression(Environment gamma, IdentExpression e) {
+		if(e.getIdent() == null) {
+			error("The identifier must refer to a name", e, SosADLPackage.Literals.IDENT_EXPRESSION__IDENT);
+			return new Pair<>(null, null);
+		} else {
+			EnvContent ec = gamma.get(e.getIdent());
+			if(ec == null) {
+				error("The name `" + e.getIdent() + "' is undefined in this context", e, SosADLPackage.Literals.IDENT_EXPRESSION__IDENT);
+				return new Pair<>(null, null);
+			} else if(!(ec instanceof VariableEnvContent)) {
+				error("The name `" + e.getIdent() + "' does not refer to a variable in this context", e, SosADLPackage.Literals.IDENT_EXPRESSION__IDENT);
+				return new Pair<>(null, null);
+			} else {
+				VariableEnvContent vec = (VariableEnvContent)ec;
+				DataType t = vec.getType();
+				saveBinder(e, vec.getBinder());
+				return new Pair<>(saveProof(e, createType_expression_Ident(gamma, e.getIdent(), t, createReflexivity())),
+						saveType(e, t));
+			}
+		}
+	}
+
+	private Pair<Type_expression_node, DataType> type_expression_node_BinaryExpression(Environment gamma,
+			BinaryExpression e) {
+		if(e.getLeft() == null) {
+			error("The binary operator must have a left operand", e, SosADLPackage.Literals.BINARY_EXPRESSION__LEFT);
+			return new Pair<>(null, null);
+		} else if(e.getOp() == null) {
+			error("The binary operator must have an operator", e, SosADLPackage.Literals.BINARY_EXPRESSION__OP);
+			return new Pair<>(null, null);
+		} else if(e.getRight() == null) {
+			error("The binary operator must have a right operand", e, SosADLPackage.Literals.BINARY_EXPRESSION__RIGHT);
+			return new Pair<>(null, null);
+		} else {
+			for(BinaryTypeInfo<? extends DataType, ? extends DataType, ? extends DataType> i: binaryTypeInformations) {
+				if(e.getOp().equals(i.getOperator())) {
+					return typeBinaryExpression(gamma, e, i);
+				}
+			}
+			error("Unknown binary operator", e, SosADLPackage.Literals.BINARY_EXPRESSION__OP);
+			return new Pair<>(null, null);
+		}
+	}
+
+	private Pair<Type_expression_node, DataType> type_expression_node_UnaryExpression(Environment gamma, UnaryExpression e) {
+		if(e.getRight() == null) {
+			error("The unary operator must have a right operand", e, SosADLPackage.Literals.UNARY_EXPRESSION__RIGHT);
+			return new Pair<>(null, null);
+		} else if(e.getOp() == null) {
+			error("The unary expression must have an operator", e, SosADLPackage.Literals.UNARY_EXPRESSION__OP);
+			return new Pair<>(null, null);
+		} else {
+			for(UnaryTypeInfo<? extends DataType> i : unaryTypeInformations) {
+				if(e.getOp().equals(i.getOperator())) {
+					return typeUnaryExpression(gamma, e, i);
+				}
+			}
+			error("Unknown unary operator", e, SosADLPackage.Literals.UNARY_EXPRESSION__OP);
+			return new Pair<>(null, SosADLFactory.eINSTANCE.createBooleanType());
+		}
+	}
+
+	private Pair<Type_expression_node, DataType> type_expression_node_IntegerValue(Environment gamma, IntegerValue e) {
+		DataType t = createRangeType(e, e);
+		return new Pair<>(saveProof(e, createType_expression_IntegerValue(gamma, BigInteger.valueOf(((IntegerValue) e).getAbsInt()))),
+				saveType(e, t));
+	}
+	
+	private Optional<DataType> chooseBetweenOrElse(Environment gamma, Optional<DataType> lb, Optional<DataType> ub, Optional<DataType> other, EObject objectForError, EStructuralFeature featureForError) {
+		Boolean solvable = OptionalUtils.mapOrElse(lb, (l) -> OptionalUtils.mapOrElse(ub, (u) -> isSubtype(gamma, l, u), true), true);
+		if(!solvable) {
+			error("Incompatible constraints on the type of this object", objectForError, featureForError);
+			return Optional.empty();
+		} else {
+			Optional<DataType> r = OptionalUtils.orElse(lb, OptionalUtils.orElse(ub, other));
+			if(!r.isPresent()) {
+				error("Cannot infer the type of this object", objectForError, featureForError);
+			}
+			return r;
 		}
 	}
 	
@@ -1119,6 +1193,74 @@ public class TypeChecker extends AccumulatingValidator {
 		} else {
 			return null;
 		}
+	}
+	
+	private DataType interSubType(Environment gamma, DataType t1, DataType t2, EObject objectForError, EStructuralFeature featureForError) {
+		if(t1 == null) {
+			return t1;
+		} else if(t2 == null) {
+			return t2;
+		} else if(t1 == t2) {
+			return t1;
+		} else if(t1 instanceof NamedType) {
+			if(t2 instanceof NamedType
+					&& ((NamedType)t1).getName() != null
+					&& ((NamedType)t2).getName() != null
+					&& ((NamedType)t1).getName().equals(((NamedType)t2).getName())) {
+				return t1;
+			} else {
+				return interSubType(gamma, pickFromGamma(gamma, t1), t2, objectForError, featureForError);
+			}
+		} else if(t2 instanceof NamedType) {
+			return interSubType(gamma, t1, pickFromGamma(gamma, t2), objectForError, featureForError);
+		} else if(t1 instanceof BooleanType && t2 instanceof BooleanType) {
+			return t1;
+		} else if(t1 instanceof RangeType && t2 instanceof RangeType) {
+			RangeType r1 = (RangeType) t1;
+			RangeType r2 = (RangeType) t2;
+			Expression mi = max(r1.getVmin(), r2.getVmin());
+			Expression ma = min(r1.getVmax(), r2.getVmax());
+			if(isLe(mi, ma)) {
+				return createRangeType(mi, ma);
+			} else {
+				error("The intersection of ranges " + labelFor(r1) + " and " + labelFor(r2) + " is empty", objectForError, featureForError);
+				return null;
+			}
+		} else if(t1 instanceof TupleType && t2 instanceof TupleType) {
+			TupleType tt1 = (TupleType) t1;
+			TupleType tt2 = (TupleType) t2;
+			Map<String,Pair<Optional<FieldDecl>,Optional<FieldDecl>>> fields = MapUtils.merge(fieldMap(tt1.getFields()), fieldMap(tt2.getFields()));
+			return createTupleType(fields.values().stream()
+					.map((p) -> intersectFieldDecl(p, gamma, objectForError, featureForError))
+					.flatMap(StreamUtils::toStream));
+		} else if(t1 instanceof SequenceType && t2 instanceof SequenceType) {
+			SequenceType s1 = (SequenceType) t1;
+			SequenceType s2 = (SequenceType) t2;
+			DataType t = interSubType(gamma, s1.getType(), s2.getType(), objectForError, featureForError);
+			if(t != null) {
+				return createSequenceType(t);
+			} else {
+				return null;
+			}
+		} else {
+			error("Incompatible types: " + labelFor(t1) + " and " + labelFor(t2) , objectForError, featureForError);
+			return null;
+		}
+	}
+	
+	private Optional<FieldDecl> intersectFieldDecl(Pair<Optional<FieldDecl>,Optional<FieldDecl>> p, Environment gamma, EObject objectForError, EStructuralFeature featureForError) {
+		return OptionalUtils.mapOrElse(p.getA(),
+				(a) -> p.getB().flatMap((b) -> intersectFieldDecl(a, b, gamma, objectForError, featureForError)),
+				p.getB());
+	}
+	
+	private Optional<FieldDecl> intersectFieldDecl(FieldDecl a, FieldDecl b, Environment gamma, EObject objectForError, EStructuralFeature featureForError) {
+		return Optional.ofNullable(interSubType(gamma, a.getType(), b.getType(), objectForError, featureForError))
+				.map((t) -> createFieldDecl(a.getName(), t));
+	}
+	
+	private static Map<String,FieldDecl> fieldMap(Collection<FieldDecl> l) {
+		return l.stream().collect(Collectors.toConcurrentMap(FieldDecl::getName, (x) -> x));
 	}
 	
 	private DataType unionSuperType(Environment gamma, DataType t1, DataType t2, EObject objectForError, EStructuralFeature featureForError) {
@@ -1144,20 +1286,20 @@ public class TypeChecker extends AccumulatingValidator {
 		} else if(t1 instanceof RangeType && t2 instanceof RangeType) {
 			RangeType r1 = (RangeType) t1;
 			RangeType r2 = (RangeType) t2;
-			return createRangeType(EcoreUtil.copy(min(r1.getVmin(), r2.getVmin())), EcoreUtil.copy(max(r1.getVmax(), r2.getVmax())));
+			return createRangeType(min(r1.getVmin(), r2.getVmin()), max(r1.getVmax(), r2.getVmax()));
 		} else if(t1 instanceof TupleType && t2 instanceof TupleType) {
 			TupleType tt1 = (TupleType) t1;
 			TupleType tt2 = (TupleType) t2;
 			Stream<Pair<FieldDecl, Optional<FieldDecl>>> s1 = StreamUtils.mapi(tt1.getFields().stream(), (f) -> lookup(tt2.getFields(), f.getName()));
 			Stream<Pair<FieldDecl, FieldDecl>> s2 = s1.flatMap((x) -> StreamUtils.toStream(x.getB()).map((y) -> new Pair<>(x.getA(), y)));
 			Stream<FieldDecl> s3 = s2.map((p) -> createFieldDecl(p.getA().getName(), unionSuperType(gamma, p.getA().getType(), p.getB().getType(), objectForError, featureForError)));
-			return createTupleType(s3.map(EcoreUtil::copy));
+			return createTupleType(s3);
 		} else if(t1 instanceof SequenceType && t2 instanceof SequenceType) {
 			SequenceType s1 = (SequenceType) t1;
 			SequenceType s2 = (SequenceType) t2;
 			DataType t = unionSuperType(gamma, s1.getType(), s2.getType(), objectForError, featureForError);
 			if(t != null) {
-				return createSequenceType(EcoreUtil.copy(t));
+				return createSequenceType(t);
 			} else {
 				return null;
 			}
@@ -1899,8 +2041,8 @@ public class TypeChecker extends AccumulatingValidator {
 	
 	private static RangeType createRangeType(Expression min, Expression max) {
 		RangeType r = SosADLFactory.eINSTANCE.createRangeType();
-		r.setVmin(EcoreUtil.copy(min));
-		r.setVmax(EcoreUtil.copy(max));
+		r.setVmin(copy(min));
+		r.setVmax(copy(max));
 		return r;
 	}
 	
@@ -1937,15 +2079,15 @@ public class TypeChecker extends AccumulatingValidator {
 	private static Expression createOpposite(Expression e) {
 		UnaryExpression r = SosADLFactory.eINSTANCE.createUnaryExpression();
 		r.setOp("-");
-		r.setRight(EcoreUtil.copy(e));
+		r.setRight(copy(e));
 		return r;
 	}
 	
 	private static Expression createBinaryExpression(Expression l, String o, Expression r) {
 		BinaryExpression ret = SosADLFactory.eINSTANCE.createBinaryExpression();
-		ret.setLeft(EcoreUtil.copy(l));
+		ret.setLeft(copy(l));
 		ret.setOp(o);
-		ret.setRight(EcoreUtil.copy(r));
+		ret.setRight(copy(r));
 		return ret;
 	}
 	
@@ -1957,7 +2099,7 @@ public class TypeChecker extends AccumulatingValidator {
 	private static TupleType createTupleType(Iterator<FieldDecl> fields) {
 		TupleType ret = SosADLFactory.eINSTANCE.createTupleType();
 		while(fields.hasNext()) {
-			ret.getFields().add(EcoreUtil.copy(fields.next()));
+			ret.getFields().add(copy(fields.next()));
 		}
 		return ret;
 	}
@@ -1968,14 +2110,14 @@ public class TypeChecker extends AccumulatingValidator {
 	
 	private static SequenceType createSequenceType(DataType t) {
 		SequenceType ret = SosADLFactory.eINSTANCE.createSequenceType();
-		ret.setType(EcoreUtil.copy(t));
+		ret.setType(copy(t));
 		return ret;
 	}
 	
 	private static FieldDecl createFieldDecl(String name, DataType t) {
 		FieldDecl f = SosADLFactory.eINSTANCE.createFieldDecl();
 		f.setName(name);
-		f.setType(EcoreUtil.copy(t));
+		f.setType(copy(t));
 		return f;
 	}
 
@@ -2177,5 +2319,35 @@ public class TypeChecker extends AccumulatingValidator {
 	
 	private static Subtype createSubtype_sequence(Environment gamma, DataType l, DataType r, Subtype p1) {
 		return new Subtype_sequence(gamma, l, r, p1);
+	}
+	
+	private static final NameGenerator nameGenerator = new SequentialNameGenerator();
+	
+	private TypeVariable createFreshTypeVariable(EObject co, EStructuralFeature csf, Function<TypeVariable,Optional<DataType>> solver, Consumer<TypeVariable> delayedTask) {
+		TypeVariable ret = TypeCheckerHelperFactory.eINSTANCE.createTypeVariable();
+		this.typeVariables.add(ret);
+		ret.setName(nameGenerator.get());
+		ret.setConcernedObject(co);
+		ret.setConcernedStructuralFeature(csf);
+		ret.setSolver(solver);
+		ret.setDelayedTask(delayedTask);
+		return ret;
+	}
+	
+	private static DataType getSubstitute(DataType t) {
+		if(t instanceof TypeVariable) {
+			TypeVariable v = (TypeVariable) t;
+			return getSubstitute(v);
+		} else {
+			return t;
+		}
+	}
+	
+	private static <T extends EObject> T copy(T x) {
+		if(x instanceof TypeVariable) {
+			return x;
+		} else {
+			return EcoreUtil.copy(x);
+		}
 	}
 }
