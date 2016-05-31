@@ -315,17 +315,21 @@ public class TypeChecker extends AccumulatingValidator {
 			Pair<Type_expression, DataType> p5 = type_expression(p4.getB(), f.getExpression());
 			Environment gamma1 = gamma.put(((NamedType)f.getData().getType()).getName(),
 					((TypeEnvContent)gamma.get(((NamedType)f.getData().getType()).getName())).addMethod(f));
-			if(p5.getA() != null && p5.getB() != null) {
-				return new Pair<>(saveProof(f, createType_FunctionDecl_Method(gamma, f.getData().getName(),
-						((NamedType)f.getData().getType()).getName(),
-						((TypeEnvContent)gamma.get(((NamedType)f.getData().getType()).getName())).getDataTypeDecl(),
-						((TypeEnvContent)gamma.get(((NamedType)f.getData().getType()).getName())).getMethods(),
-						f.getName(), f.getParameters(), p3.getB(), f.getType(), f.getValuing(), p4.getB(),
-						f.getExpression(), p5.getB(),
-						gamma1,
-						createReflexivity(), type_datatype(gamma, f.getType()), p3.getA(), p4.getA(), p5.getA(),
-						subtype(gamma, p5.getB(), f.getType(), f, SosADLPackage.Literals.FUNCTION_DECL__EXPRESSION).orElse(null), createReflexivity())),
-					gamma1);
+			DataType t = p5.getB();
+			if(p5.getA() != null && t != null) {
+				return new Pair<>(saveProof(f,
+						proofTerm(t, Type_function.class, (v) -> {
+							v.getUpperBounds().add(f.getType());
+						}, (x) -> createType_FunctionDecl_Method(gamma, f.getData().getName(),
+								((NamedType)f.getData().getType()).getName(),
+								((TypeEnvContent)gamma.get(((NamedType)f.getData().getType()).getName())).getDataTypeDecl(),
+								((TypeEnvContent)gamma.get(((NamedType)f.getData().getType()).getName())).getMethods(),
+								f.getName(), f.getParameters(), p3.getB(), f.getType(), f.getValuing(), p4.getB(),
+								f.getExpression(), x,
+								gamma1,
+								createReflexivity(), type_datatype(gamma, f.getType()), p3.getA(), p4.getA(), p5.getA(),
+								subtype(gamma, x, f.getType(), f, SosADLPackage.Literals.FUNCTION_DECL__EXPRESSION).orElse(null), createReflexivity()))),
+						gamma1);
 			} else {
 				return new Pair<>(null, gamma1);
 			}
@@ -896,8 +900,8 @@ public class TypeChecker extends AccumulatingValidator {
 		if(ten != null && t != null) {
 			saveProof(e, ten);
 			saveType(e, t);
-			return new Pair<>(createType_expression_and_type(gamma, e, t, ten,
-					type_datatype(gamma, t)), t);
+			return new Pair<>(proofTerm(t, Type_expression.class,
+					(a) -> createType_expression_and_type(gamma, e, a, ten, type_datatype(gamma, a))), t);
 		} else {
 			return new Pair<>(null, null);
 		}
@@ -990,11 +994,28 @@ public class TypeChecker extends AccumulatingValidator {
 		} else {
 			ProofTermPlaceHolder<Type_expression_node> ten = ProofTermPlaceHolder.create(Type_expression_node.class);
 			TypeVariable v = createFreshTypeVariable(s, null, (x) -> {
-				Optional<DataType> lb = x.getLowerBounds().stream().map(TypeChecker::getSubstitute).reduce((a,b) -> unionSuperType(gamma, a, b, s, SosADLPackage.Literals.SEQUENCE__ELEMENTS));
-				Optional<DataType> ub = x.getUpperBounds().stream().map(TypeChecker::getSubstitute).reduce((a,b) -> interSubType(gamma, a, b, s, SosADLPackage.Literals.SEQUENCE__ELEMENTS));
-				return chooseBetweenOrElse(gamma, lb, ub, Optional.of(createSequenceType(createBooleanType())), s, null);
+				Optional<DataType> lb = x.getLowerBounds().stream()
+						.map(TypeChecker::getSubstitute)
+						.reduce((a,b) -> unionSuperType(gamma, a, b, s, SosADLPackage.Literals.SEQUENCE__ELEMENTS));
+				Optional<DataType> ub = x.getUpperBounds().stream()
+						.map(TypeChecker::getSubstitute)
+						.reduce((a,b) -> interSubType(gamma, a, b, s, SosADLPackage.Literals.SEQUENCE__ELEMENTS));
+				Optional<DataType> y = chooseBetweenOrElse(gamma, lb, ub, Optional.of(createSequenceType(createBooleanType())), s, null);
+				return y.flatMap((t) -> {
+					if(t == null) {
+						return Optional.empty();
+					} else {
+						DataType u = resolveNamedType(gamma, t);
+						if(u instanceof SequenceType) {
+							return Optional.of(u);
+						} else {
+							error("The infered type (" + labelFor(t) + ") of the sequence is not a sequence type", s, null);
+							return Optional.empty();
+						}
+					}
+				});
 			},
-			(x) -> { ten.fillWith(createType_expression_Sequence(gamma, s.getElements(), getSubstitute(x), createForall_nil())); });
+			(x) -> { ten.fillWith(createType_expression_Sequence(gamma, s.getElements(), ((SequenceType)getSubstitute(x)).getType(), createForall_nil())); });
 			return new Pair<>(saveProof(s, ten.cast()), saveType(s, v));
 		}
 	}
@@ -1344,6 +1365,21 @@ public class TypeChecker extends AccumulatingValidator {
 			return new Pair<>(null, ifNone);
 		}
 	}
+
+	private static DataType resolveNamedType(Environment gamma, DataType t) {
+		while(t != null && t instanceof NamedType) {
+			EnvContent ec = gamma.get(((NamedType)t).getName());
+			if(ec == null) {
+				return null;
+			} else if(ec instanceof TypeEnvContent) {
+				t = ((TypeEnvContent)ec).getDataTypeDecl().getDatatype();
+			} else {
+				return null;
+			}
+		}
+		return t;
+	}
+
 	private void errorForNamedType(String label, String tofrom, Environment gamma, NamedType t, EObject targetForError,
 			EStructuralFeature forError) {
 		errorForNamedType(label, tofrom, gamma, t, (s) -> error(s, targetForError, forError));
@@ -2334,13 +2370,43 @@ public class TypeChecker extends AccumulatingValidator {
 		return ret;
 	}
 	
-	private static DataType getSubstitute(DataType t) {
-		if(t instanceof TypeVariable) {
-			TypeVariable v = (TypeVariable) t;
-			return getSubstitute(v);
+	private static TypeVariable appendDelayedTask(TypeVariable v, Consumer<TypeVariable> delayedTask) {
+		if(v.getDelayedTask() == null) {
+			v.setDelayedTask(delayedTask);
 		} else {
-			return t;
+			v.setDelayedTask(v.getDelayedTask().andThen(delayedTask));
 		}
+		return v;
+	}
+	
+	private static <T extends ProofTerm> T proofTerm(DataType x, Class<T> itf, Optional<Consumer<TypeVariable>> feed, Function<DataType, T> factory) {
+		if(x instanceof TypeVariable) {
+			TypeVariable v = (TypeVariable) x;
+			feed.ifPresent((f) -> f.accept(v));
+			ProofTermPlaceHolder<T> ptph = ProofTermPlaceHolder.create(itf);
+			appendDelayedTask(v, (y) -> {
+				DataType t = getSubstitute(v);
+				ptph.fillWith(factory.apply(t));
+			});
+			return ptph.cast();
+		} else {
+			return factory.apply(x);
+		}
+	}
+
+	private static <T extends ProofTerm> T proofTerm(DataType x, Class<T> itf, Consumer<TypeVariable> feed, Function<DataType, T> factory) {
+		return proofTerm(x, itf, Optional.ofNullable(feed), factory);
+	}
+
+	private static <T extends ProofTerm> T proofTerm(DataType x, Class<T> itf, Function<DataType, T> factory) {
+		return proofTerm(x, itf, Optional.empty(), factory);
+	}
+
+	private static DataType getSubstitute(DataType t) {
+		while(t != null && t instanceof TypeVariable) {
+			t = ((TypeVariable)t).getSubstitute();
+		}
+		return t;
 	}
 	
 	private static <T extends EObject> T copy(T x) {
