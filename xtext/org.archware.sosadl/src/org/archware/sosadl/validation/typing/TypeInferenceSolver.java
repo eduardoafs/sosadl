@@ -30,22 +30,37 @@ import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 
 /**
- * Implementation of type inference.
+ * Implementation of a type inference solver for SoSADL.
  * 
  * <p>
- * The type inference mechanism assumes the following protocol:
+ * The type inference solver mechanism assumes the following protocol:
  * <ol>
+ * <li>Type variables are created by one of the
+ * {@link #createFreshTypeVariable(BinaryOperator, EObject, EStructuralFeature)}
+ * or {@link #createFreshDependency(BinaryOperator, TypeVariable)} methods. The
+ * solver does not allow any type variable created by another process. The
+ * binary operator is used to customize the actual inference solver. Each type
+ * variable is attached to a node in the abstract syntax tree for the purpose of
+ * error reports.</li>
  * <li>The subtyping constraints are first all collected during the traversal of
  * the abstract syntax tree. Such constraints are added by calling either
  * {@link #addConstraint(DataType, DataType, EObject) or
  * {@link #addConstraint(DataType, DataType, EObject, EStructuralFeature)}.</li>
  * <li>When all the constraints are issued, the {@link #solve()} method must be
- * called to invoke the solver. The algorithm repeatedly performs the following
- * tasks. At the end of each step, the solver loops back to the beginning of its
- * algorithm.
+ * called to invoke the solver.</li>
+ * <li>After the solver returns, the {@link #isSolved()} method returns
+ * {@value true} if the inference problem is successfully solved. The
+ * {@link #deepSubstitute(DataType)} method can then be used in order to
+ * retrieve a fully substituted type.</li>
+ * </ol>
+ * 
+ * <p>
+ * The algorithm repeatedly performs the following tasks. At the end of each
+ * step, the solver loops back to the beginning of its algorithm in order to
+ * take into account the constraints issued at the previous step.
  * <ol>
- * <li>The solver first checks the constraints that do not involve type
- * variables. When any of the checked type is built using a recursive type
+ * <li>The solver first checks the constraints that do not involve any type
+ * variable. When any of the checked type is built using a recursive type
  * constructor, i.e., {@link SequenceType} or {@link TupleType}, new type
  * variables and constraints are issued to trigger the recursive checking. The
  * solver tries to check as many constraints as possible, and to report as many
@@ -54,28 +69,52 @@ import org.eclipse.emf.ecore.util.EcoreUtil;
  * tries to compute a lower bound and an upper bound for each type variable. To
  * do so, when several constraints provide a lower bound to a given type
  * variable, the solver replaces all these constraints with a single one with
- * the union of the lower bounds. It performs the same, replacing the set of
- * upper bounds with their intersection. After the replacement, the solver goes
- * back to the first step.</li>
+ * the union of the lower bounds. It performs the same task for the upper
+ * bounds, computing the intersection of the types. After the replacement, the
+ * solver goes back to the first step.</li>
  * <li>When all the constraints involve at least one type variable, and each
  * type variable is constrained by at most one lower bound and one upper bound,
  * the solver tries to infer one of the type variable. To select the type
- * variable to be substituted, the solver considers only the type variables that
- * do not depend on any non-substituted type variable. Then it prefers first a
- * type variable that has both lower and upper bounds. If no such type variable
- * exists, it selects one that has at least one bound. If no such type variable
- * exists either, it chooses a type variable with no bound.</li>
+ * variable to be substituted, the solver considers only the non-substituted
+ * type variables that do not depend on any non-substituted type variable. Among
+ * this type variables, the algorithm choose preferably one that has both lower
+ * and upper bounds. If no such type variable exists, it selects one that has at
+ * least one bound. If no such type variable exists, it chooses a type variable
+ * with no bound.</li>
  * </ol>
- * </li>
- * <li>After the solver returns, the {@link #isSolved()} method returns
- * {@value true} if the inference problem is successfully solved. The
- * {@link #deepSubstitute(DataType)} method can then be used in order to
- * retrieve the fully substituted type for any type variable.</li>
- * </ol>
+ * The algorithm terminates when no more type variable can be inferred.
+ * 
+ * <p>
+ * To implement this algorithm, the constraint are organized in four
+ * collections:
+ * <ul>
+ * <li>{@link #determinedConstraints} contains the constraints that do not
+ * involve type variables</li>
+ * <li>{@link #lowerBounds} and {@link #upperBounds} map variable names to the
+ * lists of constraints, of which one side of the inequation is the
+ * corresponding type variable</li>
+ * <li>{@link #varVarConstraints} contains the constraints where both sides of
+ * inequations are type variables</li>
+ * </ul>
+ * 
+ * <p>
+ * Inference errors are reported to a given instance of {@link ErrorCollector}.
  * 
  * @author Jeremy Buisson
  */
 public final class TypeInferenceSolver {
+	/**
+	 * Constraint used by the type inference solver.
+	 * 
+	 * <p>
+	 * In the context of the type inference solver, a constraint is an
+	 * inequation stating that type {@value sub} must be a subtype of type
+	 * {@value sup}. In addition, the constraint refers to a node in the
+	 * abstract syntax tree. This is the one at which errors are reported when
+	 * the constraint cannot be satisfied.
+	 * 
+	 * @author Jeremy Buisson
+	 */
 	private static final class Constraint {
 		public final DataType sub;
 		public final DataType sup;
@@ -100,10 +139,14 @@ public final class TypeInferenceSolver {
 	private final NameGenerator nameGenerator;
 
 	/**
-	 * Build a new instance of the type inference problem
+	 * Builds a new instance of the type inference problem
+	 * 
+	 * <p>
+	 * The newly created instance owns no type variable and contains no
+	 * constraint.
 	 * 
 	 * @param log
-	 *            collector used to report errors
+	 *            collector used to report type errors
 	 */
 	public TypeInferenceSolver(ErrorCollector log) {
 		this.log = log;
@@ -115,13 +158,20 @@ public final class TypeInferenceSolver {
 		this.nameGenerator = new SequentialNameGenerator();
 	}
 
+	/**
+	 * Returns a {@link Stream} that iterates over the type variables owned by
+	 * the type inference solver.
+	 * 
+	 * @return a {@link Stream} of type variables
+	 */
 	public Stream<TypeVariable> getVariables() {
 		return variables.values().stream();
 	}
 
 	/**
-	 * Record a new constraint
+	 * Records a new constraint.
 	 * 
+	 * <p>
 	 * The new constraint states that {@value sub} is a subtype of {@value sup}.
 	 * This method is equivalent to calling
 	 * {@link #addConstraint(DataType, DataType, EObject, EStructuralFeature)}
@@ -139,22 +189,78 @@ public final class TypeInferenceSolver {
 		addConstraint(sub, sup, origin, null);
 	}
 
+	/**
+	 * Records a new constraint.
+	 * 
+	 * <p>
+	 * The new constraint states that {@value sub} is a subtype of {@value sup}.
+	 * 
+	 * @param sub
+	 *            smallest type in the inequation
+	 * @param sup
+	 *            biggest type in the inequation
+	 * @param originObject
+	 *            node in the abstract syntax tree to which the constraint is
+	 *            attached, for error reports
+	 * @param originFeature
+	 *            out-edge of the node in the abstract sytax tree to which the
+	 *            constraint is attached, for error reports
+	 */
 	public void addConstraint(DataType sub, DataType sup, EObject originObject, EStructuralFeature originFeature) {
 		Constraint c = new Constraint(reprOrType(sub), reprOrType(sup), originObject, originFeature);
 		addConstraint(c);
 	}
 
+	/**
+	 * Records a new constraint.
+	 * 
+	 * <p>
+	 * In the newly created constraint, the smallest type in the inequation is
+	 * the owned type variable identified by its name {@value n}. The constraint
+	 * is attached to the object and feature to which the type variable is
+	 * attached.
+	 * 
+	 * @param n
+	 *            name of the type variable to be used as the smallest type in
+	 *            the inequation
+	 * @param t
+	 *            biggest type in the inequation
+	 */
 	private void addConstraint(String n, DataType t) {
 		TypeVariable v = variables.get(n);
 		addConstraint(v, t, v.getConcernedObject(), v.eContainingFeature());
 	}
 
-	@SuppressWarnings("unused")
-	private void addConstraint(DataType t, String n) {
-		TypeVariable v = variables.get(n);
-		addConstraint(t, v, v.getConcernedObject(), v.eContainingFeature());
-	}
-
+	/**
+	 * Records an already existing constraint.
+	 * 
+	 * This method should be called only by one of
+	 * {@link #addConstraint(String, DataType)},
+	 * {@link #addConstraint(DataType, DataType, EObject)} or
+	 * {@link #addConstraint(DataType, DataType, EObject, EStructuralFeature)}.
+	 * It is not intended to be called directly.
+	 * 
+	 * Depending on the characteristics of the constraint, it is added to:
+	 * <ul>
+	 * <li>{@link #determinedConstraints} if the two sides of the inequation are
+	 * either regular types, or already substituted type variables</li>
+	 * <li>{@link #lowerBounds} if the left-hand side of the inequation is
+	 * either a regular type or an already substituted type variable, and the
+	 * right-hand side is a non-substituted type variable</li>
+	 * <li>{@link #upperBounds} if the left-hand side of the inequation is a
+	 * non-substituted type variable, and the right-hand side is either a
+	 * regular type or an already substituted type variable</li>
+	 * <li>{@link #varVarConstraints} if the two sides of the inequation are
+	 * non-substituted type variables
+	 * </ul>
+	 * 
+	 * <p>
+	 * If the two sides of the inequation refer to the same type object, the
+	 * constraint is discarded.
+	 * 
+	 * @param c
+	 *            to-be-added constraint
+	 */
 	private void addConstraint(Constraint c) {
 		if (c.sub != c.sup) {
 			if (isDetermined(c.sub)) {
@@ -185,10 +291,33 @@ public final class TypeInferenceSolver {
 		}
 	}
 
+	/**
+	 * Checks whether a type is determined.
+	 * 
+	 * <p>
+	 * A type is determined either if it is a regular type, or if it is a
+	 * substituted type variable.
+	 * 
+	 * @param t
+	 *            to-be-checked type
+	 * @return {@value true} if the type is determined, {@value false} otherwise
+	 */
 	private boolean isDetermined(DataType t) {
 		return substitute(t) != null;
 	}
 
+	/**
+	 * Returns a representative of a type.
+	 * 
+	 * <p>
+	 * The representative of a type is itself if it is a regular type. The
+	 * representative of a type variable is the last type variable in the
+	 * substitution chain.
+	 * 
+	 * @param t
+	 *            a type
+	 * @return the representative of {@value t}
+	 */
 	private DataType reprOrType(DataType t) {
 		if (t instanceof TypeVariable) {
 			return repr((TypeVariable) t);
@@ -197,6 +326,17 @@ public final class TypeInferenceSolver {
 		}
 	}
 
+	/**
+	 * Returns a representative of a type variable.
+	 * 
+	 * <p>
+	 * When a type variable is substituted with another type variable, its
+	 * representative is the last type variable in the substitution chain.
+	 * 
+	 * @param v
+	 *            a type variable
+	 * @return the representative of {@value v}
+	 */
 	private TypeVariable repr(TypeVariable v) {
 		TypeVariable n = variables.get(v.getName());
 		if (n == v) {
@@ -215,10 +355,25 @@ public final class TypeInferenceSolver {
 		}
 	}
 
+	/**
+	 * Returns the name of a type variable.
+	 * 
+	 * @param v
+	 *            a type variable
+	 * @return the name of {@value v}
+	 */
 	private String nameOf(DataType v) {
 		return repr((TypeVariable) v).getName();
 	}
 
+	/**
+	 * Returns the substitute of a type.
+	 * 
+	 * @param t
+	 *            a type
+	 * @return the substitute of the representative of {@value t} if {@value t}
+	 *         is a type variable, or {@value t} otherwise
+	 */
 	private DataType substitute(DataType t) {
 		if (t != null && t instanceof TypeVariable) {
 			TypeVariable r = repr((TypeVariable) t);
@@ -228,6 +383,18 @@ public final class TypeInferenceSolver {
 		}
 	}
 
+	/**
+	 * Performs complete substitution in a type.
+	 * 
+	 * <p>
+	 * The substitution is done out-of-place, copying the complete structure of
+	 * the type. Any occurrence of a type variable is replaced by its
+	 * substitute.
+	 * 
+	 * @param t
+	 *            to-be-substituted type
+	 * @return the copy of {@value t} in which any type variable is substituted
+	 */
 	public DataType deepSubstitute(DataType t) {
 		if (t == null) {
 			return t;
@@ -251,6 +418,14 @@ public final class TypeInferenceSolver {
 		}
 	}
 
+	/**
+	 * Checks whether a type contains some type variable.
+	 * 
+	 * @param t
+	 *            to-be-checked type
+	 * @return {@value true} if {@value t} contains some type variable,
+	 *         {@value false} otherwise
+	 */
 	public static boolean containsVariable(DataType t) {
 		if (t instanceof TypeVariable) {
 			return true;
@@ -263,18 +438,72 @@ public final class TypeInferenceSolver {
 		}
 	}
 
+	/**
+	 * Adds an item to a multimap.
+	 * 
+	 * <p>
+	 * The multimap is a map whose values are {@link Deque} of items.
+	 * 
+	 * @param mm
+	 *            the multimap
+	 * @param k
+	 *            the key of the new item
+	 * @param v
+	 *            the new item
+	 */
 	private static <K, V> void multimapAdd(Map<K, Deque<V>> mm, K k, V v) {
 		mm.computeIfAbsent(k, (a) -> new ConcurrentLinkedDeque<>()).add(v);
 	}
 
-	public TypeVariable createFreshTypeVariable(BinaryOperator<Optional<DataType>> solver) {
+	/**
+	 * Creates a new type variable with a unique fresh name.
+	 * 
+	 * <p>
+	 * The name of the new type variable is generated by {@link #nameGenerator}.
+	 * Its solver is the given parameter.
+	 * 
+	 * <p>
+	 * The methods performs sanity check to ensure the freshness of the
+	 * generated name. It also ensures the ownership of the created type
+	 * variable.
+	 * 
+	 * <p>
+	 * This method is not intended to be called directly as it does not attach
+	 * the created variable to any node and out-edge in the abstract syntax
+	 * tree. Methods
+	 * {@link #createFreshTypeVariable(BinaryOperator, EObject, EStructuralFeature)}
+	 * or {@link #createFreshDependency(BinaryOperator, TypeVariable)} should be
+	 * used instead.
+	 * 
+	 * @param solver
+	 *            function used to compute the substitute for the new type
+	 *            variable
+	 * @return the newly created type variable
+	 */
+	private TypeVariable createFreshTypeVariable(BinaryOperator<Optional<DataType>> solver) {
 		TypeVariable r = TypeCheckerHelperFactory.eINSTANCE.createTypeVariable();
 		r.setName(nameGenerator.get());
 		r.setSolver(solver);
-		variables.put(r.getName(), r);
+		if (variables.put(r.getName(), r) != null) {
+			throw new IllegalArgumentException("the variable name is not fresh");
+		}
 		return r;
 	}
 
+	/**
+	 * Creates a new type variable with a unique fresh name.
+	 * 
+	 * @param solver
+	 *            function used to compute the substitute for the new type
+	 *            variable
+	 * @param concernedObject
+	 *            the node in the abstract syntax tree to which the new type
+	 *            variable is attached
+	 * @param concernedFeature
+	 *            the out-edge of the node in the abstract syntax tree to which
+	 *            the new type variable is attached
+	 * @return the newly created type variable
+	 */
 	public TypeVariable createFreshTypeVariable(BinaryOperator<Optional<DataType>> solver, EObject concernedObject,
 			EStructuralFeature concernedFeature) {
 		TypeVariable v = createFreshTypeVariable(solver);
@@ -283,6 +512,23 @@ public final class TypeInferenceSolver {
 		return v;
 	}
 
+	/**
+	 * Creates a new type variable with a unique fresh name and add it to the
+	 * dependencies of another type variable.
+	 * 
+	 * <p>
+	 * The created type variable is added to the dependencies of
+	 * {@value dependent}. It is attached to the same object and feature as
+	 * {@value dependent}.
+	 * 
+	 * @param solver
+	 *            function used to compute the substitute for the new type
+	 *            variable
+	 * @param dependent
+	 *            a type variable that is going to depend on the newly created
+	 *            type variable
+	 * @return the created type variable
+	 */
 	public TypeVariable createFreshDependency(BinaryOperator<Optional<DataType>> solver, TypeVariable dependent) {
 		TypeVariable v = createFreshTypeVariable(solver, dependent.getConcernedObject(),
 				dependent.getConcernedStructuralFeature());
@@ -290,10 +536,28 @@ public final class TypeInferenceSolver {
 		return v;
 	}
 
+	/**
+	 * Checks whether the inference problem is solved.
+	 * 
+	 * <p>
+	 * The inference problem is solved if all the type variables it owns are
+	 * substituted.
+	 * 
+	 * @return {@value true} if the problem is solved, {@value false} otherwise
+	 */
 	public boolean isSolved() {
 		return variables.values().stream().allMatch(this::isDetermined);
 	}
 
+	/**
+	 * A specification to infer a specific type variable.
+	 * 
+	 * <p>
+	 * The specification contains a reference to the type variable, and
+	 * optionally a lower bound and an upper bound for this type variable.
+	 * 
+	 * @author Jeremy Buisson
+	 */
 	private static class VariableSpec {
 		public final String name;
 		public final Optional<Constraint> lowerBound;
@@ -310,6 +574,18 @@ public final class TypeInferenceSolver {
 		}
 	}
 
+	/**
+	 * Returns the optional value of a collection.
+	 * 
+	 * <p>
+	 * This method assumes and checks that the given collection contains at most
+	 * one value.
+	 * 
+	 * @param c
+	 *            a collection
+	 * @return the value contained by {@value c}, or {@value Optional.empty()}
+	 *         if the collection if empty.
+	 */
 	private static <T> Optional<T> getTheOneOf(Collection<T> c) {
 		if (c.size() > 1) {
 			throw new IllegalArgumentException("the collection is assumed to contain at most one value");
@@ -318,6 +594,30 @@ public final class TypeInferenceSolver {
 		}
 	}
 
+	/**
+	 * Infers a type for each type variable.
+	 * 
+	 * <p>
+	 * This method implements the inference algorithm. At each step, the
+	 * algorithm first checks for the constraints that have determined types in
+	 * both sides using {@link #checkDeterminedConstraint(Constraint)}. When
+	 * there are not such constraints anymore, the method looks for type
+	 * variables that are constrained by either at least two lower bounds or at
+	 * least two upper bounds. The sets of lower or upper bounds are collapsed
+	 * using {@link #union(String, Deque)} and {@link #intersect(String, Deque)}
+	 * respectively. When there are not such type variables anymore, the method
+	 * tries to substitute one variable. The more a type variable has bounds
+	 * (either lower bound, upper bound, both or none), the more it is likely
+	 * selected by the algorithm. The chosen type variable is inferred by a
+	 * custom solver {@link TypeVariable#getSolver()}, which is specific to the
+	 * variable. After {@link #doSubstitute(TypeVariable, DataType)} records the
+	 * substitution, {@link #reSortConstraints()} is invoked to rebuild the sets
+	 * of constraints.
+	 * 
+	 * <p>
+	 * The algorithm is repeated until all the type variables are substituted,
+	 * according to {@link #isSolved()}.
+	 */
 	public void solve() {
 		for (;;) {
 			if (!determinedConstraints.isEmpty()) {
@@ -442,6 +742,18 @@ public final class TypeInferenceSolver {
 		}
 	}
 
+	/**
+	 * Records a substitution.
+	 * 
+	 * <p>
+	 * The method checks that the type variable has not been substituted
+	 * already.
+	 * 
+	 * @param a
+	 *            the substituted variable
+	 * @param b
+	 *            the substitute type
+	 */
 	private void doSubstitute(TypeVariable a, DataType b) {
 		if (a.getSubstitute() != null) {
 			throw new IllegalArgumentException("the type variable should not have been substituted already");
@@ -450,6 +762,16 @@ public final class TypeInferenceSolver {
 		}
 	}
 
+	/**
+	 * Checks whether two types are equal after substitution of all the type
+	 * variables.
+	 * 
+	 * @param l
+	 *            a type
+	 * @param r
+	 *            another type
+	 * @return {@value true} if the types are equal, {@value false} otherwise
+	 */
 	public static boolean equalsUpToSubst(DataType l, DataType r) {
 		if (l == r) {
 			return true;
@@ -491,7 +813,17 @@ public final class TypeInferenceSolver {
 		}
 	}
 
-	private boolean contains(DataType r, TypeVariable l) {
+	/**
+	 * Checks whether a type contains a given type variable.
+	 * 
+	 * @param r
+	 *            a type
+	 * @param l
+	 *            a type variable
+	 * @return {@value true} if {@value r} contains {@value l}, {@value false}
+	 *         otherwise
+	 */
+	public static boolean contains(DataType r, TypeVariable l) {
 		if (l == r) {
 			return true;
 		} else if (r instanceof TypeVariable && ((TypeVariable) r).getName().equals(l.getName())) {
@@ -509,6 +841,14 @@ public final class TypeInferenceSolver {
 		}
 	}
 
+	/**
+	 * Rebuilds the sets of constraints.
+	 * 
+	 * <p>
+	 * After a substitution, some constraint may not be in the right set. This
+	 * method is intended to fix this issue. To do so, it clears all the sets,
+	 * and adds again all the constraints.
+	 */
 	private void reSortConstraints() {
 		Map<String, Deque<Constraint>> oldUpperBounds = upperBounds;
 		Map<String, Deque<Constraint>> oldLowerBounds = lowerBounds;
@@ -522,6 +862,20 @@ public final class TypeInferenceSolver {
 				.forEach((c) -> addConstraint(c.sub, c.sup, c.originObject, c.originFeature));
 	}
 
+	/**
+	 * Solves a type variable.
+	 * 
+	 * <p>
+	 * This solver returns the upper bound is present. If not, it returns the
+	 * lower bound if present. If not, it reports it cannot infer any type for
+	 * the considered type variable.
+	 * 
+	 * @param lower
+	 *            lower bound of the type variable
+	 * @param upper
+	 *            upper bound of the type variable
+	 * @return the inferred type
+	 */
 	public static Optional<DataType> upperOrLowerSolver(Optional<DataType> lower, Optional<DataType> upper) {
 		if (upper.isPresent()) {
 			return upper;
@@ -532,6 +886,24 @@ public final class TypeInferenceSolver {
 		}
 	}
 
+	/**
+	 * Returns the union of the left-hand sides of a collection of constraints.
+	 * 
+	 * <p>
+	 * The union of a collection of types is a type that contains all those of
+	 * the collection. Namely, the union of range types is the union of the
+	 * ranges. Sequence types are covariant, so the union of sequence types is
+	 * the sequence type whose item type is the union of the item types. The
+	 * union of tuple types contains only the intersection of the sets of
+	 * fields; the resulting type of a field is the union of the types of this
+	 * field.
+	 * 
+	 * @param n
+	 *            name of the concerned type variable
+	 * @param constraints
+	 *            collection of constraints
+	 * @return the union type
+	 */
 	private Optional<DataType> union(String n, Deque<Constraint> constraints) {
 		TypeVariable v = variables.get(n);
 		if (constraints.stream().allMatch((x) -> x.sub instanceof SequenceType)) {
@@ -542,10 +914,10 @@ public final class TypeInferenceSolver {
 		} else if (constraints.stream().allMatch((x) -> x.sub instanceof BooleanType)) {
 			return Optional.of(createBooleanType());
 		} else if (constraints.stream().allMatch((x) -> x.sub instanceof RangeType)) {
-			Expression mi = constraints.stream().map((x) -> ((RangeType) x.sub).getVmin()).reduce(TypeInferenceSolver::min)
-					.get();
-			Expression ma = constraints.stream().map((x) -> ((RangeType) x.sub).getVmax()).reduce(TypeInferenceSolver::max)
-					.get();
+			Expression mi = constraints.stream().map((x) -> ((RangeType) x.sub).getVmin())
+					.reduce(TypeInferenceSolver::min).get();
+			Expression ma = constraints.stream().map((x) -> ((RangeType) x.sub).getVmax())
+					.reduce(TypeInferenceSolver::max).get();
 			return Optional.of(createRangeType(mi, ma));
 		} else if (constraints.stream().allMatch((x) -> x.sub instanceof TupleType)) {
 			return constraints.stream().map((c) -> (TupleType) c.sub).reduce((a, b) -> tupleTypeUnion(a, b, v))
@@ -562,6 +934,22 @@ public final class TypeInferenceSolver {
 		}
 	}
 
+	/**
+	 * Returns the union of two tuple types.
+	 * 
+	 * <p>
+	 * The union of tuple types contains only the intersection of the sets of
+	 * fields; the resulting type of a field is the union of the types of this
+	 * field.
+	 * 
+	 * @param t1
+	 *            a tuple type
+	 * @param t2
+	 *            another tuple type
+	 * @param w
+	 *            the concerned type variable
+	 * @return the union of {@value t1} and {@value t2}
+	 */
 	private TupleType tupleTypeUnion(TupleType t1, TupleType t2, TypeVariable w) {
 		Map<String, Optional<FieldDecl>> f2 = getFieldMap(t2);
 		List<FieldDecl> fields = t1.getFields().stream().flatMap((l) -> {
@@ -578,10 +966,37 @@ public final class TypeInferenceSolver {
 		return createTupleType(fields);
 	}
 
+	/**
+	 * Returns a map of the field declarations of a tuple type, indexed by their
+	 * name.
+	 * 
+	 * @param t1
+	 *            a tuple type
+	 * @return the map of field declarations
+	 */
 	private static Map<String, Optional<FieldDecl>> getFieldMap(TupleType t1) {
 		return t1.getFields().stream().collect(Collectors.toConcurrentMap(FieldDecl::getName, Optional::of));
 	}
 
+	/**
+	 * Returns the intersection of the right-hand sides of a collection of
+	 * constraints.
+	 * 
+	 * <p>
+	 * The intersection of a collection of types is a type whose values are
+	 * instances of all types in that collection. Namely, the intersection of
+	 * range types is the intersection of the ranges. Sequence types are
+	 * covariant, so the intersection of sequence types is the sequence type
+	 * whose item type is the intersection of the item types. The intersection
+	 * of tuple types contains the fields of all the tuple types; the resulting
+	 * type of a field is the intersection of the types of this field.
+	 * 
+	 * @param n
+	 *            name of the concerned type variable
+	 * @param constraints
+	 *            collection of constraints
+	 * @return the intersection type
+	 */
 	private Optional<DataType> intersect(String n, Deque<Constraint> constraints) {
 		TypeVariable v = variables.get(n);
 		if (constraints.stream().allMatch((x) -> x.sup instanceof SequenceType)) {
@@ -592,10 +1007,10 @@ public final class TypeInferenceSolver {
 		} else if (constraints.stream().allMatch((x) -> x.sup instanceof BooleanType)) {
 			return Optional.of(createBooleanType());
 		} else if (constraints.stream().allMatch((x) -> x.sup instanceof RangeType)) {
-			Expression mi = constraints.stream().map((x) -> ((RangeType) x.sup).getVmin()).reduce(TypeInferenceSolver::max)
-					.get();
-			Expression ma = constraints.stream().map((x) -> ((RangeType) x.sup).getVmax()).reduce(TypeInferenceSolver::min)
-					.get();
+			Expression mi = constraints.stream().map((x) -> ((RangeType) x.sup).getVmin())
+					.reduce(TypeInferenceSolver::max).get();
+			Expression ma = constraints.stream().map((x) -> ((RangeType) x.sup).getVmax())
+					.reduce(TypeInferenceSolver::min).get();
 			if (isLe(mi, ma)) {
 				return Optional.of(createRangeType(mi, ma));
 			} else {
@@ -627,6 +1042,14 @@ public final class TypeInferenceSolver {
 		}
 	}
 
+	/**
+	 * Returns a compact string representation of a string, wrapped in a
+	 * {@link Stream}.
+	 * 
+	 * @param t
+	 *            a type
+	 * @return the string representation of {@value t}
+	 */
 	private static Stream<String> typeConstructor(DataType t) {
 		if (t instanceof BooleanType) {
 			return Stream.of("boolean");
@@ -641,11 +1064,28 @@ public final class TypeInferenceSolver {
 		}
 	}
 
+	/**
+	 * Returns a {@link Stream} of pairs of field declarations taken from a
+	 * constraint involving a tuple type.
+	 * 
+	 * @param x
+	 *            a constraint
+	 * @return the produced {@link Stream}
+	 */
 	private static Stream<Pair<Constraint, FieldDecl>> getFieldDecls(Constraint x) {
 		Stream<FieldDecl> s = ((TupleType) x.sup).getFields().stream();
 		return s.map((y) -> new Pair<>(x, y));
 	}
 
+	/**
+	 * Returns the smallest expression.
+	 * 
+	 * @param l
+	 *            an expression
+	 * @param r
+	 *            another expression
+	 * @return the smallest expression of {@value l} and {@value r}
+	 */
 	private static Expression min(Expression l, Expression r) {
 		if (InterpInZ.le(l, r)) {
 			return l;
@@ -654,6 +1094,15 @@ public final class TypeInferenceSolver {
 		}
 	}
 
+	/**
+	 * Returns the greatest expression.
+	 * 
+	 * @param l
+	 *            an expression
+	 * @param r
+	 *            another expression
+	 * @return the greatest expression of {@value l} and {@value r}
+	 */
 	private static Expression max(Expression l, Expression r) {
 		if (InterpInZ.le(r, l)) {
 			return l;
@@ -662,6 +1111,21 @@ public final class TypeInferenceSolver {
 		}
 	}
 
+	/**
+	 * Checks a constraint whose two sides are determined types.
+	 * 
+	 * This methods checks whether the two types of the constraints are
+	 * compatible, after substitution. In case the types are range types, the
+	 * methods checks for range inclusion. In the case of sequence types, the
+	 * method issues a new constraint for the item types. In the case of tuple
+	 * types, the method checks for the inclusion for the sets of field
+	 * declarations. It issues a new constraint for each field declaration.
+	 * 
+	 * @param c
+	 *            a constraint
+	 * @return {@value true} if the constraint is satisfied, {@value false} if
+	 *         an error is detected
+	 */
 	private boolean checkDeterminedConstraint(Constraint c) {
 		DataType sub = substitute(c.sub);
 		DataType sup = substitute(c.sup);
