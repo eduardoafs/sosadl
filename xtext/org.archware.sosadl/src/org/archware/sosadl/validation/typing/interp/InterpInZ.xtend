@@ -28,6 +28,10 @@ class InterpInZ {
 		return l.eval.compareTo(r.eval) <= 0
 	}
 	
+	static def eq(Expression l, Expression r) {
+		return l.eval.compareTo(r.eval) == 0
+	}
+	
 	static def gt(Expression l, Expression r) {
 		return l.eval.compareTo(r.eval) > 0
 	}

@@ -5,13 +5,7 @@
   <eClassifiers xsi:type="ecore:EClass" name="TypeVariable" eSuperTypes="generated/SosADL.ecore#//DataType">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" lowerBound="1" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
         iD="true"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="upperBounds" ordered="false"
-        unique="false" upperBound="-1" eType="ecore:EClass generated/SosADL.ecore#//DataType"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="lowerBounds" ordered="false"
-        unique="false" upperBound="-1" eType="ecore:EClass generated/SosADL.ecore#//DataType"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="substitute" eType="ecore:EClass generated/SosADL.ecore#//DataType"/>
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="delayedTask" eType="#//Observer"
-        transient="true"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="dependencies" ordered="false"
         unique="false" upperBound="-1" eType="#//TypeVariable"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="solver" lowerBound="1"
@@ -21,8 +15,6 @@
     <eStructuralFeatures xsi:type="ecore:EReference" name="concernedStructuralFeature"
         eType="ecore:EClass http://www.eclipse.org/emf/2002/Ecore#//EStructuralFeature"/>
   </eClassifiers>
-  <eClassifiers xsi:type="ecore:EDataType" name="Observer" instanceTypeName="java.util.function.Consumer&lt;org.archware.sosadl.tv.typeCheckerHelper.TypeVariable>"
-      serializable="false"/>
-  <eClassifiers xsi:type="ecore:EDataType" name="Solver" instanceTypeName="java.util.function.Function&lt;org.archware.sosadl.tv.typeCheckerHelper.TypeVariable, java.util.Optional&lt;org.archware.sosadl.sosADL.DataType>>"
+  <eClassifiers xsi:type="ecore:EDataType" name="Solver" instanceTypeName="java.util.function.BinaryOperator&lt;java.util.Optional&lt;org.archware.sosadl.sosADL.DataType>>"
       serializable="false"/>
 </ecore:EPackage>
