@@ -1175,14 +1175,41 @@ public final class TypeInferenceSolver {
 		}
 	}
 
+	/**
+	 * Checks whether an expression is smaller or equal to another one.
+	 * 
+	 * @param l
+	 *            an expression
+	 * @param r
+	 *            another expression
+	 * @return {@value true} if {@value l} is smaller or equal to {@value r},
+	 *         {@value false} otherwise
+	 */
 	private static boolean isLe(Expression l, Expression r) {
 		return InterpInZ.le(l, r);
 	}
 
+	/**
+	 * Checks whether an expression is equal to another one.
+	 * 
+	 * @param l
+	 *            an expression
+	 * @param r
+	 *            another expression
+	 * @return {@value true} if {@value l} is equal to {@value r},
+	 *         {@value false} otherwise
+	 */
 	private static boolean isEq(Expression l, Expression r) {
 		return InterpInZ.eq(l, r);
 	}
 
+	/**
+	 * Returns a string representation of a type.
+	 * 
+	 * @param t
+	 *            a type
+	 * @return a string representation of {@value t}
+	 */
 	private static String typeToString(DataType t) {
 		if (t instanceof BooleanType) {
 			return "boolean";
@@ -1203,6 +1230,13 @@ public final class TypeInferenceSolver {
 		}
 	}
 
+	/**
+	 * Copy of a type, unless it is a type variable.
+	 * 
+	 * @param x
+	 *            a type
+	 * @return a copy of {@value x}
+	 */
 	public static <T extends EObject> T copy(T x) {
 		// never copy type variable in order to ensure the uniqueness of the
 		// object, and therefore the uniqueness of the substitution
