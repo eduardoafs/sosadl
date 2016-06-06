@@ -64,57 +64,6 @@ Definition env := environment env_content.
 
 
 (**
- ** Utility functions
- *)
-
-(** [env_add_params] adds a list of formal parameters to an
-environment.  *)
-
-Definition env_add_params a b :=
-  List.fold_right
-    (fun f e =>
-       match SosADL.SosADL.FormalParameter_name f with
-         | Some name =>
-           match SosADL.SosADL.FormalParameter_type f with
-             | Some type => e [| name <- EVariable type |]
-             | None => e
-           end
-         | None => e
-       end) b a.
-
-(** [conns_environment] builds an environment containing connections,
-from a list of these connections. *)
-
-Definition conns_environment l :=
-  List.fold_left
-    (fun e c =>
-       match SosADL.SosADL.Connection_name c with
-         | Some name =>
-           match SosADL.SosADL.Connection_mode c with
-             | Some mode =>
-               match SosADL.SosADL.Connection_valueType c with
-                 | Some type => e [| name <- GDConnection mode type |]
-                 | None => e
-               end
-             | None => e
-           end
-         | None => e
-       end)
-    l empty.
-
-(** [build_gate_env] builds the secondary environment for a gate
-declaration. *)
-
-Definition build_gate_env g :=
-  conns_environment (SosADL.SosADL.GateDecl_connections g).
-
-(** [build_duty_env] builds the secondary environment for a duty
-declaration. *)
-
-Definition build_duty_env d :=
-  conns_environment (SosADL.SosADL.DutyDecl_connections d).
-
-(**
  * Utilities
  *)
 
