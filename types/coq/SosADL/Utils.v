@@ -52,6 +52,8 @@ End Decs.
 
 Definition has_no_dup {A: Type} (eqdec: forall x y: A, {x=y} + {x<>y}) (l: list A) := if NoDup_dec A eqdec l then true else false.
 
+Definition string_eqb a b := if string_dec a b then true else false.
+
 (**
  * Some utility notations
 

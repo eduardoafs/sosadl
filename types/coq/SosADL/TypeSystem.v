@@ -52,7 +52,7 @@ objects that can be stored in the typing environment. The main kinds of objects 
  *)
 
 Inductive env_content: Set :=
-| EType: SosADL.SosADL.t_DataTypeDecl -> list SosADL.SosADL.t_FunctionDecl -> env_content
+| EType: SosADL.SosADL.t_DataTypeDecl -> SosADL.SosADL.t_DataType -> list SosADL.SosADL.t_FunctionDecl -> env_content
 | EFunction: SosADL.SosADL.t_FunctionDecl -> env_content
 | ESystem: SosADL.SosADL.t_SystemDecl -> env_content
 | EMediator: SosADL.SosADL.t_MediatorDecl -> env_content
@@ -61,7 +61,6 @@ Inductive env_content: Set :=
 | EVariable: SosADL.SosADL.t_DataType -> env_content.
 
 Definition env := environment env_content.
-
 
 (**
  * Utilities
@@ -151,19 +150,17 @@ Fixpoint field_type (l: list SosADL.SosADL.t_FieldDecl) (n: string) {struct l}: 
 
 (** * Subtyping relation *)
 
-Reserved Notation "t1 </ t2 'under' Gamma" (at level 70).
+Reserved Notation "t1 </ t2" (at level 70).
 
-Inductive subtype: env -> SosADL.SosADL.t_DataType -> SosADL.SosADL.t_DataType -> Prop :=
+Inductive subtype: SosADL.SosADL.t_DataType -> SosADL.SosADL.t_DataType -> Prop :=
 | subtype_refl:
     forall
-      (Gamma: env)
       (t: SosADL.SosADL.t_DataType)
     ,
-      t </ t under Gamma
+      t </ t
 
 | subtype_range:
     forall
-      (Gamma: env)
       (lmi: SosADL.SosADL.t_Expression)
       (lma: SosADL.SosADL.t_Expression)
       (rmi: SosADL.SosADL.t_Expression)
@@ -171,38 +168,10 @@ Inductive subtype: env -> SosADL.SosADL.t_DataType -> SosADL.SosADL.t_DataType -
       (p1: rmi <= lmi)
       (p2: lma <= rma)
     ,
-      (SosADL.SosADL.RangeType (Some lmi) (Some lma)) </ (SosADL.SosADL.RangeType (Some rmi) (Some rma)) under Gamma
-
-| subtype_unfold_left:
-    forall
-      (Gamma: env)
-      (l: string)
-      (def: SosADL.SosADL.t_DataType)
-      (funs: list SosADL.SosADL.t_FunctionDecl)
-      (methods: list SosADL.SosADL.t_FunctionDecl)
-      (r: SosADL.SosADL.t_DataType)
-      (p1: contains Gamma l (EType (SosADL.SosADL.DataTypeDecl (Some l) (Some def) funs) methods))
-      (p2: def </ r under Gamma)
-    ,
-      (SosADL.SosADL.NamedType (Some l)) </ r under Gamma
-
-| subtype_unfold_right:
-    forall
-      (Gamma: env)
-      (l: SosADL.SosADL.t_DataType)
-      (r: string)
-      (def: SosADL.SosADL.t_DataType)
-      (funs: list SosADL.SosADL.t_FunctionDecl)
-      (methods: list SosADL.SosADL.t_FunctionDecl)
-      (p1: contains Gamma r (EType (SosADL.SosADL.DataTypeDecl (Some r) (Some def) funs) methods))
-      (p2: l </ def under Gamma)
-    ,
-      l </ (SosADL.SosADL.NamedType (Some r)) under Gamma
-
+      (SosADL.SosADL.RangeType (Some lmi) (Some lma)) </ (SosADL.SosADL.RangeType (Some rmi) (Some rma))
 
 | subtype_tuple:
-    forall (Gamma: env)
-      (l: list SosADL.SosADL.t_FieldDecl)
+    forall (l: list SosADL.SosADL.t_FieldDecl)
       (r: list SosADL.SosADL.t_FieldDecl)
       (p1: for each f of r,
            exists n,
@@ -210,19 +179,18 @@ Inductive subtype: env -> SosADL.SosADL.t_DataType -> SosADL.SosADL.t_DataType -
              /\ exists tr,
                SosADL.SosADL.FieldDecl_type f = Some tr
                /\ exists tl, field_type l n = Some tl
-                       /\ (tl </ tr under Gamma))
+                       /\ (tl </ tr))
     ,
-      (SosADL.SosADL.TupleType l) </ (SosADL.SosADL.TupleType r) under Gamma
+      (SosADL.SosADL.TupleType l) </ (SosADL.SosADL.TupleType r)
 
 | subtype_sequence:
-    forall (Gamma: env)
-      (l: SosADL.SosADL.t_DataType)
+    forall (l: SosADL.SosADL.t_DataType)
       (r: SosADL.SosADL.t_DataType)
-      (p1: l </ r under Gamma)
+      (p1: l </ r)
     ,
-      (SosADL.SosADL.SequenceType (Some l)) </ (SosADL.SosADL.SequenceType (Some r)) under Gamma
+      (SosADL.SosADL.SequenceType (Some l)) </ (SosADL.SosADL.SequenceType (Some r))
 
-where "t1 </ t2 'under' Gamma" := (subtype Gamma t1 t2)
+where "t1 </ t2" := (subtype t1 t2)
 .
 
 (**
@@ -331,6 +299,29 @@ Inductive mutually
       mutually Gamma l Gamma1
 .
 
+(** [translate] specifies a translation from one list to another one. *)
+
+Inductive translate
+          {T1 T2: Set} {P: T1 -> T2 -> Prop}: list T1 -> list T2 -> Prop :=
+
+| translate_nil:
+    translate nil nil
+
+| translate_cons:
+    forall
+      (x1: T1)
+      (l1: list T1)
+      (x2: T2)
+      (l2: list T2)
+      (p1: P x1 x2)
+      (p2: translate l1 l2)
+    ,
+      translate (x1 :: l1) (x2 :: l2)
+.
+
+Inductive triplet {T1 T2 T3: Set}: Set :=
+| make_triplet: T1 -> T2 -> T3 -> triplet.
+
 (** [optionally] is a generic rule for an optional statement. *)
 
 Inductive optionally {T: Set} {P: env -> T -> Prop}:
@@ -369,7 +360,8 @@ Reserved Notation "'unit' u 'well' 'typed' 'in' Gamma" (at level 200, no associa
 Reserved Notation "'entity' u 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
 Reserved Notation "'typedecl' t 'well' 'typed' 'in' Gamma 'yields' 'to' Gamma1" (at level 200, Gamma at level 1, no associativity).
 Reserved Notation "'function' f 'well' 'typed' 'in' Gamma 'yields' 'to' Gamma1" (at level 200, Gamma at level 1, no associativity).
-Reserved Notation "'type' t 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
+Reserved Notation "'type' t 'looks' 'fine'" (at level 200, no associativity).
+Reserved Notation "'type' t 'is' u 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
 Reserved Notation "'system' s 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
 Reserved Notation "'mediator' m 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
 Reserved Notation "'mediatorblock' m 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
@@ -477,52 +469,77 @@ where "'expression' e 'is' 'constant' 'integer'" := (constexpr_expression e)
 
 (** ** Data types *)
 
-Inductive type_datatype: env -> SosADL.SosADL.t_DataType -> Prop :=
+Inductive check_datatype: SosADL.SosADL.t_DataType -> Prop :=
+| check_NamedType:
+    forall
+      (n: string)
+    ,
+      type (SosADL.SosADL.NamedType (Some n)) looks fine
+
+| check_TupleType:
+    forall
+      (fields: list SosADL.SosADL.t_FieldDecl)
+      (p1: values (SosADL.SosADL.FieldDecl_name f) for f of fields are distinct according to option_string_dec)
+      (p2: for each f of fields, exists t, SosADL.SosADL.FieldDecl_type f = Some t
+                                      /\ type t looks fine)
+    ,
+      type (SosADL.SosADL.TupleType fields) looks fine
+
+| check_SequenceType:
+    forall
+      (t: SosADL.SosADL.t_DataType)
+      (p: type t looks fine)
+    ,
+      type (SosADL.SosADL.SequenceType (Some t)) looks fine
+
+| check_RangeType_trivial:
+    forall
+      (min: SosADL.SosADL.t_Expression)
+      (max: SosADL.SosADL.t_Expression)
+      (p1: min <= max)
+    ,
+      type (SosADL.SosADL.RangeType (Some min)
+                                    (Some max)) looks fine
+
+| check_BooleanType:
+      type SosADL.SosADL.BooleanType looks fine
+
+where "'type' t 'looks' 'fine'" := (check_datatype t)
+.
+
+Inductive type_datatype: env -> SosADL.SosADL.t_DataType -> SosADL.SosADL.t_DataType -> Prop :=
 | type_NamedType:
     forall
       (Gamma: env)
       (n: string)
+      (u: SosADL.SosADL.t_DataType)
       (t: SosADL.SosADL.t_DataTypeDecl)
-      (p: exists m, contains Gamma n (EType t m))
+      (p: exists m, contains Gamma n (EType t u m))
     ,
-      type (SosADL.SosADL.NamedType (Some n)) well typed in Gamma
+      type (SosADL.SosADL.NamedType (Some n)) is u in Gamma
 
 | type_TupleType:
     forall
       (Gamma: env)
       (fields: list SosADL.SosADL.t_FieldDecl)
-      (p1: @mutually _ (fun gamma f _ =>
-                          exists t, SosADL.SosADL.FieldDecl_type f = Some t
-                                    /\ type t well typed in Gamma)
-                     SosADL.SosADL.FieldDecl_name
-                     (fun _ => None)
-                     Gamma fields Gamma)
-(*                     
+      (fields': list SosADL.SosADL.t_FieldDecl)
       (p1: values (SosADL.SosADL.FieldDecl_name f) for f of fields are distinct according to option_string_dec)
-      (p2: for each f of fields,
-           (exists t, SosADL.SosADL.FieldDecl_type f = Some t
-                      /\ type t well typed in Gamma))
-*)
+      (p2: for each f f' of fields fields',
+           SosADL.SosADL.FieldDecl_name f = SosADL.SosADL.FieldDecl_name f'
+           /\ exists t, SosADL.SosADL.FieldDecl_type f = Some t
+                  /\ exists t', SosADL.SosADL.FieldDecl_type f' = Some t'
+                                      /\ type t is t' in Gamma)
     ,
-      type (SosADL.SosADL.TupleType fields) well typed in Gamma
+      type (SosADL.SosADL.TupleType fields) is (SosADL.SosADL.TupleType fields') in Gamma
 
 | type_SequenceType:
     forall
       (Gamma: env)
       (t: SosADL.SosADL.t_DataType)
-      (p: type t well typed in Gamma)
+      (t': SosADL.SosADL.t_DataType)
+      (p: type t is t' in Gamma)
     ,
-      type (SosADL.SosADL.SequenceType (Some t)) well typed in Gamma
-
-                                                       (*
-| type_RangeType:
-    forall Gamma min max min__min min__max max__min max__max,
-      (expression min has type (SosADL.SosADL.RangeType (Some min__min) (Some min__max)) in Gamma)
-      /\ (expression max has type (SosADL.SosADL.RangeType (Some max__min) (Some max__max)) in Gamma)
-      /\ min <= max
-      ->
-      type (SosADL.SosADL.RangeType (Some min) (Some max)) well typed in Gamma
-*)
+      type (SosADL.SosADL.SequenceType (Some t)) is (SosADL.SosADL.SequenceType (Some t')) in Gamma
 
 | type_RangeType_trivial:
     forall
@@ -532,15 +549,17 @@ Inductive type_datatype: env -> SosADL.SosADL.t_DataType -> Prop :=
       (p1: min <= max)
     ,
       type (SosADL.SosADL.RangeType (Some min)
-                                    (Some max)) well typed in Gamma
+                                    (Some max))
+           is (SosADL.SosADL.RangeType (Some min)
+                                       (Some max)) in Gamma
 
 | type_BooleanType:
     forall
       (Gamma: env)
     ,
-      type SosADL.SosADL.BooleanType well typed in Gamma
+      type SosADL.SosADL.BooleanType is SosADL.SosADL.BooleanType in Gamma
 
-where "'type' t 'well' 'typed' 'in' Gamma" := (type_datatype Gamma t)
+where "'type' t 'is' u 'in' Gamma" := (type_datatype Gamma t u)
 .
 
 (**
@@ -638,7 +657,7 @@ Inductive type_expression: env -> SosADL.SosADL.t_Expression -> SosADL.SosADL.t_
       (e: SosADL.SosADL.t_Expression)
       (t: SosADL.SosADL.t_DataType)
       (p1: expression node e has type t in Gamma)
-      (p2: type t well typed in Gamma)
+      (p2: type t looks fine)
     ,
       expression e has type t in Gamma
 
@@ -662,7 +681,7 @@ with type_expression_node: env -> SosADL.SosADL.t_Expression -> SosADL.SosADL.t_
       (min: SosADL.SosADL.t_Expression)
       (max: SosADL.SosADL.t_Expression)
       (p1: expression e has type tau in Gamma)
-      (p2: tau </ (SosADL.SosADL.RangeType (Some min) (Some max)) under Gamma)
+      (p2: tau </ (SosADL.SosADL.RangeType (Some min) (Some max)))
     ,
       expression node (SosADL.SosADL.UnaryExpression (Some "-") (Some e))
                  has type (SosADL.SosADL.RangeType
@@ -677,7 +696,7 @@ with type_expression_node: env -> SosADL.SosADL.t_Expression -> SosADL.SosADL.t_
       (min: SosADL.SosADL.t_Expression)
       (max: SosADL.SosADL.t_Expression)
       (p1: expression e has type tau in Gamma)
-      (p2: tau </ (SosADL.SosADL.RangeType (Some min) (Some max)) under Gamma)
+      (p2: tau </ (SosADL.SosADL.RangeType (Some min) (Some max)))
     ,
       expression node (SosADL.SosADL.UnaryExpression (Some "+") (Some e))
       has type (SosADL.SosADL.RangeType (Some min) (Some max)) in Gamma
@@ -689,7 +708,7 @@ with type_expression_node: env -> SosADL.SosADL.t_Expression -> SosADL.SosADL.t_
       (e: SosADL.SosADL.t_Expression)
       (tau: SosADL.SosADL.t_DataType)
       (p1: expression e has type tau in Gamma)
-      (p2: tau </ SosADL.SosADL.BooleanType under Gamma)
+      (p2: tau </ SosADL.SosADL.BooleanType)
     ,
       expression node (SosADL.SosADL.UnaryExpression (Some "not") (Some e)) has type SosADL.SosADL.BooleanType in Gamma
 
@@ -705,9 +724,9 @@ with type_expression_node: env -> SosADL.SosADL.t_Expression -> SosADL.SosADL.t_
       (r__min: SosADL.SosADL.t_Expression)
       (r__max: SosADL.SosADL.t_Expression)
       (p1: expression l has type l__tau in Gamma)
-      (p2: l__tau </ (SosADL.SosADL.RangeType (Some l__min) (Some l__max)) under Gamma)
+      (p2: l__tau </ (SosADL.SosADL.RangeType (Some l__min) (Some l__max)))
       (p3: expression r has type r__tau in Gamma)
-      (p4: r__tau </ (SosADL.SosADL.RangeType (Some r__min) (Some r__max)) under Gamma)
+      (p4: r__tau </ (SosADL.SosADL.RangeType (Some r__min) (Some r__max)))
     ,
       expression node (SosADL.SosADL.BinaryExpression (Some l) (Some "+") (Some r))
       has type (SosADL.SosADL.RangeType (Some (SosADL.SosADL.BinaryExpression (Some l__min) (Some "+") (Some r__min)))
@@ -725,9 +744,9 @@ with type_expression_node: env -> SosADL.SosADL.t_Expression -> SosADL.SosADL.t_
       (r__min: SosADL.SosADL.t_Expression)
       (r__max: SosADL.SosADL.t_Expression)
       (p1: expression l has type l__tau in Gamma)
-      (p2: l__tau </ (SosADL.SosADL.RangeType (Some l__min) (Some l__max)) under Gamma)
+      (p2: l__tau </ (SosADL.SosADL.RangeType (Some l__min) (Some l__max)))
       (p3: expression r has type r__tau in Gamma)
-      (p4: r__tau </ (SosADL.SosADL.RangeType (Some r__min) (Some r__max)) under Gamma)
+      (p4: r__tau </ (SosADL.SosADL.RangeType (Some r__min) (Some r__max)))
     ,
       expression node (SosADL.SosADL.BinaryExpression (Some l) (Some "-") (Some r))
       has type (SosADL.SosADL.RangeType (Some (SosADL.SosADL.BinaryExpression (Some l__min) (Some "-") (Some r__max)))
@@ -747,9 +766,9 @@ with type_expression_node: env -> SosADL.SosADL.t_Expression -> SosADL.SosADL.t_
       (min: SosADL.SosADL.t_Expression)
       (max: SosADL.SosADL.t_Expression)
       (p1: expression l has type l__tau in Gamma)
-      (p2: l__tau </ (SosADL.SosADL.RangeType (Some l__min) (Some l__max)) under Gamma)
+      (p2: l__tau </ (SosADL.SosADL.RangeType (Some l__min) (Some l__max)))
       (p3: expression r has type r__tau in Gamma)
-      (p4: r__tau </ (SosADL.SosADL.RangeType (Some r__min) (Some r__max)) under Gamma)
+      (p4: r__tau </ (SosADL.SosADL.RangeType (Some r__min) (Some r__max)))
       (p5: min <= (SosADL.SosADL.BinaryExpression (Some l__min) (Some "*") (Some r__min)))
       (p6: min <= (SosADL.SosADL.BinaryExpression (Some l__min) (Some "*") (Some r__max)))
       (p7: min <= (SosADL.SosADL.BinaryExpression (Some l__max) (Some "*") (Some r__min)))
@@ -776,9 +795,9 @@ with type_expression_node: env -> SosADL.SosADL.t_Expression -> SosADL.SosADL.t_
       (min: SosADL.SosADL.t_Expression)
       (max: SosADL.SosADL.t_Expression)
       (p1: expression l has type l__tau in Gamma)
-      (p2: l__tau </ (SosADL.SosADL.RangeType (Some l__min) (Some l__max)) under Gamma)
+      (p2: l__tau </ (SosADL.SosADL.RangeType (Some l__min) (Some l__max)))
       (p3: expression r has type r__tau in Gamma)
-      (p4: r__tau </ (SosADL.SosADL.RangeType (Some r__min) (Some r__max)) under Gamma)
+      (p4: r__tau </ (SosADL.SosADL.RangeType (Some r__min) (Some r__max)))
       (p5: (SosADL.SosADL.IntegerValue (Some 1%Z)) <= r__min)
       (p6: min <= (SosADL.SosADL.BinaryExpression (Some l__min) (Some "/") (Some r__min)))
       (p7: min <= (SosADL.SosADL.BinaryExpression (Some l__min) (Some "/") (Some r__max)))
@@ -806,9 +825,9 @@ with type_expression_node: env -> SosADL.SosADL.t_Expression -> SosADL.SosADL.t_
       (min: SosADL.SosADL.t_Expression)
       (max: SosADL.SosADL.t_Expression)
       (p1: expression l has type l__tau in Gamma)
-      (p2: l__tau </ (SosADL.SosADL.RangeType (Some l__min) (Some l__max)) under Gamma)
+      (p2: l__tau </ (SosADL.SosADL.RangeType (Some l__min) (Some l__max)))
       (p3: expression r has type r__tau in Gamma)
-      (p4: r__tau </ (SosADL.SosADL.RangeType (Some r__min) (Some r__max)) under Gamma)
+      (p4: r__tau </ (SosADL.SosADL.RangeType (Some r__min) (Some r__max)))
       (p5: (r__max <= (SosADL.SosADL.UnaryExpression (Some "-") (Some (SosADL.SosADL.IntegerValue (Some 1%Z))))))
       (p6: min <= (SosADL.SosADL.BinaryExpression (Some l__min) (Some "/") (Some r__min)))
       (p7: min <= (SosADL.SosADL.BinaryExpression (Some l__min) (Some "/") (Some r__max)))
@@ -836,9 +855,9 @@ with type_expression_node: env -> SosADL.SosADL.t_Expression -> SosADL.SosADL.t_
       (min: SosADL.SosADL.t_Expression)
       (max: SosADL.SosADL.t_Expression)
       (p1: expression l has type l__tau in Gamma)
-      (p2: l__tau </ (SosADL.SosADL.RangeType (Some l__min) (Some l__max)) under Gamma)
+      (p2: l__tau </ (SosADL.SosADL.RangeType (Some l__min) (Some l__max)))
       (p3: expression r has type r__tau in Gamma)
-      (p4: r__tau </ (SosADL.SosADL.RangeType (Some r__min) (Some r__max)) under Gamma)
+      (p4: r__tau </ (SosADL.SosADL.RangeType (Some r__min) (Some r__max)))
       (p5: range_modulo_min l__min l__max r__min r__max min)
       (p6: range_modulo_max l__min l__max r__min r__max max)
     ,
@@ -852,9 +871,9 @@ with type_expression_node: env -> SosADL.SosADL.t_Expression -> SosADL.SosADL.t_
       (r: SosADL.SosADL.t_Expression)
       (r__tau: SosADL.SosADL.t_DataType)
       (p1: expression l has type l__tau in Gamma)
-      (p2: l__tau </ SosADL.SosADL.BooleanType under Gamma)
+      (p2: l__tau </ SosADL.SosADL.BooleanType)
       (p3: expression r has type r__tau in Gamma)
-      (p4: r__tau </ SosADL.SosADL.BooleanType under Gamma)
+      (p4: r__tau </ SosADL.SosADL.BooleanType)
     ,
      expression node (SosADL.SosADL.BinaryExpression (Some l) (Some "implies") (Some r)) has type SosADL.SosADL.BooleanType in Gamma
 
@@ -865,9 +884,9 @@ with type_expression_node: env -> SosADL.SosADL.t_Expression -> SosADL.SosADL.t_
       (r: SosADL.SosADL.t_Expression)
       (r__tau: SosADL.SosADL.t_DataType)
       (p1: expression l has type l__tau in Gamma)
-      (p2: l__tau </ SosADL.SosADL.BooleanType under Gamma)
+      (p2: l__tau </ SosADL.SosADL.BooleanType)
       (p3: expression r has type r__tau in Gamma)
-      (p4: r__tau </ SosADL.SosADL.BooleanType under Gamma)
+      (p4: r__tau </ SosADL.SosADL.BooleanType)
     ,
      expression node (SosADL.SosADL.BinaryExpression (Some l) (Some "or") (Some r)) has type SosADL.SosADL.BooleanType in Gamma
 
@@ -878,9 +897,9 @@ with type_expression_node: env -> SosADL.SosADL.t_Expression -> SosADL.SosADL.t_
       (r: SosADL.SosADL.t_Expression)
       (r__tau: SosADL.SosADL.t_DataType)
       (p1: expression l has type l__tau in Gamma)
-      (p2: l__tau </ SosADL.SosADL.BooleanType under Gamma)
+      (p2: l__tau </ SosADL.SosADL.BooleanType)
       (p3: expression r has type r__tau in Gamma)
-      (p4: r__tau </ SosADL.SosADL.BooleanType under Gamma)
+      (p4: r__tau </ SosADL.SosADL.BooleanType)
     ,
      expression node (SosADL.SosADL.BinaryExpression (Some l) (Some "xor") (Some r)) has type SosADL.SosADL.BooleanType in Gamma
 
@@ -891,9 +910,9 @@ with type_expression_node: env -> SosADL.SosADL.t_Expression -> SosADL.SosADL.t_
       (r: SosADL.SosADL.t_Expression)
       (r__tau: SosADL.SosADL.t_DataType)
       (p1: expression l has type l__tau in Gamma)
-      (p2: l__tau </ SosADL.SosADL.BooleanType under Gamma)
+      (p2: l__tau </ SosADL.SosADL.BooleanType)
       (p3: expression r has type r__tau in Gamma)
-      (p4: r__tau </ SosADL.SosADL.BooleanType under Gamma)
+      (p4: r__tau </ SosADL.SosADL.BooleanType)
     ,
      expression node (SosADL.SosADL.BinaryExpression (Some l) (Some "and") (Some r)) has type SosADL.SosADL.BooleanType in Gamma
 
@@ -908,9 +927,9 @@ with type_expression_node: env -> SosADL.SosADL.t_Expression -> SosADL.SosADL.t_
       (r__min: SosADL.SosADL.t_Expression)
       (r__max: SosADL.SosADL.t_Expression)
       (p1: expression l has type l__tau in Gamma)
-      (p2: l__tau </ SosADL.SosADL.RangeType (Some l__min) (Some l__max) under Gamma)
+      (p2: l__tau </ SosADL.SosADL.RangeType (Some l__min) (Some l__max))
       (p3: expression r has type r__tau in Gamma)
-      (p4: r__tau </ SosADL.SosADL.RangeType (Some r__min) (Some r__max) under Gamma)
+      (p4: r__tau </ SosADL.SosADL.RangeType (Some r__min) (Some r__max))
     ,
       expression node (SosADL.SosADL.BinaryExpression (Some l) (Some "=") (Some r)) has type SosADL.SosADL.BooleanType in Gamma
 
@@ -925,9 +944,9 @@ with type_expression_node: env -> SosADL.SosADL.t_Expression -> SosADL.SosADL.t_
       (r__min: SosADL.SosADL.t_Expression)
       (r__max: SosADL.SosADL.t_Expression)
       (p1: expression l has type l__tau in Gamma)
-      (p2: l__tau </ SosADL.SosADL.RangeType (Some l__min) (Some l__max) under Gamma)
+      (p2: l__tau </ SosADL.SosADL.RangeType (Some l__min) (Some l__max))
       (p3: expression r has type r__tau in Gamma)
-      (p4: r__tau </ SosADL.SosADL.RangeType (Some r__min) (Some r__max) under Gamma)
+      (p4: r__tau </ SosADL.SosADL.RangeType (Some r__min) (Some r__max))
     ,
       expression node (SosADL.SosADL.BinaryExpression (Some l) (Some "<>") (Some r)) has type SosADL.SosADL.BooleanType in Gamma
 
@@ -942,9 +961,9 @@ with type_expression_node: env -> SosADL.SosADL.t_Expression -> SosADL.SosADL.t_
       (r__min: SosADL.SosADL.t_Expression)
       (r__max: SosADL.SosADL.t_Expression)
       (p1: expression l has type l__tau in Gamma)
-      (p2: l__tau </ SosADL.SosADL.RangeType (Some l__min) (Some l__max) under Gamma)
+      (p2: l__tau </ SosADL.SosADL.RangeType (Some l__min) (Some l__max))
       (p3: expression r has type r__tau in Gamma)
-      (p4: r__tau </ SosADL.SosADL.RangeType (Some r__min) (Some r__max) under Gamma)
+      (p4: r__tau </ SosADL.SosADL.RangeType (Some r__min) (Some r__max))
     ,
       expression node (SosADL.SosADL.BinaryExpression (Some l) (Some "<") (Some r)) has type SosADL.SosADL.BooleanType in Gamma
 
@@ -959,9 +978,9 @@ with type_expression_node: env -> SosADL.SosADL.t_Expression -> SosADL.SosADL.t_
       (r__min: SosADL.SosADL.t_Expression)
       (r__max: SosADL.SosADL.t_Expression)
       (p1: expression l has type l__tau in Gamma)
-      (p2: l__tau </ SosADL.SosADL.RangeType (Some l__min) (Some l__max) under Gamma)
+      (p2: l__tau </ SosADL.SosADL.RangeType (Some l__min) (Some l__max))
       (p3: expression r has type r__tau in Gamma)
-      (p4: r__tau </ SosADL.SosADL.RangeType (Some r__min) (Some r__max) under Gamma)
+      (p4: r__tau </ SosADL.SosADL.RangeType (Some r__min) (Some r__max))
     ,
       expression node (SosADL.SosADL.BinaryExpression (Some l) (Some "<=") (Some r)) has type SosADL.SosADL.BooleanType in Gamma
 
@@ -976,9 +995,9 @@ with type_expression_node: env -> SosADL.SosADL.t_Expression -> SosADL.SosADL.t_
       (r__min: SosADL.SosADL.t_Expression)
       (r__max: SosADL.SosADL.t_Expression)
       (p1: expression l has type l__tau in Gamma)
-      (p2: l__tau </ SosADL.SosADL.RangeType (Some l__min) (Some l__max) under Gamma)
+      (p2: l__tau </ SosADL.SosADL.RangeType (Some l__min) (Some l__max))
       (p3: expression r has type r__tau in Gamma)
-      (p4: r__tau </ SosADL.SosADL.RangeType (Some r__min) (Some r__max) under Gamma)
+      (p4: r__tau </ SosADL.SosADL.RangeType (Some r__min) (Some r__max))
     ,
       expression node (SosADL.SosADL.BinaryExpression (Some l) (Some ">") (Some r)) has type SosADL.SosADL.BooleanType in Gamma
 
@@ -993,9 +1012,9 @@ with type_expression_node: env -> SosADL.SosADL.t_Expression -> SosADL.SosADL.t_
       (r__min: SosADL.SosADL.t_Expression)
       (r__max: SosADL.SosADL.t_Expression)
       (p1: expression l has type l__tau in Gamma)
-      (p2: l__tau </ SosADL.SosADL.RangeType (Some l__min) (Some l__max) under Gamma)
+      (p2: l__tau </ SosADL.SosADL.RangeType (Some l__min) (Some l__max))
       (p3: expression r has type r__tau in Gamma)
-      (p4: r__tau </ SosADL.SosADL.RangeType (Some r__min) (Some r__max) under Gamma)
+      (p4: r__tau </ SosADL.SosADL.RangeType (Some r__min) (Some r__max))
     ,
       expression node (SosADL.SosADL.BinaryExpression (Some l) (Some ">=") (Some r)) has type SosADL.SosADL.BooleanType in Gamma
 
@@ -1032,6 +1051,7 @@ library testDone is {
       (self: SosADL.SosADL.t_Expression)
       (t: SosADL.SosADL.t_DataType)
       (typeDecl: SosADL.SosADL.t_DataTypeDecl)
+      (alpha: SosADL.SosADL.t_DataType)
       (tau: SosADL.SosADL.t_DataType)
       (methods: list SosADL.SosADL.t_FunctionDecl)
       (name: string)
@@ -1039,13 +1059,13 @@ library testDone is {
       (ret: SosADL.SosADL.t_DataType)
       (params: list SosADL.SosADL.t_Expression)
       (p1: expression self has type t in Gamma)
-      (p2: binds Gamma (EType typeDecl methods))
-      (p4: t </ tau under Gamma)
+      (p2: binds Gamma (EType typeDecl alpha methods))
+      (p4: t </ tau)
       (p5: method name defined in methods with tau parameters formalparams returns ret)
       (p6: for each fp p of formalparams params,
            (exists t, SosADL.SosADL.FormalParameter_type fp = Some t
                  /\ (exists tp, (expression p has type tp in Gamma)
-                          /\ tp </ t under Gamma)))
+                          /\ tp </ t)))
     ,
       expression node (SosADL.SosADL.MethodCall (Some self) (Some name) params) has type ret in Gamma
 
@@ -1083,7 +1103,7 @@ library testDone is {
       (tau: SosADL.SosADL.t_DataType)
       (p1: for each e of elts,
            exists t, (expression e has type t in Gamma)
-                /\ t </ tau under Gamma)
+                /\ t </ tau)
     ,
       expression node (SosADL.SosADL.Sequence elts) has type (SosADL.SosADL.SequenceType (Some tau)) in Gamma
 
@@ -1266,11 +1286,13 @@ with type_protocol: env -> SosADL.SosADL.t_ProtocolDecl -> Prop :=
 (** ** Connection *)
 
 with type_connection: env -> SosADL.SosADL.t_Connection -> Prop :=
+       (*
 | type_Connection:
     forall Gamma name k m t,
       (type t well typed in Gamma)
       ->
       connection (SosADL.SosADL.Connection (Some k) (Some name) (Some m) (Some t)) well typed in Gamma
+*)
 
 (** ** Body *)
 
@@ -1300,7 +1322,7 @@ with type_body: env -> list SosADL.SosADL.t_BehaviorStatement -> Prop :=
 | type_Valuing_Some:
     forall Gamma x e tau tau__e l,
       (expression e has type tau__e in Gamma)
-      /\ (tau__e </ tau under Gamma)
+      /\ (tau__e </ tau)
       /\ (body l well typed in Gamma [| x <- EVariable  tau |])
       ->
       body (SosADL.SosADL.BehaviorStatement_Valuing (Some x) (Some tau) (Some e) :: l) well typed in Gamma
@@ -1401,7 +1423,7 @@ gate-or-duty, connection.%}% *)
       (contains Gamma gd (EGateOrDuty E))
       /\ (contains E conn (GDConnection SosADL.SosADL.ModeTypeOut conn__tau))
       /\ (expression e has type tau in Gamma)
-      /\ (tau </ conn__tau under Gamma)
+      /\ (tau </ conn__tau)
       /\ (body l well typed in Gamma)
       ->
       body (SosADL.SosADL.Action (Some (SosADL.SosADL.ComplexName (gd :: conn :: nil)))
@@ -1413,7 +1435,7 @@ gate-or-duty, connection.%}% *)
       (contains Gamma gd (EGateOrDuty E))
       /\ (contains E conn (GDConnection SosADL.SosADL.ModeTypeInout conn__tau))
       /\ (expression e has type tau in Gamma)
-      /\ (tau </ conn__tau under Gamma)
+      /\ (tau </ conn__tau)
       /\ (body l well typed in Gamma)
       ->
       body (SosADL.SosADL.Action (Some (SosADL.SosADL.ComplexName (gd :: conn :: nil)))
@@ -1453,14 +1475,16 @@ Definition formalParameter_to_EVariable p :=
   | None => None
   | Some t => Some (EVariable t)
   end.
-Definition type_formalParameters Gamma l Gamma1 :=
-  @mutually _ (fun gamma p _ =>
-                 exists t,
-                   SosADL.SosADL.FormalParameter_type p = Some t
-                   /\ type t well typed in Gamma)
-            SosADL.SosADL.FormalParameter_name
-            formalParameter_to_EVariable
-            Gamma l Gamma1.
+Definition type_formalParameters Gamma l l' Gamma1 :=
+  @translate _ _ (fun p p' =>
+                    SosADL.SosADL.FormalParameter_name p = SosADL.SosADL.FormalParameter_name p'
+                    /\ exists t, SosADL.SosADL.FormalParameter_type p = Some t
+                           /\ exists t', SosADL.SosADL.FormalParameter_type p' = Some t'
+                                   /\ type t is t' in Gamma) l l'
+  /\ @mutually _ (fun gamma p _ => True)
+              SosADL.SosADL.FormalParameter_name
+              formalParameter_to_EVariable
+              Gamma l Gamma1.
 Definition type_gates Gamma l Gamma1 := @incrementally _ (simple_increment _ type_gate SosADL.SosADL.GateDecl_name (fun x => (** TODO *) None)) Gamma l Gamma1.
 
 (** ** Valuings *)
@@ -1484,30 +1508,38 @@ Inductive type_function: env -> SosADL.SosADL.t_FunctionDecl -> env -> Prop :=
       (dataName: string)
       (dataTypeName: string)
       (dataTypeDecl: SosADL.SosADL.t_DataTypeDecl)
+      (dataTypeReal: SosADL.SosADL.t_DataType)
       (dataTypeMethods: list SosADL.SosADL.t_FunctionDecl)
       (name: string)
       (params: list SosADL.SosADL.t_FormalParameter)
+      (params': list SosADL.SosADL.t_FormalParameter)
       (Gammap: env)
       (rettype: SosADL.SosADL.t_DataType)
+      (rettype': SosADL.SosADL.t_DataType)
       (vals: list SosADL.SosADL.t_Valuing)
       (Gammav: env)
       (retexpr: SosADL.SosADL.t_Expression)
       (tau: SosADL.SosADL.t_DataType)
       (Gamma1: env)
-      (p1: Gamma [| dataTypeName |] = Some (EType dataTypeDecl dataTypeMethods))
-      (p2: type rettype well typed in Gamma)
-      (p3: type_formalParameters Gamma (SosADL.SosADL.FormalParameter
-                                          (Some dataName)
-                                          (Some (SosADL.SosADL.NamedType (Some dataTypeName))) :: params) Gammap)
+      (p1: Gamma [| dataTypeName |] = Some (EType dataTypeDecl dataTypeReal dataTypeMethods))
+      (p2: type rettype is rettype' in Gamma)
+      (p3: type_formalParameters Gamma
+                                 (SosADL.SosADL.FormalParameter
+                                    (Some dataName)
+                                    (Some (SosADL.SosADL.NamedType (Some dataTypeName))) :: params)
+                                 (SosADL.SosADL.FormalParameter
+                                    (Some dataName)
+                                    (Some dataTypeReal) :: params')
+                                 Gammap)
       (p4: type_valuings Gammap vals Gammav)
       (p5: expression retexpr has type tau in Gammav)
-      (p6: tau </ rettype under Gamma)
-      (p7: Gamma1 = Gamma [| dataTypeName <- EType dataTypeDecl
+      (p6: tau </ rettype)
+      (p7: Gamma1 = Gamma [| dataTypeName <- EType dataTypeDecl dataTypeReal
                                           ((SosADL.SosADL.FunctionDecl
                                               (Some (SosADL.SosADL.FormalParameter
                                                        (Some dataName)
-                                                       (Some (SosADL.SosADL.NamedType (Some dataTypeName)))))
-                                              (Some name) params (Some rettype) vals (Some retexpr)) :: dataTypeMethods) |])
+                                                       (Some dataTypeReal)))
+                                              (Some name) params' (Some rettype') vals (Some retexpr)) :: dataTypeMethods) |])
     ,
       function (SosADL.SosADL.FunctionDecl
                   (Some (SosADL.SosADL.FormalParameter
@@ -1524,23 +1556,50 @@ Definition type_functionDecls Gamma l Gamma1 := @incrementally _ type_function G
 
 (** ** Data type declaration *)
 
+Fixpoint name_is_fresh (e: env) (x: string): bool :=
+  match e with
+  | h :: r =>
+    andb
+    match (value h) with
+    | EType _ (SosADL.SosADL.NamedType (Some n)) _ => (negb (string_eqb x n))
+    | _ => true
+    end (name_is_fresh r x)
+  | nil => true
+  end.
+
 Inductive type_datatypeDecl: env -> SosADL.SosADL.t_DataTypeDecl -> env -> Prop :=
 | type_DataTypeDecl_def:
     forall
       (Gamma: env)
       (name: string)
-      (t: option SosADL.SosADL.t_DataType)
+      (t: SosADL.SosADL.t_DataType)
+      (t': SosADL.SosADL.t_DataType)
       (funs: list SosADL.SosADL.t_FunctionDecl)
       (Gamma1: env)
-      (p1: @optionally _ type_datatype Gamma t)
+      (p1: type t is t' in Gamma)
       (p2: for each f of funs,
            exists p,
              SosADL.SosADL.FunctionDecl_data f = Some p
              /\ SosADL.SosADL.FormalParameter_type p = Some (SosADL.SosADL.NamedType (Some name)))
-      (p3: type_functionDecls (Gamma [| name <- EType (SosADL.SosADL.DataTypeDecl (Some name) t funs) nil |]) funs Gamma1)
+      (p3: type_functionDecls (Gamma [| name <- EType (SosADL.SosADL.DataTypeDecl (Some name) (Some t) funs) t' nil |]) funs Gamma1)
     ,
-      typedecl (SosADL.SosADL.DataTypeDecl (Some name) t funs) well typed in Gamma yields to Gamma1
+      typedecl (SosADL.SosADL.DataTypeDecl (Some name) (Some t) funs) well typed in Gamma yields to Gamma1
 
+| type_DataTypeDecl_def_None:
+    forall
+      (Gamma: env)
+      (name: string)
+      (name': string)
+      (funs: list SosADL.SosADL.t_FunctionDecl)
+      (Gamma1: env)
+      (p1: name_is_fresh Gamma name' = true)
+      (p2: for each f of funs,
+           exists p,
+             SosADL.SosADL.FunctionDecl_data f = Some p
+             /\ SosADL.SosADL.FormalParameter_type p = Some (SosADL.SosADL.NamedType (Some name)))
+      (p3: type_functionDecls (Gamma [| name <- EType (SosADL.SosADL.DataTypeDecl (Some name) None funs) (SosADL.SosADL.NamedType (Some name')) nil |]) funs Gamma1)
+    ,
+      typedecl (SosADL.SosADL.DataTypeDecl (Some name) None funs) well typed in Gamma yields to Gamma1
 
 where "'typedecl' t 'well' 'typed' 'in' Gamma 'yields' 'to' Gamma1" := (type_datatypeDecl Gamma t Gamma1)
 .
@@ -1558,6 +1617,7 @@ Inductive type_system: env -> SosADL.SosADL.t_SystemDecl -> Prop :=
       (Gamma: env)
       (name: string)
       (params: list SosADL.SosADL.t_FormalParameter)
+      (params': list SosADL.SosADL.t_FormalParameter)
       (Gamma1: env)
       (datatypes: list SosADL.SosADL.t_DataTypeDecl)
       (Gamma2: env)
@@ -1565,7 +1625,7 @@ Inductive type_system: env -> SosADL.SosADL.t_SystemDecl -> Prop :=
       (Gamma3: env)
       (bhv: SosADL.SosADL.t_BehaviorDecl)
       (assrt: option SosADL.SosADL.t_AssertionDecl)
-      (p1: type_formalParameters Gamma params Gamma1)
+      (p1: type_formalParameters Gamma params params' Gamma1)
       (p2: type_datatypeDecls Gamma1 datatypes Gamma2)
       (p3: type_gates Gamma2 gates Gamma3)
       (p4: behavior bhv well typed in Gamma3)
