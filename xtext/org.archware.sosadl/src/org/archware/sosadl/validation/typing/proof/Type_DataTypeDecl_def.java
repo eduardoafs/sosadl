@@ -11,26 +11,29 @@ public class Type_DataTypeDecl_def implements Type_datatypeDecl {
 	
 	@Mandatory private final String name;
 	
-	private final DataType t;
+	@Mandatory private final DataType t;
+	
+	@Mandatory private final DataType t2;
 	
 	private final EList<FunctionDecl> funs;
 	
 	@Mandatory private final Environment gamma1;
 	
-	@Mandatory private final Optionally<DataType, Type_datatype> p1;
+	@Mandatory private final Type_datatype p1;
 	
 	@Mandatory private final Forall<FunctionDecl, Ex<FormalParameter, And<Equality, Equality>>> p2;
 	
 	@Mandatory private final Incrementally<FunctionDecl, Type_function> p3;
 
-	public Type_DataTypeDecl_def(Environment gamma, String name, DataType t, EList<FunctionDecl> funs,
-			Environment gamma1, Optionally<DataType, Type_datatype> p1,
+	public Type_DataTypeDecl_def(Environment gamma, String name, DataType t, DataType t2, EList<FunctionDecl> funs,
+			Environment gamma1, Type_datatype p1,
 			Forall<FunctionDecl, Ex<FormalParameter, And<Equality, Equality>>> p2,
 			Incrementally<FunctionDecl, Type_function> p3) {
 		super();
 		this.gamma = gamma;
 		this.name = name;
 		this.t = t;
+		this.t2 = t2;
 		this.funs = funs;
 		this.gamma1 = gamma1;
 		this.p1 = p1;
@@ -50,6 +53,10 @@ public class Type_DataTypeDecl_def implements Type_datatypeDecl {
 		return t;
 	}
 
+	public DataType getT2() {
+		return t2;
+	}
+
 	public EList<FunctionDecl> getFuns() {
 		return funs;
 	}
@@ -58,7 +65,7 @@ public class Type_DataTypeDecl_def implements Type_datatypeDecl {
 		return gamma1;
 	}
 
-	public Optionally<DataType, Type_datatype> getP1() {
+	public Type_datatype getP1() {
 		return p1;
 	}
 

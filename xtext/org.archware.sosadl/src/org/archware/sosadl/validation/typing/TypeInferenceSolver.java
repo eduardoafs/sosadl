@@ -15,6 +15,7 @@ import org.archware.sosadl.sosADL.BooleanType;
 import org.archware.sosadl.sosADL.DataType;
 import org.archware.sosadl.sosADL.Expression;
 import org.archware.sosadl.sosADL.FieldDecl;
+import org.archware.sosadl.sosADL.NamedType;
 import org.archware.sosadl.sosADL.RangeType;
 import org.archware.sosadl.sosADL.SequenceType;
 import org.archware.sosadl.sosADL.SosADLFactory;
@@ -413,6 +414,8 @@ public final class TypeInferenceSolver {
 			return createTupleType(
 					tt.getFields().stream().map((f) -> createFieldDecl(f.getName(), deepSubstitute(f.getType())))
 							.collect(Collectors.toList()));
+		} else if (t instanceof NamedType) {
+			return t;
 		} else {
 			return t;
 		}
@@ -777,6 +780,8 @@ public final class TypeInferenceSolver {
 			return true;
 		} else if (l instanceof BooleanType && r instanceof BooleanType) {
 			return true;
+		} else if (l instanceof NamedType && r instanceof NamedType) {
+			return ((NamedType) l).getName().equals(((NamedType) r).getName());
 		} else if (l instanceof RangeType && r instanceof RangeType) {
 			RangeType rl = (RangeType) l;
 			RangeType rr = (RangeType) r;
@@ -831,6 +836,8 @@ public final class TypeInferenceSolver {
 		} else if (r instanceof BooleanType) {
 			return false;
 		} else if (r instanceof RangeType) {
+			return false;
+		} else if (r instanceof NamedType) {
 			return false;
 		} else if (r instanceof SequenceType) {
 			return contains(((SequenceType) r).getType(), l);
@@ -922,16 +929,28 @@ public final class TypeInferenceSolver {
 		} else if (constraints.stream().allMatch((x) -> x.sub instanceof TupleType)) {
 			return constraints.stream().map((c) -> (TupleType) c.sub).reduce((a, b) -> tupleTypeUnion(a, b, v))
 					.map((x) -> (DataType) x);
+		} else if (constraints.stream().allMatch((x) -> x.sub instanceof NamedType)) {
+			List<String> names = constraints.stream().map((x) -> ((NamedType) x.sub).getName()).distinct()
+					.collect(Collectors.toList());
+			if (names.size() == 1) {
+				return constraints.stream().findAny().map((x) -> x.sub);
+			} else {
+				return incompatibleTypeConstraintsSub(n, constraints, v);
+			}
 		} else {
-			String err = n + ": incompatible type constraints ("
-					+ constraints.stream().map((c) -> c.sub).flatMap(TypeInferenceSolver::typeConstructor).distinct()
-							.map((s) -> s + " <= " + typeToString(v)).collect(Collectors.joining(", "))
-					+ ")";
-			constraints.forEach((c) -> {
-				log.error(err, c.originObject, c.originFeature);
-			});
-			return Optional.empty();
+			return incompatibleTypeConstraintsSub(n, constraints, v);
 		}
+	}
+
+	private Optional<DataType> incompatibleTypeConstraintsSub(String n, Deque<Constraint> constraints, TypeVariable v) {
+		String err = n + ": incompatible type constraints ("
+				+ constraints.stream().map((c) -> c.sub).flatMap(TypeInferenceSolver::typeConstructor).distinct()
+						.map((s) -> s + " <= " + typeToString(v)).collect(Collectors.joining(", "))
+				+ ")";
+		constraints.forEach((c) -> {
+			log.error(err, c.originObject, c.originFeature);
+		});
+		return Optional.empty();
 	}
 
 	/**
@@ -1030,16 +1049,28 @@ public final class TypeInferenceSolver {
 				});
 				return createFieldDecl(e.getKey(), v);
 			}).collect(Collectors.toList())));
+		} else if (constraints.stream().allMatch((x) -> x.sup instanceof NamedType)) {
+			List<String> names = constraints.stream().map((x) -> ((NamedType) x.sup).getName()).distinct()
+					.collect(Collectors.toList());
+			if (names.size() == 1) {
+				return constraints.stream().findAny().map((x) -> x.sup);
+			} else {
+				return incompatibleTypeConstraintSup(n, constraints, v);
+			}
 		} else {
-			String err = n + ": incompatible type constraints ("
-					+ constraints.stream().map((c) -> c.sup).flatMap(TypeInferenceSolver::typeConstructor).distinct()
-							.map((s) -> typeToString(v) + "<=" + s).collect(Collectors.joining(", "))
-					+ ")";
-			constraints.forEach((c) -> {
-				log.error(err, c.originObject, c.originFeature);
-			});
-			return Optional.empty();
+			return incompatibleTypeConstraintSup(n, constraints, v);
 		}
+	}
+
+	private Optional<DataType> incompatibleTypeConstraintSup(String n, Deque<Constraint> constraints, TypeVariable v) {
+		String err = n + ": incompatible type constraints ("
+				+ constraints.stream().map((c) -> c.sup).flatMap(TypeInferenceSolver::typeConstructor).distinct()
+						.map((s) -> typeToString(v) + "<=" + s).collect(Collectors.joining(", "))
+				+ ")";
+		constraints.forEach((c) -> {
+			log.error(err, c.originObject, c.originFeature);
+		});
+		return Optional.empty();
 	}
 
 	/**
@@ -1058,7 +1089,9 @@ public final class TypeInferenceSolver {
 		} else if (t instanceof SequenceType) {
 			return Stream.of("sequence");
 		} else if (t instanceof RangeType) {
-			return Stream.of("range");
+			return Stream.of("integer");
+		} else if (t instanceof NamedType) {
+			return Stream.of(((NamedType) t).getName());
 		} else {
 			throw new IllegalArgumentException("unknown type constructor");
 		}
@@ -1133,6 +1166,8 @@ public final class TypeInferenceSolver {
 			return true;
 		} else if (sub instanceof BooleanType && sup instanceof BooleanType) {
 			return true;
+		} else if (sub instanceof NamedType && sup instanceof NamedType) {
+			return ((NamedType) sub).getName().equals(((NamedType) sup).getName());
 		} else if (sub instanceof SequenceType && sup instanceof SequenceType) {
 			addConstraint(((SequenceType) sub).getType(), ((SequenceType) sup).getType(), c.originObject,
 					c.originFeature);
@@ -1210,7 +1245,7 @@ public final class TypeInferenceSolver {
 	 *            a type
 	 * @return a string representation of {@value t}
 	 */
-	private static String typeToString(DataType t) {
+	public static String typeToString(DataType t) {
 		if (t instanceof BooleanType) {
 			return "boolean";
 		} else if (t instanceof RangeType) {
@@ -1225,6 +1260,8 @@ public final class TypeInferenceSolver {
 			return "sequence { " + typeToString(s.getType()) + " }";
 		} else if (t instanceof TypeVariable) {
 			return "'" + ((TypeVariable) t).getName();
+		} else if (t instanceof NamedType) {
+			return ((NamedType) t).getName();
 		} else {
 			return "unknown type";
 		}

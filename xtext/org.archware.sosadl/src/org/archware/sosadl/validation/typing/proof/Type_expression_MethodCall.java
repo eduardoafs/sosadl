@@ -19,6 +19,8 @@ public class Type_expression_MethodCall implements Type_expression_node {
 	
 	@Mandatory private final DataTypeDecl typeDecl;
 	
+	@Mandatory private final DataType alpha;
+	
 	@Mandatory private final DataType tau;
 	
 	private final EList<FunctionDecl> methods;
@@ -42,7 +44,7 @@ public class Type_expression_MethodCall implements Type_expression_node {
 	@Mandatory private final Forall2<FormalParameter,Expression,Ex<DataType,And<Equality,Ex<DataType,And<Type_expression,Subtype>>>>> p6;
 
 	public Type_expression_MethodCall(Environment gamma, Expression self, DataType t, DataTypeDecl typeDecl,
-			DataType tau, EList<FunctionDecl> methods, String name, EList<FormalParameter> formalparams, DataType ret,
+			DataType alpha, DataType tau, EList<FunctionDecl> methods, String name, EList<FormalParameter> formalparams, DataType ret,
 			EList<Expression> params, Type_expression p1, Ex<BigInteger, Equality> p2, Subtype p4,
 			Ex<BigInteger, And<Equality, And<Equality, And<Equality, Equality>>>> p5,
 			Forall2<FormalParameter, Expression, Ex<DataType, And<Equality, Ex<DataType, And<Type_expression, Subtype>>>>> p6) {
@@ -51,6 +53,7 @@ public class Type_expression_MethodCall implements Type_expression_node {
 		this.self = self;
 		this.t = t;
 		this.typeDecl = typeDecl;
+		this.alpha = alpha;
 		this.tau = tau;
 		this.methods = methods;
 		this.name = name;
@@ -78,6 +81,10 @@ public class Type_expression_MethodCall implements Type_expression_node {
 
 	public DataTypeDecl getTypeDecl() {
 		return typeDecl;
+	}
+	
+	public DataType getAlpha() {
+		return alpha;
 	}
 
 	public DataType getTau() {

@@ -13,10 +13,10 @@ public class Type_expression_and_type implements Type_expression {
 	
 	@Mandatory private final Type_expression_node p1;
 	
-	@Mandatory private final Type_datatype p2;
+	@Mandatory private final Check_datatype p2;
 
 	public Type_expression_and_type(Environment gamma, Expression e, DataType t, Type_expression_node p1,
-			Type_datatype p2) {
+			Check_datatype p2) {
 		super();
 		this.gamma = gamma;
 		this.e = e;
@@ -41,7 +41,7 @@ public class Type_expression_and_type implements Type_expression {
 		return p1;
 	}
 
-	public Type_datatype getP2() {
+	public Check_datatype getP2() {
 		return p2;
 	}
 

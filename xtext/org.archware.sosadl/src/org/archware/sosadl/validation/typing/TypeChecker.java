@@ -3,9 +3,6 @@
  */
 package org.archware.sosadl.validation.typing;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.math.BigInteger;
 import java.util.Collection;
 import java.util.Iterator;
@@ -84,7 +81,6 @@ import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.xtext.xbase.lib.ListExtensions;
-import org.eclipse.xtext.xbase.lib.StringExtensions;
 
 /**
  * Implementation of the type system.
@@ -107,8 +103,8 @@ import org.eclipse.xtext.xbase.lib.StringExtensions;
  * <ul>
  * <li>For some judgments, several prover may coexist depending on the context.
  *     This is typically the case of the <code>subtype</code> judgment. See, e.g.,
- *     {@link #smallestSuperType(Class, String, DataType, Environment, DataType, EObject, EStructuralFeature)} and
- *     {@link #subtype(Environment, DataType, DataType, Consumer)}.</li>
+ *     {@link #smallestSuperType(Class, String, DataType, DataType, EObject, EStructuralFeature)} and
+ *     {@link #subtype(DataType, DataType, Consumer)}.</li>
  * <li>For some judgments, the method computes synthesized attributes, which are thus returned in addition to the proof term.
  *     These methods typically return {@link Pair} objects.
  *     This is typically the case of the <code>type_expression</code> and <code>type_expression_node> judgments.
@@ -243,23 +239,37 @@ public class TypeChecker extends AccumulatingValidator {
 	private Pair<Type_datatypeDecl, Environment> type_datatypeDecl(Environment gamma, DataTypeDecl dataTypeDecl) {
 		saveEnvironment(dataTypeDecl, gamma);
 		if(dataTypeDecl.getName() != null) {
-			Pair<Incrementally<FunctionDecl, Type_function>, Environment> p3 =
-					type_functions(gamma.put(dataTypeDecl.getName(),
-							new TypeEnvContent(dataTypeDecl, nil())), dataTypeDecl.getFunctions());
-			return new Pair<>(saveProof(dataTypeDecl,createType_DataTypeDecl_def(gamma, dataTypeDecl.getName(), dataTypeDecl.getDatatype(), dataTypeDecl.getFunctions(), p3.getB(),
-					proveOptionally(gamma, dataTypeDecl.getDatatype(), this::type_datatype),
-					proveForall(dataTypeDecl.getFunctions(), (f) -> proveDataIsSelf(dataTypeDecl, f)),
-					p3.getA())), p3.getB());
-		} else {
-			if(dataTypeDecl.getName() == null) {
-				error("The data type declaration must have a name", dataTypeDecl, null);
+			if(dataTypeDecl.getDatatype() != null) {
+				Pair<DataType, Type_datatype> p1 = type_datatype(gamma, dataTypeDecl.getDatatype());
+				Pair<Incrementally<FunctionDecl, Type_function>, Environment> p3 =
+						type_functions(gamma.put(dataTypeDecl.getName(),
+								new TypeEnvContent(dataTypeDecl, p1.getA(), nil())),
+								dataTypeDecl.getFunctions());
+				Forall<FunctionDecl, Ex<FormalParameter, And<Equality,Equality>>> p2 =
+						proveForall(dataTypeDecl.getFunctions(),
+						(f) -> proveDataIsSelf(dataTypeDecl, f));
+				return new Pair<>(saveProof(dataTypeDecl,
+						createType_DataTypeDecl_def(gamma, dataTypeDecl.getName(),
+								dataTypeDecl.getDatatype(), p1.getA(),
+								dataTypeDecl.getFunctions(), p3.getB(),
+								p1.getB(),
+								p2,
+						p3.getA())), p3.getB());
+			} else {
+				// TODO
+				error("Not yet implemented (abstract type declaration)", dataTypeDecl, null);
+				return new Pair<>(null, gamma);
 			}
+		} else {
+			error("The data type declaration must have a name", dataTypeDecl, null);
 			return new Pair<>(null, gamma);
 		}
 	}
 
 	private Ex<FormalParameter, And<Equality,Equality>> proveDataIsSelf(DataTypeDecl d, FunctionDecl f) {
-		if(f.getData() != null && f.getData().getType() instanceof NamedType && ((NamedType)f.getData().getType()).getName().equals(d.getName())) {
+		if(f.getData() != null
+				&& f.getData().getType() instanceof NamedType
+				&& ((NamedType)f.getData().getType()).getName().equals(d.getName())) {
 			return createEx_intro(f.getData(), createConj(createReflexivity(), createReflexivity()));
 		} else {
 			if(f.getData() != null && (!(f.getData().getType() instanceof NamedType) || !((NamedType)f.getData().getType()).getName().equals(d.getName()))) {
@@ -275,32 +285,79 @@ public class TypeChecker extends AccumulatingValidator {
 
 	private Pair<Type_function, Environment> type_function(Environment gamma, FunctionDecl f) {
 		saveEnvironment(f, gamma);
-		if(f.getData() != null && f.getData().getName() != null && f.getData().getType() != null && f.getData().getType() instanceof NamedType
-				&& ((NamedType)f.getData().getType()).getName() != null && gamma.get(((NamedType)f.getData().getType()).getName()) != null
+		if(f.getData() != null
+				&& f.getData().getName() != null
+				&& f.getData().getType() != null
+				&& f.getData().getType() instanceof NamedType
+				&& ((NamedType)f.getData().getType()).getName() != null
+				&& gamma.get(((NamedType)f.getData().getType()).getName()) != null
 				&& gamma.get(((NamedType)f.getData().getType()).getName()) instanceof TypeEnvContent
-				&& f.getName() != null && f.getType() != null && f.getExpression() != null) {
-			Pair<Mutually<FormalParameter, Ex<DataType, And<Equality,Type_datatype>>>, Environment> p3 = type_formalParameters(gamma, cons(f.getData(), f.getParameters()));
-			Pair<Incrementally<Valuing, Type_valuing>, Environment> p4 = type_valuings(p3.getB(), f.getValuing());
-			Pair<Type_expression, DataType> p5 = type_expression(p4.getB(), f.getExpression());
-			Environment gamma1 = gamma.put(((NamedType)f.getData().getType()).getName(),
-					((TypeEnvContent)gamma.get(((NamedType)f.getData().getType()).getName())).addMethod(f));
-			DataType t = p5.getB();
-			if(p5.getA() != null && t != null) {
-				inference.addConstraint(t, f.getType(), f, SosADLPackage.Literals.FUNCTION_DECL__EXPRESSION);
-				return new Pair<>(saveProof(f,
-						proofTerm(t, Type_function.class,
-								(x) -> createType_FunctionDecl_Method(gamma, f.getData().getName(),
-								((NamedType)f.getData().getType()).getName(),
-								((TypeEnvContent)gamma.get(((NamedType)f.getData().getType()).getName())).getDataTypeDecl(),
-								((TypeEnvContent)gamma.get(((NamedType)f.getData().getType()).getName())).getMethods(),
-								f.getName(), f.getParameters(), p3.getB(), f.getType(), f.getValuing(), p4.getB(),
-								f.getExpression(), x,
-								gamma1,
-								createReflexivity(), type_datatype(gamma, f.getType()), p3.getA(), p4.getA(), p5.getA(),
-								subtype(gamma, x, f.getType(), f, SosADLPackage.Literals.FUNCTION_DECL__EXPRESSION).orElse(null), createReflexivity()))),
-						gamma1);
+				&& f.getName() != null
+				&& f.getType() != null
+				&& f.getExpression() != null) {
+			Optional<Pair<Pair<List<FormalParameter>,Environment>,And<Forall2<FormalParameter,FormalParameter,And<Equality,Ex<DataType,And<Equality,Ex<DataType,And<Equality,Type_datatype>>>>>>,Mutually<FormalParameter,True>>>> op3 = type_formalParameters(gamma, cons(f.getData(), f.getParameters()));
+			if(op3.isPresent()) {
+				Pair<DataType, Type_datatype> p2 = type_datatype(gamma, f.getType());
+				if(p2.getA() != null && p2.getB() != null) {
+					Pair<Pair<List<FormalParameter>, Environment>, And<Forall2<FormalParameter, FormalParameter, And<Equality, Ex<DataType, And<Equality, Ex<DataType, And<Equality, Type_datatype>>>>>>, Mutually<FormalParameter, True>>> p3 = op3.get();
+					FormalParameter self2 = p3.getA().getA().get(0);
+					DataType realType = ((TypeEnvContent)gamma.get(((NamedType)f.getData().getType()).getName())).getDataType();
+					if(EcoreUtil.equals(self2.getType(), realType)) {
+						EList<FormalParameter> params2 = cdr(p3.getA().getA());
+						Environment gammap = p3.getA().getB();
+						Pair<Incrementally<Valuing, Type_valuing>, Environment> p4 = type_valuings(gammap, f.getValuing());
+						Environment gammav = p4.getB();
+						Pair<Type_expression, DataType> p5 = type_expression(gammav, f.getExpression());
+						FunctionDecl toAdd = createFunctionDecl(self2, f.getName(), params2, p2.getA(), f.getValuing(), f.getExpression());
+						Environment gamma1 = gamma.put(((NamedType)f.getData().getType()).getName(),
+								((TypeEnvContent)gamma.get(((NamedType)f.getData().getType()).getName())).addMethod(toAdd));
+						DataType t = p5.getB();
+						if(p5.getA() != null && t != null) {
+							inference.addConstraint(t, p2.getA(), f, SosADLPackage.Literals.FUNCTION_DECL__EXPRESSION);
+							return new Pair<>(saveProof(f,
+									proofTerm(t, Type_function.class,
+											(x) -> createType_FunctionDecl_Method(gamma,
+													f.getData().getName(),
+											((NamedType)f.getData().getType()).getName(),
+											((TypeEnvContent)gamma.get(((NamedType)f.getData().getType()).getName())).getDataTypeDecl(),
+											realType,
+											((TypeEnvContent)gamma.get(((NamedType)f.getData().getType()).getName())).getMethods(),
+											f.getName(),
+											f.getParameters(),
+											params2,
+											gammap,
+											f.getType(),
+											p2.getA(),
+											f.getValuing(),
+											gammav,
+											f.getExpression(),
+											x,
+											gamma1,
+											createReflexivity(),
+											p2.getB(),
+											p3.getB(),
+											p4.getA(),
+											p5.getA(),
+											subtype(x, p2.getA(), f, SosADLPackage.Literals.FUNCTION_DECL__EXPRESSION).orElse(null),
+											createReflexivity()))),
+									gamma1);
+						} else {
+							error("(p5.getA() != null && t != null)", f, null);
+							return new Pair<>(null, gamma);
+						}
+					} else {
+						String s1 = TypeInferenceSolver.typeToString(self2.getType());
+						String s2 = TypeInferenceSolver.typeToString(realType);
+						error("Inconsistent typing of the type: " + s1 + " / " + s2, f, SosADLPackage.Literals.FUNCTION_DECL__DATA);
+						return new Pair<>(null, gamma);
+					}
+				} else {
+					error("(p2.getA() != null && p2.getB() != null)", f, null);
+					return new Pair<>(null, gamma);
+				}
 			} else {
-				return new Pair<>(null, gamma1);
+				error("op3.isPresent()", f, null);
+				return new Pair<>(null, gamma);
 			}
 		} else {
 			if(f.getExpression() == null) {
@@ -340,52 +397,24 @@ public class TypeChecker extends AccumulatingValidator {
 		}
 	}
 	
-	private boolean isSubtype(Environment gamma, DataType a, DataType b) {
-		Optional<Subtype> p = new TypeChecker().subtype(gamma, a, b, null, null);
+	private boolean isSubtype(DataType a, DataType b) {
+		Optional<Subtype> p = new TypeChecker().subtype(a, b, null, null);
 		return p.isPresent();
 	}
 
-	private Optional<Subtype> subtype(Environment gamma, DataType a, DataType b, EObject target, EStructuralFeature targetForError) {
-		return subtype(gamma, a, b, (m) -> error(m, target, targetForError));
+	private Optional<Subtype> subtype(DataType a, DataType b, EObject target, EStructuralFeature targetForError) {
+		return subtype(a, b, (m) -> error(m, target, targetForError));
 	}
 
-	private Optional<Subtype> subtype(Environment gamma, DataType a, DataType b, Consumer<String> error) {
+	private Optional<Subtype> subtype(DataType a, DataType b, Consumer<String> error) {
 		if(EcoreUtil.equals(a, b)) {
-			return Optional.of(createSubtype_refl(gamma, a));
-		} else if(a instanceof NamedType
-				&& gamma.get(((NamedType)a).getName()) != null
-				&& gamma.get(((NamedType)a).getName()) instanceof TypeEnvContent
-				&& ((TypeEnvContent)gamma.get(((NamedType)a).getName())).getDataTypeDecl().getName() != null
-				&& ((TypeEnvContent)gamma.get(((NamedType)a).getName())).getDataTypeDecl().getName().equals(((NamedType)a).getName())
-				&& ((TypeEnvContent)gamma.get(((NamedType)a).getName())).getDataTypeDecl().getDatatype() != null) {
-			return subtype(gamma, ((TypeEnvContent)gamma.get(((NamedType)a).getName())).getDataTypeDecl().getDatatype(), b, error)
-					.map((p) ->
-					createSubtype_unfold_left(gamma, ((NamedType)a).getName(),
-					((TypeEnvContent)gamma.get(((NamedType)a).getName())).getDataTypeDecl().getDatatype(),
-					((TypeEnvContent)gamma.get(((NamedType)a).getName())).getDataTypeDecl().getFunctions(),
-					((TypeEnvContent)gamma.get(((NamedType)a).getName())).getMethods(),
-					b, createReflexivity(), p));
-		} else if(b instanceof NamedType
-				&& gamma.get(((NamedType)b).getName()) != null
-				&& gamma.get(((NamedType)b).getName()) instanceof TypeEnvContent
-				&& ((TypeEnvContent)gamma.get(((NamedType)b).getName())).getDataTypeDecl().getName() != null
-				&& ((TypeEnvContent)gamma.get(((NamedType)b).getName())).getDataTypeDecl().getName().equals(((NamedType)b).getName())
-				&& ((TypeEnvContent)gamma.get(((NamedType)b).getName())).getDataTypeDecl().getDatatype() != null) {
-			return subtype(gamma, a, ((TypeEnvContent)gamma.get(((NamedType)b).getName())).getDataTypeDecl().getDatatype(), error)
-					.map((p) ->
-					createSubtype_unfold_right(gamma, a,
-					((NamedType)b).getName(),
-					((TypeEnvContent)gamma.get(((NamedType)b).getName())).getDataTypeDecl().getDatatype(),
-					((TypeEnvContent)gamma.get(((NamedType)b).getName())).getDataTypeDecl().getFunctions(),
-					((TypeEnvContent)gamma.get(((NamedType)b).getName())).getMethods(),
-					createReflexivity(),
-					p));
+			return Optional.of(createSubtype_refl(a));
 		} else if(a instanceof RangeType && b instanceof RangeType
 				&& ((RangeType)a).getVmin() != null && ((RangeType)a).getVmax() != null
 				&& ((RangeType)b).getVmin() != null && ((RangeType)b).getVmax() != null
 				&& isLe(((RangeType)b).getVmin(), ((RangeType)a).getVmin())
 				&& isLe(((RangeType)a).getVmax(), ((RangeType)b).getVmax())) {
-			return Optional.of(createSubtype_range(gamma,
+			return Optional.of(createSubtype_range(
 					((RangeType)a).getVmin(), ((RangeType)a).getVmax(),
 					((RangeType)b).getVmin(), ((RangeType)b).getVmax(),
 					expression_le(((RangeType)b).getVmin(), ((RangeType)a).getVmin()),
@@ -402,7 +431,7 @@ public class TypeChecker extends AccumulatingValidator {
 						ListExtensions.map(fields,
 								(f) -> new Pair<>(
 										new Pair<>(f.getA().get(),
-												subtype(gamma, f.getA().get().getType(), f.getB().getType(), error)),
+												subtype(f.getA().get().getType(), f.getB().getType(), error)),
 										f.getB()));
 				if(proofs.stream().allMatch((p) -> p.getA().getB().isPresent())) {
 					Forall<FieldDecl, Ex<String, And<Equality, Ex<DataType, And<Equality, Ex<DataType, And<Equality, Subtype>>>>>>> p1 = proveForall(r.getFields(), (fr) -> {
@@ -415,7 +444,7 @@ public class TypeChecker extends AccumulatingValidator {
 								createEx_intro(tr, createConj(createReflexivity(),
 										createEx_intro(tl, createConj(createReflexivity(), p))))));
 					});
-					return Optional.of(createSubtype_tuple(gamma, l.getFields(), r.getFields(), p1));
+					return Optional.of(createSubtype_tuple(l.getFields(), r.getFields(), p1));
 				} else {
 					return Optional.empty();
 				}
@@ -430,14 +459,14 @@ public class TypeChecker extends AccumulatingValidator {
 		} else if (a instanceof SequenceType && b instanceof SequenceType) {
 			SequenceType l = (SequenceType) a;
 			SequenceType r = (SequenceType) b;
-			Optional<Subtype> p = subtype(gamma, l.getType(), r.getType(), error);
-			return p.map((p1) -> createSubtype_sequence(gamma, l.getType(), r.getType(), p1));
+			Optional<Subtype> p = subtype(l.getType(), r.getType(), error);
+			return p.map((p1) -> createSubtype_sequence(l.getType(), r.getType(), p1));
 		} else {
 			if(a instanceof NamedType) {
-				errorForNamedType(labelFor(b), "to", gamma, (NamedType)a, error);
+				errorForNamedType(labelFor(b), "to", (NamedType)a, error);
 			}
 			if(b instanceof NamedType) {
-				errorForNamedType(labelFor(a), "from", gamma, (NamedType)b, error);
+				errorForNamedType(labelFor(a), "from", (NamedType)b, error);
 			}
 			if(a instanceof RangeType && b instanceof RangeType) {
 				RangeType ra = (RangeType)a;
@@ -829,7 +858,7 @@ public class TypeChecker extends AccumulatingValidator {
 	private <T extends DataType> Pair<Type_expression_node, DataType> typeUnaryExpression(Environment gamma, UnaryExpression e, UnaryTypeInfo<T> i) {
 		Pair<Type_expression, DataType> p1 = type_expression(gamma, e.getRight());
 		if(p1.getA() != null && p1.getB() != null) {
-			Pair<Subtype, T> p2 = smallestSuperType(i.getClazz(), i.getLabel(), i.getIfNone().get(), gamma, p1.getB(), e, SosADLPackage.Literals.UNARY_EXPRESSION__RIGHT);
+			Pair<Subtype, T> p2 = smallestSuperType(i.getClazz(), i.getLabel(), i.getIfNone().get(), p1.getB(), e, SosADLPackage.Literals.UNARY_EXPRESSION__RIGHT);
 			if(p2.getA() != null && p2.getB() != null) {
 				return new Pair<>(saveProof(e, i.getCreateProofTerm().apply(gamma, e, p1, p2)), saveType(e, i.getCreateType().apply(gamma, e, p1, p2)));
 			} else {
@@ -844,8 +873,8 @@ public class TypeChecker extends AccumulatingValidator {
 		Pair<Type_expression, DataType> p1 = type_expression(gamma, e.getLeft());
 		Pair<Type_expression, DataType> p3 = type_expression(gamma, e.getRight());
 		if(p1.getA() != null && p1.getB() != null && p3.getA() != null && p3.getB() != null) {
-			Pair<Subtype, L> p2 = smallestSuperType(i.getlClass(), i.getlLabel(), i.getlIfNone().get(), gamma, p1.getB(), e, SosADLPackage.Literals.BINARY_EXPRESSION__LEFT);
-			Pair<Subtype, R> p4 = smallestSuperType(i.getrClass(), i.getrLabel(), i.getrIfNone().get(), gamma, p3.getB(), e, SosADLPackage.Literals.BINARY_EXPRESSION__RIGHT);
+			Pair<Subtype, L> p2 = smallestSuperType(i.getlClass(), i.getlLabel(), i.getlIfNone().get(), p1.getB(), e, SosADLPackage.Literals.BINARY_EXPRESSION__LEFT);
+			Pair<Subtype, R> p4 = smallestSuperType(i.getrClass(), i.getrLabel(), i.getrIfNone().get(), p3.getB(), e, SosADLPackage.Literals.BINARY_EXPRESSION__RIGHT);
 			if(p2.getA() != null && p2.getB() != null && p4.getA() != null && p4.getB() != null) {
 				X r = i.createType.apply(gamma, e, p1, p2, p3, p4);
 				if(r != null) {
@@ -870,12 +899,69 @@ public class TypeChecker extends AccumulatingValidator {
 			saveProof(e, ten);
 			saveType(e, t);
 			return new Pair<>(proofTerm(t, Type_expression.class,
-					(a) -> createType_expression_and_type(gamma, e, a, ten, type_datatype(gamma, a))), t);
+					(a) -> createType_expression_and_type(gamma, e, a, ten, check_datatype(a))), t);
 		} else {
 			return new Pair<>(null, null);
 		}
 	}
 	
+	private Check_datatype check_datatype(DataType t) {
+		if(t instanceof NamedType) {
+			NamedType n = (NamedType) t;
+			if(n.getName() != null) {
+				return createCheck_NamedType(n.getName());
+			} else {
+				error("The named type must have a name", t, null);
+				return null;
+			}
+		} else if(t instanceof TupleType) {
+			TupleType tt = (TupleType) t;
+			if(noDuplicate(tt.getFields().stream().map(FieldDecl::getName))) {
+				return createCheck_TupleType(tt.getFields(), createReflexivity(),
+						proveForall(tt.getFields(), (f) -> createEx_intro(f.getType(), createConj(createReflexivity(), check_datatype(f.getType())))));
+			} else {
+				errorFieldClash(tt);
+				return null;
+			}
+		} else if(t instanceof SequenceType) {
+			SequenceType s = (SequenceType) t;
+			if(s.getType() != null) {
+				return createCheck_SequenceType(s.getType(), check_datatype(s.getType()));
+			} else {
+				error("The sequence type must have a base type", t, null);
+				return null;
+			}
+		} else if(t instanceof RangeType) {
+			RangeType r = (RangeType) t;
+			if(r.getVmin() != null && r.getVmax() != null) {
+				if(isLe(r.getVmin(), r.getVmax())) {
+					return createCheck_RangeType_trivial(r.getVmin(), r.getVmax(), expression_le(r.getVmin(), r.getVmax()));
+				} else {
+					error("The lower bound must be smaller than or equal to the upper bound", t, null);
+					return null;
+				}
+			} else {
+				if(r.getVmin() == null) {
+					error("The range type must have a lower bound", t, null);
+				}
+				if(r.getVmax() == null) {
+					error("The range type must have an upper bound", t, null);
+				}
+				return null;
+			}
+		} else if(t instanceof BooleanType) {
+			return createCheck_BooleanType();
+		} else {
+			error("Unknown type", t, null);
+			return null;
+		}
+	}
+
+	private void errorFieldClash(TupleType tt) {
+		tt.getFields().stream().filter((p) -> tt.getFields().stream().map(FieldDecl::getName).filter((x) -> x.equals(p.getName())).count() >= 2)
+		.forEach((f) -> error("Multiple definitions of field `" + f.getName() + "'", f, null));
+	}
+
 	private Pair<Type_expression_node, DataType> type_expression_node(Environment gamma, Expression e) {
 		saveEnvironment(e, gamma);
 		if(e instanceof IntegerValue) {
@@ -951,7 +1037,7 @@ public class TypeChecker extends AccumulatingValidator {
 					Forall<Expression, Ex<DataType, And<Type_expression, Subtype>>> p1 = proveForall(elts, Pair::getA,
 							(p) -> createEx_intro(p.getB().getB(),
 									createConj(p.getB().getA(),
-											subtype(gamma, p.getB().getB(), item, p.getA(), null).orElse(null))));
+											subtype(p.getB().getB(), item, p.getA(), null).orElse(null))));
 					return new Pair<>(saveProof(s, createType_expression_Sequence(gamma, s.getElements(), item, p1)),
 							saveType(s, createSequenceType(item)));
 				} else {
@@ -1023,7 +1109,7 @@ public class TypeChecker extends AccumulatingValidator {
 					});
 				Stream<IntPair<TypeEnvContent>> compatibleIndexedTypes = 
 						indexedTypes
-						.filter((i) -> isSubtype(gamma, self.getB(),
+						.filter((i) -> isSubtype(self.getB(),
 								createNamedType(i.getB().getDataTypeDecl().getName())));
 				Optional<IntPair<Pair<TypeEnvContent,IntPair<FunctionDecl>>>> method =
 						compatibleIndexedTypes
@@ -1031,14 +1117,16 @@ public class TypeChecker extends AccumulatingValidator {
 								.filter((m) -> m.getB().getName().equals(mc.getMethod()))
 								.filter((m) -> params.size() == m.getB().getParameters().size())
 								.filter((m) -> StreamUtils.zip(params.stream().map(Pair::getB), m.getB().getParameters().stream())
-										.allMatch((p) -> isSubtype(gamma, p.getA().getB(), p.getB().getType())))
+										.allMatch((p) -> isSubtype(p.getA().getB(), p.getB().getType())))
 								.map((m) -> new IntPair<>(i.getA(), new Pair<>(i.getB(), m))))
 						.findFirst();
 				if(method.isPresent()) {
 					IntPair<Pair<TypeEnvContent,IntPair<FunctionDecl>>> m = method.get();
 					saveBinder(mc, m.getB().getB().getB());
 					return new Pair<>(saveProof(mc,createType_expression_MethodCall(gamma, mc.getObject(), self.getB(),
-								m.getB().getA().getDataTypeDecl(), m.getB().getB().getB().getData().getType(),
+								m.getB().getA().getDataTypeDecl(),
+								m.getB().getA().getDataType(),
+								m.getB().getB().getB().getData().getType(),
 								m.getB().getA().getMethods(),
 								mc.getMethod(),
 								m.getB().getB().getB().getParameters(),
@@ -1046,7 +1134,7 @@ public class TypeChecker extends AccumulatingValidator {
 								mc.getParameters(),
 								self.getA(),
 								createEx_intro(BigInteger.valueOf(m.getA()), createReflexivity()),
-								subtype(gamma, self.getB(), m.getB().getB().getB().getData().getType(), mc, null).orElse(null),
+								subtype(self.getB(), m.getB().getB().getB().getData().getType(), mc, null).orElse(null),
 								createEx_intro(BigInteger.valueOf(m.getB().getB().getA()),
 										createConj(createReflexivity(), createConj(createReflexivity(), createConj(createReflexivity(), createReflexivity())))),
 								proveForall2(m.getB().getB().getB().getParameters(),
@@ -1057,7 +1145,7 @@ public class TypeChecker extends AccumulatingValidator {
 												createConj(createReflexivity(),
 														createEx_intro(tp.getB(),
 																createConj(tp.getA(),
-																		subtype(gamma, tp.getB(), fp.getType(), mc, null).orElse(null)))));
+																		subtype(tp.getB(), fp.getType(), mc, null).orElse(null)))));
 											}))),
 							saveType(mc, m.getB().getB().getB().getType()));
 				} else {
@@ -1274,23 +1362,12 @@ public class TypeChecker extends AccumulatingValidator {
 		return l.stream().filter((f) -> f.getName().equals(n)).findFirst();
 	}
 
-	private <T extends DataType> Pair<Subtype, T> smallestSuperType(Class<T> target, String label, T ifNone, Environment gamma, DataType t, EObject targetForError, EStructuralFeature forError) {
+	private <T extends DataType> Pair<Subtype, T> smallestSuperType(Class<T> target, String label, T ifNone, DataType t, EObject targetForError, EStructuralFeature forError) {
 		if(target.isInstance(t)) {
-			return new Pair<>(createSubtype_refl(gamma, t), target.cast(t));
-		} else if(t instanceof NamedType && ((NamedType)t).getName() != null && gamma.get(((NamedType)t).getName()) != null
-				&& gamma.get(((NamedType)t).getName()) instanceof TypeEnvContent
-				&& ((TypeEnvContent)gamma.get(((NamedType)t).getName())).getDataTypeDecl().getName() != null
-				&& ((TypeEnvContent)gamma.get(((NamedType)t).getName())).getDataTypeDecl().getName().equals(((NamedType)t).getName())
-				&& ((TypeEnvContent)gamma.get(((NamedType)t).getName())).getDataTypeDecl().getDatatype() != null) {
-			DataType def = ((TypeEnvContent)gamma.get(((NamedType)t).getName())).getDataTypeDecl().getDatatype();
-			Pair<Subtype, T> p2 = smallestSuperType(target, label, ifNone, gamma, def, targetForError, forError);
-			return new Pair<>(createSubtype_unfold_left(gamma, ((NamedType)t).getName(), def,
-					((TypeEnvContent)gamma.get(((NamedType)t).getName())).getDataTypeDecl().getFunctions(),
-					((TypeEnvContent)gamma.get(((NamedType)t).getName())).getMethods(),
-					p2.getB(), createReflexivity(), p2.getA()), p2.getB());
+			return new Pair<>(createSubtype_refl(t), target.cast(t));
 		} else {
 			if(t instanceof NamedType) {
-				errorForNamedType(label, "to", gamma, (NamedType)t, targetForError, forError);
+				errorForNamedType(label, "to", (NamedType)t, targetForError, forError);
 			} else if(t instanceof BooleanType) {
 				error("A boolean type cannot be converted to a " + label, targetForError, forError);
 			} else if(t instanceof SequenceType) {
@@ -1306,38 +1383,16 @@ public class TypeChecker extends AccumulatingValidator {
 		}
 	}
 
-	private static DataType resolveNamedType(Environment gamma, DataType t) {
-		while(t != null && t instanceof NamedType) {
-			EnvContent ec = gamma.get(((NamedType)t).getName());
-			if(ec == null) {
-				return null;
-			} else if(ec instanceof TypeEnvContent) {
-				t = ((TypeEnvContent)ec).getDataTypeDecl().getDatatype();
-			} else {
-				return null;
-			}
-		}
-		return t;
-	}
-
-	private void errorForNamedType(String label, String tofrom, Environment gamma, NamedType t, EObject targetForError,
+	private void errorForNamedType(String label, String tofrom, NamedType t, EObject targetForError,
 			EStructuralFeature forError) {
-		errorForNamedType(label, tofrom, gamma, t, (s) -> error(s, targetForError, forError));
+		errorForNamedType(label, tofrom, t, (s) -> error(s, targetForError, forError));
 	}
 
-	private void errorForNamedType(String label, String tofrom, Environment gamma, NamedType t, Consumer<String> error) {
+	private void errorForNamedType(String label, String tofrom, NamedType t, Consumer<String> error) {
 		if(t.getName() == null) {
 			error.accept("The named type must have a name");
-		} else if (gamma.get(t.getName()) == null) {
-			error.accept("The named type `" + t.getName() + "' is undefined in this context");
-		} else if (!(gamma.get(t.getName()) instanceof TypeEnvContent)) {
-			error.accept("The name `" + t.getName() + "' must be a type declaration");
-		} else if (((TypeEnvContent)gamma.get(t.getName())).getDataTypeDecl().getName() == null || !((TypeEnvContent)gamma.get(t.getName())).getDataTypeDecl().getName().equals(t.getName())) {
-			error.accept("The name `" + t.getName() + "' does not match the declaration `" + ((TypeEnvContent)gamma.get(t.getName())).getDataTypeDecl().getName() + "'");
-		} else if (((TypeEnvContent)gamma.get(t.getName())).getDataTypeDecl().getDatatype() == null) {
-			error.accept("The type `" + t.getName() + "' cannot be converted " + tofrom + " a " + label + " because its definition is opaque");
 		} else {
-			error.accept("Type error");
+			error.accept("The type `" + t.getName() + "' cannot be converted " + tofrom + " a " + label + " because its definition is opaque");
 		}
 	}
 
@@ -1351,13 +1406,27 @@ public class TypeChecker extends AccumulatingValidator {
 		saveEnvironment(systemDecl, gamma);
 		// type_SystemDecl:
 		if(systemDecl.getName() != null && systemDecl.getBehavior() != null) {
-			Pair<Mutually<FormalParameter,Ex<DataType, And<Equality,Type_datatype>>>, Environment> p1 = type_formalParameters(gamma, systemDecl.getParameters());
-			Pair<Incrementally<DataTypeDecl,Type_datatypeDecl>,Environment> p2 = type_datatypeDecls(p1.getB(), systemDecl.getDatatypes());
-			Pair<Incrementally<GateDecl,Simple_increment<GateDecl,Type_gate>>,Environment> p3 = type_gates(p2.getB(), systemDecl.getGates());
-			return saveProof(systemDecl, createType_SystemDecl(gamma, systemDecl.getName(), systemDecl.getParameters(), p1.getB(), systemDecl.getDatatypes(), p2.getB(), systemDecl.getGates(), p3.getB(),
-					systemDecl.getBehavior(), systemDecl.getAssertion(), p1.getA(), p2.getA(), p3.getA(),
-					type_behavior(p3.getB(), systemDecl.getBehavior()),
-					proveOptionally(p3.getB(), systemDecl.getAssertion(), this::type_assertion)));
+			Optional<Pair<Pair<List<FormalParameter>, Environment>, And<Forall2<FormalParameter, FormalParameter, And<Equality, Ex<DataType, And<Equality, Ex<DataType, And<Equality, Type_datatype>>>>>>, Mutually<FormalParameter, True>>>> op1 = type_formalParameters(gamma, systemDecl.getParameters());
+			if(op1.isPresent()) {
+				Pair<Pair<List<FormalParameter>, Environment>, And<Forall2<FormalParameter, FormalParameter, And<Equality, Ex<DataType, And<Equality, Ex<DataType, And<Equality, Type_datatype>>>>>>, Mutually<FormalParameter, True>>> p1 = op1.get();
+				EList<FormalParameter> params2 = ECollections.asEList(p1.getA().getA());
+				Environment gamma1 = p1.getA().getB();
+				Pair<Incrementally<DataTypeDecl,Type_datatypeDecl>,Environment> p2 = type_datatypeDecls(gamma1, systemDecl.getDatatypes());
+				Pair<Incrementally<GateDecl,Simple_increment<GateDecl,Type_gate>>,Environment> p3 = type_gates(p2.getB(), systemDecl.getGates());
+				return saveProof(systemDecl,
+						createType_SystemDecl(gamma, systemDecl.getName(),
+								systemDecl.getParameters(),
+								params2,
+								gamma1, systemDecl.getDatatypes(),
+								p2.getB(), systemDecl.getGates(),
+								p3.getB(), systemDecl.getBehavior(),
+								systemDecl.getAssertion(),
+								p1.getB(), p2.getA(),
+								p3.getA(), type_behavior(p3.getB(), systemDecl.getBehavior()),
+						proveOptionally(p3.getB(), systemDecl.getAssertion(), this::type_assertion)));
+			} else {
+				return null;
+			}
 		} else {
 			if(systemDecl.getBehavior() == null) {
 				error("The system must have a behavior", systemDecl, null);
@@ -1384,11 +1453,52 @@ public class TypeChecker extends AccumulatingValidator {
 		return null;
 	}
 
-	private Pair<Mutually<FormalParameter, Ex<DataType, And<Equality, Type_datatype>>>, Environment> type_formalParameters(
+	private Optional<Pair<
+	Pair<List<FormalParameter>, Environment>,
+	And<Forall2<FormalParameter,FormalParameter,
+			And<Equality,Ex<DataType,And<Equality,Ex<DataType,And<Equality,Type_datatype>>>>>>,
+		Mutually<FormalParameter, True>
+	>>>
+	type_formalParameters(
 			Environment gamma, EList<FormalParameter> params) {
-		return proveMutually(gamma, params,
-				this::type_formalParameter, "SosADL.SosADL.FormalParameter_name", FormalParameter::getName,
-				"SosADL.TypeSystem.formalParameter_to_EVariable", TypeChecker::formalParameterEnvContent);
+		List<Pair<FormalParameter, Pair<DataType, Type_datatype>>> l =
+				ListExtensions.map(params, (p) -> new Pair<>(p, type_datatype(gamma, p.getType())));
+		if(l.stream().allMatch((p) -> p.getB() != null && p.getB().getA() != null && p.getB().getB() != null)) {
+			List<FormalParameter> params2 = ListExtensions.map(l, (p) -> createFormalParameter(p.getA().getName(), p.getB().getA()));
+			Forall2<FormalParameter,FormalParameter,
+			And<Equality,Ex<DataType,And<Equality,Ex<DataType,And<Equality,Type_datatype>>>>>> p1 =
+			proveForall2(l,
+					Pair::getA,
+					(p) -> createFormalParameter(p.getA().getName(), p.getB().getA()),
+					TypeChecker::type_formalParameter);
+			Pair<Mutually<FormalParameter, True>, Environment> p2 =
+					proveMutually(gamma, params2,
+							(g0,p,g1) -> createI(),
+							"SosADL.SosADL.FormalParameter_name", FormalParameter::getName,
+							"SosADL.TypeSystem.formalParameter_to_EVariable", TypeChecker::formalParameterEnvContent);
+			return Optional.of(new Pair<>(new Pair<>(params2, p2.getB()),
+					createConj(p1, p2.getA())));
+		} else {
+			return Optional.empty();
+		}
+	}
+	
+	private static And<Equality,Ex<DataType,And<Equality,Ex<DataType,And<Equality,Type_datatype>>>>> type_formalParameter(Pair<FormalParameter, Pair<DataType, Type_datatype>> p) {
+		return createConj(createReflexivity(),
+				createEx_intro(p.getA().getType(),
+						createConj(createReflexivity(),
+								createEx_intro(p.getB().getA(),
+										createConj(createReflexivity(),
+												p.getB().getB())))));
+	}
+	
+	private static EnvContent formalParameterEnvContent(FormalParameter p) {
+		DataType t = p.getType();
+		if(t == null) {
+			return null;
+		} else {
+			return new VariableEnvContent(p, t);
+		}
 	}
 
 	private Type_mediator type_mediator(Environment gamma, MediatorDecl mediator) {
@@ -1403,22 +1513,11 @@ public class TypeChecker extends AccumulatingValidator {
 		return null;
 	}
 
+	/*
 	private <T> Ex<DataType, And<Equality,Type_datatype>> proveExistsAndEqType(Environment gamma, T t, Function<T, DataType> getter) {
 		return createEx_intro(getter.apply(t), createConj(createReflexivity(), type_datatype(gamma, getter.apply(t))));
 	}
-	
-	private Ex<DataType, And<Equality,Type_datatype>> type_formalParameter(Environment gamma, FormalParameter p, Environment gamma1) {
-		return saveProof(p, proveExistsAndEqType(gamma, p, FormalParameter::getType));
-	}
-	
-	private static EnvContent formalParameterEnvContent(FormalParameter p) {
-		DataType t = p.getType();
-		if(t == null) {
-			return null;
-		} else {
-			return new VariableEnvContent(p, t);
-		}
-	}
+	*/
 	
 	private Expression_le expression_le(Expression l, Expression r) {
 		if(isLe(l, r)) {
@@ -1438,72 +1537,111 @@ public class TypeChecker extends AccumulatingValidator {
 		return isConstExprOrError(l) && isConstExprOrError(r) && InterpInZ.le(l, r);
 	}
 
-	private Type_datatype type_datatype(Environment gamma, DataType type) {
+	private Pair<DataType,Type_datatype> type_datatype(Environment gamma, DataType type) {
 		saveEnvironment(type, gamma);
 		// type_NamedType:
-		if(type instanceof NamedType && ((NamedType)type).getName() != null && gamma.get(((NamedType)type).getName()) != null && gamma.get(((NamedType)type).getName()) instanceof TypeEnvContent && ((TypeEnvContent)gamma.get(((NamedType)type).getName())).getDataTypeDecl() != null) {
-			return saveProof(type, createType_NamedType(gamma, ((NamedType)type).getName(), ((TypeEnvContent)gamma.get(((NamedType)type).getName())).getDataTypeDecl(),
-					createEx_intro(((TypeEnvContent)gamma.get(((NamedType)type).getName())).getMethods(), createReflexivity())));
+		if(type instanceof NamedType) {
+			NamedType n = (NamedType) type;
+			if(n.getName() == null) {
+				error("The named type must have a name", type, null);
+				return new Pair<>(null, null);
+			} else {
+				EnvContent ec = gamma.get(n.getName());
+				if(ec == null) {
+					error("No type declaration named `" + gamma.get(n.getName()) + "'", type, null);
+					return new Pair<>(null, null);
+				} else if(ec instanceof TypeEnvContent) {
+					TypeEnvContent tec = (TypeEnvContent) ec;
+					return new Pair<>(saveType(type, tec.getDataType()), saveProof(type,
+							createType_NamedType(gamma, n.getName(), tec.getDataType(), tec.getDataTypeDecl(),
+									createEx_intro(tec.getMethods(), createReflexivity()))));
+				} else {
+					error("`" + n.getName() + "' is not a type declaration", type, null);
+					return new Pair<>(null, null);
+				}
+			}
 		}
 		// type_TupleType:
 		else if(type instanceof TupleType) {
-			Pair<Mutually<FieldDecl, Ex<DataType, And<Equality, Type_datatype>>>, Environment> p1 = type_fields(gamma, ((TupleType)type).getFields());
-			return saveProof(type, createType_TupleType(gamma, ((TupleType)type).getFields(), p1.getA()));
+			TupleType t = (TupleType) type;
+			if(noDuplicate(t.getFields().stream().map(FieldDecl::getName))) {
+				List<Pair<FieldDecl,Pair<DataType,Type_datatype>>> l = ListExtensions.map(t.getFields(),
+						(f) -> new Pair<>(f, type_datatype(gamma, f.getType())));
+				if(l.stream().allMatch((p) -> p.getB() != null && p.getB().getA() != null && p.getB().getB() != null)) {
+					List<FieldDecl> fields2 = ListExtensions.map(l, (p) -> createFieldDecl(p.getA().getName(), p.getB().getA()));
+					TupleType r = createTupleType(fields2);
+					return new Pair<>(saveType(type, r),
+							saveProof(type,
+									createType_TupleType(gamma, t.getFields(), r.getFields(), createReflexivity(),
+											proveForall2(l, Pair::getA, (p) -> createFieldDecl(p.getA().getName(), p.getB().getA()),
+													(p) -> createConj(createReflexivity(),
+															createEx_intro(p.getA().getType(),
+																	createConj(createReflexivity(),
+																			createEx_intro(p.getB().getA(),
+																					createConj(createReflexivity(), p.getB().getB())))))))));
+				} else {
+					return new Pair<>(null, null);
+				}
+			} else {
+				errorFieldClash(t);
+				return new Pair<>(null, null);
+			}
 		}
 		// type_SequenceType:
-		else if(type instanceof SequenceType && ((SequenceType)type).getType() != null) {
-			return saveProof(type, createType_SequenceType(gamma, ((SequenceType)type).getType(),
-					type_datatype(gamma, ((SequenceType)type).getType())));
+		else if(type instanceof SequenceType) {
+			SequenceType s = (SequenceType) type;
+			if(s.getType() != null) {
+				Pair<DataType,Type_datatype> r = type_datatype(gamma, s.getType());
+				if(r != null && r.getA() != null && r.getB() != null) {
+					return new Pair<>(saveType(type, createSequenceType(r.getA())),
+							saveProof(type, createType_SequenceType(gamma, s.getType(), r.getA(), r.getB())));
+				} else {
+					return new Pair<>(null, null);
+				}
+			} else {
+				error("The sequence type must declare a base type", type, null);
+				return new Pair<>(null, null);
+			}
 		}
 		// type_RangeType_trivial
-		else if(type instanceof RangeType && ((RangeType)type).getVmin() != null
-				&& ((RangeType)type).getVmax() != null
-				&& isLe(((RangeType)type).getVmin(), ((RangeType)type).getVmax())) {
-			saveMin(type, InterpInZ.eval(((RangeType)type).getVmin()));
-			saveMax(type, InterpInZ.eval(((RangeType)type).getVmax()));
-			return saveProof(type, createType_RangeType_trivial(gamma, ((RangeType)type).getVmin(), ((RangeType)type).getVmax(),
-					expression_le(((RangeType)type).getVmin(), ((RangeType)type).getVmax())));
+		else if(type instanceof RangeType) {
+			RangeType r = (RangeType) type;
+			if(r.getVmin() != null && r.getVmax() != null) {
+				if(isLe(r.getVmin(), r.getVmax())) {
+					saveMin(type, InterpInZ.eval(((RangeType)type).getVmin()));
+					saveMax(type, InterpInZ.eval(((RangeType)type).getVmax()));
+					return new Pair<>(saveType(type, type),
+							saveProof(type, createType_RangeType_trivial(gamma, r.getVmin(), r.getVmax(),
+									expression_le(r.getVmin(), r.getVmax()))));
+				} else {
+					error("The lower bound of the range is greater than the upper bound", type, null);
+					return new Pair<>(null, null);
+				}
+			} else {
+				if(r.getVmin() == null) {
+					error("The range type must have a lower bound", type, null);
+				}
+				if(r.getVmax() == null) {
+					error("The range type must have an upper bound", type, null);
+				}
+				return new Pair<>(null, null);
+			}
 		}
 		// type_BooleanType:
 		else if(type instanceof BooleanType) {
-			return saveProof(type, createType_BooleanType(gamma));
+			return new Pair<>(saveType(type, type),
+					saveProof(type, createType_BooleanType(gamma)));
 		} else {
-			if(type instanceof NamedType && ((NamedType)type).getName() != null && gamma.get(((NamedType)type).getName()) != null && gamma.get(((NamedType)type).getName()) instanceof TypeEnvContent && ((TypeEnvContent)gamma.get(((NamedType)type).getName())).getDataTypeDecl() == null) {
-				error("No type declaration named `" + gamma.get(((NamedType)type).getName()) + "'", type, null);
-			} else if(type instanceof NamedType && ((NamedType)type).getName() != null && gamma.get(((NamedType)type).getName()) != null && !(gamma.get(((NamedType)type).getName()) instanceof TypeEnvContent)) {
-				error("`" + ((NamedType)type).getName() + "' is not a type declaration", type, null);
-			} else if(type instanceof NamedType && ((NamedType)type).getName() != null && gamma.get(((NamedType)type).getName()) == null) {
-				error("`" + ((NamedType)type).getName() + "' is undefined in this context", type, null);
-			} else if(type instanceof NamedType && ((NamedType)type).getName() == null) {
-				error("The named type must have a name", type, null);
-			} else if(type instanceof SequenceType && ((SequenceType)type).getType() == null) {
-				error("The sequence type must declare a base type", type, null);
-			} else if(type instanceof RangeType && ((RangeType)type).getVmin() != null && ((RangeType)type).getVmax() != null && !containsSomeNull(constexpr_expression(((RangeType)type).getVmin())) && !containsSomeNull(constexpr_expression(((RangeType)type).getVmax())) && InterpInZ.gt(((RangeType)type).getVmin(), ((RangeType)type).getVmax())) {
-				error("The lower bound of the range is greater than the upper bound", type, null);
-			} else if(type instanceof RangeType && ((RangeType)type).getVmin() != null && ((RangeType)type).getVmax() != null) {
-				if(!isConstExprNoError(((RangeType)type).getVmin())) {
-					error("The lower bound of the range is not a constant integer", type, SosADLPackage.Literals.RANGE_TYPE__VMIN);
-				}
-				if(!isConstExprNoError(((RangeType)type).getVmax())) {
-					error("The upper bound of the range is not a constant integer", type, SosADLPackage.Literals.RANGE_TYPE__VMAX);
-				}
-			} else if(type instanceof RangeType) {
-				error("The range must have a lower bound and an upper bound", type, null);
-			} else {
-				error("Type error", type, null);
-			}
-			return null;
+			error("Type error", type, null);
+			return new Pair<>(null, null);
 		}
 	}
-	
+
+	/*
 	private Ex<DataType, And<Equality,Type_datatype>> type_field(Environment gamma, FieldDecl f, Environment gamma1) {
 		return saveProof(f, proveExistsAndEqType(gamma, f, FieldDecl::getType));
 	}
-
-	private Pair<Mutually<FieldDecl, Ex<DataType, And<Equality, Type_datatype>>>, Environment> type_fields(
-			Environment gamma, EList<FieldDecl> fields) {
-		return proveMutually(gamma, fields, this::type_field, "SosADL.SosADL.FieldDecl_name", FieldDecl::getName, "(fun _ => None)", (x) -> null);
-	}
+	*/
 
 	private boolean isConstExprOrError(Expression e) {
 		return isConstExpr(e, this::error);
@@ -1550,6 +1688,7 @@ public class TypeChecker extends AccumulatingValidator {
 		}
 	}
 
+	@SuppressWarnings("unused")
 	private Constexpr_expression constexpr_expression(Expression e) {
 		// constexpr_IntegerValue:
 		if(e instanceof IntegerValue) {
@@ -1827,28 +1966,6 @@ public class TypeChecker extends AccumulatingValidator {
 		Set<T> set = new TreeSet<>(list);
 		return list.size() == set.size();
 	}
-
-	private static boolean containsSomeNull(Object o) {
-		if(o == null) {
-			return true;
-		} else {
-			for(Field f : o.getClass().getDeclaredFields()) {
-				if(!f.isAnnotationPresent(Eluded.class) && f.isAnnotationPresent(Mandatory.class) && ProofTerm.class.isAssignableFrom(f.getType())) {
-					try {
-						Method getter = o.getClass().getMethod("get" + StringExtensions.toFirstUpper(f.getName()));
-						Object i = getter.invoke(o);
-						if(i == null) {
-							return true;
-						} else if(containsSomeNull(i)) {
-							return true;
-						}
-					} catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-					}
-				}
-			}
-			return false;
-		}
-	}
 	
 	private static Type_sosADL createType_SosADL_file(EList<Import> i, Unit d, Type_unit p) {
 		return new Type_SosADL_file(i, d, p);
@@ -1871,29 +1988,31 @@ public class TypeChecker extends AccumulatingValidator {
 		return new Type_EntityBlock_whole(gamma, datatypes, gamma1, funs, gamma2, systems, gamma3, mediators, gamma4, architectures, gamma5, p1, p2, p3, p4, p5);
 	}
 	
-	private static Type_system createType_SystemDecl(Environment gamma, String name, EList<FormalParameter> params, Environment gamma1,
-			EList<DataTypeDecl> datatypes, Environment gamma2, EList<GateDecl> gates, Environment gamma3,
-			BehaviorDecl bhv, AssertionDecl assrt,
-			Mutually<FormalParameter, Ex<DataType, And<Equality, Type_datatype>>> p1,
-			Incrementally<DataTypeDecl,Type_datatypeDecl> p2, Incrementally<GateDecl,Simple_increment<GateDecl,Type_gate>> p3, Type_behavior p4,
+	private static Type_system createType_SystemDecl(Environment gamma, String name, EList<FormalParameter> params,
+			EList<FormalParameter> params2, Environment gamma1, EList<DataTypeDecl> datatypes, Environment gamma2,
+			EList<GateDecl> gates, Environment gamma3, BehaviorDecl bhv, AssertionDecl assrt,
+			And<Forall2<FormalParameter, FormalParameter, And<Equality, Ex<DataType, And<Equality, Ex<DataType, And<Equality, Type_datatype>>>>>>, Mutually<FormalParameter, True>> p1,
+			Incrementally<DataTypeDecl, Type_datatypeDecl> p2,
+			Incrementally<GateDecl, Simple_increment<GateDecl, Type_gate>> p3, Type_behavior p4,
 			Optionally<AssertionDecl, Type_assertion> p5) {
-		return new Type_SystemDecl(gamma, name, params, gamma1, datatypes, gamma2, gates, gamma3, bhv, assrt, p1, p2, p3, p4, p5);
+		return new Type_SystemDecl(gamma, name, params, params2, gamma1, datatypes, gamma2, gates, gamma3, bhv, assrt, p1, p2, p3, p4, p5);
 	}
 	
-	private static Type_datatypeDecl createType_DataTypeDecl_def(Environment gamma, String name, DataType t, EList<FunctionDecl> funs, Environment gamma1, Optionally<DataType, Type_datatype> p1, Forall<FunctionDecl,Ex<FormalParameter, And<Equality, Equality>>> p2, Incrementally<FunctionDecl, Type_function> p3) {
-		return new Type_DataTypeDecl_def(gamma, name, t, funs, gamma1, p1, p2, p3);
+	private static Type_datatypeDecl createType_DataTypeDecl_def(Environment gamma, String name, DataType t, DataType t2, EList<FunctionDecl> funs, Environment gamma1, Type_datatype p1, Forall<FunctionDecl,Ex<FormalParameter, And<Equality, Equality>>> p2, Incrementally<FunctionDecl, Type_function> p3) {
+		return new Type_DataTypeDecl_def(gamma, name, t, t2, funs, gamma1, p1, p2, p3);
 	}
 
-	private static Type_datatype createType_NamedType(Environment gamma, String n, DataTypeDecl t, Ex<List<FunctionDecl>, Equality> p) {
-		return new Type_NamedType(gamma, n, t, p);
+	private static Type_datatype createType_NamedType(Environment gamma, String n, DataType u, DataTypeDecl t, Ex<List<FunctionDecl>, Equality> p) {
+		return new Type_NamedType(gamma, n, u, t, p);
 	}
 	
-	private static Type_datatype createType_TupleType(Environment gamma, EList<FieldDecl> fields, Mutually<FieldDecl, Ex<DataType, And<Equality, Type_datatype>>> p1) {
-		return new Type_TupleType(gamma, fields, p1);
+	private static Type_datatype createType_TupleType(Environment gamma, EList<FieldDecl> fields, EList<FieldDecl> fields2, Equality p1,
+			Forall2<FieldDecl, FieldDecl, And<Equality, Ex<DataType, And<Equality, Ex<DataType, And<Equality, Type_datatype>>>>>> p2) {
+		return new Type_TupleType(gamma, fields, fields2, p1, p2);
 	}
 	
-	private static Type_datatype createType_SequenceType(Environment gamma, DataType t, Type_datatype p) {
-		return new Type_SequenceType(gamma, t, p);
+	private static Type_datatype createType_SequenceType(Environment gamma, DataType t, DataType t2, Type_datatype p) {
+		return new Type_SequenceType(gamma, t, t2, p);
 	}
 	
 	private static Type_datatype createType_RangeType_trivial(Environment gamma, Expression min, Expression max, Expression_le p1) {
@@ -1905,12 +2024,13 @@ public class TypeChecker extends AccumulatingValidator {
 	}
 	
 	private static Type_function createType_FunctionDecl_Method(Environment gamma, String dataName, String dataTypeName, DataTypeDecl dataTypeDecl,
-			EList<FunctionDecl> dataTypeMethods, String name, EList<FormalParameter> params, Environment gammap,
-			DataType rettype, EList<Valuing> vals, Environment gammav, Expression retexpr, DataType tau,
-			Environment gamma1, Equality p1, Type_datatype p2,
-			Mutually<FormalParameter, Ex<DataType, And<Equality, Type_datatype>>> p3,
+			DataType dataTypeReal, EList<FunctionDecl> dataTypeMethods, String name, EList<FormalParameter> params,
+			EList<FormalParameter> params2, Environment gammap, DataType rettype, DataType rettype2,
+			EList<Valuing> vals, Environment gammav, Expression retexpr, DataType tau, Environment gamma1, Equality p1,
+			Type_datatype p2,
+			And<Forall2<FormalParameter, FormalParameter, And<Equality, Ex<DataType, And<Equality, Ex<DataType, And<Equality, Type_datatype>>>>>>, Mutually<FormalParameter, True>> p3,
 			Incrementally<Valuing, Type_valuing> p4, Type_expression p5, Subtype p6, Equality p7) {
-		return new Type_FunctionDecl_Method(gamma, dataName, dataTypeName, dataTypeDecl, dataTypeMethods, name, params, gammap, rettype, vals, gammav, retexpr, tau, gamma1, p1, p2, p3, p4, p5, p6, p7);
+		return new Type_FunctionDecl_Method(gamma, dataName, dataTypeName, dataTypeDecl, dataTypeReal, dataTypeMethods, name, params, params2, gammap, rettype, rettype2, vals, gammav, retexpr, tau, gamma1, p1, p2, p3, p4, p5, p6, p7);
 	}
 	
 	private static Type_expression_node createType_expression_IntegerValue(Environment gamma, BigInteger v) {
@@ -1918,7 +2038,7 @@ public class TypeChecker extends AccumulatingValidator {
 	}
 
 	private static Type_expression createType_expression_and_type(Environment gamma, Expression e,
-			DataType t, Type_expression_node p1, Type_datatype p2) {
+			DataType t, Type_expression_node p1, Check_datatype p2) {
 		return new Type_expression_and_type(gamma, e, t, p1, p2);
 	}
 
@@ -2015,6 +2135,10 @@ public class TypeChecker extends AccumulatingValidator {
 		return new Eq_refl();
 	}
 	
+	private static True createI() {
+		return new I();
+	}
+	
 	private static RangeType createRangeType(Expression min, Expression max) {
 		RangeType r = SosADLFactory.eINSTANCE.createRangeType();
 		r.setVmin(copy(min));
@@ -2067,7 +2191,6 @@ public class TypeChecker extends AccumulatingValidator {
 		return ret;
 	}
 	
-	@SuppressWarnings("unused")
 	private static TupleType createTupleType(Iterable<FieldDecl> fields) {
 		return createTupleType(fields.iterator());
 	}
@@ -2094,6 +2217,24 @@ public class TypeChecker extends AccumulatingValidator {
 		FieldDecl f = SosADLFactory.eINSTANCE.createFieldDecl();
 		f.setName(name);
 		f.setType(copy(t));
+		return f;
+	}
+	
+	private static FormalParameter createFormalParameter(String name, DataType t) {
+		FormalParameter p = SosADLFactory.eINSTANCE.createFormalParameter();
+		p.setName(name);
+		p.setType(copy(t));
+		return p;
+	}
+	
+	private static FunctionDecl createFunctionDecl(FormalParameter self, String name, List<FormalParameter> params, DataType ret, List<Valuing> vals, Expression b) {
+		FunctionDecl f = SosADLFactory.eINSTANCE.createFunctionDecl();
+		f.setData(copy(self));
+		f.setName(name);
+		f.getParameters().addAll(ListExtensions.map(params, TypeChecker::copy));
+		f.setType(copy(ret));
+		f.getValuing().addAll(ListExtensions.map(vals, TypeChecker::copy));
+		f.setExpression(copy(b));
 		return f;
 	}
 
@@ -2214,11 +2355,11 @@ public class TypeChecker extends AccumulatingValidator {
 	}
 	
 	private static Type_expression_node createType_expression_MethodCall(Environment gamma, Expression self, DataType t, DataTypeDecl typeDecl,
-			DataType tau, EList<FunctionDecl> methods, String name, EList<FormalParameter> formalparams, DataType ret,
+			DataType alpha, DataType tau, EList<FunctionDecl> methods, String name, EList<FormalParameter> formalparams, DataType ret,
 			EList<Expression> params, Type_expression p1, Ex<BigInteger, Equality> p2, Subtype p4,
 			Ex<BigInteger, And<Equality, And<Equality, And<Equality, Equality>>>> p5,
 			Forall2<FormalParameter, Expression, Ex<DataType, And<Equality, Ex<DataType, And<Type_expression, Subtype>>>>> p6) {
-		return new Type_expression_MethodCall(gamma, self, t, typeDecl, tau, methods, name, formalparams, ret, params, p1, p2, p4, p5, p6);
+		return new Type_expression_MethodCall(gamma, self, t, typeDecl, alpha, tau, methods, name, formalparams, ret, params, p1, p2, p4, p5, p6);
 	}
 	
 	private static Type_expression_node createType_expression_Tuple(Environment gamma, EList<TupleElement> elts, EList<FieldDecl> typ, Equality p1,
@@ -2267,36 +2408,45 @@ public class TypeChecker extends AccumulatingValidator {
 		return new Range_modulo_max_neg(lmin, lmax, rmin, rmax, min, p1, p2);
 	}
 
-	private static Subtype createSubtype_refl(Environment gamma, DataType t) {
-		return new Subtype_refl(gamma, t);
-	}
-
-	private static Subtype createSubtype_unfold_left(Environment gamma, String l, DataType def,
-			EList<FunctionDecl> funs, EList<FunctionDecl> methods, DataType r, Equality p1,
-			Subtype p2) {
-		return new Subtype_unfold_left(gamma, l, def, funs, methods, r, p1, p2);
-	}
-
-	private static Subtype createSubtype_unfold_right(Environment gamma, DataType l, String r, DataType def,
-			EList<FunctionDecl> funs, EList<FunctionDecl> methods, Equality p1,
-			Subtype p2) {
-		return new Subtype_unfold_right(gamma, l, r, def, funs, methods, p1, p2);
+	private static Subtype createSubtype_refl(DataType t) {
+		return new Subtype_refl(t);
 	}
 	
-	private static Subtype createSubtype_range(Environment gamma, Expression lmi, Expression lma, Expression rmi, Expression rma,
+	private static Subtype createSubtype_range(Expression lmi, Expression lma, Expression rmi, Expression rma,
 			Expression_le p1, Expression_le p2) {
-		return new Subtype_range(gamma, lmi, lma, rmi, rma, p1, p2);
+		return new Subtype_range(lmi, lma, rmi, rma, p1, p2);
 	}
 	
-	private static Subtype createSubtype_tuple(Environment gamma, EList<FieldDecl> l, EList<FieldDecl> r,
+	private static Subtype createSubtype_tuple(EList<FieldDecl> l, EList<FieldDecl> r,
 			Forall<FieldDecl, Ex<String, And<Equality, Ex<DataType, And<Equality, Ex<DataType, And<Equality, Subtype>>>>>>> p1) {
-		return new Subtype_tuple(gamma, l, r, p1);
+		return new Subtype_tuple(l, r, p1);
 	}
 	
-	private static Subtype createSubtype_sequence(Environment gamma, DataType l, DataType r, Subtype p1) {
-		return new Subtype_sequence(gamma, l, r, p1);
+	private static Subtype createSubtype_sequence(DataType l, DataType r, Subtype p1) {
+		return new Subtype_sequence(l, r, p1);
+	}
+
+	private static Check_datatype createCheck_NamedType(String n) {
+		return new Check_NamedType(n);
 	}
 	
+	private static Check_datatype createCheck_TupleType(EList<FieldDecl> fields, Equality p1,
+			Forall<FieldDecl, Ex<DataType, And<Equality, Check_datatype>>> p2) {
+		return new Check_TupleType(fields, p1, p2);
+	}
+	
+	private static Check_datatype createCheck_SequenceType(DataType t, Check_datatype p1) {
+		return new Check_SequenceType(t, p1);
+	}
+	
+	private static Check_datatype createCheck_RangeType_trivial(Expression min, Expression max, Expression_le p1) {
+		return new Check_RangeType_trivial(min, max, p1);
+	}
+	
+	private static Check_datatype createCheck_BooleanType() {
+		return new Check_BooleanType();
+	}
+
 	private TypeVariable createFreshTypeVariable(EObject co, EStructuralFeature csf, BinaryOperator<Optional<DataType>> solver) {
 		return inference.createFreshTypeVariable(solver, co, csf);
 	}

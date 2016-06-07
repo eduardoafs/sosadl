@@ -2,29 +2,21 @@ package org.archware.sosadl.validation.typing.proof;
 
 import org.archware.sosadl.sosADL.DataType;
 import org.archware.sosadl.sosADL.FieldDecl;
-import org.archware.sosadl.validation.typing.Environment;
 import org.eclipse.emf.common.util.EList;
 
 public class Subtype_tuple implements Subtype {
-	@Mandatory private final Environment gamma;
-
 	private final EList<FieldDecl> l;
 	
 	private final EList<FieldDecl> r;
 	
 	@Mandatory private final Forall<FieldDecl, Ex<String, And<Equality, Ex<DataType, And<Equality, Ex<DataType, And<Equality, Subtype>>>>>>> p1;
 
-	public Subtype_tuple(Environment gamma, EList<FieldDecl> l, EList<FieldDecl> r,
+	public Subtype_tuple(EList<FieldDecl> l, EList<FieldDecl> r,
 			Forall<FieldDecl, Ex<String, And<Equality, Ex<DataType, And<Equality, Ex<DataType, And<Equality, Subtype>>>>>>> p1) {
 		super();
-		this.gamma = gamma;
 		this.l = l;
 		this.r = r;
 		this.p1 = p1;
-	}
-
-	public Environment getGamma() {
-		return gamma;
 	}
 
 	public EList<FieldDecl> getL() {

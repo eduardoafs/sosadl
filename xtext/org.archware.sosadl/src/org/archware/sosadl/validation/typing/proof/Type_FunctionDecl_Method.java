@@ -10,64 +10,94 @@ import org.archware.sosadl.validation.typing.Environment;
 import org.eclipse.emf.common.util.EList;
 
 public class Type_FunctionDecl_Method implements Type_function {
-	@Mandatory private final Environment gamma;
-	
-	@Mandatory private final String dataName;
+	@Mandatory
+	private final Environment gamma;
 
-	@Mandatory private final String dataTypeName;
+	@Mandatory
+	private final String dataName;
 
-	@Mandatory private final DataTypeDecl dataTypeDecl;
-	
+	@Mandatory
+	private final String dataTypeName;
+
+	@Mandatory
+	private final DataTypeDecl dataTypeDecl;
+
+	@Mandatory
+	private final DataType dataTypeReal;
+
 	private final EList<FunctionDecl> dataTypeMethods;
-	
-	@Mandatory private final String name;
-	
+
+	@Mandatory
+	private final String name;
+
 	private final EList<FormalParameter> params;
-	
-	@Mandatory private final Environment gammap;
-	
-	@Mandatory private final DataType rettype;
-	
+
+	private final EList<FormalParameter> params2;
+
+	@Mandatory
+	private final Environment gammap;
+
+	@Mandatory
+	private final DataType rettype;
+
+	@Mandatory
+	private final DataType rettype2;
+
 	private final EList<Valuing> vals;
-	
-	@Mandatory private final Environment gammav;
-	
-	@Mandatory private final Expression retexpr;
-	
-	@Mandatory private final DataType tau;
-	
-	@Mandatory private final Environment gamma1;
-	
-	@Mandatory private final Equality p1;
-	
-	@Mandatory private final Type_datatype p2;
-	
-	@Mandatory private final Mutually<FormalParameter, Ex<DataType, And<Equality,Type_datatype>>> p3;
-	
-	@Mandatory private final Incrementally<Valuing, Type_valuing> p4;
-	
-	@Mandatory private final Type_expression p5;
-	
-	@Mandatory private final Subtype p6;
-	
-	@Mandatory private final Equality p7;
+
+	@Mandatory
+	private final Environment gammav;
+
+	@Mandatory
+	private final Expression retexpr;
+
+	@Mandatory
+	private final DataType tau;
+
+	@Mandatory
+	private final Environment gamma1;
+
+	@Mandatory
+	private final Equality p1;
+
+	@Mandatory
+	private final Type_datatype p2;
+
+	@Mandatory
+	private final And<Forall2<FormalParameter, FormalParameter, And<Equality, Ex<DataType, And<Equality, Ex<DataType, And<Equality, Type_datatype>>>>>>, Mutually<FormalParameter, True>> p3;
+
+	@Mandatory
+	private final Incrementally<Valuing, Type_valuing> p4;
+
+	@Mandatory
+	private final Type_expression p5;
+
+	@Mandatory
+	private final Subtype p6;
+
+	@Mandatory
+	private final Equality p7;
 
 	public Type_FunctionDecl_Method(Environment gamma, String dataName, String dataTypeName, DataTypeDecl dataTypeDecl,
-			EList<FunctionDecl> dataTypeMethods, String name, EList<FormalParameter> params, Environment gammap,
-			DataType rettype, EList<Valuing> vals, Environment gammav, Expression retexpr, DataType tau,
-			Environment gamma1, Equality p1, Type_datatype p2,
-			Mutually<FormalParameter, Ex<DataType, And<Equality, Type_datatype>>> p3,
+			DataType dataTypeReal, EList<FunctionDecl> dataTypeMethods, String name, EList<FormalParameter> params,
+			EList<FormalParameter> params2, Environment gammap, DataType rettype, DataType rettype2,
+			EList<Valuing> vals, Environment gammav, Expression retexpr, DataType tau, Environment gamma1, Equality p1,
+			Type_datatype p2,
+			And<Forall2<FormalParameter, FormalParameter, And<Equality, Ex<DataType, And<Equality, Ex<DataType, And<Equality, Type_datatype>>>>>>, Mutually<FormalParameter, True>> p3,
 			Incrementally<Valuing, Type_valuing> p4, Type_expression p5, Subtype p6, Equality p7) {
 		super();
 		this.gamma = gamma;
 		this.dataName = dataName;
 		this.dataTypeName = dataTypeName;
 		this.dataTypeDecl = dataTypeDecl;
+		this.dataTypeReal = dataTypeReal;
 		this.dataTypeMethods = dataTypeMethods;
 		this.name = name;
 		this.params = params;
+		this.params2 = params2;
 		this.gammap = gammap;
 		this.rettype = rettype;
+		this.rettype2 = rettype2;
 		this.vals = vals;
 		this.gammav = gammav;
 		this.retexpr = retexpr;
@@ -98,6 +128,10 @@ public class Type_FunctionDecl_Method implements Type_function {
 		return dataTypeDecl;
 	}
 
+	public DataType getDataTypeReal() {
+		return dataTypeReal;
+	}
+
 	public EList<FunctionDecl> getDataTypeMethods() {
 		return dataTypeMethods;
 	}
@@ -110,12 +144,20 @@ public class Type_FunctionDecl_Method implements Type_function {
 		return params;
 	}
 
+	public EList<FormalParameter> getParams2() {
+		return params2;
+	}
+
 	public Environment getGammap() {
 		return gammap;
 	}
 
 	public DataType getRettype() {
 		return rettype;
+	}
+
+	public DataType getRettype2() {
+		return rettype2;
 	}
 
 	public EList<Valuing> getVals() {
@@ -146,7 +188,7 @@ public class Type_FunctionDecl_Method implements Type_function {
 		return p2;
 	}
 
-	public Mutually<FormalParameter, Ex<DataType, And<Equality, Type_datatype>>> getP3() {
+	public And<Forall2<FormalParameter, FormalParameter, And<Equality, Ex<DataType, And<Equality, Ex<DataType, And<Equality, Type_datatype>>>>>>, Mutually<FormalParameter, True>> getP3() {
 		return p3;
 	}
 

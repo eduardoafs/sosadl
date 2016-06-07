@@ -16,6 +16,8 @@ public class Type_SystemDecl implements Type_system {
 	
 	private final EList<FormalParameter> params;
 	
+	private final EList<FormalParameter> params2;
+	
 	@Mandatory private final Environment gamma1;
 	
 	private final EList<DataTypeDecl> datatypes;
@@ -30,7 +32,8 @@ public class Type_SystemDecl implements Type_system {
 	
 	private final AssertionDecl assrt;
 	
-	@Mandatory private final Mutually<FormalParameter, Ex<DataType, And<Equality,Type_datatype>>> p1;
+	@Mandatory
+	private final And<Forall2<FormalParameter, FormalParameter, And<Equality, Ex<DataType, And<Equality, Ex<DataType, And<Equality, Type_datatype>>>>>>, Mutually<FormalParameter, True>> p1;
 	
 	@Mandatory private final Incrementally<DataTypeDecl,Type_datatypeDecl> p2;
 
@@ -40,16 +43,18 @@ public class Type_SystemDecl implements Type_system {
 	
 	@Mandatory private final Optionally<AssertionDecl, Type_assertion> p5;
 
-	public Type_SystemDecl(Environment gamma, String name, EList<FormalParameter> params, Environment gamma1,
-			EList<DataTypeDecl> datatypes, Environment gamma2, EList<GateDecl> gates, Environment gamma3,
-			BehaviorDecl bhv, AssertionDecl assrt,
-			Mutually<FormalParameter, Ex<DataType, And<Equality, Type_datatype>>> p1,
-			Incrementally<DataTypeDecl,Type_datatypeDecl> p2, Incrementally<GateDecl,Simple_increment<GateDecl,Type_gate>> p3, Type_behavior p4,
+	public Type_SystemDecl(Environment gamma, String name, EList<FormalParameter> params,
+			EList<FormalParameter> params2, Environment gamma1, EList<DataTypeDecl> datatypes, Environment gamma2,
+			EList<GateDecl> gates, Environment gamma3, BehaviorDecl bhv, AssertionDecl assrt,
+			And<Forall2<FormalParameter, FormalParameter, And<Equality, Ex<DataType, And<Equality, Ex<DataType, And<Equality, Type_datatype>>>>>>, Mutually<FormalParameter, True>> p1,
+			Incrementally<DataTypeDecl, Type_datatypeDecl> p2,
+			Incrementally<GateDecl, Simple_increment<GateDecl, Type_gate>> p3, Type_behavior p4,
 			Optionally<AssertionDecl, Type_assertion> p5) {
 		super();
 		this.gamma = gamma;
 		this.name = name;
 		this.params = params;
+		this.params2 = params2;
 		this.gamma1 = gamma1;
 		this.datatypes = datatypes;
 		this.gamma2 = gamma2;
@@ -74,6 +79,10 @@ public class Type_SystemDecl implements Type_system {
 
 	public EList<FormalParameter> getParams() {
 		return params;
+	}
+
+	public EList<FormalParameter> getParams2() {
+		return params2;
 	}
 
 	public Environment getGamma1() {
@@ -104,15 +113,15 @@ public class Type_SystemDecl implements Type_system {
 		return assrt;
 	}
 
-	public Mutually<FormalParameter, Ex<DataType, And<Equality, Type_datatype>>> getP1() {
+	public And<Forall2<FormalParameter, FormalParameter, And<Equality, Ex<DataType, And<Equality, Ex<DataType, And<Equality, Type_datatype>>>>>>, Mutually<FormalParameter, True>> getP1() {
 		return p1;
 	}
 
-	public Incrementally<DataTypeDecl,Type_datatypeDecl> getP2() {
+	public Incrementally<DataTypeDecl, Type_datatypeDecl> getP2() {
 		return p2;
 	}
 
-	public Incrementally<GateDecl,Simple_increment<GateDecl,Type_gate>> getP3() {
+	public Incrementally<GateDecl, Simple_increment<GateDecl, Type_gate>> getP3() {
 		return p3;
 	}
 
@@ -123,4 +132,5 @@ public class Type_SystemDecl implements Type_system {
 	public Optionally<AssertionDecl, Type_assertion> getP5() {
 		return p5;
 	}
+
 }

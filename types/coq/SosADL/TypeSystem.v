@@ -299,29 +299,6 @@ Inductive mutually
       mutually Gamma l Gamma1
 .
 
-(** [translate] specifies a translation from one list to another one. *)
-
-Inductive translate
-          {T1 T2: Set} {P: T1 -> T2 -> Prop}: list T1 -> list T2 -> Prop :=
-
-| translate_nil:
-    translate nil nil
-
-| translate_cons:
-    forall
-      (x1: T1)
-      (l1: list T1)
-      (x2: T2)
-      (l2: list T2)
-      (p1: P x1 x2)
-      (p2: translate l1 l2)
-    ,
-      translate (x1 :: l1) (x2 :: l2)
-.
-
-Inductive triplet {T1 T2 T3: Set}: Set :=
-| make_triplet: T1 -> T2 -> T3 -> triplet.
-
 (** [optionally] is a generic rule for an optional statement. *)
 
 Inductive optionally {T: Set} {P: env -> T -> Prop}:
@@ -1476,15 +1453,15 @@ Definition formalParameter_to_EVariable p :=
   | Some t => Some (EVariable t)
   end.
 Definition type_formalParameters Gamma l l' Gamma1 :=
-  @translate _ _ (fun p p' =>
-                    SosADL.SosADL.FormalParameter_name p = SosADL.SosADL.FormalParameter_name p'
-                    /\ exists t, SosADL.SosADL.FormalParameter_type p = Some t
-                           /\ exists t', SosADL.SosADL.FormalParameter_type p' = Some t'
-                                   /\ type t is t' in Gamma) l l'
+  (for each p p' of l l',
+   SosADL.SosADL.FormalParameter_name p = SosADL.SosADL.FormalParameter_name p'
+   /\ exists t, SosADL.SosADL.FormalParameter_type p = Some t
+          /\ exists t', SosADL.SosADL.FormalParameter_type p' = Some t'
+                  /\ type t is t' in Gamma)
   /\ @mutually _ (fun gamma p _ => True)
               SosADL.SosADL.FormalParameter_name
               formalParameter_to_EVariable
-              Gamma l Gamma1.
+              Gamma l' Gamma1.
 Definition type_gates Gamma l Gamma1 := @incrementally _ (simple_increment _ type_gate SosADL.SosADL.GateDecl_name (fun x => (** TODO *) None)) Gamma l Gamma1.
 
 (** ** Valuings *)
@@ -1533,7 +1510,7 @@ Inductive type_function: env -> SosADL.SosADL.t_FunctionDecl -> env -> Prop :=
                                  Gammap)
       (p4: type_valuings Gammap vals Gammav)
       (p5: expression retexpr has type tau in Gammav)
-      (p6: tau </ rettype)
+      (p6: tau </ rettype')
       (p7: Gamma1 = Gamma [| dataTypeName <- EType dataTypeDecl dataTypeReal
                                           ((SosADL.SosADL.FunctionDecl
                                               (Some (SosADL.SosADL.FormalParameter

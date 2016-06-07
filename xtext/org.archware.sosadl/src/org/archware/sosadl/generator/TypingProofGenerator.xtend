@@ -198,7 +198,7 @@ class TypingProofGenerator implements IGenerator {
 		return _hook('''(ESystem «coqGenerator.generatet_SystemDecl(c.systemDecl)»)''');
 	}
 	def dispatch generateEnvContent(TypeEnvContent c) {
-		return _hook('''(EType «coqGenerator.generatet_DataTypeDecl(c.dataTypeDecl)» «coqGenerator._generateL(c.methods, [ f | coqGenerator.generatet_FunctionDecl(f)])»)''');
+		return _hook('''(EType «coqGenerator.generatet_DataTypeDecl(c.dataTypeDecl)» «coqGenerator.generatet_DataType(c.dataType)» «coqGenerator._generateL(c.methods, [ f | coqGenerator.generatet_FunctionDecl(f)])»)''');
 	}
 	def dispatch generateEnvContent(VariableEnvContent c) {
 		return _hook('''(EVariable «coqGenerator.generatet_DataType(c.type)»)''');
