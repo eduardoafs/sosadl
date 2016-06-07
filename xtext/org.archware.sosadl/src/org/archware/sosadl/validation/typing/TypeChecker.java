@@ -12,6 +12,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
@@ -142,7 +144,8 @@ import org.eclipse.xtext.xbase.lib.ListExtensions;
  */
 public class TypeChecker extends AccumulatingValidator {
 	private TypeInferenceSolver inference = new TypeInferenceSolver(this);
-	private Collection<Runnable> delayedTasks = new LinkedList<>();
+	private Collection<Runnable> delayedTasks = new ConcurrentLinkedDeque<>();
+	private Map<String, NumberGenerator> freshMaker = new ConcurrentHashMap<>();
 	
 	/**
 	 * Performs the whole type-checking of a SoSADL specification.
@@ -239,15 +242,15 @@ public class TypeChecker extends AccumulatingValidator {
 	private Pair<Type_datatypeDecl, Environment> type_datatypeDecl(Environment gamma, DataTypeDecl dataTypeDecl) {
 		saveEnvironment(dataTypeDecl, gamma);
 		if(dataTypeDecl.getName() != null) {
+			Forall<FunctionDecl, Ex<FormalParameter, And<Equality,Equality>>> p2 =
+					proveForall(dataTypeDecl.getFunctions(),
+					(f) -> proveDataIsSelf(dataTypeDecl, f));
 			if(dataTypeDecl.getDatatype() != null) {
 				Pair<DataType, Type_datatype> p1 = type_datatype(gamma, dataTypeDecl.getDatatype());
 				Pair<Incrementally<FunctionDecl, Type_function>, Environment> p3 =
 						type_functions(gamma.put(dataTypeDecl.getName(),
 								new TypeEnvContent(dataTypeDecl, p1.getA(), nil())),
 								dataTypeDecl.getFunctions());
-				Forall<FunctionDecl, Ex<FormalParameter, And<Equality,Equality>>> p2 =
-						proveForall(dataTypeDecl.getFunctions(),
-						(f) -> proveDataIsSelf(dataTypeDecl, f));
 				return new Pair<>(saveProof(dataTypeDecl,
 						createType_DataTypeDecl_def(gamma, dataTypeDecl.getName(),
 								dataTypeDecl.getDatatype(), p1.getA(),
@@ -256,14 +259,27 @@ public class TypeChecker extends AccumulatingValidator {
 								p2,
 						p3.getA())), p3.getB());
 			} else {
-				// TODO
-				error("Not yet implemented (abstract type declaration)", dataTypeDecl, null);
-				return new Pair<>(null, gamma);
+				String name = generateFreshNameFor(dataTypeDecl.getName());
+				Pair<Incrementally<FunctionDecl, Type_function>, Environment> p3 =
+						type_functions(gamma.put(dataTypeDecl.getName(),
+								new TypeEnvContent(dataTypeDecl, createNamedType(name), nil())),
+								dataTypeDecl.getFunctions());
+				return new Pair<>(saveProof(dataTypeDecl,
+						createType_DataTypeDecl_def_None(gamma, dataTypeDecl.getName(), name,
+								dataTypeDecl.getFunctions(),
+								p3.getB(), createReflexivity(),
+								p2,
+								p3.getA())), p3.getB());
 			}
 		} else {
 			error("The data type declaration must have a name", dataTypeDecl, null);
 			return new Pair<>(null, gamma);
 		}
+	}
+
+	private String generateFreshNameFor(String name) {
+		int n = freshMaker.computeIfAbsent(name, (x) -> new SequentialNumberGenerator()).getAsInt();
+		return name + ":" + n;
 	}
 
 	private Ex<FormalParameter, And<Equality,Equality>> proveDataIsSelf(DataTypeDecl d, FunctionDecl f) {
@@ -1552,6 +1568,8 @@ public class TypeChecker extends AccumulatingValidator {
 					return new Pair<>(null, null);
 				} else if(ec instanceof TypeEnvContent) {
 					TypeEnvContent tec = (TypeEnvContent) ec;
+					saveBinder(type, tec.getDataTypeDecl());
+					saveType(type, tec.getDataType());
 					return new Pair<>(saveType(type, tec.getDataType()), saveProof(type,
 							createType_NamedType(gamma, n.getName(), tec.getDataType(), tec.getDataTypeDecl(),
 									createEx_intro(tec.getMethods(), createReflexivity()))));
@@ -2000,6 +2018,12 @@ public class TypeChecker extends AccumulatingValidator {
 	
 	private static Type_datatypeDecl createType_DataTypeDecl_def(Environment gamma, String name, DataType t, DataType t2, EList<FunctionDecl> funs, Environment gamma1, Type_datatype p1, Forall<FunctionDecl,Ex<FormalParameter, And<Equality, Equality>>> p2, Incrementally<FunctionDecl, Type_function> p3) {
 		return new Type_DataTypeDecl_def(gamma, name, t, t2, funs, gamma1, p1, p2, p3);
+	}
+	
+	private static Type_datatypeDecl createType_DataTypeDecl_def_None(Environment gamma, String name, String name2, EList<FunctionDecl> funs,
+			Environment gamma1, Equality p1, Forall<FunctionDecl, Ex<FormalParameter, And<Equality, Equality>>> p2,
+			Incrementally<FunctionDecl, Type_function> p3) {
+		return new Type_DataTypeDecl_def_None(gamma, name, name2, funs, gamma1, p1, p2, p3);
 	}
 
 	private static Type_datatype createType_NamedType(Environment gamma, String n, DataType u, DataTypeDecl t, Ex<List<FunctionDecl>, Equality> p) {
