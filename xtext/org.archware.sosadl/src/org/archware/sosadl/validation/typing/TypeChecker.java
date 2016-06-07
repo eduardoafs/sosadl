@@ -11,6 +11,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
@@ -143,6 +144,15 @@ public class TypeChecker extends AccumulatingValidator {
 	private TypeInferenceSolver inference = new TypeInferenceSolver(this);
 	private Collection<Runnable> delayedTasks = new ConcurrentLinkedDeque<>();
 	private Map<String, NumberGenerator> freshMaker = new ConcurrentHashMap<>();
+	
+	@Override
+	public void error(String msg, EObject eo, EStructuralFeature esf) {
+		System.out.println("" + eo + ": " + msg);
+		if(eo == null) {
+			throw new NullPointerException();
+		}
+		super.error(msg, eo, esf);
+	}
 	
 	/**
 	 * Performs the whole type-checking of a SoSADL specification.
@@ -1003,23 +1013,19 @@ public class TypeChecker extends AccumulatingValidator {
 		if(f.getField() != null && f.getObject() != null) {
 			Pair<Type_expression, DataType> p1 = type_expression(gamma, f.getObject());
 			if(p1.getA() != null && p1.getB() != null) {
-				if(p1.getB() instanceof TupleType) {
-					TupleType tt = (TupleType) p1.getB();
-					Optional<FieldDecl> fd = tt.getFields().stream().filter((d) -> f.getField().equals(d.getName())).findFirst();
-					if(fd.isPresent()) {
-						FieldDecl d = fd.get();
-						return new Pair<>(saveProof(f, createType_expression_Field(gamma,
-								f.getObject(), tt.getFields(), f.getField(),
-								d.getType(), p1.getA(), createReflexivity())),
-								saveType(f, d.getType()));
-					} else {
-						error("The tuple has no field named `" + f.getField() + "'", f, SosADLPackage.Literals.FIELD__FIELD);
-						return new Pair<>(null, null);
-					}
-				} else {
-					error("The expression must be a tuple", f, SosADLPackage.Literals.FIELD__OBJECT);
-					return new Pair<>(null, null);
-				}
+				TypeVariable v = createFreshTypeVariable(f, SosADLPackage.Literals.FIELD__FIELD,
+						(lb,ub) -> chooseBetweenOrElse(lb, ub, Optional.of(createBooleanType())));
+				TupleType t = createTupleType(Stream.of(createFieldDecl(f.getField(), v)));
+				inference.addConstraint(p1.getB(), t, f, SosADLPackage.Literals.FIELD__FIELD);
+				return new Pair<>(saveProof(f,
+						proofTerm(v, Type_expression_node.class,
+								(x) -> createType_expression_Field(gamma,
+											f.getObject(), 
+											ECollections.asEList(((TupleType)p1.getB()).getFields().stream()
+													.map(this::deepSubstitute).collect(Collectors.toList())),
+											f.getField(), x,
+											p1.getA(),
+											createReflexivity()))), v);
 			} else {
 				return new Pair<>(null, null);
 			}
@@ -1041,31 +1047,30 @@ public class TypeChecker extends AccumulatingValidator {
 		} else if(s.getElements().stream().anyMatch((x) -> x == null)) {
 			error("All the items of the sequence must be present", s, SosADLPackage.Literals.SEQUENCE__ELEMENTS);
 			return new Pair<>(null, null);
-		} else if(!s.getElements().isEmpty()) {
-			List<Pair<Expression, Pair<Type_expression, DataType>>> elts = ListExtensions.map(s.getElements(), (x) -> new Pair<>(x, type_expression(gamma, x)));
+		} else {
+			List<Pair<Expression, Pair<Type_expression, DataType>>> elts =
+					s.getElements().stream().map((x) -> new Pair<>(x, type_expression(gamma, x))).collect(Collectors.toList());
 			if(elts.stream().allMatch((x) -> x.getB() != null && x.getB().getA() != null && x.getB().getB() != null)) {
-				Optional<DataType> itemType = elts.stream().map((x) -> x.getB().getB()).reduce((a,b) -> unionSuperType(gamma, a, b, s, SosADLPackage.Literals.SEQUENCE__ELEMENTS));
-				if(itemType.isPresent() && itemType.orElse(null) != null) {
-					DataType item = itemType.orElse(null);
-					Forall<Expression, Ex<DataType, And<Type_expression, Subtype>>> p1 = proveForall(elts, Pair::getA,
-							(p) -> createEx_intro(p.getB().getB(),
-									createConj(p.getB().getA(),
-											subtype(p.getB().getB(), item, p.getA(), null).orElse(null))));
-					return new Pair<>(saveProof(s, createType_expression_Sequence(gamma, s.getElements(), item, p1)),
-							saveType(s, createSequenceType(item)));
-				} else {
-					return new Pair<>(null, null);
-				}
+				TypeVariable v = createFreshTypeVariable(s, SosADLPackage.Literals.SEQUENCE__ELEMENTS,
+						(lb,ub) -> chooseBetweenOrElse(lb, ub, Optional.of(createBooleanType())));
+				elts.forEach((p) -> inference.addConstraint(p.getB().getB(), v, p.getA()));
+				DataType t = createSequenceType(v);
+				return new Pair<>(saveProof(s,
+						proofTerm(t, Type_expression_node.class,
+								(x) -> {
+									Forall<Expression, Ex<DataType, And<Type_expression, Subtype>>> p1 =
+											proveForall(elts, Pair::getA,
+											(p) -> {
+												DataType pbb = deepSubstitute(p.getB().getB());
+												return createEx_intro(pbb,
+														createConj(p.getB().getA(),
+																subtype(pbb, ((SequenceType)x).getType(), p.getA(), null).orElse(null)));
+											});
+									return createType_expression_Sequence(gamma, s.getElements(), ((SequenceType)x).getType(), p1);
+								})), t);
 			} else {
 				return new Pair<>(null, null);
 			}
-		} else {
-			TypeVariable v = createFreshTypeVariable(s, null, (lb,ub) -> chooseBetweenOrElse(gamma, lb, ub, Optional.of(createBooleanType())));
-			DataType t = createSequenceType(v);
-			return new Pair<>(saveProof(s,
-					proofTerm(t, Type_expression_node.class,
-							(x) -> createType_expression_Sequence(gamma, s.getElements(), ((SequenceType)getSubstitute(x)).getType(), createForall_nil()))),
-					saveType(s, t));
 		}
 	}
 
@@ -1077,23 +1082,35 @@ public class TypeChecker extends AccumulatingValidator {
 			error("All the elements of the tuple must be present", t, SosADLPackage.Literals.TUPLE__ELEMENTS);
 			return new Pair<>(null, null);
 		} else {
-			List<Pair<TupleElement, Pair<Type_expression, DataType>>> elts = ListExtensions.map(t.getElements(), (f) -> new Pair<>(f, type_expression(gamma, f.getValue())));
 			if(noDuplicate(t.getElements().stream().map((f) -> f.getLabel()))) {
+				Collection<Pair<TupleElement, Pair<Type_expression, DataType>>> elts =
+						t.getElements().stream().map((f) -> new Pair<>(f, type_expression(gamma, f.getValue())))
+						.collect(Collectors.toCollection(ConcurrentLinkedQueue::new));
 				if(elts.stream().allMatch((p) -> p.getB().getA() != null && p.getB().getB() != null)) {
-					List<Pair<TupleElement, Pair<Type_expression, FieldDecl>>> elts2 = ListExtensions.map(elts, (f) -> new Pair<>(f.getA(), new Pair<>(f.getB().getA(), createFieldDecl(f.getA().getLabel(), f.getB().getB()))));
+					List<Pair<TupleElement, Pair<Type_expression, FieldDecl>>> elts2 =
+							elts.stream().map((f) -> new Pair<>(f.getA(),
+									new Pair<>(f.getB().getA(), createFieldDecl(f.getA().getLabel(), f.getB().getB()))))
+							.collect(Collectors.toList());
 					TupleType tt = createTupleType(elts2.stream().map((f) -> f.getB().getB()));
-					Forall2<TupleElement, FieldDecl, Ex<Expression, And<Equality,Ex<DataType,And<Equality,Type_expression>>>>> p3 = proveForall2(elts2,
-							(x) -> x.getA(),
-							(x) -> x.getB().getB(),
-							(x) -> createEx_intro(x.getA().getValue(),
-									createConj(createReflexivity(),
-											createEx_intro(x.getB().getB().getType(),
-													createConj(createReflexivity(), x.getB().getA())))));
-					Type_expression_node p = createType_expression_Tuple(gamma, t.getElements(), tt.getFields(),
-							createReflexivity(),
-							proveForall2(t.getElements(), tt.getFields(), (x,y) -> createReflexivity()),
-							p3);
-					return new Pair<>(saveProof(t, p), saveType(t, tt));
+					return new Pair<>(saveProof(t,
+							proofTerm(tt, Type_expression_node.class,
+									(z) -> {
+										Forall2<TupleElement, FieldDecl, Ex<Expression, And<Equality,Ex<DataType,And<Equality,Type_expression>>>>> p3 =
+												proveForall2(elts2,
+													(x) -> x.getA(),
+													(x) -> getSubstitute(x.getB().getB()),
+													(x) -> createEx_intro(x.getA().getValue(),
+															createConj(createReflexivity(),
+																	createEx_intro(getSubstitute(x.getB().getB().getType()),
+																			createConj(createReflexivity(), x.getB().getA())))));
+										return createType_expression_Tuple(gamma, t.getElements(),
+												((TupleType)z).getFields(),
+												createReflexivity(),
+												proveForall2(t.getElements(), ((TupleType)z).getFields(),
+														(x,y) -> createReflexivity()),
+												p3);
+									})),
+							saveType(t, tt));
 				} else {
 					return new Pair<>(null, null);
 				}
@@ -1242,7 +1259,7 @@ public class TypeChecker extends AccumulatingValidator {
 				saveType(e, t));
 	}
 	
-	private static Optional<DataType> chooseBetweenOrElse(Environment gamma, Optional<DataType> lb, Optional<DataType> ub, Optional<DataType> other) {
+	private static Optional<DataType> chooseBetweenOrElse(Optional<DataType> lb, Optional<DataType> ub, Optional<DataType> other) {
 		return OptionalUtils.orElse(lb, OptionalUtils.orElse(ub, other));
 	}
 	
@@ -1862,6 +1879,7 @@ public class TypeChecker extends AccumulatingValidator {
 	}
 	
 	public static <T> T saveProof(EObject eObject, T proof) {
+		if(proof == null) { System.out.println("ummm"); }
 		AttributeAdapter.adapterOf(eObject).putAttribute(PROOF, proof);
 		return proof;
 	}
@@ -2476,8 +2494,20 @@ public class TypeChecker extends AccumulatingValidator {
 	private DataType getSubstitute(DataType t) {
 		return inference.deepSubstitute(t);
 	}
-	
+
+	private FieldDecl getSubstitute(FieldDecl f) {
+		return createFieldDecl(f.getName(), getSubstitute(f.getType()));
+	}
+
 	private static <T extends EObject> T copy(T x) {
 		return TypeInferenceSolver.copy(x);
+	}
+	
+	private DataType deepSubstitute(DataType t) {
+		return getSubstitute(t);
+	}
+	
+	private FieldDecl deepSubstitute(FieldDecl f) {
+		return getSubstitute(f);
 	}
 }

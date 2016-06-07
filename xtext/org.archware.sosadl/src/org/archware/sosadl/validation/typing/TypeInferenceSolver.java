@@ -26,6 +26,7 @@ import org.archware.sosadl.validation.ErrorCollector;
 import org.archware.sosadl.validation.typing.interp.InterpInZ;
 import org.archware.utils.MapUtils;
 import org.archware.utils.Pair;
+import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.emf.ecore.util.EcoreUtil;
@@ -132,6 +133,7 @@ public final class TypeInferenceSolver {
 	}
 
 	private final ErrorCollector log;
+	private final Map<String, DataType> substitutions;
 	private final Map<String, TypeVariable> variables;
 	private Map<String, Deque<Constraint>> upperBounds;
 	private Map<String, Deque<Constraint>> lowerBounds;
@@ -151,6 +153,7 @@ public final class TypeInferenceSolver {
 	 */
 	public TypeInferenceSolver(ErrorCollector log) {
 		this.log = log;
+		this.substitutions = new ConcurrentHashMap<>();
 		this.variables = new ConcurrentHashMap<>();
 		this.upperBounds = new ConcurrentHashMap<>();
 		this.lowerBounds = new ConcurrentHashMap<>();
@@ -338,20 +341,20 @@ public final class TypeInferenceSolver {
 	 *            a type variable
 	 * @return the representative of {@value v}
 	 */
-	private TypeVariable repr(TypeVariable v) {
+	public TypeVariable repr(TypeVariable v) {
 		TypeVariable n = variables.get(v.getName());
-		if (n == v) {
-			DataType r = v.getSubstitute();
+		if (n == v || n.getName().equals(v.getName())) {
+			DataType r = getLLSubstitute(v);
 			if (r != null && r instanceof TypeVariable) {
 				TypeVariable x = repr((TypeVariable) r);
-				v.setSubstitute(x);
+				setLLSubstitute(v, x);
 				return x;
 			} else {
 				return v;
 			}
 		} else {
 			TypeVariable r = repr(n);
-			v.setSubstitute(r);
+			setLLSubstitute(v, r);
 			return r;
 		}
 	}
@@ -378,7 +381,11 @@ public final class TypeInferenceSolver {
 	private DataType substitute(DataType t) {
 		if (t != null && t instanceof TypeVariable) {
 			TypeVariable r = repr((TypeVariable) t);
-			return r.getSubstitute();
+			DataType s = getLLSubstitute(r);
+			if (s instanceof TypeVariable) {
+				throw new IllegalArgumentException();
+			}
+			return s;
 		} else {
 			return t;
 		}
@@ -398,26 +405,46 @@ public final class TypeInferenceSolver {
 	 */
 	public DataType deepSubstitute(DataType t) {
 		if (t == null) {
-			return t;
+			throw new IllegalArgumentException();
 		} else if (t instanceof TypeVariable) {
 			return deepSubstitute(substitute(t));
 		} else if (t instanceof RangeType) {
-			return t;
+			return copy(t);
 		} else if (t instanceof SequenceType) {
 			SequenceType s = (SequenceType) t;
 			DataType i = deepSubstitute(s.getType());
 			return createSequenceType(i);
 		} else if (t instanceof BooleanType) {
-			return t;
+			return copy(t);
 		} else if (t instanceof TupleType) {
 			TupleType tt = (TupleType) t;
 			return createTupleType(
 					tt.getFields().stream().map((f) -> createFieldDecl(f.getName(), deepSubstitute(f.getType())))
 							.collect(Collectors.toList()));
 		} else if (t instanceof NamedType) {
-			return t;
+			return copy(t);
 		} else {
-			return t;
+			throw new IllegalArgumentException();
+		}
+	}
+
+	/**
+	 * Streams the type variables that occur in a type.
+	 * 
+	 * @param t
+	 *            to-be-scanned type
+	 * @return {@Stream} of type variables.
+	 */
+	public static Stream<TypeVariable> streamVariables(DataType t) {
+		if (t instanceof TypeVariable) {
+			return Stream.of((TypeVariable) t);
+		} else if (t instanceof SequenceType) {
+			return streamVariables(((SequenceType) t).getType());
+		} else if (t instanceof TupleType) {
+			return ((TupleType) t).getFields().stream().map(FieldDecl::getType)
+					.flatMap(TypeInferenceSolver::streamVariables);
+		} else {
+			return Stream.empty();
 		}
 	}
 
@@ -486,10 +513,10 @@ public final class TypeInferenceSolver {
 	private TypeVariable createFreshTypeVariable(BinaryOperator<Optional<DataType>> solver) {
 		TypeVariable r = TypeCheckerHelperFactory.eINSTANCE.createTypeVariable();
 		r.setName(nameGenerator.get());
-		r.setSolver(solver);
 		if (variables.put(r.getName(), r) != null) {
 			throw new IllegalArgumentException("the variable name is not fresh");
 		}
+		setLLSolver(r, solver);
 		return r;
 	}
 
@@ -535,7 +562,7 @@ public final class TypeInferenceSolver {
 	public TypeVariable createFreshDependency(BinaryOperator<Optional<DataType>> solver, TypeVariable dependent) {
 		TypeVariable v = createFreshTypeVariable(solver, dependent.getConcernedObject(),
 				dependent.getConcernedStructuralFeature());
-		dependent.getDependencies().add(v);
+		getLLDependencies(dependent).add(v);
 		return v;
 	}
 
@@ -670,8 +697,8 @@ public final class TypeInferenceSolver {
 						// one upper bound; find the variables whose
 						// dependencies are determined
 						Deque<VariableSpec> v = variables.entrySet().stream()
-								.filter((e) -> e.getValue().getSubstitute() == null
-										&& e.getValue().getDependencies().stream().allMatch(this::isDetermined))
+								.filter((e) -> getLLSubstitute(e.getValue()) == null
+										&& getLLDependencies(e.getValue()).stream().allMatch(this::isDetermined))
 								.map((e) -> new VariableSpec(e.getKey(),
 										getTheOneOf(
 												lowerBounds.getOrDefault(e.getKey(), new ConcurrentLinkedDeque<>())),
@@ -705,7 +732,7 @@ public final class TypeInferenceSolver {
 							}
 						}
 						VariableSpec x = toSolve.get();
-						Optional<DataType> solution = x.variable.getSolver().apply(x.lowerBound.map((c) -> c.sub),
+						Optional<DataType> solution = getLLSolver(x.variable).apply(x.lowerBound.map((c) -> c.sub),
 								x.upperBound.map((c) -> c.sup));
 						if (solution.isPresent()) {
 							DataType t = solution.get();
@@ -758,10 +785,10 @@ public final class TypeInferenceSolver {
 	 *            the substitute type
 	 */
 	private void doSubstitute(TypeVariable a, DataType b) {
-		if (a.getSubstitute() != null) {
+		if (getLLSubstitute(a) != null) {
 			throw new IllegalArgumentException("the type variable should not have been substituted already");
 		} else {
-			a.setSubstitute(reprOrType(b));
+			setLLSubstitute(a, reprOrType(b));
 		}
 	}
 
@@ -775,7 +802,7 @@ public final class TypeInferenceSolver {
 	 *            another type
 	 * @return {@value true} if the types are equal, {@value false} otherwise
 	 */
-	public static boolean equalsUpToSubst(DataType l, DataType r) {
+	public boolean equalsUpToSubst(DataType l, DataType r) {
 		if (l == r) {
 			return true;
 		} else if (l instanceof BooleanType && r instanceof BooleanType) {
@@ -799,7 +826,7 @@ public final class TypeInferenceSolver {
 			if (r instanceof TypeVariable) {
 				return ((TypeVariable) l).getName().equals(((TypeVariable) r).getName());
 			} else {
-				DataType ls = ((TypeVariable) l).getSubstitute();
+				DataType ls = getLLSubstitute((TypeVariable) l);
 				if (ls == null) {
 					return false;
 				} else {
@@ -807,7 +834,7 @@ public final class TypeInferenceSolver {
 				}
 			}
 		} else if (r instanceof TypeVariable) {
-			DataType rs = ((TypeVariable) r).getSubstitute();
+			DataType rs = getLLSubstitute((TypeVariable) r);
 			if (rs == null) {
 				return false;
 			} else {
@@ -831,8 +858,8 @@ public final class TypeInferenceSolver {
 	public static boolean contains(DataType r, TypeVariable l) {
 		if (l == r) {
 			return true;
-		} else if (r instanceof TypeVariable && ((TypeVariable) r).getName().equals(l.getName())) {
-			return true;
+		} else if (r instanceof TypeVariable) {
+			return ((TypeVariable) r).getName().equals(l.getName());
 		} else if (r instanceof BooleanType) {
 			return false;
 		} else if (r instanceof RangeType) {
@@ -1275,14 +1302,7 @@ public final class TypeInferenceSolver {
 	 * @return a copy of {@value x}
 	 */
 	public static <T extends EObject> T copy(T x) {
-		// never copy type variable in order to ensure the uniqueness of the
-		// object, and therefore the uniqueness of the substitution
-		if (x instanceof TypeVariable) {
-			// TODO ensure that any type variable in never used in two types
-			return x;
-		} else {
-			return EcoreUtil.copy(x);
-		}
+		return EcoreUtil.copy(x);
 	}
 
 	private static SequenceType createSequenceType(DataType t) {
@@ -1305,13 +1325,33 @@ public final class TypeInferenceSolver {
 	private static FieldDecl createFieldDecl(String name, DataType t) {
 		FieldDecl ret = SosADLFactory.eINSTANCE.createFieldDecl();
 		ret.setName(name);
-		ret.setType(t);
+		ret.setType(copy(t));
 		return ret;
 	}
 
 	private static TupleType createTupleType(List<FieldDecl> f) {
 		TupleType ret = SosADLFactory.eINSTANCE.createTupleType();
-		ret.getFields().addAll(f);
+		ret.getFields().addAll(f.stream().map(TypeInferenceSolver::copy).collect(Collectors.toList()));
 		return ret;
+	}
+
+	private DataType getLLSubstitute(TypeVariable v) {
+		return substitutions.get(v.getName());
+	}
+
+	private void setLLSubstitute(TypeVariable v, DataType t) {
+		substitutions.put(v.getName(), t);
+	}
+
+	private void setLLSolver(TypeVariable v, BinaryOperator<Optional<DataType>> solver) {
+		variables.get(v.getName()).setSolver(solver);
+	}
+
+	private BinaryOperator<Optional<DataType>> getLLSolver(TypeVariable v) {
+		return variables.get(v.getName()).getSolver();
+	}
+
+	private EList<TypeVariable> getLLDependencies(TypeVariable dependent) {
+		return variables.get(dependent.getName()).getDependencies();
 	}
 }

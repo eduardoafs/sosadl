@@ -75,10 +75,14 @@ class TypingProofGenerator implements IGenerator {
 	}
 
 	override void doGenerate(Resource resource, IFileSystemAccess fsa) {
-
-		for (e : resource.allContents.toIterable.filter(SosADL)) {
-	        var String resourceFilename = e.eResource.URI.trimFileExtension.lastSegment
-			fsa.generateFile(resourceFilename+"_typing.v", e.generate)
+		try {
+			for (e : resource.allContents.toIterable.filter(SosADL)) {
+		        var String resourceFilename = e.eResource.URI.trimFileExtension.lastSegment
+				fsa.generateFile(resourceFilename+"_typing.v", e.generate)
+			}
+		} catch (Throwable t) {
+			t.printStackTrace
+			throw t;
 		}
 	}
 	
@@ -162,7 +166,6 @@ class TypingProofGenerator implements IGenerator {
 	def dispatch generatorFunction(ComplexName content) { return coqGenerator.generatet_ComplexName(content) }
 	def dispatch generatorFunction(Connection content) { return coqGenerator.generatet_Connection(content) }
 	def dispatch generatorFunction(Constituent content) { return coqGenerator.generatet_Constituent(content) }
-	def dispatch CharSequence generatorFunction(TypeVariable content) { return content.substitute.generatorFunction }
 	def dispatch generatorFunction(DataType content) { return coqGenerator.generatet_DataType(content) }
 	def dispatch generatorFunction(DataTypeDecl content) { return coqGenerator.generatet_DataTypeDecl(content) }
 	def dispatch generatorFunction(DutyDecl content) { return coqGenerator.generatet_DutyDecl(content) }

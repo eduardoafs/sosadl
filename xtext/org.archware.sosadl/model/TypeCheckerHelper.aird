@@ -202,22 +202,6 @@
             <sourceAnchor xmi:type="notation:IdentityAnchor" xmi:id="_LRzbQPJmEeWBJobfaOLsNw" id="(0.5,0.19)"/>
             <targetAnchor xmi:type="notation:IdentityAnchor" xmi:id="_LRzbQfJmEeWBJobfaOLsNw" id="(0.44166666666666665,0.85)"/>
           </edges>
-          <edges xmi:type="notation:Edge" xmi:id="_cqGrYPKIEeWBJobfaOLsNw" type="4001" element="_cpxUMPKIEeWBJobfaOLsNw" source="_GNpk4PJmEeWBJobfaOLsNw" target="_BxJkYPJmEeWBJobfaOLsNw">
-            <children xmi:type="notation:Node" xmi:id="_cqHScPKIEeWBJobfaOLsNw" type="6001">
-              <layoutConstraint xmi:type="notation:Bounds" xmi:id="_cqHScfKIEeWBJobfaOLsNw" x="117" y="-7"/>
-            </children>
-            <children xmi:type="notation:Node" xmi:id="_cqHScvKIEeWBJobfaOLsNw" type="6002">
-              <layoutConstraint xmi:type="notation:Bounds" xmi:id="_cqHSc_KIEeWBJobfaOLsNw" x="18" y="-70"/>
-            </children>
-            <children xmi:type="notation:Node" xmi:id="_cqHSdPKIEeWBJobfaOLsNw" type="6003">
-              <layoutConstraint xmi:type="notation:Bounds" xmi:id="_cqHSdfKIEeWBJobfaOLsNw" x="-18" y="-68"/>
-            </children>
-            <styles xmi:type="notation:ConnectorStyle" xmi:id="_cqGrYfKIEeWBJobfaOLsNw" routing="Rectilinear"/>
-            <styles xmi:type="notation:FontStyle" xmi:id="_cqGrYvKIEeWBJobfaOLsNw" fontColor="7490599" fontName="Cantarell" fontHeight="8"/>
-            <bendpoints xmi:type="notation:RelativeBendpoints" xmi:id="_cqGrY_KIEeWBJobfaOLsNw" points="[28, 50, 13, 167]$[85, 50, 70, 167]$[85, -165, 70, -48]$[28, -165, 13, -48]"/>
-            <sourceAnchor xmi:type="notation:IdentityAnchor" xmi:id="_cqH5gPKIEeWBJobfaOLsNw" id="(0.7627118644067796,0.0)"/>
-            <targetAnchor xmi:type="notation:IdentityAnchor" xmi:id="_cqH5gfKIEeWBJobfaOLsNw" id="(0.8898305084745762,1.0)"/>
-          </edges>
           <edges xmi:type="notation:Edge" xmi:id="_MRk_kPcvEeWTtu4T45OGBw" type="4001" element="_MRA-4PcvEeWTtu4T45OGBw" source="_GNpk4PJmEeWBJobfaOLsNw" target="_GNpk4PJmEeWBJobfaOLsNw">
             <children xmi:type="notation:Node" xmi:id="_MRrGMPcvEeWTtu4T45OGBw" type="6001">
               <layoutConstraint xmi:type="notation:Bounds" xmi:id="_MRrGMfcvEeWTtu4T45OGBw" y="-10"/>
@@ -268,7 +252,7 @@
           </edges>
         </data>
       </ownedAnnotationEntries>
-      <ownedDiagramElements xmi:type="diagram:DNodeList" xmi:id="_Bw0NMPJmEeWBJobfaOLsNw" name="DataType" tooltipText="" incomingEdges="_LQyuoPJmEeWBJobfaOLsNw _cpxUMPKIEeWBJobfaOLsNw" width="12" height="10">
+      <ownedDiagramElements xmi:type="diagram:DNodeList" xmi:id="_Bw0NMPJmEeWBJobfaOLsNw" name="DataType" tooltipText="" incomingEdges="_LQyuoPJmEeWBJobfaOLsNw" width="12" height="10">
         <target xmi:type="ecore:EClass" href="generated/SosADL.ecore#//DataType"/>
         <semanticElements xmi:type="ecore:EClass" href="generated/SosADL.ecore#//DataType"/>
         <decorations xmi:type="viewpoint:Decoration" xmi:id="_BxGhEPJmEeWBJobfaOLsNw">
@@ -282,7 +266,7 @@
         </ownedStyle>
         <actualMapping xmi:type="description_1:ContainerMapping" href="platform:/plugin/org.eclipse.emf.ecoretools.design/description/ecore.odesign#//@ownedViewpoints[name='Design']/@ownedRepresentations[name='Entities']/@defaultLayer/@containerMappings[name='EC%20EClass']"/>
       </ownedDiagramElements>
-      <ownedDiagramElements xmi:type="diagram:DNodeList" xmi:id="_GNa7YPJmEeWBJobfaOLsNw" name="TypeVariable" tooltipText="" outgoingEdges="_LQyuoPJmEeWBJobfaOLsNw _cpxUMPKIEeWBJobfaOLsNw _MRA-4PcvEeWTtu4T45OGBw _Z1BnYPc4EeWTtu4T45OGBw _l7seQPc4EeWTtu4T45OGBw" incomingEdges="_MRA-4PcvEeWTtu4T45OGBw" width="12" height="10">
+      <ownedDiagramElements xmi:type="diagram:DNodeList" xmi:id="_GNa7YPJmEeWBJobfaOLsNw" name="TypeVariable" tooltipText="" outgoingEdges="_LQyuoPJmEeWBJobfaOLsNw _MRA-4PcvEeWTtu4T45OGBw _Z1BnYPc4EeWTtu4T45OGBw _l7seQPc4EeWTtu4T45OGBw" incomingEdges="_MRA-4PcvEeWTtu4T45OGBw" width="12" height="10">
         <target xmi:type="ecore:EClass" href="TypeCheckerHelper.ecore#//TypeVariable"/>
         <semanticElements xmi:type="ecore:EClass" href="TypeCheckerHelper.ecore#//TypeVariable"/>
         <arrangeConstraints>KEEP_LOCATION</arrangeConstraints>
@@ -320,20 +304,6 @@
           <centerLabelStyle xmi:type="diagram:CenterLabelStyle" xmi:id="_hNupYvcvEeWTtu4T45OGBw" showIcon="false"/>
         </ownedStyle>
         <actualMapping xmi:type="description_1:EdgeMapping" href="platform:/plugin/org.eclipse.emf.ecoretools.design/description/ecore.odesign#//@ownedViewpoints[name='Design']/@ownedRepresentations[name='Entities']/@defaultLayer/@edgeMappings[name='EC%20ESupertypes']"/>
-      </ownedDiagramElements>
-      <ownedDiagramElements xmi:type="diagram:DEdge" xmi:id="_cpxUMPKIEeWBJobfaOLsNw" name="[0..1] substitute" sourceNode="_GNa7YPJmEeWBJobfaOLsNw" targetNode="_Bw0NMPJmEeWBJobfaOLsNw">
-        <target xmi:type="ecore:EReference" href="TypeCheckerHelper.ecore#//TypeVariable/substitute"/>
-        <semanticElements xmi:type="ecore:EReference" href="TypeCheckerHelper.ecore#//TypeVariable/substitute"/>
-        <ownedStyle xmi:type="diagram:EdgeStyle" xmi:id="_cp1loPKIEeWBJobfaOLsNw" routingStyle="manhattan" strokeColor="0,0,0">
-          <description xmi:type="style:EdgeStyleDescription" href="platform:/plugin/org.eclipse.emf.ecoretools.design/description/ecore.odesign#//@ownedViewpoints[name='Design']/@ownedRepresentations[name='Entities']/@defaultLayer/@edgeMappings[name='EC_EReference']/@style"/>
-          <centerLabelStyle xmi:type="diagram:CenterLabelStyle" xmi:id="_cp1lofKIEeWBJobfaOLsNw" showIcon="false">
-            <customFeatures>labelSize</customFeatures>
-          </centerLabelStyle>
-          <endLabelStyle xmi:type="diagram:EndLabelStyle" xmi:id="_cp1lovKIEeWBJobfaOLsNw" showIcon="false" labelColor="39,76,114">
-            <customFeatures>labelSize</customFeatures>
-          </endLabelStyle>
-        </ownedStyle>
-        <actualMapping xmi:type="description_1:EdgeMapping" href="platform:/plugin/org.eclipse.emf.ecoretools.design/description/ecore.odesign#//@ownedViewpoints[name='Design']/@ownedRepresentations[name='Entities']/@defaultLayer/@edgeMappings[name='EC_EReference']"/>
       </ownedDiagramElements>
       <ownedDiagramElements xmi:type="diagram:DEdge" xmi:id="_MRA-4PcvEeWTtu4T45OGBw" name="[0..*] dependencies" sourceNode="_GNa7YPJmEeWBJobfaOLsNw" targetNode="_GNa7YPJmEeWBJobfaOLsNw">
         <target xmi:type="ecore:EReference" href="TypeCheckerHelper.ecore#//TypeVariable/dependencies"/>
