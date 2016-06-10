@@ -629,62 +629,114 @@ public abstract class TypeCheckerExpression extends TypeCheckerDataType {
 			}
 		}
 	}
+	
+	private class MethodCallTyper {
+		private final Environment gamma;
+		private final MethodCall mc;
+		private final String methodName;
+		private final DataType selfType;
+		private final Type_expression selfP;
+		private final List<Pair<Expression,Pair<Type_expression, DataType>>> params;
+		
+		private int tecRank;
+		private TypeEnvContent tec;
+		private int mRank;
+		private FunctionDecl decl;
+		
+		public MethodCallTyper(Environment gamma, MethodCall mc, String methodName, DataType selfType, Type_expression selfP,
+				List<Pair<Expression, Pair<Type_expression, DataType>>> params) {
+			this.gamma = gamma;
+			this.mc = mc;
+			this.methodName = methodName;
+			this.selfType = selfType;
+			this.selfP = selfP;
+			this.params = params;
+		}
+		
+		private Optional<DataType> lookupAndReturnType() {
+			DataType sSelfType = getSubstitute(selfType);
+			List<DataType> sParamsTypes = params.stream().map(Pair::getB).map(Pair::getB)
+					.map(TypeCheckerExpression.this::getSubstitute)
+					.collect(Collectors.toList());
+			Optional<IntPair<Pair<TypeEnvContent, IntPair<FunctionDecl>>>> method = lookupForMethod(gamma, sSelfType,
+					methodName, sParamsTypes);
+			if(!method.isPresent()) {
+				noSuchMethod(mc, sSelfType, methodName, sParamsTypes);
+			} else {
+				IntPair<Pair<TypeEnvContent, IntPair<FunctionDecl>>> m = method.get();
+				tecRank = m.getA();
+				tec = m.getB().getA();
+				mRank = m.getB().getB().getA();
+				decl = m.getB().getB().getB();
+				saveBinder(mc, decl);
+			}
+			return method.map(IntPair::getB).map(Pair::getB).map(IntPair::getB).map(FunctionDecl::getType);
+		}
+		
+		public Optional<DataType> computeReturnType() {
+			if (streamTypes().anyMatch(TypeInferenceSolver::containsVariable)) {
+				TypeVariable v = createFreshTypeVariable(mc, null, (lb,ub) -> lookupAndReturnType());
+				streamTypes()
+				.flatMap(TypeInferenceSolver::streamVariables)
+				.forEach((x) -> inference.addDependency(v, v));
+				return Optional.of(v);
+			} else {
+				return lookupAndReturnType();
+			}
+		}
+
+		private Stream<DataType> streamTypes() {
+			return Stream.of(Stream.of(selfType), params.stream().map(Pair::getB).map(Pair::getB))
+			.flatMap((i) -> i);
+		}
+		
+		public Type_expression_node computeProof() {
+			return proofTerm(Type_expression_node.class, this::buildProof, streamTypes());
+		}
+		
+		private Type_expression_node buildProof() {
+			DataType sSelfType = getSubstitute(selfType);
+			return createType_expression_MethodCall(gamma, mc.getObject(), sSelfType,
+					tec.getDataTypeDecl(),
+					getSubstitute(decl.getData().getType()),
+					tec.getMethods(),
+					methodName,
+					decl.getParameters(),
+					decl.getType(),
+					mc.getParameters(),
+					selfP,
+					createEx_intro(BigInteger.valueOf(tecRank), createReflexivity()),
+					subtype(selfType, decl.getData().getType(), mc, null).orElse(null),
+					createEx_intro(BigInteger.valueOf(mRank),
+							createConj(createReflexivity(), createConj(createReflexivity(), createConj(createReflexivity(), createReflexivity())))),
+					proveForall2(decl.getParameters(),
+							mc.getParameters(),
+							(fp,p) -> {
+								Pair<Type_expression, DataType> tp = ListUtils.assoc(params, p);
+								Type_expression pp = tp.getA();
+								DataType pt = getSubstitute(tp.getB());
+								return createEx_intro(fp.getType(),
+									createConj(createReflexivity(),
+											createEx_intro(pt,
+													createConj(pp,
+															subtype(pt, fp.getType(), mc, null).orElse(null)))));
+								}));
+		}
+	}
 
 	private Pair<Type_expression_node, DataType> type_expression_node_MethodCall(Environment gamma, MethodCall mc) {
-		if (mc.getMethod() != null) {
+		String methodName = mc.getMethod();
+		if (methodName != null) {
 			Pair<Type_expression, DataType> self = type_expression(gamma, mc.getObject());
 			List<Pair<Expression,Pair<Type_expression, DataType>>> params = ListExtensions.map(mc.getParameters(), (p) -> new Pair<>(p, type_expression(gamma, p)));
-			if(self.getA() != null && params.stream().allMatch((p) -> p.getA() != null && p.getB() != null)) {
-				Stream<IntPair<TypeEnvContent>> indexedTypes = 
-						StreamUtils.indexed(gamma.stream())
-					.flatMap((i) -> {
-						if (i.getB() instanceof TypeEnvContent) {
-							return Stream.of(new IntPair<>(i.getA(), (TypeEnvContent)i.getB()));
-						} else {
-							return Stream.empty();
-						}
-					});
-				Stream<IntPair<TypeEnvContent>> compatibleIndexedTypes = 
-						indexedTypes
-						.filter((i) -> isSubtype(self.getB(), i.getB().getDataType()));
-				Optional<IntPair<Pair<TypeEnvContent,IntPair<FunctionDecl>>>> method =
-						compatibleIndexedTypes
-						.flatMap((i) -> StreamUtils.indexed(i.getB().getMethods().stream())
-								.filter((m) -> m.getB().getName().equals(mc.getMethod()))
-								.filter((m) -> params.size() == m.getB().getParameters().size())
-								.filter((m) -> StreamUtils.zip(params.stream().map(Pair::getB), m.getB().getParameters().stream())
-										.allMatch((p) -> isSubtype(p.getA().getB(), p.getB().getType())))
-								.map((m) -> new IntPair<>(i.getA(), new Pair<>(i.getB(), m))))
-						.findFirst();
-				if(method.isPresent()) {
-					IntPair<Pair<TypeEnvContent,IntPair<FunctionDecl>>> m = method.get();
-					saveBinder(mc, m.getB().getB().getB());
-					return new Pair<>(saveProof(mc,createType_expression_MethodCall(gamma, mc.getObject(), self.getB(),
-								m.getB().getA().getDataTypeDecl(),
-								m.getB().getB().getB().getData().getType(),
-								m.getB().getA().getMethods(),
-								mc.getMethod(),
-								m.getB().getB().getB().getParameters(),
-								m.getB().getB().getB().getType(),
-								mc.getParameters(),
-								self.getA(),
-								createEx_intro(BigInteger.valueOf(m.getA()), createReflexivity()),
-								subtype(self.getB(), m.getB().getB().getB().getData().getType(), mc, null).orElse(null),
-								createEx_intro(BigInteger.valueOf(m.getB().getB().getA()),
-										createConj(createReflexivity(), createConj(createReflexivity(), createConj(createReflexivity(), createReflexivity())))),
-								proveForall2(m.getB().getB().getB().getParameters(),
-										mc.getParameters(),
-										(fp,p) -> {
-											Pair<Type_expression, DataType> tp = ListUtils.assoc(params, p);
-											return createEx_intro(fp.getType(),
-												createConj(createReflexivity(),
-														createEx_intro(tp.getB(),
-																createConj(tp.getA(),
-																		subtype(tp.getB(), fp.getType(), mc, null).orElse(null)))));
-											}))),
-							saveType(mc, m.getB().getB().getB().getType()));
+			DataType selfType = self.getB();
+			if(self.getA() != null && selfType != null && params.stream().allMatch((p) -> p.getA() != null && p.getB() != null)) {
+				MethodCallTyper mct = new MethodCallTyper(gamma, mc, methodName, selfType, self.getA(), params);
+				Optional<DataType> oret = mct.computeReturnType();
+				if(oret.isPresent()) {
+					DataType ret = oret.get();
+					return new Pair<>(saveProof(mc, mct.computeProof()), saveType(mc, ret));
 				} else {
-					error("No applicable method named `" + mc.getMethod() + "'", mc, SosADLPackage.Literals.METHOD_CALL__METHOD);
 					return new Pair<>(null, null);
 				}
 			} else {
@@ -694,6 +746,38 @@ public abstract class TypeCheckerExpression extends TypeCheckerDataType {
 			error("A method name must be provided", mc, SosADLPackage.Literals.METHOD_CALL__METHOD);
 			return new Pair<>(null, null);
 		}
+	}
+
+	private void noSuchMethod(MethodCall mc, DataType sSelfType, String methodName, List<DataType> sParamsTypes) {
+		error("No method compatible with signature: `" + TypeInferenceSolver.typeToString(sSelfType) + "::" + methodName
+				+ "(" + sParamsTypes.stream().map(TypeInferenceSolver::typeToString).collect(Collectors.joining(", ")) + ")'",
+				mc, SosADLPackage.Literals.METHOD_CALL__METHOD);
+	}
+
+	private Optional<IntPair<Pair<TypeEnvContent, IntPair<FunctionDecl>>>> lookupForMethod(Environment gamma,
+			DataType selfType, String methodName, List<DataType> params) {
+		Stream<IntPair<TypeEnvContent>> indexedTypes = 
+				StreamUtils.indexed(gamma.stream())
+			.flatMap((i) -> {
+				if (i.getB() instanceof TypeEnvContent) {
+					return Stream.of(new IntPair<>(i.getA(), (TypeEnvContent)i.getB()));
+				} else {
+					return Stream.empty();
+				}
+			});
+		Stream<IntPair<TypeEnvContent>> compatibleIndexedTypes = 
+				indexedTypes
+				.filter((i) -> isSubtype(selfType, i.getB().getDataType()));
+		Optional<IntPair<Pair<TypeEnvContent,IntPair<FunctionDecl>>>> method =
+				compatibleIndexedTypes
+				.flatMap((i) -> StreamUtils.indexed(i.getB().getMethods().stream())
+						.filter((m) -> m.getB().getName().equals(methodName))
+						.filter((m) -> params.size() == m.getB().getParameters().size())
+						.filter((m) -> StreamUtils.zip(params.stream(), m.getB().getParameters().stream())
+								.allMatch((p) -> isSubtype(p.getA(), p.getB().getType())))
+						.map((m) -> new IntPair<>(i.getA(), new Pair<>(i.getB(), m))))
+				.findFirst();
+		return method;
 	}
 
 	private Pair<Type_expression_node, DataType> type_expression_node_IdentExpression(Environment gamma, IdentExpression e) {

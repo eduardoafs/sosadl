@@ -67,7 +67,11 @@ public abstract class TypeCheckerInference extends TypeCheckerUtils {
 	}
 
 	protected <T extends ProofTerm> T proofTerm(Class<T> itf, Supplier<T> factory, DataType... x) {
-		if(Stream.of(x).anyMatch(TypeInferenceSolver::containsVariable)) {
+		return proofTerm(itf, factory, Stream.of(x));
+	}
+
+	protected <T extends ProofTerm> T proofTerm(Class<T> itf, Supplier<T> factory, Stream<DataType> x) {
+		if(x.anyMatch(TypeInferenceSolver::containsVariable)) {
 			ProofTermPlaceHolder<T> ptph = ProofTermPlaceHolder.create(itf);
 			delayedTasks.add(() -> {
 				ptph.fillWith(factory.get());
