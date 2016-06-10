@@ -65,12 +65,13 @@ import org.archware.sosadl.validation.typing.impl.TypeEnvContent;
 import org.archware.sosadl.validation.typing.impl.VariableEnvContent;
 import org.archware.sosadl.validation.typing.interp.InterpInZ;
 import org.archware.sosadl.validation.typing.proof.*;
+import org.archware.utils.DecaFunction;
 import org.archware.utils.IntPair;
 import org.archware.utils.ListUtils;
 import org.archware.utils.MapUtils;
-import org.archware.utils.NonaFunction;
 import org.archware.utils.OptionalUtils;
 import org.archware.utils.Pair;
+import org.archware.utils.PentaFunction;
 import org.archware.utils.StreamUtils;
 import org.archware.utils.TreDecaFunction;
 import org.archware.utils.TriConsumer;
@@ -428,7 +429,6 @@ public class TypeChecker extends AccumulatingValidator {
 	private Optional<Subtype> subtype(DataType a, DataType b, EObject target, EStructuralFeature targetForError) {
 		return subtype(a, b, (m) -> error(m, target, targetForError));
 	}
-
 	private Optional<Subtype> subtype(DataType a, DataType b, Consumer<String> error) {
 		if(EcoreUtil.equals(a, b)) {
 			return Optional.of(createSubtype_refl(a));
@@ -546,286 +546,6 @@ public class TypeChecker extends AccumulatingValidator {
 		}
 	}
 	
-	private final static UnaryTypeInfo<?> unopSame = new UnaryTypeInfo<>("+", RangeType.class, "range type", () -> createRangeType(0,0),
-			(g, e, p1, p2) -> createType_expression_Same(g, e.getRight(), p1.getB(),
-					p2.getB().getVmin(), p2.getB().getVmax(), p1.getA(), p2.getA()),
-			(g, e, p1, p2) -> p2.getB());
-	
-	private final static UnaryTypeInfo<?> unopOpposite = new UnaryTypeInfo<>("-", RangeType.class, "range type", () -> createRangeType(0,0),
-			(g, e, p1, p2) ->  createType_expression_Opposite(g, ((UnaryExpression)e).getRight(), p1.getB(),
-					p2.getB().getVmin(), p2.getB().getVmax(), p1.getA(), p2.getA()),
-			(g, e, p1, p2) -> createRangeType(createOpposite(p2.getB().getVmax()),
-					createOpposite(p2.getB().getVmin())));
-	
-	private final static UnaryTypeInfo<?> unopNot = new UnaryTypeInfo<>("not", BooleanType.class, "boolean type", () -> createBooleanType(),
-			(g, e, p1, p2) -> createType_expression_Not(g, e.getRight(), p1.getB(), p1.getA(), p2.getA()),
-			(g, e, p1, p2) -> p2.getB());
-
-	private final static UnaryTypeInfo<?>[] unaryTypeInformations = new UnaryTypeInfo[] {
-			unopSame,
-			unopOpposite,
-			unopNot
-	};
-	
-	private final static BinaryTypeInfo<?, ?, ?> binopAdd = new BinaryTypeInfo<>("+",
-			RangeType.class, "range type", () -> createRangeType(0, 0),
-			RangeType.class, "range type", () -> createRangeType(0, 0),
-			(g, e, p1, p2, p3, p4, r) -> createType_expression_Add(g,
-					e.getLeft(), p1.getB(), p2.getB().getVmin(), p2.getB().getVmax(),
-					e.getRight(), p3.getB(), p4.getB().getVmin(), p4.getB().getVmax(),
-					p1.getA(), p2.getA(), p3.getA(), p4.getA()),
-			(g, e, p1, p2, p3, p4) -> createRangeType(
-					createBinaryExpression(p2.getB().getVmin(), "+", p4.getB().getVmin()),
-					createBinaryExpression(p2.getB().getVmax(), "+", p4.getB().getVmax())));
-	
-	private final static BinaryTypeInfo<?, ?, ?> binopSub = new BinaryTypeInfo<>("-",
-			RangeType.class, "range type", () -> createRangeType(0, 0),
-			RangeType.class, "range type", () -> createRangeType(0, 0),
-			(g, e, p1, p2, p3, p4, r) -> createType_expression_Sub(g,
-					e.getLeft(), p1.getB(), p2.getB().getVmin(), p2.getB().getVmax(),
-					e.getRight(), p3.getB(), p4.getB().getVmin(), p4.getB().getVmax(),
-					p1.getA(), p2.getA(), p3.getA(), p4.getA()),
-			(g, e, p1, p2, p3, p4) -> createRangeType(
-					createBinaryExpression(p2.getB().getVmin(), "-", p4.getB().getVmax()),
-					createBinaryExpression(p2.getB().getVmax(), "-", p4.getB().getVmin())));
-	
-	private final BinaryTypeInfo<?, ?, ?> binopMul = new BinaryTypeInfo<>("*",
-			RangeType.class, "range type", () -> createRangeType(0, 0),
-			RangeType.class, "range type", () -> createRangeType(0, 0),
-			this::binopMulProver,
-			this::binopMulBuilder);
-
-	private Type_expression_node binopMulProver(Environment g, BinaryExpression e, Pair<Type_expression, DataType> p1, Pair<Subtype, RangeType> p2, Pair<Type_expression, DataType> p3, Pair<Subtype, RangeType> p4, RangeType r) {
-		Expression c1 = createBinaryExpression(p2.getB().getVmin(), "*", p4.getB().getVmin());
-		Expression c2 = createBinaryExpression(p2.getB().getVmin(), "*", p4.getB().getVmax());
-		Expression c3 = createBinaryExpression(p2.getB().getVmax(), "*", p4.getB().getVmin());
-		Expression c4 = createBinaryExpression(p2.getB().getVmax(), "*", p4.getB().getVmax());
-		return createType_expression_Mul(g,
-				e.getLeft(), p1.getB(), p2.getB().getVmin(), p2.getB().getVmax(),
-				e.getRight(), p3.getB(), p4.getB().getVmin(), p4.getB().getVmax(),
-				r.getVmin(), r.getVmax(), p1.getA(), p2.getA(), p3.getA(), p4.getA(),
-				expression_le(r.getVmin(), c1),
-				expression_le(r.getVmin(), c2),
-				expression_le(r.getVmin(), c3),
-				expression_le(r.getVmin(), c4),
-				expression_le(c1, r.getVmax()),
-				expression_le(c2, r.getVmax()),
-				expression_le(c3, r.getVmax()),
-				expression_le(c4, r.getVmax()));
-	}
-
-	private RangeType binopMulBuilder(Environment g, BinaryExpression e, Pair<Type_expression, DataType> p1, Pair<Subtype, RangeType> p2, Pair<Type_expression, DataType> p3, Pair<Subtype, RangeType> p4) {
-		Expression c1 = createBinaryExpression(p2.getB().getVmin(), "*", p4.getB().getVmin());
-		Expression c2 = createBinaryExpression(p2.getB().getVmin(), "*", p4.getB().getVmax());
-		Expression c3 = createBinaryExpression(p2.getB().getVmax(), "*", p4.getB().getVmin());
-		Expression c4 = createBinaryExpression(p2.getB().getVmax(), "*", p4.getB().getVmax());
-		Expression mi = min(min(c1, c2), min(c3, c4));
-		Expression ma = max(max(c1, c2), max(c3, c4));
-		return createRangeType(mi, ma);
-	}
-
-	private final BinaryTypeInfo<?, ?, ?> binopDiv = new BinaryTypeInfo<>("/",
-			RangeType.class, "range type", () -> createRangeType(0, 0),
-			RangeType.class, "range type", () -> createRangeType(0, 0),
-			this::binopDivProver,
-			this::binopDivBuilder);
-
-	private Type_expression_node binopDivProver(Environment g, BinaryExpression e, Pair<Type_expression, DataType> p1, Pair<Subtype, RangeType> p2, Pair<Type_expression, DataType> p3, Pair<Subtype, RangeType> p4, RangeType r) {
-		if(isLe(createIntegerValue(1), p4.getB().getVmin())) {
-			Expression c1 = createBinaryExpression(p2.getB().getVmin(), "/", p4.getB().getVmin());
-			Expression c2 = createBinaryExpression(p2.getB().getVmin(), "/", p4.getB().getVmax());
-			Expression c3 = createBinaryExpression(p2.getB().getVmax(), "/", p4.getB().getVmin());
-			Expression c4 = createBinaryExpression(p2.getB().getVmax(), "/", p4.getB().getVmax());
-			return createType_expression_Div_pos(g,
-					e.getLeft(), p1.getB(), p2.getB().getVmin(), p2.getB().getVmax(),
-					e.getRight(), p3.getB(), p4.getB().getVmin(), p4.getB().getVmax(),
-					r.getVmin(), r.getVmax(), p1.getA(), p2.getA(), p3.getA(), p4.getA(),
-					expression_le(createIntegerValue(1), p4.getB().getVmin()),
-					expression_le(r.getVmin(), c1),
-					expression_le(r.getVmin(), c2),
-					expression_le(r.getVmin(), c3),
-					expression_le(r.getVmin(), c4),
-					expression_le(c1, r.getVmax()),
-					expression_le(c2, r.getVmax()),
-					expression_le(c3, r.getVmax()),
-					expression_le(c4, r.getVmax()));
-		} else if (isLe(p4.getB().getVmax(), createOpposite(createIntegerValue(1)))) {
-			Expression c1 = createBinaryExpression(p2.getB().getVmin(), "/", p4.getB().getVmin());
-			Expression c2 = createBinaryExpression(p2.getB().getVmin(), "/", p4.getB().getVmax());
-			Expression c3 = createBinaryExpression(p2.getB().getVmax(), "/", p4.getB().getVmin());
-			Expression c4 = createBinaryExpression(p2.getB().getVmax(), "/", p4.getB().getVmax());
-			return createType_expression_Div_neg(g,
-					e.getLeft(), p1.getB(), p2.getB().getVmin(), p2.getB().getVmax(),
-					e.getRight(), p3.getB(), p4.getB().getVmin(), p4.getB().getVmax(),
-					r.getVmin(), r.getVmax(), p1.getA(), p2.getA(), p3.getA(), p4.getA(),
-					expression_le(p4.getB().getVmax(), createOpposite(createIntegerValue(1))),
-					expression_le(r.getVmin(), c1),
-					expression_le(r.getVmin(), c2),
-					expression_le(r.getVmin(), c3),
-					expression_le(r.getVmin(), c4),
-					expression_le(c1, r.getVmax()),
-					expression_le(c2, r.getVmax()),
-					expression_le(c3, r.getVmax()),
-					expression_le(c4, r.getVmax()));
-		} else {
-			error("The divisor must be different from 0", e.getRight(), null);
-			return null;
-		}
-	}
-	
-	private RangeType binopDivBuilder(Environment g, BinaryExpression e, Pair<Type_expression, DataType> p1, Pair<Subtype, RangeType> p2, Pair<Type_expression, DataType> p3, Pair<Subtype, RangeType> p4) {
-		if(isLe(createIntegerValue(1), p4.getB().getVmin()) || isLe(p4.getB().getVmax(), createOpposite(createIntegerValue(1)))) {
-			Expression c1 = createBinaryExpression(p2.getB().getVmin(), "/", p4.getB().getVmin());
-			Expression c2 = createBinaryExpression(p2.getB().getVmin(), "/", p4.getB().getVmax());
-			Expression c3 = createBinaryExpression(p2.getB().getVmax(), "/", p4.getB().getVmin());
-			Expression c4 = createBinaryExpression(p2.getB().getVmax(), "/", p4.getB().getVmax());
-			Expression mi = min(min(c1, c2), min(c3, c4));
-			Expression ma = max(max(c1, c2), max(c3, c4));
-			return createRangeType(mi, ma);
-		} else {
-			error("The divisor must be different from 0", e.getRight(), null);
-			return null;
-		}
-	}
-
-	private final BinaryTypeInfo<?, ?, ?> binopMod = new BinaryTypeInfo<>("mod",
-			RangeType.class, "range type", () -> createRangeType(0, 0),
-			RangeType.class, "range type", () -> createRangeType(0, 0),
-			this::binopModProver,
-			this::binopModBuilder);
-
-	private Type_expression_node binopModProver(Environment g, BinaryExpression e, Pair<Type_expression, DataType> p1, Pair<Subtype, RangeType> p2, Pair<Type_expression, DataType> p3, Pair<Subtype, RangeType> p4, RangeType r) {
-		Range_modulo_min min = range_modulo_min(
-				p2.getB().getVmin(), p2.getB().getVmax(),
-				p4.getB().getVmin(), p4.getB().getVmax(),
-				() -> createRange_modulo_min_pos(p2.getB().getVmin(), p2.getB().getVmax(),
-						p4.getB().getVmin(), p4.getB().getVmax(),
-						r.getVmin(),
-						expression_le(createIntegerValue(1), p4.getB().getVmin()),
-						expression_le(r.getVmin(), createBinaryExpression(createIntegerValue(1), "-", p4.getB().getVmax()))),
-				() -> createRange_modulo_min_zero(p2.getB().getVmin(), p2.getB().getVmax(),
-						p4.getB().getVmin(), p4.getB().getVmax(),
-						r.getVmin(),
-						expression_le(createIntegerValue(0), p2.getB().getVmin()),
-						expression_le(r.getVmin(), createIntegerValue(0))),
-				() -> createRange_modulo_min_neg(p2.getB().getVmin(), p2.getB().getVmax(),
-						p4.getB().getVmin(), p4.getB().getVmax(),
-						r.getVmin(),
-						expression_le(p4.getB().getVmax(), createOpposite(createIntegerValue(1))),
-						expression_le(r.getVmin(), createBinaryExpression(p4.getB().getVmin(), "+", createIntegerValue(1)))),
-				() -> { error("The divisor must be different from 0", e.getRight(), null); return null; });
-		if(min != null) {
-			Range_modulo_max max = range_modulo_max(
-					p2.getB().getVmin(), p2.getB().getVmax(),
-					p4.getB().getVmin(), p4.getB().getVmax(),
-					() -> createRange_modulo_max_pos(p2.getB().getVmin(), p2.getB().getVmax(),
-							p4.getB().getVmin(), p4.getB().getVmax(),
-							r.getVmax(),
-							expression_le(createIntegerValue(1), p4.getB().getVmin()),
-							expression_le(createBinaryExpression(p4.getB().getVmax(), "-", createIntegerValue(1)), r.getVmax())),
-					() -> createRange_modulo_max_zero(p2.getB().getVmin(), p2.getB().getVmax(),
-							p4.getB().getVmin(), p4.getB().getVmax(),
-							r.getVmax(),
-							expression_le(p2.getB().getVmax(), createIntegerValue(0)),
-							expression_le(createIntegerValue(0), r.getVmax())),
-					() -> createRange_modulo_max_neg(p2.getB().getVmin(), p2.getB().getVmax(),
-							p4.getB().getVmin(), p4.getB().getVmax(),
-							r.getVmax(),
-							expression_le(p4.getB().getVmax(), createOpposite(createIntegerValue(1))),
-							expression_le(createBinaryExpression(createOpposite(createIntegerValue(1)), "-", p4.getB().getVmin()), r.getVmax())),
-					() -> { error("The divisor must be different from 0", e.getRight(), null); return null; });
-			if(max != null) {
-				return createType_expression_Mod(g,
-						e.getLeft(), p1.getB(), p2.getB().getVmin(), p2.getB().getVmax(),
-						e.getRight(), p3.getB(), p4.getB().getVmin(), p4.getB().getVmax(),
-						r.getVmin(), r.getVmax(),
-						p1.getA(), p2.getA(), p3.getA(), p4.getA(), min, max);
-			} else {
-				return null;
-			}
-		} else {
-			return null;
-		}
-	}
-
-	private RangeType binopModBuilder(Environment g, BinaryExpression e, Pair<Type_expression, DataType> p1, Pair<Subtype, RangeType> p2, Pair<Type_expression, DataType> p3, Pair<Subtype, RangeType> p4) {
-		Expression min = range_modulo_min(
-				p2.getB().getVmin(), p2.getB().getVmax(),
-				p4.getB().getVmin(), p4.getB().getVmax(),
-				() -> createBinaryExpression(createIntegerValue(1), "-", p4.getB().getVmax()),
-				() -> createIntegerValue(0),
-				() -> createBinaryExpression(p4.getB().getVmin(), "+", createIntegerValue(1)),
-				() -> { error("The divisor must be different from 0", e.getRight(), null); return null; });
-		if(min != null) {
-			Expression max = range_modulo_max(
-					p2.getB().getVmin(), p2.getB().getVmax(),
-					p4.getB().getVmin(), p4.getB().getVmax(),
-					() -> createBinaryExpression(p4.getB().getVmax(), "-", createIntegerValue(1)),
-					() -> createIntegerValue(0),
-					() -> createBinaryExpression(createOpposite(createIntegerValue(1)), "-", p4.getB().getVmin()),
-					() -> { error("The divisor must be different from 0", e.getRight(), null); return null; });
-			if(max != null) {
-				return createRangeType(min, max);
-			} else {
-				return null;
-			}
-		} else {
-			return null;
-		}
-	}
-
-	private static BinaryTypeInfo<?, ?, ?> makeBooleanBinop(String op, NonaFunction<Environment, Expression, DataType, Expression, DataType, Type_expression, Subtype, Type_expression, Subtype, Type_expression_node> constructor) {
-		return new BinaryTypeInfo<>(op,
-				BooleanType.class, "boolean type", () -> createBooleanType(),
-				BooleanType.class, "boolean type", () -> createBooleanType(),
-				(g, e, p1, p2, p3, p4, r) -> constructor.apply(g,
-						e.getLeft(), p1.getB(),
-						e.getRight(), p3.getB(),
-						p1.getA(), p2.getA(), p3.getA(), p4.getA()),
-				(g, e, p1, p2, p3, p4) -> createBooleanType());
-	}
-
-	private static BinaryTypeInfo<?, ?, ?> makeCmpBinop(String op, TreDecaFunction<Environment, Expression, DataType, Expression, Expression, Expression, DataType, Expression, Expression, Type_expression, Subtype, Type_expression, Subtype, Type_expression_node> constructor) {
-		return 			new BinaryTypeInfo<>(op,
-				RangeType.class, "range type", () -> createRangeType(0, 0),
-				RangeType.class, "range type", () -> createRangeType(0, 0),
-				(g, e, p1, p2, p3, p4, r) -> constructor.apply(g,
-						e.getLeft(), p1.getB(), p2.getB().getVmin(), p2.getB().getVmax(),
-						e.getRight(), p3.getB(), p4.getB().getVmin(), p4.getB().getVmax(),
-						p1.getA(), p2.getA(), p3.getA(), p4.getA()),
-				(g, e, p1, p2, p3, p4) -> createBooleanType());
-	}
-
-	private final static BinaryTypeInfo<?, ?, ?> binopImplies = makeBooleanBinop("implies", TypeChecker::createType_expression_Implies);
-	private final static BinaryTypeInfo<?, ?, ?> binopOr = makeBooleanBinop("or", TypeChecker::createType_expression_Or);
-	private final static BinaryTypeInfo<?, ?, ?> binopXor = makeBooleanBinop("xor", TypeChecker::createType_expression_Xor);
-	private final static BinaryTypeInfo<?, ?, ?> binopAnd = makeBooleanBinop("and", TypeChecker::createType_expression_And);
-	
-	private final static BinaryTypeInfo<?, ?, ?> binopEqual = makeCmpBinop("=", TypeChecker::createType_expression_Equal);
-	private final static BinaryTypeInfo<?, ?, ?> binopDiff = makeCmpBinop("<>", TypeChecker::createType_expression_Diff);
-	private final static BinaryTypeInfo<?, ?, ?> binopLt = makeCmpBinop("<", TypeChecker::createType_expression_Lt);
-	private final static BinaryTypeInfo<?, ?, ?> binopLe = makeCmpBinop("<=", TypeChecker::createType_expression_Le);
-	private final static BinaryTypeInfo<?, ?, ?> binopGt = makeCmpBinop(">", TypeChecker::createType_expression_Gt);
-	private final static BinaryTypeInfo<?, ?, ?> binopGe = makeCmpBinop(">=", TypeChecker::createType_expression_Ge);
-	
-	private final BinaryTypeInfo<?, ?, ?>[] binaryTypeInformations = new BinaryTypeInfo[] {
-			binopAdd,
-			binopSub,
-			binopMul,
-			binopDiv,
-			binopMod,
-			binopImplies,
-			binopOr,
-			binopXor,
-			binopAnd,
-			binopEqual,
-			binopDiff,
-			binopLt,
-			binopLe,
-			binopGt,
-			binopGe
-	};
-	
 	private <T> T range_modulo_min(Expression lmin, Expression lmax, Expression rmin, Expression rmax, Supplier<T> pos, Supplier<T> zero, Supplier<T> neg, Supplier<T> divByZero) {
 		if(isLe(createIntegerValue(1), rmin)) {
 			if(isLe(createIntegerValue(0), lmin)) {
@@ -878,40 +598,458 @@ public class TypeChecker extends AccumulatingValidator {
 		}
 	}
 	
-	private <T extends DataType> Pair<Type_expression_node, DataType> typeUnaryExpression(Environment gamma, UnaryExpression e, UnaryTypeInfo<T> i) {
-		Pair<Type_expression, DataType> p1 = type_expression(gamma, e.getRight());
-		if(p1.getA() != null && p1.getB() != null) {
-			Pair<Subtype, T> p2 = smallestSuperType(i.getClazz(), i.getLabel(), i.getIfNone().get(), p1.getB(), e, SosADLPackage.Literals.UNARY_EXPRESSION__RIGHT);
-			if(p2.getA() != null && p2.getB() != null) {
-				return new Pair<>(saveProof(e, i.getCreateProofTerm().apply(gamma, e, p1, p2)), saveType(e, i.getCreateType().apply(gamma, e, p1, p2)));
-			} else {
-				return new Pair<>(null, null);
-			}
-		} else {
-			return new Pair<>(null, null);
+	private static abstract class AbstractUnaryTypeInfo<P extends Type_expression_node> extends StringBasedUnaryTypeInfo<P> {
+		private final PentaFunction<Environment, Expression, DataType, Type_expression, Subtype, P> prover;
+			
+		public AbstractUnaryTypeInfo(String operator, PentaFunction<Environment, Expression, DataType, Type_expression, Subtype, P> prover) {
+			super(operator);
+			this.prover = prover;
+		}
+
+		@Override
+		public P prove(Environment gamma, UnaryExpression e, Type_expression pOperand, DataType tOperand) {
+			return prover.apply(gamma, e.getRight(), tOperand, pOperand, createSubtype_refl(tOperand));
 		}
 	}
 	
-	private <L extends DataType, R extends DataType, X extends DataType> Pair<Type_expression_node, DataType> typeBinaryExpression(Environment gamma, BinaryExpression e, BinaryTypeInfo<L, R, X> i) {
-		Pair<Type_expression, DataType> p1 = type_expression(gamma, e.getLeft());
-		Pair<Type_expression, DataType> p3 = type_expression(gamma, e.getRight());
-		if(p1.getA() != null && p1.getB() != null && p3.getA() != null && p3.getB() != null) {
-			Pair<Subtype, L> p2 = smallestSuperType(i.getlClass(), i.getlLabel(), i.getlIfNone().get(), p1.getB(), e, SosADLPackage.Literals.BINARY_EXPRESSION__LEFT);
-			Pair<Subtype, R> p4 = smallestSuperType(i.getrClass(), i.getrLabel(), i.getrIfNone().get(), p3.getB(), e, SosADLPackage.Literals.BINARY_EXPRESSION__RIGHT);
-			if(p2.getA() != null && p2.getB() != null && p4.getA() != null && p4.getB() != null) {
-				X r = i.createType.apply(gamma, e, p1, p2, p3, p4);
-				if(r != null) {
-					return new Pair<>(saveProof(e, i.createProofTerm.apply(gamma, e, p1, p2, p3, p4, r)), saveType(e, r));
-				} else {
-					return new Pair<>(null, null);
-				}
-			} else {
-				return new Pair<>(null, null);
-			}
-		} else {
-			return new Pair<>(null, null);
+	private class BooleanUnaryTypeInfo<P extends Type_expression_node> extends AbstractUnaryTypeInfo<P> {
+		public BooleanUnaryTypeInfo(String operator, PentaFunction<Environment, Expression, DataType, Type_expression, Subtype, P> prover) {
+			super(operator, prover);
+		}
+		
+		@Override
+		public Optional<DataType> immediateType(UnaryExpression e, DataType operand) {
+			inference.addConstraint(operand, createBooleanType(), e, SosADLPackage.Literals.UNARY_EXPRESSION__RIGHT);
+			return Optional.of(TypeChecker.createBooleanType());
 		}
 	}
+	
+	private class SynthetizingUnaryTypeInfo<P extends Type_expression_node> extends AbstractUnaryTypeInfo<P> {
+		private final Function<DataType, Optional<DataType>> solver;
+		
+		public SynthetizingUnaryTypeInfo(String operator,
+				PentaFunction<Environment, Expression, DataType, Type_expression, Subtype, P> prover,
+				Function<DataType, Optional<DataType>> solver) {
+			super(operator, prover);
+			this.solver = solver;
+		}
+		
+		@Override
+		public Optional<DataType> immediateType(UnaryExpression e, DataType operand) {
+			if(TypeInferenceSolver.containsVariable(operand)) {
+				TypeVariable v = inference.createFreshTypeVariable((lb,ub) -> solver.apply(getSubstitute(operand)), e, null);
+				TypeInferenceSolver.streamVariables(operand).forEach((x) -> inference.addDependency(v, x));
+				return Optional.of(v);
+			} else {
+				return solver.apply(operand);
+			}
+		}
+	}
+	
+	private final UnaryTypeInfo2<?> unop2Same = new SynthetizingUnaryTypeInfo<>("+",
+			(g,e,t,p,s) -> createType_expression_Same(g, e, t, ((RangeType)t).getVmin(), ((RangeType)t).getVmax(), p, s),
+			(t) -> Optional.ofNullable(t).filter((x) -> x instanceof RangeType));
+	
+	private final UnaryTypeInfo2<?> unop2Opposite = new SynthetizingUnaryTypeInfo<>("-",
+			(g,e,t,p,s) -> createType_expression_Opposite(g, e, t, ((RangeType)t).getVmin(), ((RangeType)t).getVmax(), p, s),
+			(t) -> Optional.ofNullable(t)
+			.filter((x) -> x instanceof RangeType)
+			.map((x) -> createRangeType(createOpposite(((RangeType)x).getVmax()),
+					createOpposite(((RangeType)x).getVmin()))));
+	
+	private final UnaryTypeInfo2<?> unop2Not = new BooleanUnaryTypeInfo<>("not",
+			TypeChecker::createType_expression_Not);
+
+	private final UnaryTypeInfo2<?>[] unaryTypeInformations2 = new UnaryTypeInfo2[] {
+			unop2Same,
+			unop2Opposite,
+			unop2Not
+	};
+
+	private static abstract class AbstractBinaryTypeInfo<P extends Type_expression_node> extends StringBasedBinaryTypeInfo<P> {
+		private final DecaFunction<Environment,
+		Expression, DataType, Type_expression, Subtype,
+		Expression, DataType, Type_expression, Subtype,
+		DataType, P> prover;
+			
+		public AbstractBinaryTypeInfo(String operator, DecaFunction<Environment, Expression, DataType, Type_expression, Subtype, Expression, DataType, Type_expression, Subtype, DataType, P> prover) {
+			super(operator);
+			this.prover = prover;
+		}
+
+		@Override
+		public P prove(Environment gamma, BinaryExpression e, Type_expression pLeft, DataType tLeft, Type_expression pRight, DataType tRight, DataType r) {
+			return prover.apply(gamma, e.getLeft(), tLeft, pLeft, createSubtype_refl(tLeft),
+					e.getRight(), tRight, pRight, createSubtype_refl(tRight), r);
+		}
+	}
+	
+	private class SynthetizingBinaryTypeInfo<P extends Type_expression_node> extends AbstractBinaryTypeInfo<P> {
+		private final TriFunction<BinaryExpression, DataType, DataType, Optional<DataType>> solver;
+		
+		public SynthetizingBinaryTypeInfo(String operator,
+				DecaFunction<Environment, Expression, DataType, Type_expression, Subtype, Expression, DataType, Type_expression, Subtype, DataType, P> prover,
+				TriFunction<BinaryExpression, DataType, DataType, Optional<DataType>> solver) {
+			super(operator, prover);
+			this.solver = solver;
+		}
+		
+		@Override
+		public Optional<DataType> immediateType(BinaryExpression e, DataType left, DataType right) {
+			Collection<TypeVariable> vars = Stream.of(left, right)
+					.flatMap(TypeInferenceSolver::streamVariables)
+					.collect(Collectors.toCollection(ConcurrentLinkedDeque::new));
+			if(vars.isEmpty()) {
+				return solver.apply(e, left, right);
+			} else {
+				TypeVariable v = inference.createFreshTypeVariable((lb,ub) -> solver.apply(e, getSubstitute(left), getSubstitute(right)), e, null);
+				vars.forEach((x) -> inference.addDependency(v, x));
+				return Optional.of(v);
+			}
+		}
+	}
+	
+	private class CmpBinaryTypeInfo<P extends Type_expression_node> extends SynthetizingBinaryTypeInfo<Type_expression_node> {
+		public CmpBinaryTypeInfo(String operator, TreDecaFunction<Environment, Expression, DataType, Expression, Expression, Expression, DataType, Expression, Expression, Type_expression, Subtype, Type_expression, Subtype, Type_expression_node> constructor, TriFunction<BinaryExpression, DataType, DataType, Optional<DataType>> solver) {
+			super(operator,
+					(g,l,lt,lp,ls,r,rt,rp,rs,dr) -> constructor.apply(g,
+							l, lt, ((RangeType)lt).getVmin(), ((RangeType)lt).getVmax(),
+							r, rt, ((RangeType)rt).getVmin(), ((RangeType)rt).getVmax(),
+							lp, ls, rp, rs),
+					solver
+					);
+		}
+	}
+
+	private class BooleanBinaryTypeInfo<P extends Type_expression_node> extends AbstractBinaryTypeInfo<P> {
+		public BooleanBinaryTypeInfo(String operator, DecaFunction<Environment, Expression, DataType, Type_expression, Subtype, Expression, DataType, Type_expression, Subtype, DataType, P> prover) {
+			super(operator, prover);
+		}
+
+		@Override
+		public Optional<DataType> immediateType(BinaryExpression e, DataType left, DataType right) {
+			inference.addConstraint(left, createBooleanType(), e, SosADLPackage.Literals.BINARY_EXPRESSION__LEFT);
+			inference.addConstraint(right, createBooleanType(), e, SosADLPackage.Literals.BINARY_EXPRESSION__RIGHT);
+			return Optional.of(TypeChecker.createBooleanType());
+		}
+	}
+
+	private static Optional<DataType> binopSolverAdd(BinaryExpression e, DataType l, DataType r) {
+		if(l instanceof RangeType) {
+			if(r instanceof RangeType) {
+				return Optional.of(createRangeType(
+						createBinaryExpression(((RangeType)l).getVmin(), "+", ((RangeType)r).getVmin()),
+						createBinaryExpression(((RangeType)l).getVmax(), "+", ((RangeType)r).getVmax())));
+			} else {
+				return Optional.empty();
+			}
+		} else {
+			return Optional.empty();
+		}
+	}
+	
+	private final BinaryTypeInfo2<?> binop2Add = new SynthetizingBinaryTypeInfo<>("+",
+				(g, le, lt, lp, ls, re, rt, rp, rs, r) ->
+					createType_expression_Add(g, le, lt, ((RangeType)lt).getVmin(), ((RangeType)lt).getVmax(),
+							re, rt, ((RangeType)rt).getVmin(), ((RangeType)rt).getVmax(),
+							lp, ls, rp, rs),
+				TypeChecker::binopSolverAdd);
+
+	private static Optional<DataType> binopSolverSub(BinaryExpression e, DataType l, DataType r) {
+		if(l instanceof RangeType) {
+			if(r instanceof RangeType) {
+				return Optional.of(createRangeType(
+						createBinaryExpression(((RangeType)l).getVmin(), "-", ((RangeType)r).getVmax()),
+						createBinaryExpression(((RangeType)l).getVmax(), "-", ((RangeType)r).getVmin())));
+			} else {
+				return Optional.empty();
+			}
+		} else {
+			return Optional.empty();
+		}
+	}
+	
+	private final BinaryTypeInfo2<?> binop2Sub = new SynthetizingBinaryTypeInfo<>("-",
+			(g, le, lt, lp, ls, re, rt, rp, rs, r) ->
+				createType_expression_Sub(g, le, lt, ((RangeType)lt).getVmin(), ((RangeType)lt).getVmax(),
+						re, rt, ((RangeType)rt).getVmin(), ((RangeType)rt).getVmax(),
+						lp, ls, rp, rs),
+			TypeChecker::binopSolverSub);
+
+	private Type_expression_node binopProverMul(Environment g, Expression le, DataType ldt, Type_expression lp,
+			Subtype ls, Expression re, DataType rdt, Type_expression rp, Subtype rs, DataType rd) {
+		RangeType lt = (RangeType) ldt;
+		RangeType rt = (RangeType) rdt;
+		RangeType r = (RangeType) rd;
+		Expression c1 = createBinaryExpression(lt.getVmin(), "*", rt.getVmin());
+		Expression c2 = createBinaryExpression(lt.getVmin(), "*", rt.getVmax());
+		Expression c3 = createBinaryExpression(lt.getVmax(), "*", rt.getVmin());
+		Expression c4 = createBinaryExpression(lt.getVmax(), "*", rt.getVmax());
+		return createType_expression_Mul(g,
+				le, lt, lt.getVmin(), lt.getVmax(),
+				re, rt, rt.getVmin(), rt.getVmax(),
+				r.getVmin(), r.getVmax(), lp, ls, rp, rs,
+				expression_le(r.getVmin(), c1),
+				expression_le(r.getVmin(), c2),
+				expression_le(r.getVmin(), c3),
+				expression_le(r.getVmin(), c4),
+				expression_le(c1, r.getVmax()),
+				expression_le(c2, r.getVmax()),
+				expression_le(c3, r.getVmax()),
+				expression_le(c4, r.getVmax()));
+	}
+
+	private static Optional<DataType> binopSolverMul(BinaryExpression e, DataType ldt, DataType rdt) {
+		if(ldt instanceof RangeType) {
+			if(rdt instanceof RangeType) {
+				RangeType lt = (RangeType) ldt;
+				RangeType rt = (RangeType) rdt;
+				Expression c1 = createBinaryExpression(lt.getVmin(), "*", rt.getVmin());
+				Expression c2 = createBinaryExpression(lt.getVmin(), "*", rt.getVmax());
+				Expression c3 = createBinaryExpression(lt.getVmax(), "*", rt.getVmin());
+				Expression c4 = createBinaryExpression(lt.getVmax(), "*", rt.getVmax());
+				Expression mi = min(min(c1, c2), min(c3, c4));
+				Expression ma = max(max(c1, c2), max(c3, c4));
+				return Optional.of(createRangeType(mi, ma));
+			} else {
+				return Optional.empty();
+			}
+		} else {
+			return Optional.empty();
+		}
+	}
+
+	private final BinaryTypeInfo2<?> binop2Mul = new SynthetizingBinaryTypeInfo<>("*",
+			this::binopProverMul,
+			TypeChecker::binopSolverMul);
+
+	private Type_expression_node binopProverDiv(Environment g, Expression le, DataType dlt, Type_expression lp,
+			Subtype ls, Expression re, DataType drt, Type_expression rp, Subtype rs, DataType dr) {
+		RangeType lt = (RangeType) dlt;
+		RangeType rt = (RangeType) drt;
+		RangeType r = (RangeType) dr;
+		if(isLe(createIntegerValue(1), rt.getVmin())) {
+			Expression c1 = createBinaryExpression(lt.getVmin(), "/", rt.getVmin());
+			Expression c2 = createBinaryExpression(lt.getVmin(), "/", rt.getVmax());
+			Expression c3 = createBinaryExpression(lt.getVmax(), "/", rt.getVmin());
+			Expression c4 = createBinaryExpression(lt.getVmax(), "/", rt.getVmax());
+			return createType_expression_Div_pos(g,
+					le, lt, lt.getVmin(), lt.getVmax(),
+					re, rt, rt.getVmin(), rt.getVmax(),
+					r.getVmin(), r.getVmax(), lp, ls, rp, rs,
+					expression_le(createIntegerValue(1), rt.getVmin()),
+					expression_le(r.getVmin(), c1),
+					expression_le(r.getVmin(), c2),
+					expression_le(r.getVmin(), c3),
+					expression_le(r.getVmin(), c4),
+					expression_le(c1, r.getVmax()),
+					expression_le(c2, r.getVmax()),
+					expression_le(c3, r.getVmax()),
+					expression_le(c4, r.getVmax()));
+		} else if (isLe(rt.getVmax(), createOpposite(createIntegerValue(1)))) {
+			Expression c1 = createBinaryExpression(lt.getVmin(), "/", rt.getVmin());
+			Expression c2 = createBinaryExpression(lt.getVmin(), "/", rt.getVmax());
+			Expression c3 = createBinaryExpression(lt.getVmax(), "/", rt.getVmin());
+			Expression c4 = createBinaryExpression(lt.getVmax(), "/", rt.getVmax());
+			return createType_expression_Div_neg(g,
+					le, lt, lt.getVmin(), lt.getVmax(),
+					re, rt, rt.getVmin(), rt.getVmax(),
+					r.getVmin(), r.getVmax(), lp, ls, rp, rs,
+					expression_le(rt.getVmax(), createOpposite(createIntegerValue(1))),
+					expression_le(r.getVmin(), c1),
+					expression_le(r.getVmin(), c2),
+					expression_le(r.getVmin(), c3),
+					expression_le(r.getVmin(), c4),
+					expression_le(c1, r.getVmax()),
+					expression_le(c2, r.getVmax()),
+					expression_le(c3, r.getVmax()),
+					expression_le(c4, r.getVmax()));
+		} else {
+			error("The divisor must be different from 0", re, null);
+			return null;
+		}
+	}
+
+	private Optional<DataType> binopSolverDiv(BinaryExpression e, DataType l, DataType r) {
+		if(l instanceof RangeType) {
+			if(r instanceof RangeType) {
+				RangeType lt = (RangeType) l;
+				RangeType rt = (RangeType) r;
+				if(isLe(createIntegerValue(1), rt.getVmin()) || isLe(rt.getVmax(), createOpposite(createIntegerValue(1)))) {
+					Expression c1 = createBinaryExpression(lt.getVmin(), "/", rt.getVmin());
+					Expression c2 = createBinaryExpression(lt.getVmin(), "/", rt.getVmax());
+					Expression c3 = createBinaryExpression(lt.getVmax(), "/", rt.getVmin());
+					Expression c4 = createBinaryExpression(lt.getVmax(), "/", rt.getVmax());
+					Expression mi = min(min(c1, c2), min(c3, c4));
+					Expression ma = max(max(c1, c2), max(c3, c4));
+					return Optional.of(createRangeType(mi, ma));
+				} else {
+					//error("The divisor must be different from 0", e.getRight(), null);
+					return Optional.empty();
+				}
+			} else {
+				return Optional.empty();
+			}
+		} else {
+			return Optional.empty();
+		}
+	}
+
+	private final BinaryTypeInfo2<?> binop2Div = new SynthetizingBinaryTypeInfo<>("/",
+			this::binopProverDiv,
+			this::binopSolverDiv);
+
+	private Type_expression_node binopProverMod(Environment g, Expression le, DataType dlt, Type_expression lp,
+			Subtype ls, Expression re, DataType drt, Type_expression rp, Subtype rs, DataType dr) {
+		RangeType lt = (RangeType) dlt;
+		RangeType rt = (RangeType) drt;
+		RangeType r = (RangeType) dr;
+		Range_modulo_min min = range_modulo_min(
+				lt.getVmin(), lt.getVmax(),
+				rt.getVmin(), rt.getVmax(),
+				() -> createRange_modulo_min_pos(lt.getVmin(), lt.getVmax(),
+						rt.getVmin(), rt.getVmax(),
+						r.getVmin(),
+						expression_le(createIntegerValue(1), rt.getVmin()),
+						expression_le(r.getVmin(), createBinaryExpression(createIntegerValue(1), "-", rt.getVmax()))),
+				() -> createRange_modulo_min_zero(lt.getVmin(), lt.getVmax(),
+						rt.getVmin(), rt.getVmax(),
+						r.getVmin(),
+						expression_le(createIntegerValue(0), lt.getVmin()),
+						expression_le(r.getVmin(), createIntegerValue(0))),
+				() -> createRange_modulo_min_neg(lt.getVmin(), lt.getVmax(),
+						rt.getVmin(), rt.getVmax(),
+						r.getVmin(),
+						expression_le(rt.getVmax(), createOpposite(createIntegerValue(1))),
+						expression_le(r.getVmin(), createBinaryExpression(rt.getVmin(), "+", createIntegerValue(1)))),
+				() -> { error("The divisor must be different from 0", re, null); return null; });
+		if(min != null) {
+			Range_modulo_max max = range_modulo_max(
+					lt.getVmin(), lt.getVmax(),
+					rt.getVmin(), rt.getVmax(),
+					() -> createRange_modulo_max_pos(lt.getVmin(), lt.getVmax(),
+							rt.getVmin(), rt.getVmax(),
+							r.getVmax(),
+							expression_le(createIntegerValue(1), rt.getVmin()),
+							expression_le(createBinaryExpression(rt.getVmax(), "-", createIntegerValue(1)), r.getVmax())),
+					() -> createRange_modulo_max_zero(lt.getVmin(), lt.getVmax(),
+							rt.getVmin(), rt.getVmax(),
+							r.getVmax(),
+							expression_le(lt.getVmax(), createIntegerValue(0)),
+							expression_le(createIntegerValue(0), r.getVmax())),
+					() -> createRange_modulo_max_neg(lt.getVmin(), lt.getVmax(),
+							rt.getVmin(), rt.getVmax(),
+							r.getVmax(),
+							expression_le(rt.getVmax(), createOpposite(createIntegerValue(1))),
+							expression_le(createBinaryExpression(createOpposite(createIntegerValue(1)), "-", rt.getVmin()), r.getVmax())),
+					() -> { error("The divisor must be different from 0", re, null); return null; });
+			if(max != null) {
+				return createType_expression_Mod(g,
+						le, lt, lt.getVmin(), lt.getVmax(),
+						re, rt, rt.getVmin(), rt.getVmax(),
+						r.getVmin(), r.getVmax(),
+						lp, ls, rp, rs, min, max);
+			} else {
+				return null;
+			}
+		} else {
+			return null;
+		}
+	}
+
+	private Optional<DataType> binopSolverMod(BinaryExpression e, DataType l, DataType r) {
+		if(l instanceof RangeType) {
+			if(r instanceof RangeType) {
+				RangeType lt = (RangeType) l;
+				RangeType rt = (RangeType) r;
+				Expression min = range_modulo_min(
+						lt.getVmin(), lt.getVmax(),
+						rt.getVmin(), rt.getVmax(),
+						() -> createBinaryExpression(createIntegerValue(1), "-", rt.getVmax()),
+						() -> createIntegerValue(0),
+						() -> createBinaryExpression(rt.getVmin(), "+", createIntegerValue(1)),
+						() -> { error("The divisor must be different from 0", e.getRight(), null); return null; });
+				if(min != null) {
+					Expression max = range_modulo_max(
+							lt.getVmin(), lt.getVmax(),
+							rt.getVmin(), rt.getVmax(),
+							() -> createBinaryExpression(rt.getVmax(), "-", createIntegerValue(1)),
+							() -> createIntegerValue(0),
+							() -> createBinaryExpression(createOpposite(createIntegerValue(1)), "-", rt.getVmin()),
+							() -> { error("The divisor must be different from 0", e.getRight(), null); return null; });
+					if(max != null) {
+						return Optional.of(createRangeType(min, max));
+					} else {
+						error("Cannot infer the upper-bound of the range", e, null);
+						return Optional.empty();
+					}
+				} else {
+					error("Cannot infer the lower-bound of the range", e, null);
+					return Optional.empty();
+				}
+			} else {
+				error("The right-hand operator of `mod' must be a range type, found " + TypeInferenceSolver.typeToString(r), e, SosADLPackage.Literals.BINARY_EXPRESSION__RIGHT);
+				return Optional.empty();
+			}
+		} else {
+			error("The left-hand operator of `mod' must be a range type, found " + TypeInferenceSolver.typeToString(l), e, SosADLPackage.Literals.BINARY_EXPRESSION__LEFT);
+			return Optional.empty();
+		}
+	}
+
+	private final BinaryTypeInfo2<?> binop2Mod = new SynthetizingBinaryTypeInfo<>("mod",
+			this::binopProverMod,
+			this::binopSolverMod);
+
+	private final BinaryTypeInfo2<?> binop2Implies =
+			new BooleanBinaryTypeInfo<Type_expression_node>("implies",
+					(g,l,lt,lp,ls,r,rt,rp,rs,t) -> TypeChecker.createType_expression_Implies(g, l, lt, r, rt, lp, ls, rp, rs));
+	private final BinaryTypeInfo2<?> binop2Or =
+			new BooleanBinaryTypeInfo<Type_expression_node>("or",
+					(g,l,lt,lp,ls,r,rt,rp,rs,t) -> TypeChecker.createType_expression_Or(g, l, lt, r, rt, lp, ls, rp, rs));
+	private final BinaryTypeInfo2<?> binop2Xor =
+			new BooleanBinaryTypeInfo<Type_expression_node>("xor",
+					(g,l,lt,lp,ls,r,rt,rp,rs,t) -> TypeChecker.createType_expression_Xor(g, l, lt, r, rt, lp, ls, rp, rs));
+	private final BinaryTypeInfo2<?> binop2And =
+			new BooleanBinaryTypeInfo<Type_expression_node>("and",
+					(g,l,lt,lp,ls,r,rt,rp,rs,t) -> TypeChecker.createType_expression_And(g, l, lt, r, rt, lp, ls, rp, rs));
+			
+	private static Optional<DataType> binopSolverCmp(BinaryExpression e, DataType l, DataType r) {
+		if(l instanceof RangeType) {
+			if(r instanceof RangeType) {
+				return Optional.of(createBooleanType());
+			} else {
+				return Optional.empty();
+			}
+		} else {
+			return Optional.empty();
+		}
+	}
+
+	private final BinaryTypeInfo2<?> binop2Equal = new CmpBinaryTypeInfo<>("=", TypeChecker::createType_expression_Equal, TypeChecker::binopSolverCmp);
+	private final BinaryTypeInfo2<?> binop2Diff = new CmpBinaryTypeInfo<>("<>", TypeChecker::createType_expression_Diff, TypeChecker::binopSolverCmp);
+	private final BinaryTypeInfo2<?> binop2Lt = new CmpBinaryTypeInfo<>("<", TypeChecker::createType_expression_Lt, TypeChecker::binopSolverCmp);
+	private final BinaryTypeInfo2<?> binop2Le = new CmpBinaryTypeInfo<>("<=", TypeChecker::createType_expression_Le, TypeChecker::binopSolverCmp);
+	private final BinaryTypeInfo2<?> binop2Gt = new CmpBinaryTypeInfo<>(">", TypeChecker::createType_expression_Gt, TypeChecker::binopSolverCmp);
+	private final BinaryTypeInfo2<?> binop2Ge = new CmpBinaryTypeInfo<>(">=", TypeChecker::createType_expression_Ge, TypeChecker::binopSolverCmp);
+
+	private final BinaryTypeInfo2<?>[] binaryTypeInformations2 = new BinaryTypeInfo2[] {
+			binop2Add,
+			binop2Sub,
+			binop2Mul,
+			binop2Div,
+			binop2Mod,
+			binop2Implies,
+			binop2Or,
+			binop2Xor,
+			binop2And,
+			binop2Equal,
+			binop2Diff,
+			binop2Lt,
+			binop2Le,
+			binop2Gt,
+			binop2Ge
+	};
 
 	private Pair<Type_expression, DataType> type_expression(Environment gamma, Expression e) {
 		saveEnvironment(e, gamma);
@@ -1225,13 +1363,32 @@ public class TypeChecker extends AccumulatingValidator {
 			error("The binary operator must have a right operand", e, SosADLPackage.Literals.BINARY_EXPRESSION__RIGHT);
 			return new Pair<>(null, null);
 		} else {
-			for(BinaryTypeInfo<? extends DataType, ? extends DataType, ? extends DataType> i: binaryTypeInformations) {
-				if(e.getOp().equals(i.getOperator())) {
-					return typeBinaryExpression(gamma, e, i);
+			Pair<Type_expression, DataType> pp1 = type_expression(gamma, e.getLeft());
+			Type_expression p1 = pp1.getA();
+			DataType t1 = pp1.getB();
+			Pair<Type_expression, DataType> pp3 = type_expression(gamma, e.getRight());
+			Type_expression p3 = pp3.getA();
+			DataType t3 = pp3.getB();
+			if(p1 != null && t1 != null && p3 != null && t3 != null) {
+				for(BinaryTypeInfo2<?> i : binaryTypeInformations2) {
+					if(i.isCandidate(e.getOp(), t1, t3)) {
+						Optional<DataType> or = i.immediateType(e, t1, t3);
+						if(or.isPresent()) {
+							DataType r = or.get();
+							return new Pair<>(
+									saveProof(e, proofTerm(Type_expression_node.class,
+											() -> i.prove(gamma, e, p1, getSubstitute(t1), p3, getSubstitute(t3), getSubstitute(r)),
+											t1, r)),
+									saveType(e, r));
+						}
+					}
 				}
+				error("Unknown unary operator with types " + TypeInferenceSolver.typeToString(t1) + " `" + e.getOp() + "' " + TypeInferenceSolver.typeToString(t3),
+						e, SosADLPackage.Literals.BINARY_EXPRESSION__OP);
+				return new Pair<>(null, null);
+			} else {
+				return new Pair<>(null, null);
 			}
-			error("Unknown binary operator", e, SosADLPackage.Literals.BINARY_EXPRESSION__OP);
-			return new Pair<>(null, null);
 		}
 	}
 
@@ -1243,13 +1400,29 @@ public class TypeChecker extends AccumulatingValidator {
 			error("The unary expression must have an operator", e, SosADLPackage.Literals.UNARY_EXPRESSION__OP);
 			return new Pair<>(null, null);
 		} else {
-			for(UnaryTypeInfo<? extends DataType> i : unaryTypeInformations) {
-				if(e.getOp().equals(i.getOperator())) {
-					return typeUnaryExpression(gamma, e, i);
+			Pair<Type_expression, DataType> pp1 = type_expression(gamma, e.getRight());
+			Type_expression p1 = pp1.getA();
+			DataType t1 = pp1.getB();
+			if(p1 != null && t1 != null) {
+				for(UnaryTypeInfo2<?> i : unaryTypeInformations2) {
+					if(i.isCandidate(e.getOp(), t1)) {
+						Optional<DataType> or = i.immediateType(e, t1);
+						if(or.isPresent()) {
+							DataType r = or.get();
+							return new Pair<>(
+									saveProof(e, proofTerm(Type_expression_node.class,
+											() -> i.prove(gamma, e, p1, getSubstitute(t1)),
+											t1, r)),
+									saveType(e, r));
+						}
+					}
 				}
+				error("Unknown unary operator `" + e.getOp() + "' applied to type " + TypeInferenceSolver.typeToString(t1),
+						e, SosADLPackage.Literals.UNARY_EXPRESSION__OP);
+				return new Pair<>(null, null);
+			} else {
+				return new Pair<>(null, null);
 			}
-			error("Unknown unary operator", e, SosADLPackage.Literals.UNARY_EXPRESSION__OP);
-			return new Pair<>(null, SosADLFactory.eINSTANCE.createBooleanType());
 		}
 	}
 
@@ -1342,82 +1515,6 @@ public class TypeChecker extends AccumulatingValidator {
 		return l.stream().collect(Collectors.toConcurrentMap(FieldDecl::getName, (x) -> x));
 	}
 	
-	private DataType unionSuperType(Environment gamma, DataType t1, DataType t2, EObject objectForError, EStructuralFeature featureForError) {
-		if(t1 == null) {
-			return t1;
-		} else if(t2 == null) {
-			return t2;
-		} else if(t1 == t2) {
-			return t1;
-		} else if(t1 instanceof NamedType) {
-			if(t2 instanceof NamedType
-					&& ((NamedType)t1).getName() != null
-					&& ((NamedType)t2).getName() != null
-					&& ((NamedType)t1).getName().equals(((NamedType)t2).getName())) {
-				return t1;
-			} else {
-				return unionSuperType(gamma, pickFromGamma(gamma, t1), t2, objectForError, featureForError);
-			}
-		} else if(t2 instanceof NamedType) {
-			return unionSuperType(gamma, t1, pickFromGamma(gamma, t2), objectForError, featureForError);
-		} else if(t1 instanceof BooleanType && t2 instanceof BooleanType) {
-			return t1;
-		} else if(t1 instanceof RangeType && t2 instanceof RangeType) {
-			RangeType r1 = (RangeType) t1;
-			RangeType r2 = (RangeType) t2;
-			return createRangeType(min(r1.getVmin(), r2.getVmin()), max(r1.getVmax(), r2.getVmax()));
-		} else if(t1 instanceof TupleType && t2 instanceof TupleType) {
-			TupleType tt1 = (TupleType) t1;
-			TupleType tt2 = (TupleType) t2;
-			Stream<Pair<FieldDecl, Optional<FieldDecl>>> s1 = StreamUtils.mapi(tt1.getFields().stream(), (f) -> lookup(tt2.getFields(), f.getName()));
-			Stream<Pair<FieldDecl, FieldDecl>> s2 = s1.flatMap((x) -> StreamUtils.toStream(x.getB()).map((y) -> new Pair<>(x.getA(), y)));
-			Stream<FieldDecl> s3 = s2.map((p) -> createFieldDecl(p.getA().getName(), unionSuperType(gamma, p.getA().getType(), p.getB().getType(), objectForError, featureForError)));
-			return createTupleType(s3);
-		} else if(t1 instanceof SequenceType && t2 instanceof SequenceType) {
-			SequenceType s1 = (SequenceType) t1;
-			SequenceType s2 = (SequenceType) t2;
-			DataType t = unionSuperType(gamma, s1.getType(), s2.getType(), objectForError, featureForError);
-			if(t != null) {
-				return createSequenceType(t);
-			} else {
-				return null;
-			}
-		} else {
-			error("Incompatible types: " + labelFor(t1) + " and " + labelFor(t2) , objectForError, featureForError);
-			return null;
-		}
-	}
-	
-	private static Optional<FieldDecl> lookup(List<FieldDecl> l, String n) {
-		return l.stream().filter((f) -> f.getName().equals(n)).findFirst();
-	}
-
-	private <T extends DataType> Pair<Subtype, T> smallestSuperType(Class<T> target, String label, T ifNone, DataType t, EObject targetForError, EStructuralFeature forError) {
-		if(target.isInstance(t)) {
-			return new Pair<>(createSubtype_refl(t), target.cast(t));
-		} else {
-			if(t instanceof NamedType) {
-				errorForNamedType(label, "to", (NamedType)t, targetForError, forError);
-			} else if(t instanceof BooleanType) {
-				error("A boolean type cannot be converted to a " + label, targetForError, forError);
-			} else if(t instanceof SequenceType) {
-				error("A sequence type cannot be converted to a " + label, targetForError, forError);
-			} else if(t instanceof TupleType) {
-				error("A tuple type cannot be converted to a " + label, targetForError, forError);
-			} else if(t instanceof RangeType) {
-				error("A range type cannot be converted to a " + label, targetForError, forError);
-			} else {
-				error("Type error", targetForError, forError);
-			}
-			return new Pair<>(null, ifNone);
-		}
-	}
-
-	private void errorForNamedType(String label, String tofrom, NamedType t, EObject targetForError,
-			EStructuralFeature forError) {
-		errorForNamedType(label, tofrom, t, (s) -> error(s, targetForError, forError));
-	}
-
 	private void errorForNamedType(String label, String tofrom, NamedType t, Consumer<String> error) {
 		if(t.getName() == null) {
 			error.accept("The named type must have a name");
@@ -1866,8 +1963,16 @@ public class TypeChecker extends AccumulatingValidator {
 		return (DataType) AttributeAdapter.adapterOf(eObject).getAttribute(TYPE);
 	}
 	
+	public static void saveMin(EObject eObject, Expression e) {
+		saveMin(eObject, InterpInZ.eval(e));
+	}
+		
 	public static void saveMin(EObject eObject, BigInteger i) {
 		AttributeAdapter.adapterOf(eObject).putAttribute(MIN, i);
+	}
+	
+	public static void saveMax(EObject eObject, Expression e) {
+		saveMax(eObject, InterpInZ.eval(e));
 	}
 	
 	public static void saveMax(EObject eObject, BigInteger i) {
@@ -2183,6 +2288,7 @@ public class TypeChecker extends AccumulatingValidator {
 		return createRangeType(min, createIntegerValue(max));
 	}
 
+	@SuppressWarnings("unused")
 	private static RangeType createRangeType(int min, int max) {
 		return createRangeType(createIntegerValue(min), createIntegerValue(max));
 	}
@@ -2477,17 +2583,22 @@ public class TypeChecker extends AccumulatingValidator {
 	private TypeVariable createFreshTypeVariable(EObject co, EStructuralFeature csf, BinaryOperator<Optional<DataType>> solver) {
 		return inference.createFreshTypeVariable(solver, co, csf);
 	}
-	
 	private <T extends ProofTerm> T proofTerm(DataType x, Class<T> itf, Function<DataType, T> factory) {
-		if(TypeInferenceSolver.containsVariable(x)) {
+		return proofTerm(itf, () -> {
+			DataType t = getSubstitute(x);
+			return factory.apply(t);
+		}, x);
+	}
+	
+	private <T extends ProofTerm> T proofTerm(Class<T> itf, Supplier<T> factory, DataType... x) {
+		if(Stream.of(x).anyMatch(TypeInferenceSolver::containsVariable)) {
 			ProofTermPlaceHolder<T> ptph = ProofTermPlaceHolder.create(itf);
 			delayedTasks.add(() -> {
-				DataType t = getSubstitute(x);
-				ptph.fillWith(factory.apply(t));
+				ptph.fillWith(factory.get());
 			});
 			return ptph.cast();
 		} else {
-			return factory.apply(x);
+			return factory.get();
 		}
 	}
 

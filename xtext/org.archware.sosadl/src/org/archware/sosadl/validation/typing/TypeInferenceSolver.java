@@ -1354,4 +1354,8 @@ public final class TypeInferenceSolver {
 	private EList<TypeVariable> getLLDependencies(TypeVariable dependent) {
 		return variables.get(dependent.getName()).getDependencies();
 	}
+	
+	public void addDependency(TypeVariable dependent, TypeVariable dependence) {
+		getLLDependencies(dependent).add(dependence);
+	}
 }
