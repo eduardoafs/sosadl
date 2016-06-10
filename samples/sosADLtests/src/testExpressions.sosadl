@@ -1,0 +1,50 @@
+// ok: no testDone.iosts file will be generated
+// because: "done" generates no transition,
+// thus "behavior{done}" and "protocol{done}" will translate into nothing,
+// thus no iosts system.
+
+library testDone is {
+  
+  system test() is {
+  	
+  	datatype type0
+
+  	datatype type0
+ 
+    datatype type1 is integer{1..3} {
+		function (x: type1)::f(): integer{2..4} is { return x+1 }
+		function (x: type1)::g(): integer{-2..2} is { return x-x }
+		function (x: type1)::h(): integer{1..9} is { return x*x }
+		function (x: type1)::i(): integer{0..1} is { return x/2 }
+		function (x: type1)::j(): integer{-4..0} is { return (-4) }
+		function (x: type1)::k(): integer{0..3} is { return 9 mod x }
+		function (x: type1)::l(): integer{-3..0} is { return (-9) mod x }
+		function (x: type1)::m(): integer{0..3} is { return 9 mod (-x) }
+		function (x: type1)::n(): integer{-3..0} is { return (-9) mod (-x) }
+		function (x: type1)::o(): sequence{integer{1..3}} is { return sequence{1, 2, 3} }
+		function (x: type1)::p(): sequence{integer{-1..7}} is { return sequence{0, -1, 6, 4, 2} }
+		function (x: type1)::q(): sequence{integer{-3..4}} is { return sequence{x, (-x), x+1} }
+		function (x: type1)::r(): tuple{a: integer{1..3}, b: integer{-3..1}} is { return tuple{ a=2, b=(-1) } }
+		function (x: type1)::s(): tuple{a: integer{1..3}, b: integer{-3..1}} is { return tuple{ a=1, b=(-1), c=x+1 } }
+		function (x: type1)::t(): tuple{a: type1, b: integer{-3..1}} is { return tuple{ a=1, b=(-1), c=x+1 } }
+		function (x: type1)::u(): integer{0..4} is { return tuple{ a=x, b=(-x), c=x+1 }::c }
+		function (x: type1)::v(): sequence{type0} is { return sequence{} }
+		function (x: type1)::w(): type1 is { return tuple{ a=x, b=(-x), c=x }::c }
+		function (x: type1)::y(): sequence{type0} is { return tuple{ a=sequence{}, b=2 }::a }
+    }
+    
+    gate gate1 is {
+      connection connection1 is in{type1}
+    } guarantee {
+      protocol gate1protocol is {
+        // empty protocol: will not generate any iosts process.
+        done
+      }
+    }
+    
+    behavior test is {
+      // empty behavior: will not generate any iosts process.
+      done
+    }
+  }
+}
