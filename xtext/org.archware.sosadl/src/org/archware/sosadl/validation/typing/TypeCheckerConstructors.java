@@ -418,9 +418,9 @@ public class TypeCheckerConstructors extends TypeCheckerAnnotate {
 	}
 
 	protected static Type_expression_node createType_expression_MethodCall(Environment gamma, Expression self, DataType t, DataTypeDecl typeDecl,
-			DataType alpha, DataType tau, EList<FunctionDecl> methods, String name, EList<FormalParameter> formalparams, DataType ret, EList<Expression> params, Type_expression p1,
+			DataType tau, EList<FunctionDecl> methods, String name, EList<FormalParameter> formalparams, DataType ret, EList<Expression> params, Type_expression p1,
 			Ex<BigInteger, Equality> p2, Subtype p4, Ex<BigInteger, And<Equality, And<Equality, And<Equality, Equality>>>> p5, Forall2<FormalParameter, Expression, Ex<DataType, And<Equality, Ex<DataType, And<Type_expression, Subtype>>>>> p6) {
-				return new Type_expression_MethodCall(gamma, self, t, typeDecl, alpha, tau, methods, name, formalparams, ret, params, p1, p2, p4, p5, p6);
+				return new Type_expression_MethodCall(gamma, self, t, typeDecl, tau, methods, name, formalparams, ret, params, p1, p2, p4, p5, p6);
 			}
 
 	protected static Type_expression_node createType_expression_Tuple(Environment gamma, EList<TupleElement> elts, EList<FieldDecl> typ, Equality p1,

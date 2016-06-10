@@ -59,7 +59,7 @@ public abstract class TypeCheckerDataType extends TypeCheckerInterpretation {
 	}
 
 	protected boolean isSubtype(DataType a, DataType b) {
-		Optional<Subtype> p = new TypeChecker().subtype(a, b, null, null);
+		Optional<Subtype> p = new TypeChecker().subtype(a, b, (x) -> {});
 		return p.isPresent();
 	}
 

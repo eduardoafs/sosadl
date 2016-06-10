@@ -646,8 +646,7 @@ public abstract class TypeCheckerExpression extends TypeCheckerDataType {
 					});
 				Stream<IntPair<TypeEnvContent>> compatibleIndexedTypes = 
 						indexedTypes
-						.filter((i) -> isSubtype(self.getB(),
-								createNamedType(i.getB().getDataTypeDecl().getName())));
+						.filter((i) -> isSubtype(self.getB(), i.getB().getDataType()));
 				Optional<IntPair<Pair<TypeEnvContent,IntPair<FunctionDecl>>>> method =
 						compatibleIndexedTypes
 						.flatMap((i) -> StreamUtils.indexed(i.getB().getMethods().stream())
@@ -662,7 +661,6 @@ public abstract class TypeCheckerExpression extends TypeCheckerDataType {
 					saveBinder(mc, m.getB().getB().getB());
 					return new Pair<>(saveProof(mc,createType_expression_MethodCall(gamma, mc.getObject(), self.getB(),
 								m.getB().getA().getDataTypeDecl(),
-								m.getB().getA().getDataType(),
 								m.getB().getB().getB().getData().getType(),
 								m.getB().getA().getMethods(),
 								mc.getMethod(),

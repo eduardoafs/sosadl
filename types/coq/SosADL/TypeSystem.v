@@ -1014,7 +1014,6 @@ with type_expression_node: env -> SosADL.SosADL.t_Expression -> SosADL.SosADL.t_
       (self: SosADL.SosADL.t_Expression)
       (t: SosADL.SosADL.t_DataType)
       (typeDecl: SosADL.SosADL.t_DataTypeDecl)
-      (alpha: SosADL.SosADL.t_DataType)
       (tau: SosADL.SosADL.t_DataType)
       (methods: list SosADL.SosADL.t_FunctionDecl)
       (name: string)
@@ -1022,7 +1021,7 @@ with type_expression_node: env -> SosADL.SosADL.t_Expression -> SosADL.SosADL.t_
       (ret: SosADL.SosADL.t_DataType)
       (params: list SosADL.SosADL.t_Expression)
       (p1: expression self has type t in Gamma)
-      (p2: binds Gamma (EType typeDecl alpha methods))
+      (p2: binds Gamma (EType typeDecl tau methods))
       (p4: t </ tau)
       (p5: method name defined in methods with tau parameters formalparams returns ret)
       (p6: for each fp p of formalparams params,
