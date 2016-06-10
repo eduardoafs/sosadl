@@ -146,15 +146,6 @@ public class TypeChecker extends AccumulatingValidator {
 	private Collection<Runnable> delayedTasks = new ConcurrentLinkedDeque<>();
 	private Map<String, NumberGenerator> freshMaker = new ConcurrentHashMap<>();
 	
-	@Override
-	public void error(String msg, EObject eo, EStructuralFeature esf) {
-		System.out.println("" + eo + ": " + msg);
-		if(eo == null) {
-			throw new NullPointerException();
-		}
-		super.error(msg, eo, esf);
-	}
-	
 	/**
 	 * Performs the whole type-checking of a SoSADL specification.
 	 * 
@@ -625,11 +616,11 @@ public class TypeChecker extends AccumulatingValidator {
 	}
 	
 	private class SynthetizingUnaryTypeInfo<P extends Type_expression_node> extends AbstractUnaryTypeInfo<P> {
-		private final Function<DataType, Optional<DataType>> solver;
+		private final BiFunction<UnaryExpression, DataType, Optional<DataType>> solver;
 		
 		public SynthetizingUnaryTypeInfo(String operator,
 				PentaFunction<Environment, Expression, DataType, Type_expression, Subtype, P> prover,
-				Function<DataType, Optional<DataType>> solver) {
+				BiFunction<UnaryExpression, DataType, Optional<DataType>> solver) {
 			super(operator, prover);
 			this.solver = solver;
 		}
@@ -637,25 +628,34 @@ public class TypeChecker extends AccumulatingValidator {
 		@Override
 		public Optional<DataType> immediateType(UnaryExpression e, DataType operand) {
 			if(TypeInferenceSolver.containsVariable(operand)) {
-				TypeVariable v = inference.createFreshTypeVariable((lb,ub) -> solver.apply(getSubstitute(operand)), e, null);
+				TypeVariable v = inference.createFreshTypeVariable((lb,ub) -> solver.apply(e, getSubstitute(operand)), e, null);
 				TypeInferenceSolver.streamVariables(operand).forEach((x) -> inference.addDependency(v, x));
 				return Optional.of(v);
 			} else {
-				return solver.apply(operand);
+				return solver.apply(e, operand);
 			}
+		}
+	}
+	
+	private Optional<RangeType> toRangeType(UnaryExpression e, DataType t) {
+		if(t instanceof RangeType) {
+			return Optional.of((RangeType)t);
+		} else {
+			error("The operand of `" + e.getOp() + "' must be a range type, found " + TypeInferenceSolver.typeToString(t), e, SosADLPackage.Literals.UNARY_EXPRESSION__RIGHT);
+			return Optional.empty();
 		}
 	}
 	
 	private final UnaryTypeInfo2<?> unop2Same = new SynthetizingUnaryTypeInfo<>("+",
 			(g,e,t,p,s) -> createType_expression_Same(g, e, t, ((RangeType)t).getVmin(), ((RangeType)t).getVmax(), p, s),
-			(t) -> Optional.ofNullable(t).filter((x) -> x instanceof RangeType));
+			(e, t) -> Optional.ofNullable(t).flatMap((x) -> toRangeType(e, t)).map((x) -> (DataType) x));
 	
 	private final UnaryTypeInfo2<?> unop2Opposite = new SynthetizingUnaryTypeInfo<>("-",
 			(g,e,t,p,s) -> createType_expression_Opposite(g, e, t, ((RangeType)t).getVmin(), ((RangeType)t).getVmax(), p, s),
-			(t) -> Optional.ofNullable(t)
-			.filter((x) -> x instanceof RangeType)
-			.map((x) -> createRangeType(createOpposite(((RangeType)x).getVmax()),
-					createOpposite(((RangeType)x).getVmin()))));
+			(e, t) -> Optional.ofNullable(t)
+			.flatMap((x) -> toRangeType(e, x))
+			.map((x) -> createRangeType(createOpposite(x.getVmax()),
+					createOpposite(x.getVmin()))));
 	
 	private final UnaryTypeInfo2<?> unop2Not = new BooleanUnaryTypeInfo<>("not",
 			TypeChecker::createType_expression_Not);
@@ -734,16 +734,18 @@ public class TypeChecker extends AccumulatingValidator {
 		}
 	}
 
-	private static Optional<DataType> binopSolverAdd(BinaryExpression e, DataType l, DataType r) {
+	private Optional<DataType> binopSolverAdd(BinaryExpression e, DataType l, DataType r) {
 		if(l instanceof RangeType) {
 			if(r instanceof RangeType) {
 				return Optional.of(createRangeType(
 						createBinaryExpression(((RangeType)l).getVmin(), "+", ((RangeType)r).getVmin()),
 						createBinaryExpression(((RangeType)l).getVmax(), "+", ((RangeType)r).getVmax())));
 			} else {
+				error("The right-hand operatand of `" + e.getOp() + "' must be a range type, found " + TypeInferenceSolver.typeToString(r), e, SosADLPackage.Literals.BINARY_EXPRESSION__RIGHT);
 				return Optional.empty();
 			}
 		} else {
+			error("The left-hand operatand of `" + e.getOp() + "' must be a range type, found " + TypeInferenceSolver.typeToString(l), e, SosADLPackage.Literals.BINARY_EXPRESSION__LEFT);
 			return Optional.empty();
 		}
 	}
@@ -753,18 +755,20 @@ public class TypeChecker extends AccumulatingValidator {
 					createType_expression_Add(g, le, lt, ((RangeType)lt).getVmin(), ((RangeType)lt).getVmax(),
 							re, rt, ((RangeType)rt).getVmin(), ((RangeType)rt).getVmax(),
 							lp, ls, rp, rs),
-				TypeChecker::binopSolverAdd);
+				this::binopSolverAdd);
 
-	private static Optional<DataType> binopSolverSub(BinaryExpression e, DataType l, DataType r) {
+	private Optional<DataType> binopSolverSub(BinaryExpression e, DataType l, DataType r) {
 		if(l instanceof RangeType) {
 			if(r instanceof RangeType) {
 				return Optional.of(createRangeType(
 						createBinaryExpression(((RangeType)l).getVmin(), "-", ((RangeType)r).getVmax()),
 						createBinaryExpression(((RangeType)l).getVmax(), "-", ((RangeType)r).getVmin())));
 			} else {
+				error("The right-hand operatand of `" + e.getOp() + "' must be a range type, found " + TypeInferenceSolver.typeToString(r), e, SosADLPackage.Literals.BINARY_EXPRESSION__RIGHT);
 				return Optional.empty();
 			}
 		} else {
+			error("The left-hand operatand of `" + e.getOp() + "' must be a range type, found " + TypeInferenceSolver.typeToString(l), e, SosADLPackage.Literals.BINARY_EXPRESSION__LEFT);
 			return Optional.empty();
 		}
 	}
@@ -774,7 +778,7 @@ public class TypeChecker extends AccumulatingValidator {
 				createType_expression_Sub(g, le, lt, ((RangeType)lt).getVmin(), ((RangeType)lt).getVmax(),
 						re, rt, ((RangeType)rt).getVmin(), ((RangeType)rt).getVmax(),
 						lp, ls, rp, rs),
-			TypeChecker::binopSolverSub);
+			this::binopSolverSub);
 
 	private Type_expression_node binopProverMul(Environment g, Expression le, DataType ldt, Type_expression lp,
 			Subtype ls, Expression re, DataType rdt, Type_expression rp, Subtype rs, DataType rd) {
@@ -799,11 +803,11 @@ public class TypeChecker extends AccumulatingValidator {
 				expression_le(c4, r.getVmax()));
 	}
 
-	private static Optional<DataType> binopSolverMul(BinaryExpression e, DataType ldt, DataType rdt) {
-		if(ldt instanceof RangeType) {
-			if(rdt instanceof RangeType) {
-				RangeType lt = (RangeType) ldt;
-				RangeType rt = (RangeType) rdt;
+	private Optional<DataType> binopSolverMul(BinaryExpression e, DataType l, DataType r) {
+		if(l instanceof RangeType) {
+			if(r instanceof RangeType) {
+				RangeType lt = (RangeType) l;
+				RangeType rt = (RangeType) r;
 				Expression c1 = createBinaryExpression(lt.getVmin(), "*", rt.getVmin());
 				Expression c2 = createBinaryExpression(lt.getVmin(), "*", rt.getVmax());
 				Expression c3 = createBinaryExpression(lt.getVmax(), "*", rt.getVmin());
@@ -812,16 +816,18 @@ public class TypeChecker extends AccumulatingValidator {
 				Expression ma = max(max(c1, c2), max(c3, c4));
 				return Optional.of(createRangeType(mi, ma));
 			} else {
+				error("The right-hand operatand of `" + e.getOp() + "' must be a range type, found " + TypeInferenceSolver.typeToString(r), e, SosADLPackage.Literals.BINARY_EXPRESSION__RIGHT);
 				return Optional.empty();
 			}
 		} else {
+			error("The left-hand operatand of `" + e.getOp() + "' must be a range type, found " + TypeInferenceSolver.typeToString(l), e, SosADLPackage.Literals.BINARY_EXPRESSION__LEFT);
 			return Optional.empty();
 		}
 	}
 
 	private final BinaryTypeInfo2<?> binop2Mul = new SynthetizingBinaryTypeInfo<>("*",
 			this::binopProverMul,
-			TypeChecker::binopSolverMul);
+			this::binopSolverMul);
 
 	private Type_expression_node binopProverDiv(Environment g, Expression le, DataType dlt, Type_expression lp,
 			Subtype ls, Expression re, DataType drt, Type_expression rp, Subtype rs, DataType dr) {
@@ -888,9 +894,11 @@ public class TypeChecker extends AccumulatingValidator {
 					return Optional.empty();
 				}
 			} else {
+				error("The right-hand operatand of `" + e.getOp() + "' must be a range type, found " + TypeInferenceSolver.typeToString(r), e, SosADLPackage.Literals.BINARY_EXPRESSION__RIGHT);
 				return Optional.empty();
 			}
 		} else {
+			error("The left-hand operatand of `" + e.getOp() + "' must be a range type, found " + TypeInferenceSolver.typeToString(l), e, SosADLPackage.Literals.BINARY_EXPRESSION__LEFT);
 			return Optional.empty();
 		}
 	}
@@ -988,11 +996,11 @@ public class TypeChecker extends AccumulatingValidator {
 					return Optional.empty();
 				}
 			} else {
-				error("The right-hand operator of `mod' must be a range type, found " + TypeInferenceSolver.typeToString(r), e, SosADLPackage.Literals.BINARY_EXPRESSION__RIGHT);
+				error("The right-hand operatand of `" + e.getOp() + "' must be a range type, found " + TypeInferenceSolver.typeToString(r), e, SosADLPackage.Literals.BINARY_EXPRESSION__RIGHT);
 				return Optional.empty();
 			}
 		} else {
-			error("The left-hand operator of `mod' must be a range type, found " + TypeInferenceSolver.typeToString(l), e, SosADLPackage.Literals.BINARY_EXPRESSION__LEFT);
+			error("The left-hand operatand of `" + e.getOp() + "' must be a range type, found " + TypeInferenceSolver.typeToString(l), e, SosADLPackage.Literals.BINARY_EXPRESSION__LEFT);
 			return Optional.empty();
 		}
 	}
@@ -1014,24 +1022,26 @@ public class TypeChecker extends AccumulatingValidator {
 			new BooleanBinaryTypeInfo<Type_expression_node>("and",
 					(g,l,lt,lp,ls,r,rt,rp,rs,t) -> TypeChecker.createType_expression_And(g, l, lt, r, rt, lp, ls, rp, rs));
 			
-	private static Optional<DataType> binopSolverCmp(BinaryExpression e, DataType l, DataType r) {
+	private Optional<DataType> binopSolverCmp(BinaryExpression e, DataType l, DataType r) {
 		if(l instanceof RangeType) {
 			if(r instanceof RangeType) {
 				return Optional.of(createBooleanType());
 			} else {
+				error("The right-hand operatand of `" + e.getOp() + "' must be a range type, found " + TypeInferenceSolver.typeToString(r), e, SosADLPackage.Literals.BINARY_EXPRESSION__RIGHT);
 				return Optional.empty();
 			}
 		} else {
+			error("The left-hand operatand of `" + e.getOp() + "' must be a range type, found " + TypeInferenceSolver.typeToString(l), e, SosADLPackage.Literals.BINARY_EXPRESSION__LEFT);
 			return Optional.empty();
 		}
 	}
 
-	private final BinaryTypeInfo2<?> binop2Equal = new CmpBinaryTypeInfo<>("=", TypeChecker::createType_expression_Equal, TypeChecker::binopSolverCmp);
-	private final BinaryTypeInfo2<?> binop2Diff = new CmpBinaryTypeInfo<>("<>", TypeChecker::createType_expression_Diff, TypeChecker::binopSolverCmp);
-	private final BinaryTypeInfo2<?> binop2Lt = new CmpBinaryTypeInfo<>("<", TypeChecker::createType_expression_Lt, TypeChecker::binopSolverCmp);
-	private final BinaryTypeInfo2<?> binop2Le = new CmpBinaryTypeInfo<>("<=", TypeChecker::createType_expression_Le, TypeChecker::binopSolverCmp);
-	private final BinaryTypeInfo2<?> binop2Gt = new CmpBinaryTypeInfo<>(">", TypeChecker::createType_expression_Gt, TypeChecker::binopSolverCmp);
-	private final BinaryTypeInfo2<?> binop2Ge = new CmpBinaryTypeInfo<>(">=", TypeChecker::createType_expression_Ge, TypeChecker::binopSolverCmp);
+	private final BinaryTypeInfo2<?> binop2Equal = new CmpBinaryTypeInfo<>("=", TypeChecker::createType_expression_Equal, this::binopSolverCmp);
+	private final BinaryTypeInfo2<?> binop2Diff = new CmpBinaryTypeInfo<>("<>", TypeChecker::createType_expression_Diff, this::binopSolverCmp);
+	private final BinaryTypeInfo2<?> binop2Lt = new CmpBinaryTypeInfo<>("<", TypeChecker::createType_expression_Lt, this::binopSolverCmp);
+	private final BinaryTypeInfo2<?> binop2Le = new CmpBinaryTypeInfo<>("<=", TypeChecker::createType_expression_Le, this::binopSolverCmp);
+	private final BinaryTypeInfo2<?> binop2Gt = new CmpBinaryTypeInfo<>(">", TypeChecker::createType_expression_Gt, this::binopSolverCmp);
+	private final BinaryTypeInfo2<?> binop2Ge = new CmpBinaryTypeInfo<>(">=", TypeChecker::createType_expression_Ge, this::binopSolverCmp);
 
 	private final BinaryTypeInfo2<?>[] binaryTypeInformations2 = new BinaryTypeInfo2[] {
 			binop2Add,

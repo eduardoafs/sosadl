@@ -16,6 +16,9 @@ public class AccumulatingValidator implements ErrorCollector {
 	
 	@Override
 	public void error(String message, EObject target, EStructuralFeature feature) {
+		if(target == null) {
+			throw new NullPointerException();
+		}
 		errors.add(new ValidationError(message, target, feature));
 	}
 }
