@@ -65,8 +65,10 @@ public abstract class TypeCheckerExpression extends TypeCheckerDataType {
 	
 			@Override
 			public Type_expression_node prove(Environment gamma, UnaryExpression e, Type_expression pOperand, DataType tOperand) {
-				return proofTerm(gamma, Type_expression_node.class,
-						(g) -> prover.apply(g, e.getRight(), tOperand, pOperand, createSubtype_refl(tOperand)));
+				return p(Type_expression_node.class, gamma,
+						(gamma_) -> p(Type_expression_node.class, tOperand,
+								(tOperand_) -> prover.apply(gamma_, e.getRight(), tOperand_, pOperand,
+										createSubtype_refl(tOperand_))));
 			}
 		}
 
@@ -128,7 +130,7 @@ public abstract class TypeCheckerExpression extends TypeCheckerDataType {
 				.map((x) -> createRangeType(createOpposite(x.getVmax()),
 						createOpposite(x.getVmin()))));
 	private final UnaryTypeInfo2<?> unop2Not = new BooleanUnaryTypeInfo<>("not",
-				TypeChecker::createType_expression_Not);
+				this::createType_expression_Not);
 	private final UnaryTypeInfo2<?>[] unaryTypeInformations2 = new UnaryTypeInfo2[] {
 				unop2Same,
 				unop2Opposite,
@@ -148,9 +150,12 @@ public abstract class TypeCheckerExpression extends TypeCheckerDataType {
 	
 			@Override
 			public Type_expression_node prove(Environment gamma, BinaryExpression e, Type_expression pLeft, DataType tLeft, Type_expression pRight, DataType tRight, DataType r) {
-				return proofTerm(gamma, Type_expression_node.class,
-						(g) -> prover.apply(g, e.getLeft(), tLeft, pLeft, createSubtype_refl(tLeft),
-						e.getRight(), tRight, pRight, createSubtype_refl(tRight), r));
+				return p(Type_expression_node.class, gamma,
+						(gamma_) -> p(Type_expression_node.class, tLeft,
+								(tLeft_) -> p(Type_expression_node.class, tRight,
+										(tRight_) -> p(Type_expression_node.class, r,
+												(r_) -> prover.apply(gamma_, e.getLeft(), tLeft_, pLeft, createSubtype_refl(tLeft_),
+														e.getRight(), tRight_, pRight, createSubtype_refl(tRight_), r_)))));
 			}
 		}
 
@@ -430,14 +435,14 @@ public abstract class TypeCheckerExpression extends TypeCheckerDataType {
 	}
 
 	private final BinaryTypeInfo2<?> binop2Implies = new BooleanBinaryTypeInfo<Type_expression_node>("implies",
-						(g,l,lt,lp,ls,r,rt,rp,rs,t) -> TypeChecker.createType_expression_Implies(g, l, lt, r, rt, lp, ls, rp, rs));
+						(g,l,lt,lp,ls,r,rt,rp,rs,t) -> createType_expression_Implies(g, l, lt, r, rt, lp, ls, rp, rs));
 	private final BinaryTypeInfo2<?> binop2Or = new BooleanBinaryTypeInfo<Type_expression_node>("or",
-						(g,l,lt,lp,ls,r,rt,rp,rs,t) -> TypeChecker.createType_expression_Or(g, l, lt, r, rt, lp, ls, rp, rs));
+						(g,l,lt,lp,ls,r,rt,rp,rs,t) -> createType_expression_Or(g, l, lt, r, rt, lp, ls, rp, rs));
 	private final BinaryTypeInfo2<?> binop2Xor = new BooleanBinaryTypeInfo<Type_expression_node>("xor",
-						(g,l,lt,lp,ls,r,rt,rp,rs,t) -> TypeChecker.createType_expression_Xor(g, l, lt, r, rt, lp, ls, rp, rs));
+						(g,l,lt,lp,ls,r,rt,rp,rs,t) -> createType_expression_Xor(g, l, lt, r, rt, lp, ls, rp, rs));
 	private final BinaryTypeInfo2<?> binop2And = new BooleanBinaryTypeInfo<Type_expression_node>("and",
-						(g,l,lt,lp,ls,r,rt,rp,rs,t) -> TypeChecker.createType_expression_And(g, l, lt, r, rt, lp, ls, rp, rs));
-	private final BinaryTypeInfo2<?> binop2Equal = new CmpBinaryTypeInfo<>("=", TypeChecker::createType_expression_Equal, this::binopSolverCmp);
+						(g,l,lt,lp,ls,r,rt,rp,rs,t) -> createType_expression_And(g, l, lt, r, rt, lp, ls, rp, rs));
+	private final BinaryTypeInfo2<?> binop2Equal = new CmpBinaryTypeInfo<>("=", this::createType_expression_Equal, this::binopSolverCmp);
 
 	private Optional<DataType> binopSolverCmp(BinaryExpression e, DataType l, DataType r) {
 		if(l instanceof RangeType) {
@@ -453,11 +458,11 @@ public abstract class TypeCheckerExpression extends TypeCheckerDataType {
 		}
 	}
 
-	private final BinaryTypeInfo2<?> binop2Diff = new CmpBinaryTypeInfo<>("<>", TypeChecker::createType_expression_Diff, this::binopSolverCmp);
-	private final BinaryTypeInfo2<?> binop2Lt = new CmpBinaryTypeInfo<>("<", TypeChecker::createType_expression_Lt, this::binopSolverCmp);
-	private final BinaryTypeInfo2<?> binop2Le = new CmpBinaryTypeInfo<>("<=", TypeChecker::createType_expression_Le, this::binopSolverCmp);
-	private final BinaryTypeInfo2<?> binop2Gt = new CmpBinaryTypeInfo<>(">", TypeChecker::createType_expression_Gt, this::binopSolverCmp);
-	private final BinaryTypeInfo2<?> binop2Ge = new CmpBinaryTypeInfo<>(">=", TypeChecker::createType_expression_Ge, this::binopSolverCmp);
+	private final BinaryTypeInfo2<?> binop2Diff = new CmpBinaryTypeInfo<>("<>", this::createType_expression_Diff, this::binopSolverCmp);
+	private final BinaryTypeInfo2<?> binop2Lt = new CmpBinaryTypeInfo<>("<", this::createType_expression_Lt, this::binopSolverCmp);
+	private final BinaryTypeInfo2<?> binop2Le = new CmpBinaryTypeInfo<>("<=", this::createType_expression_Le, this::binopSolverCmp);
+	private final BinaryTypeInfo2<?> binop2Gt = new CmpBinaryTypeInfo<>(">", this::createType_expression_Gt, this::binopSolverCmp);
+	private final BinaryTypeInfo2<?> binop2Ge = new CmpBinaryTypeInfo<>(">=", this::createType_expression_Ge, this::binopSolverCmp);
 	private final BinaryTypeInfo2<?>[] binaryTypeInformations2 = new BinaryTypeInfo2[] {
 				binop2Add,
 				binop2Sub,
@@ -488,8 +493,9 @@ public abstract class TypeCheckerExpression extends TypeCheckerDataType {
 		if(ten != null && t != null) {
 			saveProof(e, ten);
 			saveType(e, t);
-			return new Pair<>(proofTerm(gamma, t, Type_expression.class,
-					(g, a) -> createType_expression_and_type(g, e, a, ten, check_datatype(a))), t);
+			return new Pair<>(p(Type_expression.class, gamma,
+					(gamma_) -> p(Type_expression.class, t,
+							(t_) -> createType_expression_and_type(gamma_, e, t_, ten, check_datatype(t_)))), t);
 		} else {
 			return new Pair<>(null, null);
 		}
@@ -585,11 +591,13 @@ public abstract class TypeCheckerExpression extends TypeCheckerDataType {
 
 		@Override
 		public Type_expression_node computeProof() {
-			return proofTerm(gamma, Type_expression_node.class, this::buildProof, sTau);
+			return p(Type_expression_node.class, gamma, this::buildProof);
 		}
 
 		private Type_expression_node buildProof(Environment gamma) {
-			return createType_expression_Map(gamma, obj, getSubstitute(tau), x, e, getSubstitute(tau__e), p1, p2);
+			return p(Type_expression_node.class, tau,
+					(tau_) -> p(Type_expression_node.class, tau__e,
+							(tau__e_) -> createType_expression_Map(gamma, obj, tau_, x, e, tau__e_, p1, p2)));
 		}
 	}
 	
@@ -627,14 +635,15 @@ public abstract class TypeCheckerExpression extends TypeCheckerDataType {
 				TupleType t = createTupleType(Stream.of(createFieldDecl(f.getField(), v)));
 				inference.addConstraint(p1.getB(), t, f, SosADLPackage.Literals.FIELD__FIELD);
 				return new Pair<>(saveProof(f,
-						proofTerm(gamma, v, Type_expression_node.class,
-								(g, x) -> createType_expression_Field(g,
+						p(Type_expression_node.class, gamma,
+								(gamma_) -> p(Type_expression_node.class, v,
+										(v_) -> createType_expression_Field(gamma_,
 											f.getObject(), 
 											ECollections.asEList(((TupleType)p1.getB()).getFields().stream()
 													.map(this::deepSubstitute).collect(Collectors.toList())),
-											f.getField(), x,
+											f.getField(), v_,
 											p1.getA(),
-											createReflexivity()))), v);
+											createReflexivity())))), v);
 			} else {
 				return new Pair<>(null, null);
 			}
@@ -665,18 +674,19 @@ public abstract class TypeCheckerExpression extends TypeCheckerDataType {
 				elts.forEach((p) -> inference.addConstraint(p.getB().getB(), v, p.getA()));
 				DataType t = createSequenceType(v);
 				return new Pair<>(saveProof(s,
-						proofTerm(gamma, t, Type_expression_node.class,
-								(g, x) -> {
+						p(Type_expression_node.class, gamma,
+								(gamma_) -> p(Type_expression_node.class, t,
+										(t_) -> {
 									Forall<Expression, Ex<DataType, And<Type_expression, Subtype>>> p1 =
 											proveForall(elts, Pair::getA,
 											(p) -> {
 												DataType pbb = deepSubstitute(p.getB().getB());
 												return createEx_intro(pbb,
 														createConj(p.getB().getA(),
-																subtype(pbb, ((SequenceType)x).getType(), p.getA(), null).orElse(null)));
+																subtype(pbb, ((SequenceType)t_).getType(), p.getA(), null).orElse(null)));
 											});
-									return createType_expression_Sequence(g, s.getElements(), ((SequenceType)x).getType(), p1);
-								})), t);
+									return createType_expression_Sequence(gamma_, s.getElements(), ((SequenceType)t_).getType(), p1);
+								}))), t);
 			} else {
 				return new Pair<>(null, null);
 			}
@@ -702,8 +712,9 @@ public abstract class TypeCheckerExpression extends TypeCheckerDataType {
 							.collect(Collectors.toList());
 					TupleType tt = createTupleType(elts2.stream().map((f) -> f.getB().getB()));
 					return new Pair<>(saveProof(t,
-							proofTerm(gamma, tt, Type_expression_node.class,
-									(g, z) -> {
+							p(Type_expression_node.class,gamma,
+									(gamma_) -> p(Type_expression_node.class, tt,
+											(tt_) -> {
 										Forall2<TupleElement, FieldDecl, Ex<Expression, And<Equality,Ex<DataType,And<Equality,Type_expression>>>>> p3 =
 												proveForall2(elts2,
 													(x) -> x.getA(),
@@ -712,13 +723,13 @@ public abstract class TypeCheckerExpression extends TypeCheckerDataType {
 															createConj(createReflexivity(),
 																	createEx_intro(getSubstitute(x.getB().getB().getType()),
 																			createConj(createReflexivity(), x.getB().getA())))));
-										return createType_expression_Tuple(g, t.getElements(),
-												((TupleType)z).getFields(),
+										return createType_expression_Tuple(gamma_, t.getElements(),
+												((TupleType)tt_).getFields(),
 												createReflexivity(),
-												proveForall2(t.getElements(), ((TupleType)z).getFields(),
+												proveForall2(t.getElements(), ((TupleType)tt_).getFields(),
 														(x,y) -> createReflexivity()),
 												p3);
-									})),
+									}))),
 							saveType(t, tt));
 				} else {
 					return new Pair<>(null, null);
@@ -801,14 +812,17 @@ public abstract class TypeCheckerExpression extends TypeCheckerDataType {
 		 */
 		@Override
 		public Type_expression_node computeProof() {
-			return proofTerm(gamma, Type_expression_node.class, this::buildProof, streamTypes());
+			return p(Type_expression_node.class, gamma, this::buildProof);
 		}
 		
 		private Type_expression_node buildProof(Environment gamma) {
-			DataType sSelfType = getSubstitute(selfType);
-			return createType_expression_MethodCall(gamma, mc.getObject(), sSelfType,
+			return p(Type_expression_node.class, selfType,
+			(selfType_) -> p(Type_expression_node.class, decl.getData().getType(),
+					(ddt_) -> p(Type_expression_node.class, params,
+							(params_) ->
+			createType_expression_MethodCall(gamma, mc.getObject(), selfType_,
 					tec.getDataTypeDecl(),
-					getSubstitute(decl.getData().getType()),
+					ddt_,
 					tec.getMethods(),
 					methodName,
 					decl.getParameters(),
@@ -822,15 +836,15 @@ public abstract class TypeCheckerExpression extends TypeCheckerDataType {
 					proveForall2(decl.getParameters(),
 							mc.getParameters(),
 							(fp,p) -> {
-								Pair<Type_expression, DataType> tp = ListUtils.assoc(params, p);
+								Pair<Type_expression, DataType> tp = ListUtils.assoc(params_, p);
 								Type_expression pp = tp.getA();
-								DataType pt = getSubstitute(tp.getB());
+								DataType pt = tp.getB();
 								return createEx_intro(fp.getType(),
 									createConj(createReflexivity(),
 											createEx_intro(pt,
 													createConj(pp,
 															subtype(pt, fp.getType(), mc, null).orElse(null)))));
-								}));
+								})))));
 		}
 	}
 
@@ -919,8 +933,9 @@ public abstract class TypeCheckerExpression extends TypeCheckerDataType {
 				DataType t = vec.getType();
 				saveBinder(e, vec.getBinder());
 				return new Pair<>(saveProof(e,
-						proofTerm(gamma, Type_expression_node.class, (g) ->
-						createType_expression_Ident(g, e.getIdent(), getSubstitute(t), createReflexivity()), t)),
+						p(Type_expression_node.class, gamma,
+								(gamma_) ->p(Type_expression_node.class, t,
+										(t_) -> createType_expression_Ident(gamma_, e.getIdent(), t_, createReflexivity())))),
 						saveType(e, t));
 			}
 		}
@@ -950,9 +965,11 @@ public abstract class TypeCheckerExpression extends TypeCheckerDataType {
 						if(or.isPresent()) {
 							DataType r = or.get();
 							return new Pair<>(
-									saveProof(e, proofTerm(gamma, Type_expression_node.class,
-											(g) -> i.prove(g, e, p1, getSubstitute(t1), p3, getSubstitute(t3), getSubstitute(r)),
-											t1, r)),
+									saveProof(e, p(Type_expression_node.class, gamma,
+											(gamma_) -> p(Type_expression_node.class, t1,
+													(t1_) -> p(Type_expression_node.class, t3,
+															(t3_) -> p(Type_expression_node.class, r,
+																	(r_) -> i.prove(gamma_, e, p1, t1_, p3, t3_, r_)))))),
 									saveType(e, r));
 						}
 					}
@@ -984,9 +1001,9 @@ public abstract class TypeCheckerExpression extends TypeCheckerDataType {
 						if(or.isPresent()) {
 							DataType r = or.get();
 							return new Pair<>(
-									saveProof(e, proofTerm(gamma, Type_expression_node.class,
-											(g) -> i.prove(g, e, p1, getSubstitute(t1)),
-											t1, r)),
+									saveProof(e, p(Type_expression_node.class, gamma,
+											(gamma_) -> p(Type_expression_node.class, t1,
+													(t1_) -> i.prove(gamma_, e, p1, t1_)))),
 									saveType(e, r));
 						}
 					}
@@ -1003,7 +1020,7 @@ public abstract class TypeCheckerExpression extends TypeCheckerDataType {
 	private Pair<Type_expression_node, DataType> type_expression_node_IntegerValue(Environment gamma, IntegerValue e) {
 		DataType t = createRangeType(e, e);
 		return new Pair<>(saveProof(e,
-				proofTerm(gamma, Type_expression_node.class, (g) -> createType_expression_IntegerValue(g, BigInteger.valueOf(((IntegerValue) e).getAbsInt())))),
+				p(Type_expression_node.class, gamma, (gamma_) -> createType_expression_IntegerValue(gamma_, BigInteger.valueOf(((IntegerValue) e).getAbsInt())))),
 				saveType(e, t));
 	}
 

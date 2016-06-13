@@ -1,6 +1,5 @@
 package org.archware.sosadl.validation.typing;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -11,12 +10,12 @@ import java.util.stream.Collectors;
 import org.archware.sosadl.generator.SosADLPrettyPrinterGenerator;
 import org.archware.sosadl.sosADL.BooleanType;
 import org.archware.sosadl.sosADL.DataType;
-import org.archware.sosadl.sosADL.Expression;
 import org.archware.sosadl.sosADL.FieldDecl;
 import org.archware.sosadl.sosADL.NamedType;
 import org.archware.sosadl.sosADL.RangeType;
 import org.archware.sosadl.sosADL.SequenceType;
 import org.archware.sosadl.sosADL.TupleType;
+import org.archware.sosadl.tv.typeCheckerHelper.TypeVariable;
 import org.archware.sosadl.validation.typing.impl.TypeEnvContent;
 import org.archware.sosadl.validation.typing.interp.InterpInZ;
 import org.archware.sosadl.validation.typing.proof.And;
@@ -26,10 +25,7 @@ import org.archware.sosadl.validation.typing.proof.Ex;
 import org.archware.sosadl.validation.typing.proof.Forall;
 import org.archware.sosadl.validation.typing.proof.Subtype;
 import org.archware.sosadl.validation.typing.proof.Type_datatype;
-import org.archware.utils.MapUtils;
-import org.archware.utils.OptionalUtils;
 import org.archware.utils.Pair;
-import org.archware.utils.StreamUtils;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.emf.ecore.util.EcoreUtil;
@@ -59,8 +55,12 @@ public abstract class TypeCheckerDataType extends TypeCheckerInterpretation {
 	}
 
 	protected boolean isSubtype(DataType a, DataType b) {
-		Optional<Subtype> p = new TypeChecker().subtype(a, b, (x) -> {});
-		return p.isPresent();
+		if(TypeInferenceSolver.containsVariable(a) || TypeInferenceSolver.containsVariable(b)) {
+			throw new IllegalArgumentException();
+		} else {
+			Optional<Subtype> p = new TypeChecker().subtype(a, b, (x) -> {});
+			return p.isPresent();
+		}
 	}
 
 	protected Optional<Subtype> subtype(DataType a, DataType b, EObject target, EStructuralFeature targetForError) {
@@ -68,7 +68,10 @@ public abstract class TypeCheckerDataType extends TypeCheckerInterpretation {
 	}
 
 	protected Optional<Subtype> subtype(DataType a, DataType b, Consumer<String> error) {
-		if(EcoreUtil.equals(a, b)) {
+		if(a instanceof TypeVariable || b instanceof TypeVariable) {
+			return Optional.of(p(Subtype.class, a, (a_) ->
+			p(Subtype.class, b, (b_) -> subtype(a_, b_, error).orElse(null))));
+		} else if(EcoreUtil.equals(a, b)) {
 			return Optional.of(createSubtype_refl(a));
 		} else if(a instanceof RangeType && b instanceof RangeType
 				&& ((RangeType)a).getVmin() != null && ((RangeType)a).getVmax() != null
@@ -165,12 +168,10 @@ public abstract class TypeCheckerDataType extends TypeCheckerInterpretation {
 		}
 	}
 
-	private static Map<String,FieldDecl> fieldMap(Collection<FieldDecl> l) {
-		return l.stream().collect(Collectors.toConcurrentMap(FieldDecl::getName, (x) -> x));
-	}
-
 	protected Check_datatype check_datatype(DataType t) {
-		if(t instanceof NamedType) {
+		if(t instanceof TypeVariable) {
+			return p(Check_datatype.class, t, (t_) -> check_datatype(t_));
+		} else if(t instanceof NamedType) {
 			NamedType n = (NamedType) t;
 			if(n.getName() != null) {
 				return createCheck_NamedType(n.getName());
@@ -224,85 +225,6 @@ public abstract class TypeCheckerDataType extends TypeCheckerInterpretation {
 	private void errorFieldClash(TupleType tt) {
 		tt.getFields().stream().filter((p) -> tt.getFields().stream().map(FieldDecl::getName).filter((x) -> x.equals(p.getName())).count() >= 2)
 		.forEach((f) -> error("Multiple definitions of field `" + f.getName() + "'", f, null));
-	}
-
-	private DataType pickFromGamma(Environment gamma, DataType t) {
-		if(gamma.get(((NamedType)t).getName()) != null
-				&& gamma.get(((NamedType)t).getName()) instanceof TypeEnvContent
-				&& ((TypeEnvContent)gamma.get(((NamedType)t).getName())).getDataTypeDecl().getName() != null
-				&& ((TypeEnvContent)gamma.get(((NamedType)t).getName())).getDataTypeDecl().getName().equals(((NamedType)t).getName())) {
-			return ((TypeEnvContent)gamma.get(((NamedType)t).getName())).getDataTypeDecl().getDatatype();
-		} else {
-			return null;
-		}
-	}
-
-	private DataType interSubType(Environment gamma, DataType t1, DataType t2, EObject objectForError, EStructuralFeature featureForError) {
-		if(t1 == null) {
-			return t1;
-		} else if(t2 == null) {
-			return t2;
-		} else if(t1 == t2) {
-			return t1;
-		} else if(t1 instanceof NamedType) {
-			if(t2 instanceof NamedType
-					&& ((NamedType)t1).getName() != null
-					&& ((NamedType)t2).getName() != null
-					&& ((NamedType)t1).getName().equals(((NamedType)t2).getName())) {
-				return t1;
-			} else {
-				return interSubType(gamma, pickFromGamma(gamma, t1), t2, objectForError, featureForError);
-			}
-		} else if(t2 instanceof NamedType) {
-			return interSubType(gamma, t1, pickFromGamma(gamma, t2), objectForError, featureForError);
-		} else if(t1 instanceof BooleanType && t2 instanceof BooleanType) {
-			return t1;
-		} else if(t1 instanceof RangeType && t2 instanceof RangeType) {
-			RangeType r1 = (RangeType) t1;
-			RangeType r2 = (RangeType) t2;
-			Expression mi = max(r1.getVmin(), r2.getVmin());
-			Expression ma = min(r1.getVmax(), r2.getVmax());
-			if(isLe(mi, ma)) {
-				return createRangeType(mi, ma);
-			} else {
-				error("The intersection of ranges " + labelFor(r1) + " and " + labelFor(r2) + " is empty", objectForError, featureForError);
-				return null;
-			}
-		} else if(t1 instanceof TupleType && t2 instanceof TupleType) {
-			TupleType tt1 = (TupleType) t1;
-			TupleType tt2 = (TupleType) t2;
-			Map<String,Pair<Optional<FieldDecl>,Optional<FieldDecl>>> fields = MapUtils.merge(fieldMap(tt1.getFields()), fieldMap(tt2.getFields()));
-			return createTupleType(fields.values().stream()
-					.map((p) -> intersectFieldDecl(p, gamma, objectForError, featureForError))
-					.flatMap(StreamUtils::toStream));
-		} else if(t1 instanceof SequenceType && t2 instanceof SequenceType) {
-			SequenceType s1 = (SequenceType) t1;
-			SequenceType s2 = (SequenceType) t2;
-			DataType t = interSubType(gamma, s1.getType(), s2.getType(), objectForError, featureForError);
-			if(t != null) {
-				return createSequenceType(t);
-			} else {
-				return null;
-			}
-		} else {
-			error("Incompatible types: " + labelFor(t1) + " and " + labelFor(t2) , objectForError, featureForError);
-			return null;
-		}
-	}
-
-	private Optional<FieldDecl> intersectFieldDecl(Pair<Optional<FieldDecl>,Optional<FieldDecl>> p, Environment gamma, EObject objectForError, EStructuralFeature featureForError) {
-		return OptionalUtils.mapOrElse(p.getA(),
-				(a) -> p.getB().flatMap((b) -> intersectFieldDecl(a, b, gamma, objectForError, featureForError)),
-				p.getB());
-	}
-
-	private Optional<FieldDecl> intersectFieldDecl(FieldDecl a, FieldDecl b, Environment gamma, EObject objectForError, EStructuralFeature featureForError) {
-		return Optional.ofNullable(interSubType(gamma, a.getType(), b.getType(), objectForError, featureForError))
-				.map((t) -> createFieldDecl(a.getName(), t));
-	}
-
-	public TypeCheckerDataType() {
-		super();
 	}
 
 	private void errorForNamedType(String label, String tofrom, NamedType t, Consumer<String> error) {

@@ -274,31 +274,36 @@ public class TypeChecker extends TypeCheckerExpression {
 						if(p5.getA() != null && t != null) {
 							inference.addConstraint(t, p2.getA(), f, SosADLPackage.Literals.FUNCTION_DECL__EXPRESSION);
 							return new Pair<>(saveProof(f,
-									proofTerm(gamma, t, Type_function.class,
-											(g, x) -> createType_FunctionDecl_Method(g,
+									p(Type_function.class, gamma,
+											(gamma_) -> p(Type_function.class, t,
+													(x) -> p(Type_function.class, gammap,
+															(gammap_) -> p(Type_function.class, gammav,
+																	(gammav_) -> p(Type_function.class, gamma1,
+																			(gamma1_) ->
+													createType_FunctionDecl_Method(gamma_,
 													f.getData().getName(),
 											((NamedType)f.getData().getType()).getName(),
-											((TypeEnvContent)g.get(((NamedType)f.getData().getType()).getName())).getDataTypeDecl(),
+											((TypeEnvContent)gamma_.get(((NamedType)f.getData().getType()).getName())).getDataTypeDecl(),
 											realType,
-											((TypeEnvContent)g.get(((NamedType)f.getData().getType()).getName())).getMethods(),
+											((TypeEnvContent)gamma_.get(((NamedType)f.getData().getType()).getName())).getMethods(),
 											f.getName(),
 											f.getParameters(),
 											params2,
-											getSubstitute(gammap),
+											gammap_,
 											f.getType(),
 											p2.getA(),
 											f.getValuing(),
-											getSubstitute(gammav),
+											gammav_,
 											f.getExpression(),
 											x,
-											getSubstitute(gamma1),
+											gamma1_,
 											createReflexivity(),
 											p2.getB(),
 											p3.getB(),
 											p4.getA(),
 											p5.getA(),
 											subtype(x, p2.getA(), f, SosADLPackage.Literals.FUNCTION_DECL__EXPRESSION).orElse(null),
-											createReflexivity()))),
+											createReflexivity()))))))),
 									gamma1);
 						} else {
 							error("(p5.getA() != null && t != null)", f, null);
@@ -431,7 +436,7 @@ public class TypeChecker extends TypeCheckerExpression {
 			proveForall2(l,
 					Pair::getA,
 					(p) -> createFormalParameter(p.getA().getName(), p.getB().getA()),
-					TypeChecker::type_formalParameter);
+					this::type_formalParameter);
 			Pair<Mutually<FormalParameter, True>, Environment> p2 =
 					proveMutually(gamma, params2,
 							(g0,p,g1) -> createI(),
@@ -444,7 +449,7 @@ public class TypeChecker extends TypeCheckerExpression {
 		}
 	}
 	
-	private static And<Equality,Ex<DataType,And<Equality,Ex<DataType,And<Equality,Type_datatype>>>>> type_formalParameter(Pair<FormalParameter, Pair<DataType, Type_datatype>> p) {
+	private And<Equality,Ex<DataType,And<Equality,Ex<DataType,And<Equality,Type_datatype>>>>> type_formalParameter(Pair<FormalParameter, Pair<DataType, Type_datatype>> p) {
 		return createConj(createReflexivity(),
 				createEx_intro(p.getA().getType(),
 						createConj(createReflexivity(),

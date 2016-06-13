@@ -15,9 +15,9 @@ import org.archware.utils.Pair;
 import org.archware.utils.TriFunction;
 import org.eclipse.emf.ecore.EObject;
 
-public abstract class TypeCheckerGenericRules extends TypeCheckerInference {
+public abstract class TypeCheckerGenericRules extends TypeCheckerProofConstructor {
 
-	protected static <S, T extends EObject, P extends ProofTerm> Forall<T, P> proveForall(List<S> l, Function<S,T> f,
+	protected <S, T extends EObject, P extends ProofTerm> Forall<T, P> proveForall(List<S> l, Function<S,T> f,
 			Function<S,P> prover) {
 				if(l.isEmpty()) {
 					return createForall_nil();
@@ -26,11 +26,11 @@ public abstract class TypeCheckerGenericRules extends TypeCheckerInference {
 				}
 			}
 
-	protected static <T extends EObject, P extends ProofTerm> Forall<T, P> proveForall(List<T> l, Function<T,P> prover) {
+	protected <T extends EObject, P extends ProofTerm> Forall<T, P> proveForall(List<T> l, Function<T,P> prover) {
 		return proveForall(l, (x) -> x, prover);
 	}
 
-	protected static <T1 extends EObject, T2 extends EObject, P extends ProofTerm> Forall2<T1,T2,P> proveForall2(List<? extends T1> l,
+	protected <T1 extends EObject, T2 extends EObject, P extends ProofTerm> Forall2<T1,T2,P> proveForall2(List<? extends T1> l,
 			List<? extends T2> m, BiFunction<T1, T2, ? extends P> prover) {
 				if(l.isEmpty() && m.isEmpty()) {
 					return createForall2_nil();
@@ -39,7 +39,7 @@ public abstract class TypeCheckerGenericRules extends TypeCheckerInference {
 				}
 			}
 
-	protected static <T, T1 extends EObject, T2 extends EObject, P extends ProofTerm> Forall2<T1,T2,P> proveForall2(List<T> zipped,
+	protected <T, T1 extends EObject, T2 extends EObject, P extends ProofTerm> Forall2<T1,T2,P> proveForall2(List<T> zipped,
 			Function<T, T1> left, Function<T, T2> right, Function<T, P> prover) {
 				if(zipped.isEmpty()) {
 					return createForall2_nil();
@@ -51,7 +51,7 @@ public abstract class TypeCheckerGenericRules extends TypeCheckerInference {
 				}
 			}
 
-	protected static <T extends EObject, P extends ProofTerm> Pair<Incrementally<T,P>,Environment> proveIncrementally(Environment gamma, List<T> l,
+	protected <T extends EObject, P extends ProofTerm> Pair<Incrementally<T,P>,Environment> proveIncrementally(Environment gamma, List<T> l,
 			BiFunction<Environment, T, Pair<P, Environment>> prover) {
 				if(l.isEmpty()) {
 					return new Pair<>(createIncrementally_nil(gamma), gamma);
@@ -64,7 +64,7 @@ public abstract class TypeCheckerGenericRules extends TypeCheckerInference {
 				}
 			}
 
-	protected static <T extends EObject, P extends ProofTerm> Pair<Simple_increment<T,P>,Environment> proveSimpleIncrement(Environment gamma, T x,
+	protected <T extends EObject, P extends ProofTerm> Pair<Simple_increment<T,P>,Environment> proveSimpleIncrement(Environment gamma, T x,
 			BiFunction<Environment, T, P> prover, String n, Function<T, ? extends String> name, String c, Function<T, ? extends EnvContent> content) {
 				Environment gamma1 = augment_env(gamma, name.apply(x), content.apply(x));
 				return new Pair<>(createSimple_increment_step(n, c, gamma, x, gamma1, createReflexivity(), prover.apply(gamma, x)), gamma1);
