@@ -18,6 +18,7 @@ import org.archware.sosadl.sosADL.FieldDecl;
 import org.archware.sosadl.sosADL.FunctionDecl;
 import org.archware.sosadl.sosADL.IdentExpression;
 import org.archware.sosadl.sosADL.IntegerValue;
+import org.archware.sosadl.sosADL.Map;
 import org.archware.sosadl.sosADL.MethodCall;
 import org.archware.sosadl.sosADL.RangeType;
 import org.archware.sosadl.sosADL.Sequence;
@@ -54,7 +55,7 @@ import org.eclipse.xtext.xbase.lib.ListExtensions;
 
 public abstract class TypeCheckerExpression extends TypeCheckerDataType {
 
-	protected static abstract class AbstractUnaryTypeInfo<P extends Type_expression_node> extends StringBasedUnaryTypeInfo<P> {
+	protected abstract class AbstractUnaryTypeInfo<P extends Type_expression_node> extends StringBasedUnaryTypeInfo<P> {
 			private final PentaFunction<Environment, Expression, DataType, Type_expression, Subtype, P> prover;
 				
 			public AbstractUnaryTypeInfo(String operator, PentaFunction<Environment, Expression, DataType, Type_expression, Subtype, P> prover) {
@@ -63,8 +64,9 @@ public abstract class TypeCheckerExpression extends TypeCheckerDataType {
 			}
 	
 			@Override
-			public P prove(Environment gamma, UnaryExpression e, Type_expression pOperand, DataType tOperand) {
-				return prover.apply(gamma, e.getRight(), tOperand, pOperand, createSubtype_refl(tOperand));
+			public Type_expression_node prove(Environment gamma, UnaryExpression e, Type_expression pOperand, DataType tOperand) {
+				return proofTerm(gamma, Type_expression_node.class,
+						(g) -> prover.apply(g, e.getRight(), tOperand, pOperand, createSubtype_refl(tOperand)));
 			}
 		}
 
@@ -133,7 +135,7 @@ public abstract class TypeCheckerExpression extends TypeCheckerDataType {
 				unop2Not
 		};
 
-	protected static abstract class AbstractBinaryTypeInfo<P extends Type_expression_node> extends StringBasedBinaryTypeInfo<P> {
+	protected abstract class AbstractBinaryTypeInfo<P extends Type_expression_node> extends StringBasedBinaryTypeInfo<P> {
 			private final DecaFunction<Environment,
 			Expression, DataType, Type_expression, Subtype,
 			Expression, DataType, Type_expression, Subtype,
@@ -145,9 +147,10 @@ public abstract class TypeCheckerExpression extends TypeCheckerDataType {
 			}
 	
 			@Override
-			public P prove(Environment gamma, BinaryExpression e, Type_expression pLeft, DataType tLeft, Type_expression pRight, DataType tRight, DataType r) {
-				return prover.apply(gamma, e.getLeft(), tLeft, pLeft, createSubtype_refl(tLeft),
-						e.getRight(), tRight, pRight, createSubtype_refl(tRight), r);
+			public Type_expression_node prove(Environment gamma, BinaryExpression e, Type_expression pLeft, DataType tLeft, Type_expression pRight, DataType tRight, DataType r) {
+				return proofTerm(gamma, Type_expression_node.class,
+						(g) -> prover.apply(g, e.getLeft(), tLeft, pLeft, createSubtype_refl(tLeft),
+						e.getRight(), tRight, pRight, createSubtype_refl(tRight), r));
 			}
 		}
 
@@ -485,8 +488,8 @@ public abstract class TypeCheckerExpression extends TypeCheckerDataType {
 		if(ten != null && t != null) {
 			saveProof(e, ten);
 			saveType(e, t);
-			return new Pair<>(proofTerm(t, Type_expression.class,
-					(a) -> createType_expression_and_type(gamma, e, a, ten, check_datatype(a))), t);
+			return new Pair<>(proofTerm(gamma, t, Type_expression.class,
+					(g, a) -> createType_expression_and_type(g, e, a, ten, check_datatype(a))), t);
 		} else {
 			return new Pair<>(null, null);
 		}
@@ -510,8 +513,107 @@ public abstract class TypeCheckerExpression extends TypeCheckerDataType {
 			return type_expression_node_Sequence(gamma, (Sequence) e);
 		} else if(e instanceof org.archware.sosadl.sosADL.Field) {
 			return type_expression_node_Field(gamma, (org.archware.sosadl.sosADL.Field)e);
+		} else if(e instanceof Map) {
+			return type_expression_node_Map(gamma, (Map)e);
 		} else {
 			error("Type error", e, null);
+			return new Pair<>(null, null);
+		}
+	}
+	
+	private class MapTyper implements Typer {
+		private final Environment gamma;
+		private final Map m;
+		private final Expression obj;
+		private final DataType sTau;
+		private final String x;
+		private final Expression e;
+		private final Type_expression p1;
+		
+		private DataType tau;
+		private DataType tau__e;
+		private Type_expression p2;
+		
+		public MapTyper(Environment gamma, Map m, DataType sTau, Type_expression p1) {
+			super();
+			this.gamma = gamma;
+			this.m = m;
+			this.obj = m.getObject();
+			this.sTau = sTau;
+			this.x = m.getVariable();
+			this.e = m.getExpression();
+			this.p1 = p1;
+		}
+		
+		private DataType getObjType() {
+			if(sTau instanceof TypeVariable) {
+				return getSubstitute(sTau);
+			} else {
+				return sTau;
+			}
+		}
+		
+		private Optional<DataType> lookupAndReturnType() {
+			DataType s = getObjType();
+			if(s instanceof SequenceType) {
+				SequenceType st = (SequenceType) s;
+				tau = st.getType();
+				Pair<Type_expression, DataType> pt2 = type_expression(gamma.put(x, new VariableEnvContent(m, tau)), e);
+				tau__e = pt2.getB();
+				p2 = pt2.getA();
+				if(tau__e != null && p2 != null) {
+					return Optional.of(createSequenceType(tau__e));
+				} else {
+					return Optional.empty();
+				}
+			} else {
+				error("The object must be a sequence", m, SosADLPackage.Literals.MAP__OBJECT);
+				return Optional.empty();
+			}
+		}
+
+		@Override
+		public Optional<DataType> computeReturnType() {
+			if (sTau instanceof TypeVariable) {
+				TypeVariable v = createFreshTypeVariable(m, null, (lb,ub) -> lookupAndReturnType());
+				inference.addDependency(v, (TypeVariable) sTau);
+				return Optional.of(v);
+			} else {
+				return lookupAndReturnType();
+			}
+		}
+
+		@Override
+		public Type_expression_node computeProof() {
+			return proofTerm(gamma, Type_expression_node.class, this::buildProof, sTau);
+		}
+
+		private Type_expression_node buildProof(Environment gamma) {
+			return createType_expression_Map(gamma, obj, getSubstitute(tau), x, e, getSubstitute(tau__e), p1, p2);
+		}
+	}
+	
+	private Pair<Type_expression_node, DataType> type_expression_node_Map(Environment gamma, Map e) {
+		if(e.getExpression() != null && e.getObject() != null && e.getVariable() != null) {
+			Pair<Type_expression, DataType> pt1 = type_expression(gamma, e.getObject());
+			Type_expression p1 = pt1.getA();
+			DataType sTau = pt1.getB();
+			if(p1 != null && sTau != null) {
+				MapTyper typer = new MapTyper(gamma, e, sTau, p1);
+				return typeWithTyper(e, typer);
+			} else {
+				return new Pair<>(null, null);
+			}
+		} else {
+			if(e.getExpression() == null) {
+				error("There must be a collected expression", e, SosADLPackage.Literals.MAP__EXPRESSION);
+			}
+			if(e.getObject() == null) {
+				error("The collected expression must be applied to a sequence", e, SosADLPackage.Literals.MAP__OBJECT);
+			}
+			if(e.getVariable() == null) {
+				error("The collected expression must declare a variable", e, SosADLPackage.Literals.MAP__VARIABLE);
+			}
 			return new Pair<>(null, null);
 		}
 	}
@@ -525,8 +627,8 @@ public abstract class TypeCheckerExpression extends TypeCheckerDataType {
 				TupleType t = createTupleType(Stream.of(createFieldDecl(f.getField(), v)));
 				inference.addConstraint(p1.getB(), t, f, SosADLPackage.Literals.FIELD__FIELD);
 				return new Pair<>(saveProof(f,
-						proofTerm(v, Type_expression_node.class,
-								(x) -> createType_expression_Field(gamma,
+						proofTerm(gamma, v, Type_expression_node.class,
+								(g, x) -> createType_expression_Field(g,
 											f.getObject(), 
 											ECollections.asEList(((TupleType)p1.getB()).getFields().stream()
 													.map(this::deepSubstitute).collect(Collectors.toList())),
@@ -563,8 +665,8 @@ public abstract class TypeCheckerExpression extends TypeCheckerDataType {
 				elts.forEach((p) -> inference.addConstraint(p.getB().getB(), v, p.getA()));
 				DataType t = createSequenceType(v);
 				return new Pair<>(saveProof(s,
-						proofTerm(t, Type_expression_node.class,
-								(x) -> {
+						proofTerm(gamma, t, Type_expression_node.class,
+								(g, x) -> {
 									Forall<Expression, Ex<DataType, And<Type_expression, Subtype>>> p1 =
 											proveForall(elts, Pair::getA,
 											(p) -> {
@@ -573,7 +675,7 @@ public abstract class TypeCheckerExpression extends TypeCheckerDataType {
 														createConj(p.getB().getA(),
 																subtype(pbb, ((SequenceType)x).getType(), p.getA(), null).orElse(null)));
 											});
-									return createType_expression_Sequence(gamma, s.getElements(), ((SequenceType)x).getType(), p1);
+									return createType_expression_Sequence(g, s.getElements(), ((SequenceType)x).getType(), p1);
 								})), t);
 			} else {
 				return new Pair<>(null, null);
@@ -600,8 +702,8 @@ public abstract class TypeCheckerExpression extends TypeCheckerDataType {
 							.collect(Collectors.toList());
 					TupleType tt = createTupleType(elts2.stream().map((f) -> f.getB().getB()));
 					return new Pair<>(saveProof(t,
-							proofTerm(tt, Type_expression_node.class,
-									(z) -> {
+							proofTerm(gamma, tt, Type_expression_node.class,
+									(g, z) -> {
 										Forall2<TupleElement, FieldDecl, Ex<Expression, And<Equality,Ex<DataType,And<Equality,Type_expression>>>>> p3 =
 												proveForall2(elts2,
 													(x) -> x.getA(),
@@ -610,7 +712,7 @@ public abstract class TypeCheckerExpression extends TypeCheckerDataType {
 															createConj(createReflexivity(),
 																	createEx_intro(getSubstitute(x.getB().getB().getType()),
 																			createConj(createReflexivity(), x.getB().getA())))));
-										return createType_expression_Tuple(gamma, t.getElements(),
+										return createType_expression_Tuple(g, t.getElements(),
 												((TupleType)z).getFields(),
 												createReflexivity(),
 												proveForall2(t.getElements(), ((TupleType)z).getFields(),
@@ -630,7 +732,7 @@ public abstract class TypeCheckerExpression extends TypeCheckerDataType {
 		}
 	}
 	
-	private class MethodCallTyper {
+	private class MethodCallTyper implements Typer {
 		private final Environment gamma;
 		private final MethodCall mc;
 		private final String methodName;
@@ -673,12 +775,16 @@ public abstract class TypeCheckerExpression extends TypeCheckerDataType {
 			return method.map(IntPair::getB).map(Pair::getB).map(IntPair::getB).map(FunctionDecl::getType);
 		}
 		
+		/* (non-Javadoc)
+		 * @see org.archware.sosadl.validation.typing.Typer#computeReturnType()
+		 */
+		@Override
 		public Optional<DataType> computeReturnType() {
 			if (streamTypes().anyMatch(TypeInferenceSolver::containsVariable)) {
 				TypeVariable v = createFreshTypeVariable(mc, null, (lb,ub) -> lookupAndReturnType());
 				streamTypes()
 				.flatMap(TypeInferenceSolver::streamVariables)
-				.forEach((x) -> inference.addDependency(v, v));
+				.forEach((x) -> inference.addDependency(v, x));
 				return Optional.of(v);
 			} else {
 				return lookupAndReturnType();
@@ -690,11 +796,15 @@ public abstract class TypeCheckerExpression extends TypeCheckerDataType {
 			.flatMap((i) -> i);
 		}
 		
+		/* (non-Javadoc)
+		 * @see org.archware.sosadl.validation.typing.Typer#computeProof()
+		 */
+		@Override
 		public Type_expression_node computeProof() {
-			return proofTerm(Type_expression_node.class, this::buildProof, streamTypes());
+			return proofTerm(gamma, Type_expression_node.class, this::buildProof, streamTypes());
 		}
 		
-		private Type_expression_node buildProof() {
+		private Type_expression_node buildProof(Environment gamma) {
 			DataType sSelfType = getSubstitute(selfType);
 			return createType_expression_MethodCall(gamma, mc.getObject(), sSelfType,
 					tec.getDataTypeDecl(),
@@ -731,19 +841,31 @@ public abstract class TypeCheckerExpression extends TypeCheckerDataType {
 			List<Pair<Expression,Pair<Type_expression, DataType>>> params = ListExtensions.map(mc.getParameters(), (p) -> new Pair<>(p, type_expression(gamma, p)));
 			DataType selfType = self.getB();
 			if(self.getA() != null && selfType != null && params.stream().allMatch((p) -> p.getA() != null && p.getB() != null)) {
-				MethodCallTyper mct = new MethodCallTyper(gamma, mc, methodName, selfType, self.getA(), params);
-				Optional<DataType> oret = mct.computeReturnType();
-				if(oret.isPresent()) {
-					DataType ret = oret.get();
-					return new Pair<>(saveProof(mc, mct.computeProof()), saveType(mc, ret));
-				} else {
-					return new Pair<>(null, null);
-				}
+				Typer mct = new MethodCallTyper(gamma, mc, methodName, selfType, self.getA(), params);
+				return typeWithTyper(mc, mct);
 			} else {
 				return new Pair<>(null, null);
 			}
 		} else {
 			error("A method name must be provided", mc, SosADLPackage.Literals.METHOD_CALL__METHOD);
+			return new Pair<>(null, null);
+		}
+	}
+
+	private interface Typer {
+
+		Optional<DataType> computeReturnType();
+
+		Type_expression_node computeProof();
+
+	}
+	
+	private Pair<Type_expression_node, DataType> typeWithTyper(Expression mc, Typer mct) {
+		Optional<DataType> oret = mct.computeReturnType();
+		if(oret.isPresent()) {
+			DataType ret = oret.get();
+			return new Pair<>(saveProof(mc, mct.computeProof()), saveType(mc, ret));
+		} else {
 			return new Pair<>(null, null);
 		}
 	}
@@ -796,7 +918,9 @@ public abstract class TypeCheckerExpression extends TypeCheckerDataType {
 				VariableEnvContent vec = (VariableEnvContent)ec;
 				DataType t = vec.getType();
 				saveBinder(e, vec.getBinder());
-				return new Pair<>(saveProof(e, createType_expression_Ident(gamma, e.getIdent(), t, createReflexivity())),
+				return new Pair<>(saveProof(e,
+						proofTerm(gamma, Type_expression_node.class, (g) ->
+						createType_expression_Ident(g, e.getIdent(), getSubstitute(t), createReflexivity()), t)),
 						saveType(e, t));
 			}
 		}
@@ -826,8 +950,8 @@ public abstract class TypeCheckerExpression extends TypeCheckerDataType {
 						if(or.isPresent()) {
 							DataType r = or.get();
 							return new Pair<>(
-									saveProof(e, proofTerm(Type_expression_node.class,
-											() -> i.prove(gamma, e, p1, getSubstitute(t1), p3, getSubstitute(t3), getSubstitute(r)),
+									saveProof(e, proofTerm(gamma, Type_expression_node.class,
+											(g) -> i.prove(g, e, p1, getSubstitute(t1), p3, getSubstitute(t3), getSubstitute(r)),
 											t1, r)),
 									saveType(e, r));
 						}
@@ -860,8 +984,8 @@ public abstract class TypeCheckerExpression extends TypeCheckerDataType {
 						if(or.isPresent()) {
 							DataType r = or.get();
 							return new Pair<>(
-									saveProof(e, proofTerm(Type_expression_node.class,
-											() -> i.prove(gamma, e, p1, getSubstitute(t1)),
+									saveProof(e, proofTerm(gamma, Type_expression_node.class,
+											(g) -> i.prove(g, e, p1, getSubstitute(t1)),
 											t1, r)),
 									saveType(e, r));
 						}
@@ -878,7 +1002,8 @@ public abstract class TypeCheckerExpression extends TypeCheckerDataType {
 
 	private Pair<Type_expression_node, DataType> type_expression_node_IntegerValue(Environment gamma, IntegerValue e) {
 		DataType t = createRangeType(e, e);
-		return new Pair<>(saveProof(e, createType_expression_IntegerValue(gamma, BigInteger.valueOf(((IntegerValue) e).getAbsInt()))),
+		return new Pair<>(saveProof(e,
+				proofTerm(gamma, Type_expression_node.class, (g) -> createType_expression_IntegerValue(g, BigInteger.valueOf(((IntegerValue) e).getAbsInt())))),
 				saveType(e, t));
 	}
 

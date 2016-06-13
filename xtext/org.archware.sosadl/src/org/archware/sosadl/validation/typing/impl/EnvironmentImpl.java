@@ -1,6 +1,7 @@
 package org.archware.sosadl.validation.typing.impl;
 
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -26,5 +27,10 @@ public class EnvironmentImpl implements Environment {
 	@Override
 	public <T> T match(BiFunction<EnvContent, Environment, T> ifCons, Supplier<T> ifNil) {
 		return ifNil.get();
+	}
+
+	@Override
+	public Environment deepClone(Function<EnvContent, EnvContent> cellClone) {
+		return this;
 	}
 }

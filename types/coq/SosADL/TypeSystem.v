@@ -1069,13 +1069,19 @@ with type_expression_node: env -> SosADL.SosADL.t_Expression -> SosADL.SosADL.t_
     ,
       expression node (SosADL.SosADL.Sequence elts) has type (SosADL.SosADL.SequenceType (Some tau)) in Gamma
 
-(*
 | type_expression_Map:
-    forall Gamma coll tau x e tau__e,
-      (expression coll has type (SosADL.SosADL.SequenceType (Some tau)) in Gamma)
-      /\ (expression e has type tau__e in Gamma [| x <- EVariable tau |])
-      ->
-      expression (SosADL.SosADL.Map (Some coll) (Some x) (Some e)) has type (SosADL.SosADL.SequenceType (Some tau__e)) in Gamma
+    forall (Gamma: env)
+      (obj: SosADL.SosADL.t_Expression)
+      (tau: SosADL.SosADL.t_DataType)
+      (x: string)
+      (e: SosADL.SosADL.t_Expression)
+      (tau__e: SosADL.SosADL.t_DataType)
+      (p1: expression obj has type (SosADL.SosADL.SequenceType (Some tau)) in Gamma)
+      (p2: expression e has type tau__e in Gamma [| x <- EVariable tau |])
+    ,
+      expression node (SosADL.SosADL.Map (Some obj) (Some x) (Some e)) has type (SosADL.SosADL.SequenceType (Some tau__e)) in Gamma
+
+(*
 
 | type_expression_Select:
     forall Gamma coll tau x e,
@@ -1086,7 +1092,7 @@ with type_expression_node: env -> SosADL.SosADL.t_Expression -> SosADL.SosADL.t_
 *)
 
 (** %\todo{%[CallExpression], [UnobservableValue], [Unify], [Relay]
-and [Quantify] are not handled yet.%}% *)
+and [Quantify] are not handled yet, but they are not allowed in any kind of expression.%}% *)
 
 where "'expression' e 'has' 'type' t 'in' Gamma" := (type_expression Gamma e t)
 and "'expression' 'node' e 'has' 'type' t 'in' Gamma" := (type_expression_node Gamma e t)

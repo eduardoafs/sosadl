@@ -1,6 +1,7 @@
 package org.archware.sosadl.validation.typing.impl;
 
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -20,7 +21,7 @@ public class CellEnvironmentImpl extends EnvironmentImpl implements Environment 
 
 	@Override
 	public EnvContent get(String name) {
-		if(name.equals(this.name)){
+		if (name.equals(this.name)) {
 			return info;
 		} else {
 			return parent.get(name);
@@ -30,11 +31,11 @@ public class CellEnvironmentImpl extends EnvironmentImpl implements Environment 
 	public String getName() {
 		return name;
 	}
-	
+
 	public EnvContent getInfo() {
 		return info;
 	}
-	
+
 	public Environment getParent() {
 		return parent;
 	}
@@ -47,5 +48,9 @@ public class CellEnvironmentImpl extends EnvironmentImpl implements Environment 
 	@Override
 	public <T> T match(BiFunction<EnvContent, Environment, T> ifCons, Supplier<T> ifNil) {
 		return ifCons.apply(info, parent);
+	}
+
+	@Override public Environment deepClone(Function<EnvContent,EnvContent> cloneCell) {
+		return new CellEnvironmentImpl(parent.deepClone(cloneCell), this.name, cloneCell.apply(info));
 	}
 }

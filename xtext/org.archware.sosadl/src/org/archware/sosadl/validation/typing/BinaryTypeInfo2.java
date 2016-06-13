@@ -12,5 +12,5 @@ public interface BinaryTypeInfo2<P extends Type_expression_node> {
 
 	Optional<DataType> immediateType(BinaryExpression e, DataType left, DataType right);
 
-	P prove(Environment gamma, BinaryExpression e, Type_expression pLeft, DataType tLeft, Type_expression pRight, DataType tRight, DataType r);
+	Type_expression_node prove(Environment gamma, BinaryExpression e, Type_expression pLeft, DataType tLeft, Type_expression pRight, DataType tRight, DataType r);
 }

@@ -436,6 +436,11 @@ public class TypeCheckerConstructors extends TypeCheckerAnnotate {
 	protected static Type_expression_node createType_expression_Sequence(Environment gamma, EList<Expression> elts, DataType tau, Forall<Expression, Ex<DataType, And<Type_expression, Subtype>>> p1) {
 		return new Type_expression_Sequence(gamma, elts, tau, p1);
 	}
+	
+	protected static Type_expression_node createType_expression_Map(Environment gamma, Expression object, DataType tau, String variable, Expression expression,
+			DataType tau__e, Type_expression p1, Type_expression p2) {
+		return new Type_expression_Map(gamma, object, tau, variable, expression, tau__e, p1, p2);
+	}
 
 	protected static Range_modulo_min createRange_modulo_min_pos(Expression lmin, Expression lmax, Expression rmin, Expression rmax, Expression min,
 			Expression_le p1, Expression_le p2) {
@@ -507,5 +512,4 @@ public class TypeCheckerConstructors extends TypeCheckerAnnotate {
 	private static <T extends EObject> T copy(T x) {
 		return TypeInferenceSolver.copy(x);
 	}
-
 }

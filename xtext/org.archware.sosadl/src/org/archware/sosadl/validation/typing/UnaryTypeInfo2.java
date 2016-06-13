@@ -12,5 +12,5 @@ public interface UnaryTypeInfo2<P extends Type_expression_node> {
 
 	Optional<DataType> immediateType(UnaryExpression e, DataType operand);
 
-	P prove(Environment gamma, UnaryExpression e, Type_expression pOperand, DataType tOperand);
+	Type_expression_node prove(Environment gamma, UnaryExpression e, Type_expression pOperand, DataType tOperand);
 }

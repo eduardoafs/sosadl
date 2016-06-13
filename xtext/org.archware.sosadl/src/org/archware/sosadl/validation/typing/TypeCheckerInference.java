@@ -3,6 +3,7 @@ package org.archware.sosadl.validation.typing;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -12,6 +13,7 @@ import org.archware.sosadl.sosADL.DataType;
 import org.archware.sosadl.sosADL.FieldDecl;
 import org.archware.sosadl.sosADL.SosADL;
 import org.archware.sosadl.tv.typeCheckerHelper.TypeVariable;
+import org.archware.sosadl.validation.typing.impl.VariableEnvContent;
 import org.archware.sosadl.validation.typing.proof.ProofTerm;
 import org.archware.sosadl.validation.typing.proof.ProofTermPlaceHolder;
 import org.archware.sosadl.validation.typing.proof.Type_sosADL;
@@ -58,27 +60,46 @@ public abstract class TypeCheckerInference extends TypeCheckerUtils {
 	protected TypeVariable createFreshTypeVariable(EObject co, EStructuralFeature csf, BinaryOperator<Optional<DataType>> solver) {
 		return inference.createFreshTypeVariable(solver, co, csf);
 	}
+	
+	private Stream<DataType> streamEnvironmentTypes(Environment gamma) {
+		return gamma.stream().filter((x) -> x instanceof VariableEnvContent).map((x) -> (VariableEnvContent)x)
+				.map(VariableEnvContent::getType);
+	}
+	
+	protected Environment getSubstitute(Environment gamma) {
+		return gamma.deepClone(this::getSubstitute);
+	}
+	
+	private EnvContent getSubstitute(EnvContent c) {
+		if(c instanceof VariableEnvContent) {
+			return new VariableEnvContent(((VariableEnvContent) c).getBinder(), getSubstitute(((VariableEnvContent) c).getType()));
+		} else {
+			return c;
+		}
+	}
 
-	protected <T extends ProofTerm> T proofTerm(DataType x, Class<T> itf, Function<DataType, T> factory) {
-		return proofTerm(itf, () -> {
+	protected <T extends ProofTerm> T proofTerm(Environment gamma, DataType x, Class<T> itf, BiFunction<Environment, DataType, T> factory) {
+		return proofTerm(gamma, itf, (g) -> {
 			DataType t = getSubstitute(x);
-			return factory.apply(t);
+			return factory.apply(g, t);
 		}, x);
 	}
 
-	protected <T extends ProofTerm> T proofTerm(Class<T> itf, Supplier<T> factory, DataType... x) {
-		return proofTerm(itf, factory, Stream.of(x));
+	protected <T extends ProofTerm> T proofTerm(Environment gamma, Class<T> itf, Function<Environment, T> factory, DataType... x) {
+		return proofTerm(gamma, itf, factory, Stream.of(x));
 	}
 
-	protected <T extends ProofTerm> T proofTerm(Class<T> itf, Supplier<T> factory, Stream<DataType> x) {
-		if(x.anyMatch(TypeInferenceSolver::containsVariable)) {
+	protected <T extends ProofTerm> T proofTerm(Environment gamma, Class<T> itf, Function<Environment, T> factory, Stream<DataType> x) {
+		boolean xv = x.anyMatch(TypeInferenceSolver::containsVariable);
+		boolean gv = streamEnvironmentTypes(gamma).anyMatch(TypeInferenceSolver::containsVariable);
+		if(xv || gv) {
 			ProofTermPlaceHolder<T> ptph = ProofTermPlaceHolder.create(itf);
 			delayedTasks.add(() -> {
-				ptph.fillWith(factory.get());
+				ptph.fillWith(factory.apply(getSubstitute(gamma)));
 			});
 			return ptph.cast();
 		} else {
-			return factory.get();
+			return factory.apply(gamma);
 		}
 	}
 
