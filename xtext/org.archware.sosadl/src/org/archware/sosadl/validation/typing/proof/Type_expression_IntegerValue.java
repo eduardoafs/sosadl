@@ -5,9 +5,11 @@ import java.math.BigInteger;
 import org.archware.sosadl.validation.typing.Environment;
 
 public class Type_expression_IntegerValue implements Type_expression_node {
-	@Mandatory private final Environment gamma;
-	
-	@Mandatory private final BigInteger v;
+	@Mandatory
+	private final Environment gamma;
+
+	@Mandatory
+	private final BigInteger v;
 
 	public Type_expression_IntegerValue(Environment gamma, BigInteger v) {
 		super();

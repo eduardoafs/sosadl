@@ -2,8 +2,9 @@ package org.archware.sosadl.validation.typing.proof;
 
 import org.archware.sosadl.validation.typing.Environment;
 
-public class Incrementally_nil<T,P> implements Incrementally<T,P> {
-	@Mandatory private final Environment gamma;
+public class Incrementally_nil<T, P> implements Incrementally<T, P> {
+	@Mandatory
+	private final Environment gamma;
 
 	public Incrementally_nil(Environment gamma) {
 		super();

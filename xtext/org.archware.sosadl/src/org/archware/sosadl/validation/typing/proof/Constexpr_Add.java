@@ -3,13 +3,17 @@ package org.archware.sosadl.validation.typing.proof;
 import org.archware.sosadl.sosADL.Expression;
 
 public class Constexpr_Add implements Constexpr_expression {
-	@Mandatory private final Expression l;
-	
-	@Mandatory private final Expression r;
-	
-	@Mandatory private final Constexpr_expression p1;
-	
-	@Mandatory private final Constexpr_expression p2;
+	@Mandatory
+	private final Expression l;
+
+	@Mandatory
+	private final Expression r;
+
+	@Mandatory
+	private final Constexpr_expression p1;
+
+	@Mandatory
+	private final Constexpr_expression p2;
 
 	public Constexpr_Add(Expression l, Expression r, Constexpr_expression p1, Constexpr_expression p2) {
 		super();

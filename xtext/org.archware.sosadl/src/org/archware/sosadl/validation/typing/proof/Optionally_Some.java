@@ -2,12 +2,15 @@ package org.archware.sosadl.validation.typing.proof;
 
 import org.archware.sosadl.validation.typing.Environment;
 
-public class Optionally_Some<T, P> implements Optionally<T,P> {
-	@Mandatory private final Environment gamma;
+public class Optionally_Some<T, P> implements Optionally<T, P> {
+	@Mandatory
+	private final Environment gamma;
 
-	@Mandatory private final T x;
-	
-	@Mandatory private final P p1;
+	@Mandatory
+	private final T x;
+
+	@Mandatory
+	private final P p1;
 
 	public Optionally_Some(Environment gamma, T x, P p1) {
 		super();

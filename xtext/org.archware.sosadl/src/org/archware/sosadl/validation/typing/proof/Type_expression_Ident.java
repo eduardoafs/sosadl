@@ -4,13 +4,17 @@ import org.archware.sosadl.sosADL.DataType;
 import org.archware.sosadl.validation.typing.Environment;
 
 public class Type_expression_Ident implements Type_expression_node {
-	@Mandatory private final Environment gamma;
-	
-	@Mandatory private final String x;
-	
-	@Mandatory private final DataType tau;
-	
-	@Mandatory private final Equality p;
+	@Mandatory
+	private final Environment gamma;
+
+	@Mandatory
+	private final String x;
+
+	@Mandatory
+	private final DataType tau;
+
+	@Mandatory
+	private final Equality p;
 
 	public Type_expression_Ident(Environment gamma, String x, DataType tau, Equality p) {
 		super();

@@ -5,31 +5,44 @@ import org.archware.sosadl.sosADL.Expression;
 import org.archware.sosadl.validation.typing.Environment;
 
 public class Type_expression_Ge implements Type_expression_node {
-	@Mandatory private final Environment gamma;
-	
-	@Mandatory private final Expression l;
-	
-	@Mandatory private final DataType l__tau;
-	
-	@Mandatory private final Expression l__min;
-	
-	@Mandatory private final Expression l__max;
-	
-	@Mandatory private final Expression r;
-	
-	@Mandatory private final DataType r__tau;
-	
-	@Mandatory private final Expression r__min;
-	
-	@Mandatory private final Expression r__max;
-	
-	@Mandatory private final Type_expression p1;
-	
-	@Mandatory private final Subtype p2;
-	
-	@Mandatory private final Type_expression p3;
-	
-	@Mandatory private final Subtype p4;
+	@Mandatory
+	private final Environment gamma;
+
+	@Mandatory
+	private final Expression l;
+
+	@Mandatory
+	private final DataType l__tau;
+
+	@Mandatory
+	private final Expression l__min;
+
+	@Mandatory
+	private final Expression l__max;
+
+	@Mandatory
+	private final Expression r;
+
+	@Mandatory
+	private final DataType r__tau;
+
+	@Mandatory
+	private final Expression r__min;
+
+	@Mandatory
+	private final Expression r__max;
+
+	@Mandatory
+	private final Type_expression p1;
+
+	@Mandatory
+	private final Subtype p2;
+
+	@Mandatory
+	private final Type_expression p3;
+
+	@Mandatory
+	private final Subtype p4;
 
 	public Type_expression_Ge(Environment gamma, Expression l, DataType l__tau, Expression l__min, Expression l__max,
 			Expression r, DataType r__tau, Expression r__min, Expression r__max, Type_expression p1, Subtype p2,

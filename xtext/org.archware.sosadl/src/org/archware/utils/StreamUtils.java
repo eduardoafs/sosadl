@@ -12,15 +12,16 @@ public class StreamUtils {
 	public static <T> Stream<T> toStream(Optional<T> o) {
 		return OptionalUtils.mapOrElse(o, Stream::of, Stream.empty());
 	}
-	
-	public static <A,B> Stream<Pair<A,B>> mapi(Stream<A> s, Function<A,B> f) {
+
+	public static <A, B> Stream<Pair<A, B>> mapi(Stream<A> s, Function<A, B> f) {
 		return s.map((x) -> new Pair<>(x, f.apply(x)));
 	}
 
 	public static <T> Stream<IntPair<T>> indexed(Stream<T> s) {
-		return StreamSupport.stream(Spliterators.spliteratorUnknownSize(indexed(s.iterator()), Spliterator.DISTINCT | Spliterator.IMMUTABLE | Spliterator.NONNULL), false);
+		return StreamSupport.stream(Spliterators.spliteratorUnknownSize(indexed(s.iterator()),
+				Spliterator.DISTINCT | Spliterator.IMMUTABLE | Spliterator.NONNULL), false);
 	}
-	
+
 	public static <T> Iterator<IntPair<T>> indexed(Iterator<T> i) {
 		return new Iterator<IntPair<T>>() {
 			private final Iterator<T> parent = i;
@@ -34,16 +35,17 @@ public class StreamUtils {
 			@Override
 			public IntPair<T> next() {
 				return new IntPair<>(position++, parent.next());
-			}			
+			}
 		};
 	}
-	
-	public static <R,S> Stream<Pair<R,S>> zip(Stream<R> r, Stream<S> s) {
-		return StreamSupport.stream(Spliterators.spliteratorUnknownSize(zip(r.iterator(), s.iterator()), Spliterator.IMMUTABLE | Spliterator.NONNULL), false);
+
+	public static <R, S> Stream<Pair<R, S>> zip(Stream<R> r, Stream<S> s) {
+		return StreamSupport.stream(Spliterators.spliteratorUnknownSize(zip(r.iterator(), s.iterator()),
+				Spliterator.IMMUTABLE | Spliterator.NONNULL), false);
 	}
-	
-	public static <R,S> Iterator<Pair<R,S>> zip(Iterator<R> r, Iterator<S> s) {
-		return new Iterator<Pair<R,S>>() {
+
+	public static <R, S> Iterator<Pair<R, S>> zip(Iterator<R> r, Iterator<S> s) {
+		return new Iterator<Pair<R, S>>() {
 			@Override
 			public boolean hasNext() {
 				return r.hasNext() && s.hasNext();

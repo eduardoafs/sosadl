@@ -266,6 +266,12 @@ public final class TypeInferenceSolver {
 	 *            to-be-added constraint
 	 */
 	private void addConstraint(Constraint c) {
+		if(c.originObject == null) {
+			throw new NullPointerException();
+		}
+		if(c.originObject.eContainer() == null) {
+			throw new IllegalArgumentException("The given EObject (" + c.originObject.toString() + ") is not contained in any object");
+		}
 		if (c.sub != c.sup) {
 			if (isDetermined(c.sub)) {
 				if (isDetermined(c.sup)) {

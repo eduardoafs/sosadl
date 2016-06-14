@@ -1,7 +1,8 @@
 package org.archware.sosadl.validation.typing.proof;
 
-public class Or_introl<R,S> implements Or<R,S> {
-	@Mandatory private final R p;
+public class Or_introl<R, S> implements Or<R, S> {
+	@Mandatory
+	private final R p;
 
 	public Or_introl(R p) {
 		super();

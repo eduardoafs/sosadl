@@ -8,15 +8,20 @@ import org.archware.sosadl.sosADL.FunctionDecl;
 import org.archware.sosadl.validation.typing.Environment;
 
 public class Type_NamedType implements Type_datatype {
-	@Mandatory private final Environment gamma;
-	
-	@Mandatory private final String n;
-	
-	@Mandatory private final DataType u;
-	
-	@Mandatory private final DataTypeDecl t;
-	
-	@Mandatory private final Ex<List<FunctionDecl>, Equality> p;
+	@Mandatory
+	private final Environment gamma;
+
+	@Mandatory
+	private final String n;
+
+	@Mandatory
+	private final DataType u;
+
+	@Mandatory
+	private final DataTypeDecl t;
+
+	@Mandatory
+	private final Ex<List<FunctionDecl>, Equality> p;
 
 	public Type_NamedType(Environment gamma, String n, DataType u, DataTypeDecl t, Ex<List<FunctionDecl>, Equality> p) {
 		super();
@@ -34,7 +39,7 @@ public class Type_NamedType implements Type_datatype {
 	public String getN() {
 		return n;
 	}
-	
+
 	public DataType getU() {
 		return u;
 	}
@@ -43,7 +48,7 @@ public class Type_NamedType implements Type_datatype {
 		return t;
 	}
 
-	public Ex<List<FunctionDecl>,Equality> getP() {
+	public Ex<List<FunctionDecl>, Equality> getP() {
 		return p;
 	}
 

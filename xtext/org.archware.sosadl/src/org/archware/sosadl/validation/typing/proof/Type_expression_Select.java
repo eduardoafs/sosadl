@@ -4,7 +4,7 @@ import org.archware.sosadl.sosADL.DataType;
 import org.archware.sosadl.sosADL.Expression;
 import org.archware.sosadl.validation.typing.Environment;
 
-public class Type_expression_Map implements Type_expression_node {
+public class Type_expression_Select implements Type_expression_node {
 	@Mandatory
 	private final Environment gamma;
 
@@ -21,15 +21,12 @@ public class Type_expression_Map implements Type_expression_node {
 	private final Expression e;
 
 	@Mandatory
-	private final DataType tau__e;
-
-	@Mandatory
 	private final Type_expression p1;
 
 	@Mandatory
 	private final Type_expression p2;
 
-	public Type_expression_Map(Environment gamma, Expression obj, DataType tau, String x, Expression e, DataType tau__e,
+	public Type_expression_Select(Environment gamma, Expression obj, DataType tau, String x, Expression e,
 			Type_expression p1, Type_expression p2) {
 		super();
 		this.gamma = gamma;
@@ -37,7 +34,6 @@ public class Type_expression_Map implements Type_expression_node {
 		this.tau = tau;
 		this.x = x;
 		this.e = e;
-		this.tau__e = tau__e;
 		this.p1 = p1;
 		this.p2 = p2;
 	}
@@ -60,10 +56,6 @@ public class Type_expression_Map implements Type_expression_node {
 
 	public Expression getE() {
 		return e;
-	}
-
-	public DataType getTau__e() {
-		return tau__e;
 	}
 
 	public Type_expression getP1() {

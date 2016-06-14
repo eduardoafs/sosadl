@@ -8,17 +8,21 @@ import org.archware.sosadl.validation.typing.Environment;
 import org.eclipse.emf.common.util.EList;
 
 public class Type_expression_Tuple implements Type_expression_node {
-	@Mandatory private final Environment gamma;
-	
+	@Mandatory
+	private final Environment gamma;
+
 	private final EList<TupleElement> elts;
-	
+
 	private final EList<FieldDecl> typ;
-	
-	@Mandatory private final Equality p1;
-	
-	@Mandatory private final Forall2<TupleElement, FieldDecl, Equality> p2;
-	
-	@Mandatory private final Forall2<TupleElement, FieldDecl, Ex<Expression, And<Equality, Ex<DataType, And<Equality, Type_expression>>>>> p3;
+
+	@Mandatory
+	private final Equality p1;
+
+	@Mandatory
+	private final Forall2<TupleElement, FieldDecl, Equality> p2;
+
+	@Mandatory
+	private final Forall2<TupleElement, FieldDecl, Ex<Expression, And<Equality, Ex<DataType, And<Equality, Type_expression>>>>> p3;
 
 	public Type_expression_Tuple(Environment gamma, EList<TupleElement> elts, EList<FieldDecl> typ, Equality p1,
 			Forall2<TupleElement, FieldDecl, Equality> p2,

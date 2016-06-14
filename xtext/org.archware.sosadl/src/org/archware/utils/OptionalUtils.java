@@ -5,7 +5,7 @@ import java.util.function.Function;
 
 public class OptionalUtils {
 
-	public static <T,U> U mapOrElse(Optional<T> o, Function<T,U> f, U ifEmpty) {
+	public static <T, U> U mapOrElse(Optional<T> o, Function<T, U> f, U ifEmpty) {
 		return o.map(f).orElse(ifEmpty);
 	}
 

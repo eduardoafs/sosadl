@@ -5,15 +5,20 @@ import org.archware.sosadl.sosADL.Expression;
 import org.archware.sosadl.validation.typing.Environment;
 
 public class Type_expression_and_type implements Type_expression {
-	@Mandatory private final Environment gamma;
-	
-	@Mandatory private final Expression e;
-	
-	@Mandatory private final DataType t;
-	
-	@Mandatory private final Type_expression_node p1;
-	
-	@Mandatory private final Check_datatype p2;
+	@Mandatory
+	private final Environment gamma;
+
+	@Mandatory
+	private final Expression e;
+
+	@Mandatory
+	private final DataType t;
+
+	@Mandatory
+	private final Type_expression_node p1;
+
+	@Mandatory
+	private final Check_datatype p2;
 
 	public Type_expression_and_type(Environment gamma, Expression e, DataType t, Type_expression_node p1,
 			Check_datatype p2) {

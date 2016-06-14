@@ -5,15 +5,20 @@ import org.archware.sosadl.sosADL.Expression;
 import org.archware.sosadl.validation.typing.Environment;
 
 public class Type_expression_Not implements Type_expression_node {
-	@Mandatory private final Environment gamma;
-	
-	@Mandatory private final Expression e;
-	
-	@Mandatory private final DataType tau;
-	
-	@Mandatory private final Type_expression p1;
+	@Mandatory
+	private final Environment gamma;
 
-	@Mandatory private final Subtype p2;
+	@Mandatory
+	private final Expression e;
+
+	@Mandatory
+	private final DataType tau;
+
+	@Mandatory
+	private final Type_expression p1;
+
+	@Mandatory
+	private final Subtype p2;
 
 	public Type_expression_Not(Environment gamma, Expression e, DataType tau, Type_expression p1, Subtype p2) {
 		super();

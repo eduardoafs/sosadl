@@ -6,10 +6,11 @@ import org.eclipse.emf.common.util.EList;
 
 public class Subtype_tuple implements Subtype {
 	private final EList<FieldDecl> l;
-	
+
 	private final EList<FieldDecl> r;
-	
-	@Mandatory private final Forall<FieldDecl, Ex<String, And<Equality, Ex<DataType, And<Equality, Ex<DataType, And<Equality, Subtype>>>>>>> p1;
+
+	@Mandatory
+	private final Forall<FieldDecl, Ex<String, And<Equality, Ex<DataType, And<Equality, Ex<DataType, And<Equality, Subtype>>>>>>> p1;
 
 	public Subtype_tuple(EList<FieldDecl> l, EList<FieldDecl> r,
 			Forall<FieldDecl, Ex<String, And<Equality, Ex<DataType, And<Equality, Ex<DataType, And<Equality, Subtype>>>>>>> p1) {

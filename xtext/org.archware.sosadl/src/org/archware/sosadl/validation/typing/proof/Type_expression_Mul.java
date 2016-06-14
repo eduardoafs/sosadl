@@ -5,51 +5,74 @@ import org.archware.sosadl.sosADL.Expression;
 import org.archware.sosadl.validation.typing.Environment;
 
 public class Type_expression_Mul implements Type_expression_node {
-	@Mandatory private final Environment gamma;
-	
-	@Mandatory private final Expression l;
-	
-	@Mandatory private final DataType l__tau;
-	
-	@Mandatory private final Expression l__min;
-	
-	@Mandatory private final Expression l__max;
-	
-	@Mandatory private final Expression r;
-	
-	@Mandatory private final DataType r__tau;
-	
-	@Mandatory private final Expression r__min;
-	
-	@Mandatory private final Expression r__max;
-	
-	@Mandatory private final Expression min;
+	@Mandatory
+	private final Environment gamma;
 
-	@Mandatory private final Expression max;
-	
-	@Mandatory private final Type_expression p1;
-	
-	@Mandatory private final Subtype p2;
-	
-	@Mandatory private final Type_expression p3;
-	
-	@Mandatory private final Subtype p4;
+	@Mandatory
+	private final Expression l;
 
-	@Mandatory private final Expression_le p5;
+	@Mandatory
+	private final DataType l__tau;
 
-	@Mandatory private final Expression_le p6;
+	@Mandatory
+	private final Expression l__min;
 
-	@Mandatory private final Expression_le p7;
+	@Mandatory
+	private final Expression l__max;
 
-	@Mandatory private final Expression_le p8;
+	@Mandatory
+	private final Expression r;
 
-	@Mandatory private final Expression_le p9;
+	@Mandatory
+	private final DataType r__tau;
 
-	@Mandatory private final Expression_le pa;
+	@Mandatory
+	private final Expression r__min;
 
-	@Mandatory private final Expression_le pb;
+	@Mandatory
+	private final Expression r__max;
 
-	@Mandatory private final Expression_le pc;
+	@Mandatory
+	private final Expression min;
+
+	@Mandatory
+	private final Expression max;
+
+	@Mandatory
+	private final Type_expression p1;
+
+	@Mandatory
+	private final Subtype p2;
+
+	@Mandatory
+	private final Type_expression p3;
+
+	@Mandatory
+	private final Subtype p4;
+
+	@Mandatory
+	private final Expression_le p5;
+
+	@Mandatory
+	private final Expression_le p6;
+
+	@Mandatory
+	private final Expression_le p7;
+
+	@Mandatory
+	private final Expression_le p8;
+
+	@Mandatory
+	private final Expression_le p9;
+
+	@Mandatory
+	private final Expression_le pa;
+
+	@Mandatory
+	private final Expression_le pb;
+
+	@Mandatory
+	private final Expression_le pc;
 
 	public Type_expression_Mul(Environment gamma, Expression l, DataType l__tau, Expression l__min, Expression l__max,
 			Expression r, DataType r__tau, Expression r__min, Expression r__max, Expression min, Expression max,

@@ -7,10 +7,10 @@ import org.eclipse.emf.common.util.EList;
 @CoqType("SoSADL (AST.SosADL i (Some d)) well typed")
 public class Type_SosADL_file implements Type_sosADL {
 	private final EList<Import> i;
-	
+
 	@Mandatory
 	private final Unit d;
-	
+
 	@Mandatory
 	@CoqType("unit d well typed in empty")
 	private final Type_unit p;

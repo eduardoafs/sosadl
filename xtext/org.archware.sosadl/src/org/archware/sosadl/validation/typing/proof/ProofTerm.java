@@ -19,10 +19,13 @@ import org.eclipse.xtext.xbase.lib.StringExtensions;
 /**
  * A Coq term reified as a Java object.
  * 
- * The default implementation uses Java reflexivity in order to generate the proper formatting.
- * The {@link ProofTerm#getConstructorName()} method is used to generate the name of the Coq constructor.
- * The {@link ProofTerm#getDeclaredFields()} method retrieves the fields of the object, i.e., the parameters of the Coq constructor.
- * The {@link ProofTerm#describeField(Field)} method can be overridden in order to customized how each field is handled.
+ * The default implementation uses Java reflexivity in order to generate the
+ * proper formatting. The {@link ProofTerm#getConstructorName()} method is used
+ * to generate the name of the Coq constructor. The
+ * {@link ProofTerm#getDeclaredFields()} method retrieves the fields of the
+ * object, i.e., the parameters of the Coq constructor. The
+ * {@link ProofTerm#describeField(Field)} method can be overridden in order to
+ * customized how each field is handled.
  * 
  * A typical usage scenario is:
  * 
@@ -40,8 +43,10 @@ public interface ProofTerm {
 	/**
 	 * Returns the name of the Coq constructor for this object.
 	 * 
-	 * Whenever the class is annotated with {@link CoqConstructor}, the returned name is the one in the {@link CoqConstructor#value()} field of the annotation.
-	 * Otherwise, the returned name is the name of the class, of which the first letter is turned to lower case.
+	 * Whenever the class is annotated with {@link CoqConstructor}, the returned
+	 * name is the one in the {@link CoqConstructor#value()} field of the
+	 * annotation. Otherwise, the returned name is the name of the class, of
+	 * which the first letter is turned to lower case.
 	 * 
 	 * @return name of the Coq constructor.
 	 */
@@ -58,10 +63,15 @@ public interface ProofTerm {
 	/**
 	 * Returns an array containing the fields for this object.
 	 * 
-	 * Each field, which encodes one parameter in the corresponding Coq term, implements any of {@link Eluded}, {@link ListField}, {@link MandatoryField} or {@link OptionalField}, depending on the characteristics of the field.
-	 * The actual choice of what type is returned is delegated to the {@link #describeField(Field)} method, such that it can be customized by any implementing class.
+	 * Each field, which encodes one parameter in the corresponding Coq term,
+	 * implements any of {@link Eluded}, {@link ListField},
+	 * {@link MandatoryField} or {@link OptionalField}, depending on the
+	 * characteristics of the field. The actual choice of what type is returned
+	 * is delegated to the {@link #describeField(Field)} method, such that it
+	 * can be customized by any implementing class.
 	 * 
-	 * The returned array is built from the one returned by {@link Class#getDeclaredFields()}.
+	 * The returned array is built from the one returned by
+	 * {@link Class#getDeclaredFields()}.
 	 * 
 	 * @return array of the fields to be used as parameters in the Coq term.
 	 */
@@ -73,22 +83,33 @@ public interface ProofTerm {
 	}
 
 	/**
-	 * Returns the value and description of a field to be used as a parameter in a Coq term.
+	 * Returns the value and description of a field to be used as a parameter in
+	 * a Coq term.
 	 * 
 	 * Depending on the annotation and type of the field:
 	 * <ul>
-	 * <li>If the field is annotated with {@link Eluded}, then an {@link EludedField} is returned.</li>
-	 * <li>If the field has type {@link java.util.List} (or any subtype), then a  {@link ListField} is returned.</li>
-	 * <li>If the field is annotated with {@link Mandatory}, then a {@link MandatoryField} is returned.</li>
+	 * <li>If the field is annotated with {@link Eluded}, then an
+	 * {@link EludedField} is returned.</li>
+	 * <li>If the field has type {@link java.util.List} (or any subtype), then a
+	 * {@link ListField} is returned.</li>
+	 * <li>If the field is annotated with {@link Mandatory}, then a
+	 * {@link MandatoryField} is returned.</li>
 	 * <li>Otherwise, a {@link OptionalField} is returned.</li>
 	 * </ul>
 	 * 
-	 * In the {@link ListField}, {@link MandatoryField} and {@link OptionalField} cases, if the field is is annotated with {@link CoqLiteral}, then the field is assumed to hold an instance of {@link CharSequence}.
-	 * This {@link CharSequence} is returned as it is, without any additional operation, by the {@link ListField#get(Function)}, {@link MandatoryField#get(Function)} and {@link OptionalField#get(Function)} methods, respectively.
+	 * In the {@link ListField}, {@link MandatoryField} and
+	 * {@link OptionalField} cases, if the field is is annotated with
+	 * {@link CoqLiteral}, then the field is assumed to hold an instance of
+	 * {@link CharSequence}. This {@link CharSequence} is returned as it is,
+	 * without any additional operation, by the {@link ListField#get(Function)},
+	 * {@link MandatoryField#get(Function)} and
+	 * {@link OptionalField#get(Function)} methods, respectively.
 	 * 
-	 * @param f the field to process
+	 * @param f
+	 *            the field to process
 	 * 
-	 * @return the field value and description as expected in order to format the Coq code.
+	 * @return the field value and description as expected in order to format
+	 *         the Coq code.
 	 */
 	default FieldDescriptor describeField(Field f) {
 		if (f.isAnnotationPresent(Eluded.class)) {

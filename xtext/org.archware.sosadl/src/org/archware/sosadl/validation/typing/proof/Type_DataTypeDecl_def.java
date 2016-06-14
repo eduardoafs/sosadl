@@ -7,27 +7,34 @@ import org.archware.sosadl.validation.typing.Environment;
 import org.eclipse.emf.common.util.EList;
 
 public class Type_DataTypeDecl_def implements Type_datatypeDecl {
-	@Mandatory private final Environment gamma;
-	
-	@Mandatory private final String name;
-	
-	@Mandatory private final DataType t;
-	
-	@Mandatory private final DataType t2;
-	
+	@Mandatory
+	private final Environment gamma;
+
+	@Mandatory
+	private final String name;
+
+	@Mandatory
+	private final DataType t;
+
+	@Mandatory
+	private final DataType t2;
+
 	private final EList<FunctionDecl> funs;
-	
-	@Mandatory private final Environment gamma1;
-	
-	@Mandatory private final Type_datatype p1;
-	
-	@Mandatory private final Forall<FunctionDecl, Ex<FormalParameter, And<Equality, Equality>>> p2;
-	
-	@Mandatory private final Incrementally<FunctionDecl, Type_function> p3;
+
+	@Mandatory
+	private final Environment gamma1;
+
+	@Mandatory
+	private final Type_datatype p1;
+
+	@Mandatory
+	private final Forall<FunctionDecl, Ex<FormalParameter, And<Equality, Equality>>> p2;
+
+	@Mandatory
+	private final Incrementally<FunctionDecl, Type_function> p3;
 
 	public Type_DataTypeDecl_def(Environment gamma, String name, DataType t, DataType t2, EList<FunctionDecl> funs,
-			Environment gamma1, Type_datatype p1,
-			Forall<FunctionDecl, Ex<FormalParameter, And<Equality, Equality>>> p2,
+			Environment gamma1, Type_datatype p1, Forall<FunctionDecl, Ex<FormalParameter, And<Equality, Equality>>> p2,
 			Incrementally<FunctionDecl, Type_function> p3) {
 		super();
 		this.gamma = gamma;

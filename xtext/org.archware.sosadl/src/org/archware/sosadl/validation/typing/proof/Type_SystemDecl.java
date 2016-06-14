@@ -10,38 +10,48 @@ import org.archware.sosadl.validation.typing.Environment;
 import org.eclipse.emf.common.util.EList;
 
 public class Type_SystemDecl implements Type_system {
-	@Mandatory private final Environment gamma;
-	
-	@Mandatory private final String name;
-	
-	private final EList<FormalParameter> params;
-	
-	private final EList<FormalParameter> params2;
-	
-	@Mandatory private final Environment gamma1;
-	
-	private final EList<DataTypeDecl> datatypes;
-	
-	@Mandatory private final Environment gamma2;
-	
-	private final EList<GateDecl> gates;
-	
-	@Mandatory private final Environment gamma3;
+	@Mandatory
+	private final Environment gamma;
 
-	@Mandatory private final BehaviorDecl bhv;
-	
+	@Mandatory
+	private final String name;
+
+	private final EList<FormalParameter> params;
+
+	private final EList<FormalParameter> params2;
+
+	@Mandatory
+	private final Environment gamma1;
+
+	private final EList<DataTypeDecl> datatypes;
+
+	@Mandatory
+	private final Environment gamma2;
+
+	private final EList<GateDecl> gates;
+
+	@Mandatory
+	private final Environment gamma3;
+
+	@Mandatory
+	private final BehaviorDecl bhv;
+
 	private final AssertionDecl assrt;
-	
+
 	@Mandatory
 	private final And<Forall2<FormalParameter, FormalParameter, And<Equality, Ex<DataType, And<Equality, Ex<DataType, And<Equality, Type_datatype>>>>>>, Mutually<FormalParameter, True>> p1;
-	
-	@Mandatory private final Incrementally<DataTypeDecl,Type_datatypeDecl> p2;
 
-	@Mandatory private final Incrementally<GateDecl, Simple_increment<GateDecl, Type_gate>> p3;
-	
-	@Mandatory private final Type_behavior p4;
-	
-	@Mandatory private final Optionally<AssertionDecl, Type_assertion> p5;
+	@Mandatory
+	private final Incrementally<DataTypeDecl, Type_datatypeDecl> p2;
+
+	@Mandatory
+	private final Incrementally<GateDecl, Simple_increment<GateDecl, Type_gate>> p3;
+
+	@Mandatory
+	private final Type_behavior p4;
+
+	@Mandatory
+	private final Optionally<AssertionDecl, Type_assertion> p5;
 
 	public Type_SystemDecl(Environment gamma, String name, EList<FormalParameter> params,
 			EList<FormalParameter> params2, Environment gamma1, EList<DataTypeDecl> datatypes, Environment gamma2,

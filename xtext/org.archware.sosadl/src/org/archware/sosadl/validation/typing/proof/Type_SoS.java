@@ -7,13 +7,13 @@ import org.archware.sosadl.validation.typing.Environment;
 public class Type_SoS implements Type_unit {
 	@Mandatory
 	private final Environment gamma;
-	
+
 	@Mandatory
 	private final String n;
-	
+
 	@Mandatory
 	private final EntityBlock e;
-	
+
 	@Mandatory
 	@CoqType("entity e well typed in gamma")
 	private final Type_entityBlock p;
@@ -25,7 +25,7 @@ public class Type_SoS implements Type_unit {
 		this.e = e;
 		this.p = p;
 	}
-	
+
 	public Environment getGamma() {
 		return gamma;
 	}

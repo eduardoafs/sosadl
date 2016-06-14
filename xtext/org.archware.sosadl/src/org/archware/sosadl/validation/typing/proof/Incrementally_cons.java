@@ -4,23 +4,29 @@ import java.util.List;
 
 import org.archware.sosadl.validation.typing.Environment;
 
-public class Incrementally_cons<T,P> implements Incrementally<T,P> {
-	@Mandatory private final Environment gamma;
-	
-	@Mandatory private final T x;
-	
-	@Mandatory private final Environment gammai;
-	
-	private final List<T> l;
-	
-	@Mandatory private final Environment gamma1;
-	
-	@Mandatory private final P p1;
-	
-	@Mandatory private final Incrementally<T,P> p2;
+public class Incrementally_cons<T, P> implements Incrementally<T, P> {
+	@Mandatory
+	private final Environment gamma;
 
-	public Incrementally_cons(Environment gamma, T x, Environment gammai, List<T> l,
-			Environment gamma1, P p1, Incrementally<T, P> p2) {
+	@Mandatory
+	private final T x;
+
+	@Mandatory
+	private final Environment gammai;
+
+	private final List<T> l;
+
+	@Mandatory
+	private final Environment gamma1;
+
+	@Mandatory
+	private final P p1;
+
+	@Mandatory
+	private final Incrementally<T, P> p2;
+
+	public Incrementally_cons(Environment gamma, T x, Environment gammai, List<T> l, Environment gamma1, P p1,
+			Incrementally<T, P> p2) {
 		super();
 		this.gamma = gamma;
 		this.x = x;

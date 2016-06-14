@@ -21,6 +21,7 @@ import org.archware.sosadl.sosADL.IntegerValue;
 import org.archware.sosadl.sosADL.Map;
 import org.archware.sosadl.sosADL.MethodCall;
 import org.archware.sosadl.sosADL.RangeType;
+import org.archware.sosadl.sosADL.Select;
 import org.archware.sosadl.sosADL.Sequence;
 import org.archware.sosadl.sosADL.SequenceType;
 import org.archware.sosadl.sosADL.SosADLPackage;
@@ -521,12 +522,112 @@ public abstract class TypeCheckerExpression extends TypeCheckerDataType {
 			return type_expression_node_Field(gamma, (org.archware.sosadl.sosADL.Field)e);
 		} else if(e instanceof Map) {
 			return type_expression_node_Map(gamma, (Map)e);
+		} else if(e instanceof Select) {
+			return type_expression_node_Select(gamma, (Select)e);
 		} else {
 			error("Type error", e, null);
 			return new Pair<>(null, null);
 		}
 	}
+
+	private class SelectTyper implements Typer {
+		private final Environment gamma;
+		private final Select s;
+		private final Expression obj;
+		private final DataType sTau;
+		private final String x;
+		private final Expression e;
+		private final Type_expression p1;
+		
+		private DataType tau;
+		private Type_expression p2;
+		
+		public SelectTyper(Environment gamma, Select s, DataType sTau, Type_expression p1) {
+			super();
+			this.gamma = gamma;
+			this.s = s;
+			this.obj = s.getObject();
+			this.sTau = sTau;
+			this.x = s.getVariable();
+			this.e = s.getCondition();
+			this.p1 = p1;
+		}
+		
+		private DataType getObjType() {
+			if(sTau instanceof TypeVariable) {
+				return getSubstitute(sTau);
+			} else {
+				return sTau;
+			}
+		}
+		
+		private Optional<DataType> lookupAndReturnType() {
+			DataType s = getObjType();
+			if(s instanceof SequenceType) {
+				SequenceType st = (SequenceType) s;
+				tau = st.getType();
+				Pair<Type_expression, DataType> pt2 = type_expression(gamma.put(x, new VariableEnvContent(s, tau)), e);
+				p2 = pt2.getA();
+				DataType t2 = pt2.getB();
+				if(t2 != null && p2 != null) {
+					inference.addConstraint(t2, createBooleanType(), this.s, SosADLPackage.Literals.SELECT__CONDITION);
+					return Optional.of(createSequenceType(tau));
+				} else {
+					return Optional.empty();
+				}
+			} else {
+				error("The object must be a sequence", this.s, SosADLPackage.Literals.SELECT__OBJECT);
+				return Optional.empty();
+			}
+		}
+
+		@Override
+		public Optional<DataType> computeReturnType() {
+			if (sTau instanceof TypeVariable) {
+				TypeVariable v = createFreshTypeVariable(s, null, (lb,ub) -> lookupAndReturnType());
+				inference.addDependency(v, (TypeVariable) sTau);
+				return Optional.of(v);
+			} else {
+				return lookupAndReturnType();
+			}
+		}
+
+		@Override
+		public Type_expression_node computeProof() {
+			return p(Type_expression_node.class, gamma, this::buildProof);
+		}
+
+		private Type_expression_node buildProof(Environment gamma) {
+			return p(Type_expression_node.class, tau,
+					(tau_) -> createType_expression_Select(gamma, obj, tau_, x, e, p1, p2));
+		}
+	}
 	
+	private Pair<Type_expression_node, DataType> type_expression_node_Select(Environment gamma, Select e) {
+		if(e.getCondition() != null && e.getObject() != null && e.getVariable() != null) {
+			Pair<Type_expression, DataType> pt1 = type_expression(gamma, e.getObject());
+			Type_expression p1 = pt1.getA();
+			DataType sTau = pt1.getB();
+			if(p1 != null && sTau != null) {
+				SelectTyper typer = new SelectTyper(gamma, e, sTau, p1);
+				return typeWithTyper(e, typer);
+			} else {
+				return new Pair<>(null, null);
+			}
+		} else {
+			if(e.getCondition() == null) {
+				error("There must be a predicate expression", e, SosADLPackage.Literals.SELECT__CONDITION);
+			}
+			if(e.getObject() == null) {
+				error("The selection must be applied to a sequence", e, SosADLPackage.Literals.SELECT__OBJECT);
+			}
+			if(e.getVariable() == null) {
+				error("The selection must declare a variable", e, SosADLPackage.Literals.SELECT__VARIABLE);
+			}
+			return new Pair<>(null, null);
+		}
+	}
+
 	private class MapTyper implements Typer {
 		private final Environment gamma;
 		private final Map m;

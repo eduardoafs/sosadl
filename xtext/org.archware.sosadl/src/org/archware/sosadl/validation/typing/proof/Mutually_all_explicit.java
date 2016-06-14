@@ -5,28 +5,40 @@ import java.util.List;
 import org.archware.sosadl.validation.typing.Environment;
 
 @CoqConstructor("@mutually_all")
-public class Mutually_all_explicit<T,P> implements Mutually<T,P> {
-	@Eluded private final Object t = null;
-	
-	@Eluded private final Object p = null;
-	
-	@Mandatory @CoqLiteral private final String name;
-	
-	@Mandatory @CoqLiteral private final String content;
-	
-	@Mandatory private final Environment gamma;
-	
-	private final List<T> l;
-	
-	@Mandatory private final Environment gamma1;
-	
-	@Mandatory private final Equality p1;
-	
-	@Mandatory private final Equality p2;
-	
-	@Mandatory private final Forall<T, P> p3;
+public class Mutually_all_explicit<T, P> implements Mutually<T, P> {
+	@Eluded
+	private final Object t = null;
 
-	public Mutually_all_explicit(String name, String content, Environment gamma, List<T> l, Environment gamma1, Equality p1, Equality p2, Forall<T, P> p3) {
+	@Eluded
+	private final Object p = null;
+
+	@Mandatory
+	@CoqLiteral
+	private final String name;
+
+	@Mandatory
+	@CoqLiteral
+	private final String content;
+
+	@Mandatory
+	private final Environment gamma;
+
+	private final List<T> l;
+
+	@Mandatory
+	private final Environment gamma1;
+
+	@Mandatory
+	private final Equality p1;
+
+	@Mandatory
+	private final Equality p2;
+
+	@Mandatory
+	private final Forall<T, P> p3;
+
+	public Mutually_all_explicit(String name, String content, Environment gamma, List<T> l, Environment gamma1,
+			Equality p1, Equality p2, Forall<T, P> p3) {
 		super();
 		this.name = name;
 		this.content = content;

@@ -2,8 +2,9 @@ package org.archware.sosadl.validation.typing.proof;
 
 import org.archware.sosadl.validation.typing.Environment;
 
-public class Optionally_None<T, P> implements Optionally<T,P> {
-	@Mandatory private final Environment gamma;
+public class Optionally_None<T, P> implements Optionally<T, P> {
+	@Mandatory
+	private final Environment gamma;
 
 	public Optionally_None(Environment gamma) {
 		super();

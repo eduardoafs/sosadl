@@ -5,23 +5,32 @@ import org.archware.sosadl.sosADL.Expression;
 import org.archware.sosadl.validation.typing.Environment;
 
 public class Type_expression_Or implements Type_expression_node {
-	@Mandatory private final Environment gamma;
-	
-	@Mandatory private final Expression l;
-	
-	@Mandatory private final DataType l__tau;
-	
-	@Mandatory private final Expression r;
-	
-	@Mandatory private final DataType r__tau;
-	
-	@Mandatory private final Type_expression p1;
-	
-	@Mandatory private final Subtype p2;
-	
-	@Mandatory private final Type_expression p3;
-	
-	@Mandatory private final Subtype p4;
+	@Mandatory
+	private final Environment gamma;
+
+	@Mandatory
+	private final Expression l;
+
+	@Mandatory
+	private final DataType l__tau;
+
+	@Mandatory
+	private final Expression r;
+
+	@Mandatory
+	private final DataType r__tau;
+
+	@Mandatory
+	private final Type_expression p1;
+
+	@Mandatory
+	private final Subtype p2;
+
+	@Mandatory
+	private final Type_expression p3;
+
+	@Mandatory
+	private final Subtype p4;
 
 	public Type_expression_Or(Environment gamma, Expression l, DataType l__tau, Expression r, DataType r__tau,
 			Type_expression p1, Subtype p2, Type_expression p3, Subtype p4) {

@@ -6,13 +6,16 @@ import org.archware.sosadl.validation.typing.Environment;
 import org.eclipse.emf.common.util.EList;
 
 public class Type_expression_Sequence implements Type_expression_node {
-	@Mandatory private final Environment gamma;
-	
+	@Mandatory
+	private final Environment gamma;
+
 	private final EList<Expression> elts;
-	
-	@Mandatory private final DataType tau;
-	
-	@Mandatory private final Forall<Expression, Ex<DataType, And<Type_expression, Subtype>>> p1;
+
+	@Mandatory
+	private final DataType tau;
+
+	@Mandatory
+	private final Forall<Expression, Ex<DataType, And<Type_expression, Subtype>>> p1;
 
 	public Type_expression_Sequence(Environment gamma, EList<Expression> elts, DataType tau,
 			Forall<Expression, Ex<DataType, And<Type_expression, Subtype>>> p1) {

@@ -11,35 +11,47 @@ import org.archware.sosadl.validation.typing.Environment;
 import org.eclipse.emf.common.util.EList;
 
 public class Type_expression_MethodCall implements Type_expression_node {
-	@Mandatory private final Environment gamma;
-	
-	@Mandatory private final Expression self;
-	
-	@Mandatory private final DataType t;
-	
-	@Mandatory private final DataTypeDecl typeDecl;
-	
-	@Mandatory private final DataType tau;
-	
+	@Mandatory
+	private final Environment gamma;
+
+	@Mandatory
+	private final Expression self;
+
+	@Mandatory
+	private final DataType t;
+
+	@Mandatory
+	private final DataTypeDecl typeDecl;
+
+	@Mandatory
+	private final DataType tau;
+
 	private final EList<FunctionDecl> methods;
-	
-	@Mandatory private final String name;
-	
+
+	@Mandatory
+	private final String name;
+
 	private final EList<FormalParameter> formalparams;
-	
-	@Mandatory private final DataType ret;
-	
+
+	@Mandatory
+	private final DataType ret;
+
 	private final EList<Expression> params;
-	
-	@Mandatory private final Type_expression p1;
-	
-	@Mandatory private final Ex<BigInteger, Equality> p2;
-	
-	@Mandatory private final Subtype p4;
-	
-	@Mandatory private final Ex<BigInteger, And<Equality, And<Equality, And<Equality, Equality>>>> p5;
-	
-	@Mandatory private final Forall2<FormalParameter,Expression,Ex<DataType,And<Equality,Ex<DataType,And<Type_expression,Subtype>>>>> p6;
+
+	@Mandatory
+	private final Type_expression p1;
+
+	@Mandatory
+	private final Ex<BigInteger, Equality> p2;
+
+	@Mandatory
+	private final Subtype p4;
+
+	@Mandatory
+	private final Ex<BigInteger, And<Equality, And<Equality, And<Equality, Equality>>>> p5;
+
+	@Mandatory
+	private final Forall2<FormalParameter, Expression, Ex<DataType, And<Equality, Ex<DataType, And<Type_expression, Subtype>>>>> p6;
 
 	public Type_expression_MethodCall(Environment gamma, Expression self, DataType t, DataTypeDecl typeDecl,
 			DataType tau, EList<FunctionDecl> methods, String name, EList<FormalParameter> formalparams, DataType ret,

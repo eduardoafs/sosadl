@@ -6,19 +6,26 @@ import org.archware.sosadl.sosADL.Expression;
 
 @CoqConstructor("In_Z")
 public class In_Z implements Expression_le {
-	@Mandatory private final Expression l;
-	
-	@Mandatory private final BigInteger zl;
-	
-	@Mandatory private final Expression r;
-	
-	@Mandatory private final BigInteger zr;
+	@Mandatory
+	private final Expression l;
 
-	@Mandatory private final Equality p1;
+	@Mandatory
+	private final BigInteger zl;
 
-	@Mandatory private final Equality p2;
+	@Mandatory
+	private final Expression r;
 
-	@Mandatory private final Equality p3;
+	@Mandatory
+	private final BigInteger zr;
+
+	@Mandatory
+	private final Equality p1;
+
+	@Mandatory
+	private final Equality p2;
+
+	@Mandatory
+	private final Equality p3;
 
 	public In_Z(Expression l, BigInteger zl, Expression r, BigInteger zr, Equality p1, Equality p2, Equality p3) {
 		super();

@@ -4,18 +4,23 @@ import java.util.List;
 
 import org.archware.sosadl.validation.typing.Environment;
 
-public class Mutually_all<T,P> implements Mutually<T,P> {
-	@Mandatory private final Environment gamma;
-	
+public class Mutually_all<T, P> implements Mutually<T, P> {
+	@Mandatory
+	private final Environment gamma;
+
 	private final List<T> l;
-	
-	@Mandatory private final Environment gamma1;
-	
-	@Mandatory private final Equality p1;
-	
-	@Mandatory private final Equality p2;
-	
-	@Mandatory private final Forall<T, P> p3;
+
+	@Mandatory
+	private final Environment gamma1;
+
+	@Mandatory
+	private final Equality p1;
+
+	@Mandatory
+	private final Equality p2;
+
+	@Mandatory
+	private final Forall<T, P> p3;
 
 	public Mutually_all(Environment gamma, List<T> l, Environment gamma1, Equality p1, Equality p2, Forall<T, P> p3) {
 		super();

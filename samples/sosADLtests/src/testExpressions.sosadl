@@ -32,7 +32,8 @@ library testDone is {
 		function (x: type1)::v(): sequence{type0} is { return sequence{} }
 		function (x: type1)::w(): type1 is { return tuple{ a=x, b=(-x), c=x }::c }
 		function (x: type1)::y(): sequence{type0} is { return tuple{ a=sequence{}, b=2 }::a }
-		function (x: type1)::p(): sequence{integer{0..8}} is { return sequence{0, -1, 6, 4, 2}::collect{ x suchthat x+1 } }
+		function (x: type1)::z(): sequence{integer{0..8}} is { return sequence{0, -1, 6, 4, 2}::collect{ x suchthat x+1 } }
+		function (x: type1)::z2(): sequence{integer{-1..7}} is { return sequence{0, -1, 6, 4, 2}::select{ x suchthat x>1 } }
     }
     
     gate gate1 is {

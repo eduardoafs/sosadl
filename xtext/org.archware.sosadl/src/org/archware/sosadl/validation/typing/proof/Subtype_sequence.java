@@ -3,11 +3,14 @@ package org.archware.sosadl.validation.typing.proof;
 import org.archware.sosadl.sosADL.DataType;
 
 public class Subtype_sequence implements Subtype {
-	@Mandatory private final DataType l;
+	@Mandatory
+	private final DataType l;
 
-	@Mandatory private final DataType r;
+	@Mandatory
+	private final DataType r;
 
-	@Mandatory private final Subtype p1;
+	@Mandatory
+	private final Subtype p1;
 
 	public Subtype_sequence(DataType l, DataType r, Subtype p1) {
 		super();
