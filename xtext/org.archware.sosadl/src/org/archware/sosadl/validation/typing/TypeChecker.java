@@ -37,6 +37,7 @@ import org.archware.sosadl.validation.typing.proof.Forall2;
 import org.archware.sosadl.validation.typing.proof.Incrementally;
 import org.archware.sosadl.validation.typing.proof.Mutually;
 import org.archware.sosadl.validation.typing.proof.Simple_increment;
+import org.archware.sosadl.validation.typing.proof.Subtype;
 import org.archware.sosadl.validation.typing.proof.True;
 import org.archware.sosadl.validation.typing.proof.Type_architecture;
 import org.archware.sosadl.validation.typing.proof.Type_assertion;
@@ -232,7 +233,7 @@ public class TypeChecker extends TypeCheckerExpression {
 			return createEx_intro(f.getData(), createConj(createReflexivity(), createReflexivity()));
 		} else {
 			if(f.getData() != null && (!(f.getData().getType() instanceof NamedType) || !((NamedType)f.getData().getType()).getName().equals(d.getName()))) {
-				error("The type of the data parameter " + f.getData().getName() + " must be `" + d.getName() + "'", f.getData().getType(), null);
+				error("The type of the data parameter " + f.getData().getName() + " must be `" + d.getName() + "'", f, SosADLPackage.Literals.FUNCTION_DECL__DATA);
 			} else if(f.getData() == null) {
 				error("The function must have a data parameter", f, null);
 			} else {
@@ -361,11 +362,50 @@ public class TypeChecker extends TypeCheckerExpression {
 		}
 	}
 	
+	private Pair<Type_valuing, Environment> type_valuing(Environment gamma, Valuing v) {
+		Expression e = v.getExpression();
+		String x = v.getVariable();
+		if(e != null && x != null) {
+			Pair<Type_expression, DataType> pt1 = type_expression(gamma, e);
+			Type_expression p1 = pt1.getA();
+			DataType tau__e = pt1.getB();
+			if(p1 != null && tau__e != null) {
+				DataType tau = v.getType();
+				if(tau != null) {
+					return new Pair<>(saveProof(v,
+							p(Type_valuing.class, gamma,
+									(gamma_) -> p(Type_valuing.class, tau,
+											(tau_) -> p(Type_valuing.class, tau__e,
+													(tau__e_) -> {
+														Optional<Subtype> st = subtype(tau__e_, tau_,
+																v, null);
+														return st.map((st_) -> createType_Valuing_typed(gamma_, x, tau_, e, tau__e_, p1, st_)).orElse(null);
+							})))),
+							gamma.put(x, new VariableEnvContent(v, tau)));
+				} else {
+					return new Pair<>(saveProof(v,
+							p(Type_valuing.class, gamma,
+									(gamma_) -> p(Type_valuing.class, tau__e,
+													(tau__e_) -> createType_Valuing_inferred(gamma_, x, e, tau__e_, p1)))),
+							gamma.put(x, new VariableEnvContent(v, tau__e)));
+				}
+			} else {
+				return new Pair<>(null, gamma);
+			}
+		} else {
+			if(v.getExpression() == null) {
+				error("The valuing must contain an expression", v, SosADLPackage.Literals.VALUING__EXPRESSION);
+			}
+			if(v.getVariable() == null) {
+				error("The valuing must contain a variable name", v, SosADLPackage.Literals.VALUING__VARIABLE);
+			}
+			return new Pair<>(null, gamma);
+		}
+	}
 
 	private Pair<Incrementally<Valuing, Type_valuing>, Environment> type_valuings(Environment gamma,
 			EList<Valuing> l) {
-		// TODO Auto-generated method stub
-		return new Pair<>(null, gamma);
+		return proveIncrementally(gamma, l, this::type_valuing);
 	}
 
 	private Type_system type_system(Environment gamma, SystemDecl systemDecl) {

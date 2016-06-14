@@ -451,4 +451,14 @@ public abstract class TypeCheckerProofConstructor extends TypeCheckerInference {
 	protected Check_datatype createCheck_BooleanType() {
 		return new Check_BooleanType();
 	}
+
+	protected Type_valuing createType_Valuing_typed(Environment gamma, String x, DataType tau, Expression e,
+			DataType tau__e, Type_expression p1, Subtype p2) {
+		return new Type_Valuing_typed(gamma, x, tau, e, tau__e, p1, p2);
+	}
+
+	protected Type_valuing createType_Valuing_inferred(Environment gamma, String x, Expression e, DataType tau__e,
+			Type_expression p1) {
+		return new Type_Valuing_inferred(gamma, x, e, tau__e, p1);
+	}
 }

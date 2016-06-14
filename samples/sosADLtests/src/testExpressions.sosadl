@@ -34,6 +34,18 @@ library testDone is {
 		function (x: type1)::y(): sequence{type0} is { return tuple{ a=sequence{}, b=2 }::a }
 		function (x: type1)::z(): sequence{integer{0..8}} is { return sequence{0, -1, 6, 4, 2}::collect{ x suchthat x+1 } }
 		function (x: type1)::z2(): sequence{integer{-1..7}} is { return sequence{0, -1, 6, 4, 2}::select{ x suchthat x>1 } }
+		
+		function (x: type1)::longer1(): sequence{integer{0..10}} is {
+			value toto = sequence{1,2,3,4,9}
+			value titi is sequence{integer{0..6}} = sequence{1,2,3,4}
+			return toto
+		}
+		
+		function (x: type1)::longer2(): sequence{integer{0..6}} is {
+			value toto = sequence{1,2,3,4}
+			value titi is sequence{integer{0..6}} = sequence{1,2,3,4}
+			return titi
+		}
     }
     
     gate gate1 is {
