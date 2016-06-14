@@ -354,6 +354,7 @@ Reserved Notation "'assertion' a 'well' 'typed' 'in' Gamma" (at level 200, Gamma
 Reserved Notation "'protocol' p 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
 Reserved Notation "'connection' c 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
 Reserved Notation "'body' b 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
+Reserved Notation "'valuing' v 'well' 'typed' 'in' Gamma 'yields' 'to' Gamma1" (at level 200, Gamma at level 1, no associativity).
 
 (**
  * The type system
@@ -1459,6 +1460,31 @@ Definition type_gates Gamma l Gamma1 := @incrementally _ (simple_increment _ typ
 (** ** Valuings *)
 Inductive type_valuing: env -> SosADL.SosADL.t_Valuing -> env -> Prop :=
 
+| type_Valuing_typed:
+    forall (Gamma: env)
+      (x: string)
+      (tau: SosADL.SosADL.t_DataType)
+      (e: SosADL.SosADL.t_Expression)
+      (tau__e: SosADL.SosADL.t_DataType)
+      (p1: expression e has type tau__e in Gamma)
+      (p2: tau__e </ tau)
+    ,
+      valuing (SosADL.SosADL.Valuing_Valuing (Some x) (Some tau) (Some e))
+              well typed in Gamma
+                              yields to (Gamma [| x <- EVariable tau |])
+
+| type_Valuing_inferred:
+    forall (Gamma: env)
+      (x: string)
+      (e: SosADL.SosADL.t_Expression)
+      (tau__e: SosADL.SosADL.t_DataType)
+      (p1: expression e has type tau__e in Gamma)
+    ,
+      valuing (SosADL.SosADL.Valuing_Valuing (Some x) None (Some e))
+              well typed in Gamma
+                              yields to (Gamma [| x <- EVariable tau__e |])
+
+where "'valuing' v 'well' 'typed' 'in' Gamma 'yields' 'to' Gamma1" := (type_valuing Gamma v Gamma1)
 .
 
 Definition type_valuings Gamma l Gamma1 := @incrementally _ type_valuing Gamma l Gamma1.
