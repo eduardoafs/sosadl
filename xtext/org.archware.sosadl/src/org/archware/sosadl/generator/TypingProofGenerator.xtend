@@ -138,13 +138,10 @@ class TypingProofGenerator implements IGenerator {
 	}
 	
 	def CharSequence generateProof(ProofTerm p) {
-		var hsb = new HierarchicalStringBuilder()
-		hsb.append('(').append(p.constructorName)
-		for (i: p.declaredFields) {
-			hsb.append('\n').append(i.processFieldDbg)
-		}
-		hsb.append(')')
-		hsb
+		return '''(«p.constructorName»
+		    «FOR i : p.declaredFields»
+      			«processFieldDbg(i)»
+      			«ENDFOR»)'''
 	}
 	
 	def orAdmitted(Optional<CharSequence> x) { return x.orElse("(admitted _)") }
