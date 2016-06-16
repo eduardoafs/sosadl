@@ -18,18 +18,14 @@ public class Factorizor {
 	
 	public CharSequence hook(CharSequence s) {
 		String s2 = s.toString();
-		String c = cache.get(s2);
-		if(c != null) {
-			return c;
+		if(s2.length() < THRESHOLD) {
+			return s2;
 		} else {
-			if(s2.length() < THRESHOLD) {
-				return s;
-			} else {
+			return cache.computeIfAbsent(s2, (x) -> {
 				String name = freshName();
 				definitions.add(new Pair<>(name, s2));
-				cache.put(s2, name);
 				return name;
-			}
+			});
 		}
 	}
 	

@@ -4,6 +4,7 @@
 package org.archware.sosadl.generator
 
 import java.math.BigInteger
+import java.util.Optional
 import org.archware.sosadl.sosADL.ActionSuite
 import org.archware.sosadl.sosADL.ArchBehaviorDecl
 import org.archware.sosadl.sosADL.ArchitectureDecl
@@ -51,15 +52,13 @@ import org.archware.sosadl.validation.typing.impl.TypeEnvContent
 import org.archware.sosadl.validation.typing.impl.VariableEnvContent
 import org.archware.sosadl.validation.typing.proof.ProofTerm
 import org.archware.sosadl.validation.typing.proof.fields.EludedField
+import org.archware.sosadl.validation.typing.proof.fields.FieldDescriptor
 import org.archware.sosadl.validation.typing.proof.fields.ListField
 import org.archware.sosadl.validation.typing.proof.fields.MandatoryField
 import org.archware.sosadl.validation.typing.proof.fields.OptionalField
 import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.xtext.generator.IFileSystemAccess
 import org.eclipse.xtext.generator.IGenerator
-import java.util.Optional
-import org.archware.sosadl.validation.typing.proof.fields.FieldDescriptor
-import org.archware.sosadl.tv.typeCheckerHelper.TypeVariable
 
 /**
  * Generates code from your model files on save.
@@ -78,7 +77,12 @@ class TypingProofGenerator implements IGenerator {
 		try {
 			for (e : resource.allContents.toIterable.filter(SosADL)) {
 		        var String resourceFilename = e.eResource.URI.trimFileExtension.lastSegment
-				fsa.generateFile(resourceFilename+"_typing.v", e.generate)
+				System.gc
+				var t0 = System.nanoTime
+		        var res = e.generate
+				var t1 = System.nanoTime
+				System.out.println("generate " + resourceFilename + " " + (t1-t0) + "ns")
+				fsa.generateFile(resourceFilename+"_typing.v", res)
 			}
 		} catch (Throwable t) {
 			t.printStackTrace
@@ -87,9 +91,15 @@ class TypingProofGenerator implements IGenerator {
 	}
 	
 	def generate(SosADL s) {
+		var String resourceFilename = s.eResource.URI.trimFileExtension.lastSegment
+		var t0 = System.nanoTime
 		var term = coqGenerator.generatet_SosADL(s)
+		var t1 = System.nanoTime
 		var proof = generateProofOf(s)
-		return '''
+		var t2 = System.nanoTime
+		var ret = '''
+			(* generated for file «s.eResource.URI» *)
+			
 			Require Import SosADL.Environment.
 			Require Import SosADL.TypeSystem.
 			Require Import SosADL.SosADL.
@@ -113,6 +123,11 @@ class TypingProofGenerator implements IGenerator {
 			Definition well_typed: SoSADL («term») well typed :=
 			«proof».
 			''';
+		var t3 = System.nanoTime
+		System.out.println("generatet_SosADL " + resourceFilename + " " + (t1-t0) + "ns")
+		System.out.println("generateProofOf " + resourceFilename + " " + (t2-t1) + "ns")
+		System.out.println("dump " + resourceFilename + " " + (t3-t2) + "ns")		
+		return ret;
 	}
 	
 	def generateProofOf(SosADL s) {
@@ -120,13 +135,16 @@ class TypingProofGenerator implements IGenerator {
 	}
 	
 	def CharSequence generateProof(ProofTerm p) {
-		return '''(«p.constructorName»
-		    «FOR i : p.declaredFields»
-      			«processFieldDbg(i)»
-      			«ENDFOR»)'''
+		var hsb = new HierarchicalStringBuilder()
+		hsb.append('(').append(p.constructorName)
+		for (i: p.declaredFields) {
+			hsb.append('\n').append(i.processFieldDbg)
+		}
+		hsb.append(')')
+		hsb
 	}
 	
-	def orAdmitted(Optional<CharSequence> x) { return x.orElse('''(admitted _)''') }
+	def orAdmitted(Optional<CharSequence> x) { return x.orElse("(admitted _)") }
 	
 	def processFieldDbg(FieldDescriptor f) {
 		try
@@ -137,7 +155,7 @@ class TypingProofGenerator implements IGenerator {
 		}
 	}
 	
-	def dispatch processField(EludedField f) '''_'''
+	def dispatch processField(EludedField f) { return "_"; }
 	def dispatch processField(ListField f) { return coqGenerator._generateL(f.get[x | x.generatorFunction], [orAdmitted]) }
 	def dispatch processField(MandatoryField f) { return f.get[Object x | x.generatorFunction].orAdmitted }
 	def dispatch processField(OptionalField f) { return coqGenerator._generateO(f.get[generatorFunction].orElse(null), [x | x]) }

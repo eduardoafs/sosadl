@@ -33,12 +33,10 @@ import org.archware.sosadl.validation.typing.proof.And;
 import org.archware.sosadl.validation.typing.proof.Equality;
 import org.archware.sosadl.validation.typing.proof.Ex;
 import org.archware.sosadl.validation.typing.proof.Forall;
-import org.archware.sosadl.validation.typing.proof.Forall2;
 import org.archware.sosadl.validation.typing.proof.Incrementally;
-import org.archware.sosadl.validation.typing.proof.Mutually;
+import org.archware.sosadl.validation.typing.proof.Mutually_translate;
 import org.archware.sosadl.validation.typing.proof.Simple_increment;
 import org.archware.sosadl.validation.typing.proof.Subtype;
-import org.archware.sosadl.validation.typing.proof.True;
 import org.archware.sosadl.validation.typing.proof.Type_architecture;
 import org.archware.sosadl.validation.typing.proof.Type_assertion;
 import org.archware.sosadl.validation.typing.proof.Type_behavior;
@@ -46,6 +44,7 @@ import org.archware.sosadl.validation.typing.proof.Type_datatype;
 import org.archware.sosadl.validation.typing.proof.Type_datatypeDecl;
 import org.archware.sosadl.validation.typing.proof.Type_entityBlock;
 import org.archware.sosadl.validation.typing.proof.Type_expression;
+import org.archware.sosadl.validation.typing.proof.Type_formalParameter;
 import org.archware.sosadl.validation.typing.proof.Type_function;
 import org.archware.sosadl.validation.typing.proof.Type_gate;
 import org.archware.sosadl.validation.typing.proof.Type_mediator;
@@ -59,7 +58,6 @@ import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.emf.ecore.util.EcoreUtil;
-import org.eclipse.xtext.xbase.lib.ListExtensions;
 
 /**
  * Implementation of the type system.
@@ -255,11 +253,11 @@ public class TypeChecker extends TypeCheckerExpression {
 				&& f.getName() != null
 				&& f.getType() != null
 				&& f.getExpression() != null) {
-			Optional<Pair<Pair<List<FormalParameter>,Environment>,And<Forall2<FormalParameter,FormalParameter,And<Equality,Ex<DataType,And<Equality,Ex<DataType,And<Equality,Type_datatype>>>>>>,Mutually<FormalParameter,True>>>> op3 = type_formalParameters(gamma, cons(f.getData(), f.getParameters()));
+			Optional<Pair<Pair<List<FormalParameter>,Environment>,Mutually_translate<FormalParameter,Type_formalParameter>>> op3 = type_formalParameters(gamma, cons(f.getData(), f.getParameters()));
 			if(op3.isPresent()) {
 				Pair<DataType, Type_datatype> p2 = type_datatype(gamma, f.getType());
 				if(p2.getA() != null && p2.getB() != null) {
-					Pair<Pair<List<FormalParameter>, Environment>, And<Forall2<FormalParameter, FormalParameter, And<Equality, Ex<DataType, And<Equality, Ex<DataType, And<Equality, Type_datatype>>>>>>, Mutually<FormalParameter, True>>> p3 = op3.get();
+					Pair<Pair<List<FormalParameter>,Environment>,Mutually_translate<FormalParameter,Type_formalParameter>> p3 = op3.get();
 					FormalParameter self2 = p3.getA().getA().get(0);
 					DataType realType = ((TypeEnvContent)gamma.get(((NamedType)f.getData().getType()).getName())).getDataType();
 					if(EcoreUtil.equals(self2.getType(), realType)) {
@@ -412,24 +410,26 @@ public class TypeChecker extends TypeCheckerExpression {
 		saveEnvironment(systemDecl, gamma);
 		// type_SystemDecl:
 		if(systemDecl.getName() != null && systemDecl.getBehavior() != null) {
-			Optional<Pair<Pair<List<FormalParameter>, Environment>, And<Forall2<FormalParameter, FormalParameter, And<Equality, Ex<DataType, And<Equality, Ex<DataType, And<Equality, Type_datatype>>>>>>, Mutually<FormalParameter, True>>>> op1 = type_formalParameters(gamma, systemDecl.getParameters());
+			Optional<Pair<Pair<List<FormalParameter>,Environment>,Mutually_translate<FormalParameter,Type_formalParameter>>> op1 = type_formalParameters(gamma, systemDecl.getParameters());
 			if(op1.isPresent()) {
-				Pair<Pair<List<FormalParameter>, Environment>, And<Forall2<FormalParameter, FormalParameter, And<Equality, Ex<DataType, And<Equality, Ex<DataType, And<Equality, Type_datatype>>>>>>, Mutually<FormalParameter, True>>> p1 = op1.get();
+				Pair<Pair<List<FormalParameter>, Environment>, Mutually_translate<FormalParameter, Type_formalParameter>> p1 = op1.get();
 				EList<FormalParameter> params2 = ECollections.asEList(p1.getA().getA());
 				Environment gamma1 = p1.getA().getB();
 				Pair<Incrementally<DataTypeDecl,Type_datatypeDecl>,Environment> p2 = type_datatypeDecls(gamma1, systemDecl.getDatatypes());
-				Pair<Incrementally<GateDecl,Simple_increment<GateDecl,Type_gate>>,Environment> p3 = type_gates(p2.getB(), systemDecl.getGates());
+				Environment gamma2 = p2.getB();
+				Pair<Pair<List<GateDecl>,Environment>,Mutually_translate<GateDecl,Type_gate>> p3 = type_gates(gamma2, systemDecl.getGates());
+				Environment gamma3 = p3.getA().getB();
 				return saveProof(systemDecl,
 						createType_SystemDecl(gamma, systemDecl.getName(),
 								systemDecl.getParameters(),
 								params2,
 								gamma1, systemDecl.getDatatypes(),
-								p2.getB(), systemDecl.getGates(),
-								p3.getB(), systemDecl.getBehavior(),
+								gamma2, systemDecl.getGates(),
+								gamma3, systemDecl.getBehavior(),
 								systemDecl.getAssertion(),
 								p1.getB(), p2.getA(),
-								p3.getA(), type_behavior(p3.getB(), systemDecl.getBehavior()),
-						proveOptionally(p3.getB(), systemDecl.getAssertion(), this::type_assertion)));
+								p3.getB(), type_behavior(gamma3, systemDecl.getBehavior()),
+						proveOptionally(gamma3, systemDecl.getAssertion(), this::type_assertion)));
 			} else {
 				return null;
 			}
@@ -444,9 +444,21 @@ public class TypeChecker extends TypeCheckerExpression {
 			return null;
 		}
 	}
+	
+	private Type_gate type_gate(Environment gamma, GateDecl g, GateDecl g1, Environment gamma1, Object x) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	
+	private Pair<GateDecl, Object> translate_gate(Environment gamma, GateDecl g) {
+		// TODO Auto-generated method stub
+		return new Pair<>(g, null);
+	}
 
-	private Pair<Incrementally<GateDecl, Simple_increment<GateDecl,Type_gate>>, Environment> type_gates(Environment gamma, EList<GateDecl> l) {
-		return proveIncrementally(gamma, l, (g,x) -> proveSimpleIncrement(g, x, this::type_gate, "SosADL.SosADL.GateDecl_name", GateDecl::getName, "(fun x => None)", (y) -> null));
+	private Pair<Pair<List<GateDecl>, Environment>, Mutually_translate<GateDecl, Type_gate>> type_gates(Environment gamma, EList<GateDecl> l) {
+		return proveMutuallyTranslate(gamma, l, this::translate_gate, this::type_gate,
+				"SosADL.SosADL.GateDecl_name", GateDecl::getName,
+				"SosADL.TypeSystem.gateDecl_to_EGateOrDuty", (y) -> null);
 	}
 	
 	private Type_assertion type_assertion(Environment gamma, AssertionDecl a) {
@@ -454,48 +466,38 @@ public class TypeChecker extends TypeCheckerExpression {
 		return null;
 	}
 	
-	private Type_gate type_gate(Environment gamma, GateDecl g) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	private Optional<Pair<
-	Pair<List<FormalParameter>, Environment>,
-	And<Forall2<FormalParameter,FormalParameter,
-			And<Equality,Ex<DataType,And<Equality,Ex<DataType,And<Equality,Type_datatype>>>>>>,
-		Mutually<FormalParameter, True>
-	>>>
-	type_formalParameters(
-			Environment gamma, EList<FormalParameter> params) {
-		List<Pair<FormalParameter, Pair<DataType, Type_datatype>>> l =
-				ListExtensions.map(params, (p) -> new Pair<>(p, type_datatype(gamma, p.getType())));
-		if(l.stream().allMatch((p) -> p.getB() != null && p.getB().getA() != null && p.getB().getB() != null)) {
-			List<FormalParameter> params2 = ListExtensions.map(l, (p) -> createFormalParameter(p.getA().getName(), p.getB().getA()));
-			Forall2<FormalParameter,FormalParameter,
-			And<Equality,Ex<DataType,And<Equality,Ex<DataType,And<Equality,Type_datatype>>>>>> p1 =
-			proveForall2(l,
-					Pair::getA,
-					(p) -> createFormalParameter(p.getA().getName(), p.getB().getA()),
-					this::type_formalParameter);
-			Pair<Mutually<FormalParameter, True>, Environment> p2 =
-					proveMutually(gamma, params2,
-							(g0,p,g1) -> createI(),
-							"SosADL.SosADL.FormalParameter_name", FormalParameter::getName,
-							"SosADL.TypeSystem.formalParameter_to_EVariable", TypeChecker::formalParameterEnvContent);
-			return Optional.of(new Pair<>(new Pair<>(params2, p2.getB()),
-					createConj(p1, p2.getA())));
+	private Pair<FormalParameter, Type_datatype> translate_formalParameter(Environment gamma, FormalParameter p) {
+		if(p.getName() != null && p.getType() != null) {
+			Pair<DataType, Type_datatype> pt = type_datatype(gamma, p.getType());
+			if(pt.getA() != null && pt.getB() != null) {
+				return new Pair<>(createFormalParameter(p.getName(), pt.getA()), pt.getB());
+			} else {
+				return null;
+			}
 		} else {
-			return Optional.empty();
+			if(p.getName() == null) {
+				error("The formal parameter must have a name", p, SosADLPackage.Literals.FORMAL_PARAMETER__NAME);
+			}
+			if(p.getType() == null) {
+				error("The formal parameter must have a type", p, SosADLPackage.Literals.FORMAL_PARAMETER__TYPE);
+			}
+			return null;
 		}
 	}
 	
-	private And<Equality,Ex<DataType,And<Equality,Ex<DataType,And<Equality,Type_datatype>>>>> type_formalParameter(Pair<FormalParameter, Pair<DataType, Type_datatype>> p) {
-		return createConj(createReflexivity(),
-				createEx_intro(p.getA().getType(),
-						createConj(createReflexivity(),
-								createEx_intro(p.getB().getA(),
-										createConj(createReflexivity(),
-												p.getB().getB())))));
+	private Type_formalParameter type_formalParameter(Environment gamma, FormalParameter f, FormalParameter f1, Environment gamma1, Type_datatype p1) {
+		return createType_FormalParameter_typed(gamma, f1.getName(), f.getType(), f1.getType(), gamma1, p1);
+	}
+	
+	private Optional<Pair<
+	Pair<List<FormalParameter>, Environment>,
+	Mutually_translate<FormalParameter, Type_formalParameter>>>
+	type_formalParameters(
+			Environment gamma, EList<FormalParameter> params) {
+		return Optional.of(proveMutuallyTranslate(gamma, params, this::translate_formalParameter, this::type_formalParameter,
+				"SosADL.SosADL.FormalParameter_name", FormalParameter::getName,
+				"SosADL.TypeSystem.formalParameter_to_EVariable", TypeChecker::formalParameterEnvContent))
+				.filter((p) -> p.getB() != null);
 	}
 	
 	private static EnvContent formalParameterEnvContent(FormalParameter p) {

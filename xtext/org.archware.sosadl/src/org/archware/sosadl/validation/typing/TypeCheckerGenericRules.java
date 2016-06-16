@@ -3,15 +3,20 @@ package org.archware.sosadl.validation.typing;
 import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
+import org.archware.sosadl.validation.typing.proof.And;
+import org.archware.sosadl.validation.typing.proof.Equality;
 import org.archware.sosadl.validation.typing.proof.Forall;
 import org.archware.sosadl.validation.typing.proof.Forall2;
 import org.archware.sosadl.validation.typing.proof.Incrementally;
 import org.archware.sosadl.validation.typing.proof.Mutually;
+import org.archware.sosadl.validation.typing.proof.Mutually_translate;
 import org.archware.sosadl.validation.typing.proof.Optionally;
 import org.archware.sosadl.validation.typing.proof.ProofTerm;
 import org.archware.sosadl.validation.typing.proof.Simple_increment;
 import org.archware.utils.Pair;
+import org.archware.utils.PentaFunction;
 import org.archware.utils.TriFunction;
 import org.eclipse.emf.ecore.EObject;
 
@@ -109,6 +114,40 @@ public abstract class TypeCheckerGenericRules extends TypeCheckerProofConstructo
 			l.stream().filter((p) -> l.stream().map(name).filter((x) -> x.equals(name.apply(p))).count() >= 2)
 					.forEach((f) -> error("Multiple definitions of `" + name.apply(f) + "'", f, null));
 			return new Pair<>(null, gamma);
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	protected <T extends EObject, P extends ProofTerm, Q> Pair<Pair<List<T>, Environment>, Mutually_translate<T, P>> proveMutuallyTranslate(
+			Environment gamma, List<T> l, BiFunction<Environment, T, Pair<T, Q>> translator,
+			PentaFunction<Environment, T, T, Environment, Q, P> prover, String n, Function<T, ? extends String> name,
+			String c, Function<T, ? extends EnvContent> content) {
+		if (noDuplicate(l.stream().map(name))) {
+			List<Pair<T, Pair<T, Q>>> pl = l.stream().map((x) -> new Pair<>(x, translator.apply(gamma, x)))
+					.collect(Collectors.toList());
+			if (pl.stream().allMatch((p) -> p.getB() != null && p.getB().getA() != null && p.getB().getB() != null)) {
+				if (pl.stream().allMatch((p) -> name.apply(p.getA()).equals(name.apply(p.getB().getA())))) {
+					List<T> l1 = pl.stream().map(Pair::getB).map(Pair::getA).collect(Collectors.toList());
+					Environment gamma1 = fold_right((x, g) -> augment_env(g, name.apply(x), content.apply(x)), gamma,
+							l1);
+					Forall2<T, T, And<Equality, P>> forall = proveForall2(pl, Pair::getA, (p) -> p.getB().getA(),
+							(p) -> createConj(createReflexivity(),
+									prover.apply(gamma, p.getA(), p.getB().getA(), gamma1, p.getB().getB())));
+					Mutually_translate<T, P> r = p(Mutually_translate.class, gamma,
+							(gamma_) -> p(Mutually_translate.class, gamma1,
+									(gamma1_) -> createMutually_translate_all_explicit(n, c, gamma_, l, l1, gamma1_,
+											createReflexivity(), createReflexivity(), forall)));
+					return new Pair<>(new Pair<>(l1, gamma1), r);
+				} else {
+					throw new IllegalArgumentException();
+				}
+			} else {
+				return new Pair<>(new Pair<>(l, gamma), null);
+			}
+		} else {
+			l.stream().filter((p) -> l.stream().map(name).filter((x) -> x.equals(name.apply(p))).count() >= 2)
+					.forEach((f) -> error("Multiple definitions of `" + name.apply(f) + "'", f, null));
+			return new Pair<>(new Pair<>(l, gamma), null);
 		}
 	}
 

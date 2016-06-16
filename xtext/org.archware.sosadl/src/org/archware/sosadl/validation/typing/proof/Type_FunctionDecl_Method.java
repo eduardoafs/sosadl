@@ -64,7 +64,7 @@ public class Type_FunctionDecl_Method implements Type_function {
 	private final Type_datatype p2;
 
 	@Mandatory
-	private final And<Forall2<FormalParameter, FormalParameter, And<Equality, Ex<DataType, And<Equality, Ex<DataType, And<Equality, Type_datatype>>>>>>, Mutually<FormalParameter, True>> p3;
+	private final Mutually_translate<FormalParameter, Type_formalParameter> p3;
 
 	@Mandatory
 	private final Incrementally<Valuing, Type_valuing> p4;
@@ -82,8 +82,7 @@ public class Type_FunctionDecl_Method implements Type_function {
 			DataType dataTypeReal, EList<FunctionDecl> dataTypeMethods, String name, EList<FormalParameter> params,
 			EList<FormalParameter> params2, Environment gammap, DataType rettype, DataType rettype2,
 			EList<Valuing> vals, Environment gammav, Expression retexpr, DataType tau, Environment gamma1, Equality p1,
-			Type_datatype p2,
-			And<Forall2<FormalParameter, FormalParameter, And<Equality, Ex<DataType, And<Equality, Ex<DataType, And<Equality, Type_datatype>>>>>>, Mutually<FormalParameter, True>> p3,
+			Type_datatype p2, Mutually_translate<FormalParameter, Type_formalParameter> p3,
 			Incrementally<Valuing, Type_valuing> p4, Type_expression p5, Subtype p6, Equality p7) {
 		super();
 		this.gamma = gamma;
@@ -188,7 +187,7 @@ public class Type_FunctionDecl_Method implements Type_function {
 		return p2;
 	}
 
-	public And<Forall2<FormalParameter, FormalParameter, And<Equality, Ex<DataType, And<Equality, Ex<DataType, And<Equality, Type_datatype>>>>>>, Mutually<FormalParameter, True>> getP3() {
+	public Mutually_translate<FormalParameter, Type_formalParameter> getP3() {
 		return p3;
 	}
 

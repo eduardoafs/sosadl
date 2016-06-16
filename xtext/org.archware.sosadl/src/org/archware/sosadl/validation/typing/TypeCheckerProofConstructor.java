@@ -52,9 +52,9 @@ public abstract class TypeCheckerProofConstructor extends TypeCheckerInference {
 	protected Type_system createType_SystemDecl(Environment gamma, String name, EList<FormalParameter> params,
 			EList<FormalParameter> params2, Environment gamma1, EList<DataTypeDecl> datatypes, Environment gamma2,
 			EList<GateDecl> gates, Environment gamma3, BehaviorDecl bhv, AssertionDecl assrt,
-			And<Forall2<FormalParameter, FormalParameter, And<Equality, Ex<DataType, And<Equality, Ex<DataType, And<Equality, Type_datatype>>>>>>, Mutually<FormalParameter, True>> p1,
+			Mutually_translate<FormalParameter, Type_formalParameter> p1,
 			Incrementally<DataTypeDecl, Type_datatypeDecl> p2,
-			Incrementally<GateDecl, Simple_increment<GateDecl, Type_gate>> p3, Type_behavior p4,
+			Mutually_translate<GateDecl,Type_gate> p3, Type_behavior p4,
 			Optionally<AssertionDecl, Type_assertion> p5) {
 		return new Type_SystemDecl(gamma, name, params, params2, gamma1, datatypes, gamma2, gates, gamma3, bhv, assrt,
 				p1, p2, p3, p4, p5);
@@ -103,8 +103,8 @@ public abstract class TypeCheckerProofConstructor extends TypeCheckerInference {
 			EList<FormalParameter> params, EList<FormalParameter> params2, Environment gammap, DataType rettype,
 			DataType rettype2, EList<Valuing> vals, Environment gammav, Expression retexpr, DataType tau,
 			Environment gamma1, Equality p1, Type_datatype p2,
-			And<Forall2<FormalParameter, FormalParameter, And<Equality, Ex<DataType, And<Equality, Ex<DataType, And<Equality, Type_datatype>>>>>>, Mutually<FormalParameter, True>> p3,
-			Incrementally<Valuing, Type_valuing> p4, Type_expression p5, Subtype p6, Equality p7) {
+			Mutually_translate<FormalParameter, Type_formalParameter> p3, Incrementally<Valuing, Type_valuing> p4,
+			Type_expression p5, Subtype p6, Equality p7) {
 		return new Type_FunctionDecl_Method(gamma, dataName, dataTypeName, dataTypeDecl, dataTypeReal, dataTypeMethods,
 				name, params, params2, gammap, rettype, rettype2, vals, gammav, retexpr, tau, gamma1, p1, p2, p3, p4,
 				p5, p6, p7);
@@ -175,14 +175,15 @@ public abstract class TypeCheckerProofConstructor extends TypeCheckerInference {
 		return new Simple_increment_step<>(n, c, gamma, x, gamma1, p1, p2);
 	}
 
-	protected <T, P> Mutually<T, P> createMutually_all(Environment gamma, List<T> l, Environment gamma1, Equality p1,
-			Equality p2, Forall<T, P> p3) {
-		return new Mutually_all<>(gamma, l, gamma1, p1, p2, p3);
-	}
-
 	protected <T, P> Mutually<T, P> createMutually_all_explicit(String name, String content, Environment gamma,
 			List<T> l, Environment gamma1, Equality p1, Equality p2, Forall<T, P> p3) {
 		return new Mutually_all_explicit<>(name, content, gamma, l, gamma1, p1, p2, p3);
+	}
+
+	protected <T, P> Mutually_translate<T, P> createMutually_translate_all_explicit(String name, String content,
+			Environment gamma, List<T> l, List<T> l1, Environment gamma1, Equality p1, Equality p2,
+			Forall2<T, T, And<Equality, P>> p3) {
+		return new Mutually_translate_all_explicit<>(name, content, gamma, l, l1, gamma1, p1, p2, p3);
 	}
 
 	protected <T, P> Optionally<T, P> createOptionally_None(Environment gamma) {
@@ -223,6 +224,11 @@ public abstract class TypeCheckerProofConstructor extends TypeCheckerInference {
 
 	protected True createI() {
 		return new I();
+	}
+
+	protected Type_formalParameter createType_FormalParameter_typed(Environment gamma, String n, DataType t,
+			DataType t1, Environment gamma1, Type_datatype p1) {
+		return new Type_FormalParameter_typed(gamma, n, t, t1, gamma1, p1);
 	}
 
 	protected Type_expression_node createType_expression_Same(Environment gamma, Expression e, DataType tau,
