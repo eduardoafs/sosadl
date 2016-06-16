@@ -59,6 +59,8 @@ import org.archware.sosadl.validation.typing.proof.fields.OptionalField
 import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.xtext.generator.IFileSystemAccess
 import org.eclipse.xtext.generator.IGenerator
+import java.util.HashMap
+import java.util.Map
 
 /**
  * Generates code from your model files on save.
@@ -126,7 +128,8 @@ class TypingProofGenerator implements IGenerator {
 		var t3 = System.nanoTime
 		System.out.println("generatet_SosADL " + resourceFilename + " " + (t1-t0) + "ns")
 		System.out.println("generateProofOf " + resourceFilename + " " + (t2-t1) + "ns")
-		System.out.println("dump " + resourceFilename + " " + (t3-t2) + "ns")		
+		System.out.println("dump " + resourceFilename + " " + (t3-t2) + "ns")
+		System.out.println("cache: " + missCount + "(miss) + " + (tryCount - missCount) + "(hit) = " + tryCount)		
 		return ret;
 	}
 	
@@ -156,9 +159,18 @@ class TypingProofGenerator implements IGenerator {
 	}
 	
 	def dispatch processField(EludedField f) { return "_"; }
-	def dispatch processField(ListField f) { return coqGenerator._generateL(f.get[x | x.generatorFunction], [orAdmitted]) }
-	def dispatch processField(MandatoryField f) { return f.get[Object x | x.generatorFunction].orAdmitted }
-	def dispatch processField(OptionalField f) { return coqGenerator._generateO(f.get[generatorFunction].orElse(null), [x | x]) }
+	def dispatch processField(ListField f) { return coqGenerator._generateL(f.get[x | x.generatorFunction_], [orAdmitted]) }
+	def dispatch processField(MandatoryField f) { return f.get[Object x | x.generatorFunction_].orAdmitted }
+	def dispatch processField(OptionalField f) { return coqGenerator._generateO(f.get[generatorFunction_].orElse(null), [x | x]) }
+
+	private var Map<Object, CharSequence> cache = new HashMap
+	private var missCount = 0
+	private var tryCount = 0;
+	
+	def CharSequence generatorFunction_(Object o) {
+		tryCount += 1;
+		return cache.computeIfAbsent(o, [ k | missCount += 1; o.generatorFunction]);
+	}
 	
 	def dispatch generatorFunction(Integer content) { return coqGenerator.generateZ(content) }
 	def dispatch generatorFunction(BigInteger content) {
@@ -216,12 +228,12 @@ class TypingProofGenerator implements IGenerator {
 	def dispatch generateEnvironment(Environment env) { throw new UnsupportedOperationException }
 	
 	def dispatch generateEnvContent(SystemEnvContent c) {
-		return _hook('''(ESystem «coqGenerator.generatet_SystemDecl(c.systemDecl)»)''');
+		return _hook('''(ESystem «c.systemDecl.generatorFunction_»)''');
 	}
 	def dispatch generateEnvContent(TypeEnvContent c) {
-		return _hook('''(EType «coqGenerator.generatet_DataTypeDecl(c.dataTypeDecl)» «coqGenerator.generatet_DataType(c.dataType)» «coqGenerator._generateL(c.methods, [ f | coqGenerator.generatet_FunctionDecl(f)])»)''');
+		return _hook('''(EType «c.dataTypeDecl.generatorFunction_» «c.dataType.generatorFunction_» «coqGenerator._generateL(c.methods, [ f | f.generatorFunction_])»)''');
 	}
 	def dispatch generateEnvContent(VariableEnvContent c) {
-		return _hook('''(EVariable «coqGenerator.generatet_DataType(c.type)»)''');
+		return _hook('''(EVariable «c.type.generatorFunction_»)''');
 	}
 }

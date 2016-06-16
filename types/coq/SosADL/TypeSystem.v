@@ -25,20 +25,6 @@ Require Import BinInt.
  *)
 
 (**
- ** Gates and duties
-
-For gates and duties, a secondary map is stored in the
-environment. This map lists the connections of the gate or of the
-duty.
-
-%\note{%The kind of connection (normal or environment) is not used.%}%
-
- *)
-
-Inductive gd_env_content: Set :=
-| GDConnection: SosADL.SosADL.ModeType -> SosADL.SosADL.t_DataType -> gd_env_content.
-
-(**
  ** Objects in [Gamma], the main environment
 
 We choose to have a single environment for all the kinds of objects,
@@ -57,8 +43,9 @@ Inductive env_content: Set :=
 | ESystem: SosADL.SosADL.t_SystemDecl -> env_content
 | EMediator: SosADL.SosADL.t_MediatorDecl -> env_content
 | EArchitecture: SosADL.SosADL.t_ArchitectureDecl -> env_content
-| EGateOrDuty: environment gd_env_content -> env_content
-| EVariable: SosADL.SosADL.t_DataType -> env_content.
+| EGateOrDuty: list SosADL.SosADL.t_Connection -> env_content
+| EVariable: SosADL.SosADL.t_DataType -> env_content
+| EConnection: SosADL.SosADL.t_Connection -> env_content.
 
 Definition env := environment env_content.
 
@@ -299,6 +286,25 @@ Inductive mutually
       mutually Gamma l Gamma1
 .
 
+(** [mutually_translate] is a generic rule for unordered, simultaneous, mutual definitions. *)
+
+Inductive mutually_translate
+          {T: Set} {P: env -> T -> T -> env -> Prop} {name: T -> option string} {content: T -> option env_content}:
+  env -> list T -> list T -> env -> Prop :=
+
+| mutually_translate_all:
+    forall
+      (Gamma: env)
+      (l: list T)
+      (l1: list T)
+      (Gamma1: env)
+      (p1: (augment_env_with_all Gamma name content l1) = Gamma1)
+      (p2: values (name x) for x of l1 are distinct according to option_string_dec)
+      (p3: for each x x1 of l l1, (name x) = (name x1) /\ P Gamma x x1 Gamma1)
+    ,
+      mutually_translate Gamma l l1 Gamma1
+.
+
 (** [optionally] is a generic rule for an optional statement. *)
 
 Inductive optionally {T: Set} {P: env -> T -> Prop}:
@@ -346,13 +352,10 @@ Reserved Notation "'architecture' a 'well' 'typed' 'in' Gamma" (at level 200, Ga
 Reserved Notation "'architectureblock' a 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
 Reserved Notation "'expression' e 'has' 'type' t 'in' Gamma" (at level 200, no associativity, Gamma at level 1).
 Reserved Notation "'expression' 'node' e 'has' 'type' t 'in' Gamma" (at level 200, no associativity, Gamma at level 1).
-Reserved Notation "'gate' g 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
-Reserved Notation "'duty' d 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
 Reserved Notation "'archbehavior' b 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
 Reserved Notation "'behavior' b 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
 Reserved Notation "'assertion' a 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
 Reserved Notation "'protocol' p 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
-Reserved Notation "'connection' c 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
 Reserved Notation "'body' b 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
 Reserved Notation "'valuing' v 'well' 'typed' 'in' Gamma 'yields' 'to' Gamma1" (at level 200, Gamma at level 1, no associativity).
 
@@ -1198,34 +1201,6 @@ with type_architectureblock: env -> SosADL.SosADL.t_ArchitectureDecl -> Prop :=
 *)
 
 
-(**
- ** Gate
- *)
-
-with type_gate: env -> SosADL.SosADL.t_GateDecl -> Prop :=
-| type_GateDecl:
-    forall Gamma name conns p,
-      (protocol p well typed in Gamma)
-      /\ (values (SosADL.SosADL.Connection_name c) for c of conns are distinct according to option_string_dec)
-      /\ (for each c of conns, connection c well typed in Gamma)
-      ->
-      gate (SosADL.SosADL.GateDecl (Some name) conns (Some p)) well typed in Gamma
-
-
-(**
- ** Duty
- *)
-
-with type_duty: env -> SosADL.SosADL.t_DutyDecl -> Prop :=
-| type_DutyDecl:
-    forall Gamma name conns a p,
-      (protocol p well typed in Gamma)
-      /\ (values (SosADL.SosADL.Connection_name c) for c of conns are distinct according to option_string_dec)
-      /\ (for each c of conns, connection c well typed in Gamma)
-      /\ (assertion a well typed in Gamma)
-      ->
-      duty (SosADL.SosADL.DutyDecl (Some name) conns (Some a) (Some p)) well typed in Gamma
-
 (** ** Architecture behavior*)
 
 (* %\todo{%TBD%}% *)
@@ -1253,17 +1228,6 @@ with type_assertion: env -> SosADL.SosADL.t_AssertionDecl -> Prop :=
 
 with type_protocol: env -> SosADL.SosADL.t_ProtocolDecl -> Prop :=
 
-(** ** Connection *)
-
-with type_connection: env -> SosADL.SosADL.t_Connection -> Prop :=
-       (*
-| type_Connection:
-    forall Gamma name k m t,
-      (type t well typed in Gamma)
-      ->
-      connection (SosADL.SosADL.Connection (Some k) (Some name) (Some m) (Some t)) well typed in Gamma
-*)
-
 (** ** Body *)
 
 (** %\note{%The typing rules enforce that statements [RepeatBehavior],
@@ -1278,6 +1242,7 @@ inconsistent in regard to the question whether the type system
 enforces some rules on the last statement of a sequence.%}% *)
 
 with type_body: env -> list SosADL.SosADL.t_BehaviorStatement -> Prop :=
+       (*
 | type_EmptyBody:
     forall Gamma,
       body nil well typed in Gamma
@@ -1345,6 +1310,7 @@ with type_body: env -> list SosADL.SosADL.t_BehaviorStatement -> Prop :=
       /\ (body l well typed in Gamma)
       ->
       body (SosADL.SosADL.BehaviorStatement_TellAssertion (Some name) (Some e) :: l) well typed in Gamma
+*)
 
 (** The idea underpinning the [type_AskStatement] rule is to assume an
 environment [ee] in which all the (free) names of [e] are bound to
@@ -1367,6 +1333,7 @@ are done in [ee] merged in [Gamma]. *)
 [type_SendStatement_InOut] assume that the complex name is a pair:
 gate-or-duty, connection.%}% *)
 
+       (*
 | type_ReceiveStatement_In:
     forall Gamma gd E conn x conn__tau l,
       (contains Gamma gd (EGateOrDuty E))
@@ -1422,29 +1389,51 @@ gate-or-duty, connection.%}% *)
 | type_Done:
     forall Gamma,
       body (SosADL.SosADL.BehaviorStatement_Done :: nil) well typed in Gamma
-
+*)
 
 where "'mediator' m 'well' 'typed' 'in' Gamma" := (type_mediator Gamma m)
 and "'mediatorblock' m 'well' 'typed' 'in' Gamma" := (type_mediatorblock Gamma m)
 and "'architecture' a 'well' 'typed' 'in' Gamma" := (type_architecture Gamma a)
 and "'architectureblock' a 'well' 'typed' 'in' Gamma" := (type_architectureblock Gamma a)
-and "'gate' g 'well' 'typed' 'in' Gamma" := (type_gate Gamma g)
-and "'duty' d 'well' 'typed' 'in' Gamma" := (type_duty Gamma d)
 and "'archbehavior' b 'well' 'typed' 'in' Gamma" := (type_archbehavior Gamma b)
 and "'behavior' b 'well' 'typed' 'in' Gamma" := (type_behavior Gamma b)
 and "'assertion' a 'well' 'typed' 'in' Gamma" := (type_assertion Gamma a)
 and "'protocol' p 'well' 'typed' 'in' Gamma" := (type_protocol Gamma p)
-and "'connection' c 'well' 'typed' 'in' Gamma" := (type_connection Gamma c)
 and "'body' b 'well' 'typed' 'in' Gamma" := (type_body Gamma b)
 .
 
 Definition type_mediators Gamma l Gamma1 := @incrementally _ (simple_increment _ type_mediator SosADL.SosADL.MediatorDecl_name (fun x => Some (EMediator x))) Gamma l Gamma1.
 Definition type_architectures Gamma l Gamma1 := @incrementally _ (simple_increment _ type_architecture SosADL.SosADL.ArchitectureDecl_name (fun x => Some (EArchitecture x))) Gamma l Gamma1.
+
+(**
+ ** Formal parameters
+ *)
+
 Definition formalParameter_to_EVariable p :=
   match SosADL.SosADL.FormalParameter_type p with
   | None => None
   | Some t => Some (EVariable t)
   end.
+
+Inductive type_formalParameter: env -> SosADL.SosADL.t_FormalParameter -> SosADL.SosADL.t_FormalParameter -> env -> Prop :=
+
+| type_FormalParameter_typed:
+    forall (Gamma: env)
+      (n: string)
+      (t: SosADL.SosADL.t_DataType)
+      (t1: SosADL.SosADL.t_DataType)
+      (Gamma1: env)
+      (p1: type t is t1 in Gamma)
+    ,
+      type_formalParameter Gamma (SosADL.SosADL.FormalParameter (Some n) (Some t))
+                           (SosADL.SosADL.FormalParameter (Some n) (Some t1)) Gamma1
+.
+
+Definition type_formalParameters Gamma l l1 Gamma1 :=
+  @mutually_translate _ type_formalParameter SosADL.SosADL.FormalParameter_name formalParameter_to_EVariable
+                      Gamma l l1 Gamma1.
+
+(*
 Definition type_formalParameters Gamma l l' Gamma1 :=
   (for each p p' of l l',
    SosADL.SosADL.FormalParameter_name p = SosADL.SosADL.FormalParameter_name p'
@@ -1455,7 +1444,72 @@ Definition type_formalParameters Gamma l l' Gamma1 :=
               SosADL.SosADL.FormalParameter_name
               formalParameter_to_EVariable
               Gamma l' Gamma1.
-Definition type_gates Gamma l Gamma1 := @incrementally _ (simple_increment _ type_gate SosADL.SosADL.GateDecl_name (fun x => (** TODO *) None)) Gamma l Gamma1.
+*)
+
+(**
+ ** Gates and duties
+
+Gates and duties are typed in a similar way.
+ *)
+
+(** *** Connection *)
+
+Inductive type_connection: env -> SosADL.SosADL.t_Connection -> SosADL.SosADL.t_Connection -> env -> Prop :=
+
+| type_Connection:
+    forall (Gamma: env)
+      (name: string)
+      (k: bool)
+      (m: SosADL.SosADL.ModeType)
+      (t: SosADL.SosADL.t_DataType)
+      (t1: SosADL.SosADL.t_DataType)
+      (Gamma1: env)
+      (p1: type t is t1 in Gamma)
+    ,
+      type_connection Gamma (SosADL.SosADL.Connection (Some k) (Some name) (Some m) (Some t))
+                      (SosADL.SosADL.Connection (Some k) (Some name) (Some m) (Some t1)) Gamma1
+.
+
+Definition type_connections Gamma l l1 Gamma1 :=
+  @mutually_translate _ type_connection SosADL.SosADL.Connection_name (fun x => Some (EConnection x))
+                      Gamma l l1 Gamma1.
+
+Inductive type_gate: env -> SosADL.SosADL.t_GateDecl -> SosADL.SosADL.t_GateDecl -> env -> Prop :=
+| type_GateDecl:
+    forall (Gamma: env)
+      (name: string)
+      (conns: list SosADL.SosADL.t_Connection)
+      (conns1: list SosADL.SosADL.t_Connection)
+      (p: SosADL.SosADL.t_ProtocolDecl)
+      (Gamma1: env)
+      (p1: type_connections Gamma conns conns1 Gamma1)
+      (p2: protocol p well typed in Gamma1)
+    ,
+      type_gate Gamma (SosADL.SosADL.GateDecl (Some name) conns (Some p))
+                (SosADL.SosADL.GateDecl (Some name) conns1 (Some p)) Gamma1
+.
+
+Definition gateDecl_to_EGateOrDuty g :=
+  Some (EGateOrDuty (SosADL.SosADL.GateDecl_connections g)).
+
+Definition type_gates Gamma l Gamma1 :=
+  exists l1,
+    @mutually_translate _ type_gate SosADL.SosADL.GateDecl_name gateDecl_to_EGateOrDuty
+                        Gamma l l1 Gamma1.
+
+(*
+Inductive type_duty: env -> SosADL.SosADL.t_DutyDecl -> Prop :=
+| type_DutyDecl:
+    forall Gamma name conns a p,
+      (protocol p well typed in Gamma)
+      /\ (values (SosADL.SosADL.Connection_name c) for c of conns are distinct according to option_string_dec)
+      /\ (for each c of conns, connection c well typed in Gamma)
+      /\ (assertion a well typed in Gamma)
+      ->
+      duty (SosADL.SosADL.DutyDecl (Some name) conns (Some a) (Some p)) well typed in Gamma
+where "'duty' d 'well' 'typed' 'in' Gamma" := (type_duty Gamma d)
+.
+*)
 
 (** ** Valuings *)
 Inductive type_valuing: env -> SosADL.SosADL.t_Valuing -> env -> Prop :=
