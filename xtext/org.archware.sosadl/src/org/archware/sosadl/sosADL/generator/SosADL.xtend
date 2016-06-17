@@ -19,14 +19,15 @@ import org.archware.sosadl.sosADL.AssertionDecl
 import org.archware.sosadl.sosADL.Behavior
 import org.archware.sosadl.sosADL.BehaviorDecl
 import org.archware.sosadl.sosADL.Action
+import org.archware.sosadl.sosADL.AssertBehavior
 import org.archware.sosadl.sosADL.ChooseBehavior
-import org.archware.sosadl.sosADL.DoExpr
-import org.archware.sosadl.sosADL.Done
+import org.archware.sosadl.sosADL.DoExprBehavior
+import org.archware.sosadl.sosADL.DoneBehavior
 import org.archware.sosadl.sosADL.ForEachBehavior
 import org.archware.sosadl.sosADL.IfThenElseBehavior
 import org.archware.sosadl.sosADL.RecursiveCall
 import org.archware.sosadl.sosADL.RepeatBehavior
-import org.archware.sosadl.sosADL.Valuing
+import org.archware.sosadl.sosADL.ValuingBehavior
 import org.archware.sosadl.sosADL.Quantify
 import org.archware.sosadl.sosADL.Relay
 import org.archware.sosadl.sosADL.Unify
@@ -69,16 +70,21 @@ import org.archware.sosadl.sosADL.ReceiveProtocolAction
 import org.archware.sosadl.sosADL.SendProtocolAction
 import org.archware.sosadl.sosADL.ProtocolDecl
 import org.archware.sosadl.sosADL.AnyAction
+import org.archware.sosadl.sosADL.AssertProtocol
 import org.archware.sosadl.sosADL.ChooseProtocol
+import org.archware.sosadl.sosADL.DoExprProtocol
+import org.archware.sosadl.sosADL.DoneProtocol
 import org.archware.sosadl.sosADL.ForEachProtocol
 import org.archware.sosadl.sosADL.IfThenElseProtocol
 import org.archware.sosadl.sosADL.ProtocolAction
 import org.archware.sosadl.sosADL.RepeatProtocol
+import org.archware.sosadl.sosADL.ValuingProtocol
 import org.archware.sosadl.sosADL.SosADL
 import org.archware.sosadl.sosADL.SystemDecl
 import org.archware.sosadl.sosADL.TupleElement
 import org.archware.sosadl.sosADL.Library
 import org.archware.sosadl.sosADL.SoS
+import org.archware.sosadl.sosADL.Valuing
 
 @Generated(value = "sosADL")
 class CoqGenerator {
@@ -171,9 +177,9 @@ class CoqGenerator {
 	
 	def CharSequence generatet_ArchitectureDecl(ArchitectureDecl n) '''(ArchitectureDecl «_generateO(n.getName(), [generatestring])» «_generateL(n.getParameters(), [generatet_FormalParameter])» «_generateL(n.getDatatypes(), [generatet_DataTypeDecl])» «_generateL(n.getGates(), [generatet_GateDecl])» «_generateO(n.getBehavior(), [generatet_ArchBehaviorDecl])» «_generateO(n.getAssertion(), [generatet_AssertionDecl])»)'''
 	
-	def dispatch CharSequence generatet_Assert(AskAssertion n) '''(Assert_AskAssertion «_generateO(n.getName(), [generatestring])» «_generateO(n.getExpression(), [generatet_Expression])»)'''
+	def dispatch CharSequence generatet_Assert(AskAssertion n) '''(AskAssertion «_generateO(n.getName(), [generatestring])» «_generateO(n.getExpression(), [generatet_Expression])»)'''
 	
-	def dispatch CharSequence generatet_Assert(TellAssertion n) '''(Assert_TellAssertion «_generateO(n.getName(), [generatestring])» «_generateO(n.getExpression(), [generatet_Expression])»)'''
+	def dispatch CharSequence generatet_Assert(TellAssertion n) '''(TellAssertion «_generateO(n.getName(), [generatestring])» «_generateO(n.getExpression(), [generatet_Expression])»)'''
 	
 	def CharSequence generatet_AssertionDecl(AssertionDecl n) '''(AssertionDecl «_generateO(n.getName(), [generatestring])» «_generateO(n.getBody(), [generatet_Protocol])»)'''
 	
@@ -183,13 +189,13 @@ class CoqGenerator {
 	
 	def dispatch CharSequence generatet_BehaviorStatement(Action n) '''(Action «_generateO(n.getComplexName(), [generatet_ComplexName])» «_generateO(n.getSuite(), [generatet_ActionSuite])»)'''
 	
-	def dispatch CharSequence generatet_BehaviorStatement(AskAssertion n) '''(BehaviorStatement_AskAssertion «_generateO(n.getName(), [generatestring])» «_generateO(n.getExpression(), [generatet_Expression])»)'''
+	def dispatch CharSequence generatet_BehaviorStatement(AssertBehavior n) '''(AssertBehavior «_generateO(n.getAssertion(), [generatet_Assert])»)'''
 	
 	def dispatch CharSequence generatet_BehaviorStatement(ChooseBehavior n) '''(ChooseBehavior «_generateL(n.getBranches(), [generatet_Behavior])»)'''
 	
-	def dispatch CharSequence generatet_BehaviorStatement(DoExpr n) '''(BehaviorStatement_DoExpr «_generateO(n.getExpression(), [generatet_Expression])»)'''
+	def dispatch CharSequence generatet_BehaviorStatement(DoExprBehavior n) '''(DoExprBehavior «_generateO(n.getExpression(), [generatet_Expression])»)'''
 	
-	def dispatch CharSequence generatet_BehaviorStatement(Done n) '''BehaviorStatement_Done'''
+	def dispatch CharSequence generatet_BehaviorStatement(DoneBehavior n) '''DoneBehavior'''
 	
 	def dispatch CharSequence generatet_BehaviorStatement(ForEachBehavior n) '''(ForEachBehavior «_generateO(n.getVariable(), [generatestring])» «_generateO(n.getSetOfValues(), [generatet_Expression])» «_generateO(n.getRepeated(), [generatet_Behavior])»)'''
 	
@@ -199,9 +205,7 @@ class CoqGenerator {
 	
 	def dispatch CharSequence generatet_BehaviorStatement(RepeatBehavior n) '''(RepeatBehavior «_generateO(n.getRepeated(), [generatet_Behavior])»)'''
 	
-	def dispatch CharSequence generatet_BehaviorStatement(TellAssertion n) '''(BehaviorStatement_TellAssertion «_generateO(n.getName(), [generatestring])» «_generateO(n.getExpression(), [generatet_Expression])»)'''
-	
-	def dispatch CharSequence generatet_BehaviorStatement(Valuing n) '''(BehaviorStatement_Valuing «_generateO(n.getVariable(), [generatestring])» «_generateO(n.getType(), [generatet_DataType])» «_generateO(n.getExpression(), [generatet_Expression])»)'''
+	def dispatch CharSequence generatet_BehaviorStatement(ValuingBehavior n) '''(ValuingBehavior «_generateO(n.getValuing(), [generatet_Valuing])»)'''
 	
 	def dispatch CharSequence generatet_Binding(Quantify n) '''(Binding_Quantify «_generateO(n.getQuantifier(), [generateQuantifier])» «_generateL(n.getElements(), [generatet_ElementInConstituent])» «_generateO(n.getBindings(), [generatet_Expression])»)'''
 	
@@ -297,13 +301,13 @@ class CoqGenerator {
 	
 	def dispatch CharSequence generatet_ProtocolStatement(AnyAction n) '''AnyAction'''
 	
-	def dispatch CharSequence generatet_ProtocolStatement(AskAssertion n) '''(ProtocolStatement_AskAssertion «_generateO(n.getName(), [generatestring])» «_generateO(n.getExpression(), [generatet_Expression])»)'''
+	def dispatch CharSequence generatet_ProtocolStatement(AssertProtocol n) '''(AssertProtocol «_generateO(n.getAssertion(), [generatet_Assert])»)'''
 	
 	def dispatch CharSequence generatet_ProtocolStatement(ChooseProtocol n) '''(ChooseProtocol «_generateL(n.getBranches(), [generatet_Protocol])»)'''
 	
-	def dispatch CharSequence generatet_ProtocolStatement(DoExpr n) '''(ProtocolStatement_DoExpr «_generateO(n.getExpression(), [generatet_Expression])»)'''
+	def dispatch CharSequence generatet_ProtocolStatement(DoExprProtocol n) '''(DoExprProtocol «_generateO(n.getExpression(), [generatet_Expression])»)'''
 	
-	def dispatch CharSequence generatet_ProtocolStatement(Done n) '''ProtocolStatement_Done'''
+	def dispatch CharSequence generatet_ProtocolStatement(DoneProtocol n) '''DoneProtocol'''
 	
 	def dispatch CharSequence generatet_ProtocolStatement(ForEachProtocol n) '''(ForEachProtocol «_generateO(n.getVariable(), [generatestring])» «_generateO(n.getSetOfValues(), [generatet_Expression])» «_generateO(n.getRepeated(), [generatet_Protocol])»)'''
 	
@@ -313,9 +317,7 @@ class CoqGenerator {
 	
 	def dispatch CharSequence generatet_ProtocolStatement(RepeatProtocol n) '''(RepeatProtocol «_generateO(n.getRepeated(), [generatet_Protocol])»)'''
 	
-	def dispatch CharSequence generatet_ProtocolStatement(TellAssertion n) '''(ProtocolStatement_TellAssertion «_generateO(n.getName(), [generatestring])» «_generateO(n.getExpression(), [generatet_Expression])»)'''
-	
-	def dispatch CharSequence generatet_ProtocolStatement(Valuing n) '''(ProtocolStatement_Valuing «_generateO(n.getVariable(), [generatestring])» «_generateO(n.getType(), [generatet_DataType])» «_generateO(n.getExpression(), [generatet_Expression])»)'''
+	def dispatch CharSequence generatet_ProtocolStatement(ValuingProtocol n) '''(ValuingProtocol «_generateO(n.getValuing(), [generatet_Valuing])»)'''
 	
 	def CharSequence generatet_SosADL(SosADL n) '''(SosADL «_generateL(n.getImports(), [generatet_Import])» «_generateO(n.getContent(), [generatet_Unit])»)'''
 	
@@ -327,5 +329,5 @@ class CoqGenerator {
 	
 	def dispatch CharSequence generatet_Unit(SoS n) '''(SoS «_generateO(n.getName(), [generatestring])» «_generateO(n.getDecls(), [generatet_EntityBlock])»)'''
 	
-	def CharSequence generatet_Valuing(Valuing n) '''(Valuing_Valuing «_generateO(n.getVariable(), [generatestring])» «_generateO(n.getType(), [generatet_DataType])» «_generateO(n.getExpression(), [generatet_Expression])»)'''
+	def CharSequence generatet_Valuing(Valuing n) '''(Valuing «_generateO(n.getName(), [generatestring])» «_generateO(n.getType(), [generatet_DataType])» «_generateO(n.getExpression(), [generatet_Expression])»)'''
 }

@@ -36,8 +36,8 @@ with t_ArchitectureDecl: Set :=
 | ArchitectureDecl: option string -> list t_FormalParameter -> list t_DataTypeDecl -> list t_GateDecl -> option t_ArchBehaviorDecl -> option t_AssertionDecl ->  t_ArchitectureDecl
 
 with t_Assert: Set :=
-| Assert_AskAssertion: option string -> option t_Expression ->  t_Assert
-| Assert_TellAssertion: option string -> option t_Expression ->  t_Assert
+| AskAssertion: option string -> option t_Expression ->  t_Assert
+| TellAssertion: option string -> option t_Expression ->  t_Assert
 
 with t_AssertionDecl: Set :=
 | AssertionDecl: option string -> option t_Protocol ->  t_AssertionDecl
@@ -50,16 +50,15 @@ with t_BehaviorDecl: Set :=
 
 with t_BehaviorStatement: Set :=
 | Action: option t_ComplexName -> option t_ActionSuite ->  t_BehaviorStatement
-| BehaviorStatement_AskAssertion: option string -> option t_Expression ->  t_BehaviorStatement
+| AssertBehavior: option t_Assert ->  t_BehaviorStatement
 | ChooseBehavior: list t_Behavior ->  t_BehaviorStatement
-| BehaviorStatement_DoExpr: option t_Expression ->  t_BehaviorStatement
-| BehaviorStatement_Done: t_BehaviorStatement
+| DoExprBehavior: option t_Expression ->  t_BehaviorStatement
+| DoneBehavior: t_BehaviorStatement
 | ForEachBehavior: option string -> option t_Expression -> option t_Behavior ->  t_BehaviorStatement
 | IfThenElseBehavior: option t_Expression -> option t_Behavior -> option t_Behavior ->  t_BehaviorStatement
 | RecursiveCall: list t_Expression ->  t_BehaviorStatement
 | RepeatBehavior: option t_Behavior ->  t_BehaviorStatement
-| BehaviorStatement_TellAssertion: option string -> option t_Expression ->  t_BehaviorStatement
-| BehaviorStatement_Valuing: option string -> option t_DataType -> option t_Expression ->  t_BehaviorStatement
+| ValuingBehavior: option t_Valuing ->  t_BehaviorStatement
 
 with t_Binding: Set :=
 | Binding_Quantify: option Quantifier -> list t_ElementInConstituent -> option t_Expression ->  t_Binding
@@ -149,16 +148,15 @@ with t_ProtocolDecl: Set :=
 
 with t_ProtocolStatement: Set :=
 | AnyAction: t_ProtocolStatement
-| ProtocolStatement_AskAssertion: option string -> option t_Expression ->  t_ProtocolStatement
+| AssertProtocol: option t_Assert ->  t_ProtocolStatement
 | ChooseProtocol: list t_Protocol ->  t_ProtocolStatement
-| ProtocolStatement_DoExpr: option t_Expression ->  t_ProtocolStatement
-| ProtocolStatement_Done: t_ProtocolStatement
+| DoExprProtocol: option t_Expression ->  t_ProtocolStatement
+| DoneProtocol: t_ProtocolStatement
 | ForEachProtocol: option string -> option t_Expression -> option t_Protocol ->  t_ProtocolStatement
 | IfThenElseProtocol: option t_Expression -> option t_Protocol -> option t_Protocol ->  t_ProtocolStatement
 | ProtocolAction: option t_ComplexName -> option t_ProtocolActionSuite ->  t_ProtocolStatement
 | RepeatProtocol: option t_Protocol ->  t_ProtocolStatement
-| ProtocolStatement_TellAssertion: option string -> option t_Expression ->  t_ProtocolStatement
-| ProtocolStatement_Valuing: option string -> option t_DataType -> option t_Expression ->  t_ProtocolStatement
+| ValuingProtocol: option t_Valuing ->  t_ProtocolStatement
 
 with t_SosADL: Set :=
 | SosADL: list t_Import -> option t_Unit ->  t_SosADL
@@ -174,7 +172,7 @@ with t_Unit: Set :=
 | SoS: option string -> option t_EntityBlock ->  t_Unit
 
 with t_Valuing: Set :=
-| Valuing_Valuing: option string -> option t_DataType -> option t_Expression ->  t_Valuing
+| Valuing: option string -> option t_DataType -> option t_Expression ->  t_Valuing
 .
 
 Definition ArchBehaviorDecl_name x :=
@@ -522,19 +520,19 @@ Definition TupleElement_value x :=
 	| TupleElement _ y => y
 	end.
 
-Definition Valuing_Valuing_variable x :=
+Definition Valuing_name x :=
 	match x with
-	| Valuing_Valuing y _ _ => y
+	| Valuing y _ _ => y
 	end.
 
-Definition Valuing_Valuing_type x :=
+Definition Valuing_type x :=
 	match x with
-	| Valuing_Valuing _ y _ => y
+	| Valuing _ y _ => y
 	end.
 
-Definition Valuing_Valuing_expression x :=
+Definition Valuing_expression x :=
 	match x with
-	| Valuing_Valuing _ _ y => y
+	| Valuing _ _ y => y
 	end.
 
 (*
