@@ -201,10 +201,10 @@ class SosADLPrettyPrinterGenerator implements IGenerator {
 	'''
 	
 	def compile(ProtocolStatement p)'''
-    «IF p instanceof Valuing»
-      «(p as Valuing).compile»
-    «ELSEIF p instanceof Assert»
-      «(p as Assert).compile»
+    «IF p instanceof ValuingProtocol»
+      «(p as ValuingProtocol).valuing.compile»
+    «ELSEIF p instanceof AssertProtocol»
+      «(p as AssertProtocol).assertion.compile»
     «ELSEIF p instanceof ProtocolAction»
       «(p as ProtocolAction).compile»
     «ELSEIF p instanceof AnyAction»
@@ -217,10 +217,10 @@ class SosADLPrettyPrinterGenerator implements IGenerator {
       «(p as ChooseProtocol).compile»
     «ELSEIF p instanceof ForEachProtocol»
       «(p as ForEachProtocol).compile»
-    «ELSEIF p instanceof DoExpr»
-      «(p as DoExpr).compile»
-    «ELSEIF p instanceof Done»
-      «(p as Done).compile»
+    «ELSEIF p instanceof DoExprProtocol»
+      «(p as DoExprProtocol).compile»
+    «ELSEIF p instanceof DoneProtocol»
+      «(p as DoneProtocol).compile»
     «ENDIF»
 	'''
 	
@@ -239,7 +239,11 @@ class SosADLPrettyPrinterGenerator implements IGenerator {
     foreach «f.variable» in «f.setOfValues.compile» «f.repeated.compile»
 	'''
 	
-	def compile(DoExpr d)'''
+	def compile(DoExprProtocol d)'''
+    do «d.expression.compile»
+	'''
+	
+	def compile(DoExprBehavior d)'''
     do «d.expression.compile»
 	'''
 	
@@ -247,7 +251,9 @@ class SosADLPrettyPrinterGenerator implements IGenerator {
     repeat «r.repeated.compile»
 	''' 
 	
-	def compile(Done d)'''done'''
+	def compile(DoneProtocol d)'''done'''
+	
+	def compile(DoneBehavior d)'''done'''
 	    
     def compile(ProtocolAction p)'''
     via «p.complexName.compile»«
@@ -281,10 +287,10 @@ class SosADLPrettyPrinterGenerator implements IGenerator {
     '''
     
     def compile(BehaviorStatement b)'''
-    «IF b instanceof Valuing»
-      «(b as Valuing).compile»
-    «ELSEIF b instanceof Assert»
-      «(b as Assert).compile»
+    «IF b instanceof ValuingBehavior»
+      «(b as ValuingBehavior).valuing.compile»
+    «ELSEIF b instanceof AssertBehavior»
+      «(b as AssertBehavior).assertion.compile»
     «ELSEIF b instanceof Action»
       «(b as Action).compile»
     «ELSEIF b instanceof RepeatBehavior»
@@ -295,10 +301,10 @@ class SosADLPrettyPrinterGenerator implements IGenerator {
       «(b as ChooseBehavior).compile»
     «ELSEIF b instanceof ForEachBehavior»
       «(b as ForEachBehavior).compile»
-    «ELSEIF b instanceof DoExpr»
-      «(b as DoExpr).compile»
-    «ELSEIF b instanceof Done»
-      «(b as Done).compile»
+    «ELSEIF b instanceof DoExprBehavior»
+      «(b as DoExprBehavior).compile»
+    «ELSEIF b instanceof DoneBehavior»
+      «(b as DoneBehavior).compile»
     «ELSEIF b instanceof RecursiveCall»
       «(b as RecursiveCall).compile»
     «ENDIF»
@@ -455,7 +461,7 @@ class SosADLPrettyPrinterGenerator implements IGenerator {
     def compile(ComplexName c)'''«IF c.name != null»«c.name.join("::")»«ENDIF»'''
     
 	def compile(Valuing v)'''
-      value «v.variable»«IF v.type != null» is «v.type.compile»«ENDIF» = «v.expression.compile»
+      value «v.name»«IF v.type != null» is «v.type.compile»«ENDIF» = «v.expression.compile»
 	'''
 	
 	def compile(IntegerValue i)'''«i.absInt»'''
@@ -487,7 +493,6 @@ class SosADLPrettyPrinterGenerator implements IGenerator {
     ELSEIF e instanceof Tuple»«(e as Tuple).compile»«
     ELSEIF e instanceof Sequence»«(e as Sequence).compile»«
     ELSEIF e instanceof IntegerValue»«(e as IntegerValue).compile»«
-    ELSEIF e instanceof CallExpression»«(e as CallExpression).compile»«
     ELSEIF e instanceof Field»«(e as Field).compile»«
     ELSEIF e instanceof Select»«(e as Select).compile»«
     ELSEIF e instanceof Map»«(e as Map).compile»«
