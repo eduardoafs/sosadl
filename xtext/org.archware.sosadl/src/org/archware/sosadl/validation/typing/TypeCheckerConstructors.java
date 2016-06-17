@@ -6,13 +6,17 @@ import java.util.stream.Stream;
 
 import org.archware.sosadl.sosADL.BinaryExpression;
 import org.archware.sosadl.sosADL.BooleanType;
+import org.archware.sosadl.sosADL.Connection;
 import org.archware.sosadl.sosADL.DataType;
 import org.archware.sosadl.sosADL.Expression;
 import org.archware.sosadl.sosADL.FieldDecl;
 import org.archware.sosadl.sosADL.FormalParameter;
 import org.archware.sosadl.sosADL.FunctionDecl;
+import org.archware.sosadl.sosADL.GateDecl;
 import org.archware.sosadl.sosADL.IntegerValue;
+import org.archware.sosadl.sosADL.ModeType;
 import org.archware.sosadl.sosADL.NamedType;
+import org.archware.sosadl.sosADL.ProtocolDecl;
 import org.archware.sosadl.sosADL.RangeType;
 import org.archware.sosadl.sosADL.SequenceType;
 import org.archware.sosadl.sosADL.SosADLFactory;
@@ -123,6 +127,23 @@ public class TypeCheckerConstructors extends TypeCheckerAnnotate {
 		f.getValuing().addAll(ListExtensions.map(vals, TypeCheckerConstructors::copy));
 		f.setExpression(copy(b));
 		return f;
+	}
+
+	protected static GateDecl createGateDecl(String name, List<Connection> conns, ProtocolDecl protocol) {
+		GateDecl g = SosADLFactory.eINSTANCE.createGateDecl();
+		g.setName(name);
+		g.getConnections().addAll(conns);
+		g.setProtocol(copy(protocol));
+		return g;
+	}
+
+	protected static Connection createConnection(boolean env, String name, ModeType mode, DataType type) {
+		Connection c = SosADLFactory.eINSTANCE.createConnection();
+		c.setEnvironment(env);
+		c.setName(name);
+		c.setMode(mode);
+		c.setValueType(copy(type));
+		return c;
 	}
 
 	private static <T extends EObject> T copy(T x) {

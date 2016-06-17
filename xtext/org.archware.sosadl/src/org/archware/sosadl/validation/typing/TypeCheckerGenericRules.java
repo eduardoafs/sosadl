@@ -121,15 +121,15 @@ public abstract class TypeCheckerGenericRules extends TypeCheckerProofConstructo
 	protected <T extends EObject, P extends ProofTerm, Q> Pair<Pair<List<T>, Environment>, Mutually_translate<T, P>> proveMutuallyTranslate(
 			Environment gamma, List<T> l, BiFunction<Environment, T, Pair<T, Q>> translator,
 			PentaFunction<Environment, T, T, Environment, Q, P> prover, String n, Function<T, ? extends String> name,
-			String c, Function<T, ? extends EnvContent> content) {
+			String c, BiFunction<T, T, ? extends EnvContent> content) {
 		if (noDuplicate(l.stream().map(name))) {
 			List<Pair<T, Pair<T, Q>>> pl = l.stream().map((x) -> new Pair<>(x, translator.apply(gamma, x)))
 					.collect(Collectors.toList());
-			if (pl.stream().allMatch((p) -> p.getB() != null && p.getB().getA() != null && p.getB().getB() != null)) {
+			if (pl.stream().allMatch((p) -> p.getB() != null && p.getB().getA() != null)) {
 				if (pl.stream().allMatch((p) -> name.apply(p.getA()).equals(name.apply(p.getB().getA())))) {
 					List<T> l1 = pl.stream().map(Pair::getB).map(Pair::getA).collect(Collectors.toList());
-					Environment gamma1 = fold_right((x, g) -> augment_env(g, name.apply(x), content.apply(x)), gamma,
-							l1);
+					Environment gamma1 = fold_right((x, g) -> augment_env(g, name.apply(x.getB().getA()),
+							content.apply(x.getA(), x.getB().getA())), gamma, pl);
 					Forall2<T, T, And<Equality, P>> forall = proveForall2(pl, Pair::getA, (p) -> p.getB().getA(),
 							(p) -> createConj(createReflexivity(),
 									prover.apply(gamma, p.getA(), p.getB().getA(), gamma1, p.getB().getB())));

@@ -7,26 +7,31 @@ import org.archware.sosadl.sosADL.DataType;
 import org.archware.sosadl.sosADL.DataTypeDecl;
 import org.archware.sosadl.sosADL.FunctionDecl;
 import org.archware.sosadl.validation.typing.EnvContent;
+import org.archware.sosadl.validation.typing.proof.CoqConstructor;
+import org.archware.sosadl.validation.typing.proof.Mandatory;
 import org.eclipse.emf.common.util.ECollections;
 import org.eclipse.emf.common.util.EList;
 
+@CoqConstructor("EType")
 public class TypeEnvContent implements EnvContent {
+	@Mandatory
 	private final DataTypeDecl dataTypeDecl;
-	
+
+	@Mandatory
 	private final DataType dataType;
-	
+
 	private final EList<FunctionDecl> methods;
-	
+
 	public TypeEnvContent(DataTypeDecl dtd, DataType dt, EList<FunctionDecl> methods) {
 		this.dataTypeDecl = dtd;
 		this.dataType = dt;
 		this.methods = methods;
 	}
-	
+
 	public DataTypeDecl getDataTypeDecl() {
 		return this.dataTypeDecl;
 	}
-	
+
 	public DataType getDataType() {
 		return dataType;
 	}

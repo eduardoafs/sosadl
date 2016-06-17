@@ -1,5 +1,7 @@
 package org.archware.sosadl.validation.typing.proof;
 
+import java.util.List;
+
 import org.archware.sosadl.sosADL.AssertionDecl;
 import org.archware.sosadl.sosADL.BehaviorDecl;
 import org.archware.sosadl.sosADL.DataTypeDecl;
@@ -38,13 +40,13 @@ public class Type_SystemDecl implements Type_system {
 	private final AssertionDecl assrt;
 
 	@Mandatory
-	private final Mutually_translate<FormalParameter,Type_formalParameter> p1;
+	private final Mutually_translate<FormalParameter, Type_formalParameter> p1;
 
 	@Mandatory
 	private final Incrementally<DataTypeDecl, Type_datatypeDecl> p2;
 
 	@Mandatory
-	private final Mutually_translate<GateDecl,Type_gate> p3;
+	private final Ex<List<GateDecl>, Mutually_translate<GateDecl, Type_gate>> p3;
 
 	@Mandatory
 	private final Type_behavior p4;
@@ -55,9 +57,9 @@ public class Type_SystemDecl implements Type_system {
 	public Type_SystemDecl(Environment gamma, String name, EList<FormalParameter> params,
 			EList<FormalParameter> params2, Environment gamma1, EList<DataTypeDecl> datatypes, Environment gamma2,
 			EList<GateDecl> gates, Environment gamma3, BehaviorDecl bhv, AssertionDecl assrt,
-			Mutually_translate<FormalParameter,Type_formalParameter> p1,
+			Mutually_translate<FormalParameter, Type_formalParameter> p1,
 			Incrementally<DataTypeDecl, Type_datatypeDecl> p2,
-			Mutually_translate<GateDecl,Type_gate> p3, Type_behavior p4,
+			Ex<List<GateDecl>, Mutually_translate<GateDecl, Type_gate>> p3, Type_behavior p4,
 			Optionally<AssertionDecl, Type_assertion> p5) {
 		super();
 		this.gamma = gamma;
@@ -122,7 +124,7 @@ public class Type_SystemDecl implements Type_system {
 		return assrt;
 	}
 
-	public Mutually_translate<FormalParameter,Type_formalParameter> getP1() {
+	public Mutually_translate<FormalParameter, Type_formalParameter> getP1() {
 		return p1;
 	}
 
@@ -130,7 +132,7 @@ public class Type_SystemDecl implements Type_system {
 		return p2;
 	}
 
-	public Mutually_translate<GateDecl,Type_gate> getP3() {
+	public Ex<List<GateDecl>, Mutually_translate<GateDecl, Type_gate>> getP3() {
 		return p3;
 	}
 

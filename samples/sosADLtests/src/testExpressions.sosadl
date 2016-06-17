@@ -56,6 +56,15 @@ library testDone is {
         done
       }
     }
+
+    gate gate2 is {
+      connection connection1 is in{type1}
+    } guarantee {
+      protocol gate1protocol is {
+        // empty protocol: will not generate any iosts process.
+        done
+      }
+    }
     
     behavior test is {
       // empty behavior: will not generate any iosts process.

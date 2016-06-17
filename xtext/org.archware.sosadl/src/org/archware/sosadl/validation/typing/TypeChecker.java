@@ -117,7 +117,7 @@ import org.eclipse.emf.ecore.util.EcoreUtil;
  * 
  * @author Jeremy Buisson
  */
-public class TypeChecker extends TypeCheckerExpression {
+public class TypeChecker extends TypeCheckerConnections {
 	@Override
 	protected Type_sosADL type_sosADL(SosADL file) {
 		// type_SosADL:
@@ -417,8 +417,8 @@ public class TypeChecker extends TypeCheckerExpression {
 				Environment gamma1 = p1.getA().getB();
 				Pair<Incrementally<DataTypeDecl,Type_datatypeDecl>,Environment> p2 = type_datatypeDecls(gamma1, systemDecl.getDatatypes());
 				Environment gamma2 = p2.getB();
-				Pair<Pair<List<GateDecl>,Environment>,Mutually_translate<GateDecl,Type_gate>> p3 = type_gates(gamma2, systemDecl.getGates());
-				Environment gamma3 = p3.getA().getB();
+				Pair<Environment,Ex<List<GateDecl>,Mutually_translate<GateDecl,Type_gate>>> p3 = type_gates(gamma2, systemDecl.getGates());
+				Environment gamma3 = p3.getA();
 				return saveProof(systemDecl,
 						createType_SystemDecl(gamma, systemDecl.getName(),
 								systemDecl.getParameters(),
@@ -443,22 +443,6 @@ public class TypeChecker extends TypeCheckerExpression {
 			}
 			return null;
 		}
-	}
-	
-	private Type_gate type_gate(Environment gamma, GateDecl g, GateDecl g1, Environment gamma1, Object x) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-	
-	private Pair<GateDecl, Object> translate_gate(Environment gamma, GateDecl g) {
-		// TODO Auto-generated method stub
-		return new Pair<>(g, null);
-	}
-
-	private Pair<Pair<List<GateDecl>, Environment>, Mutually_translate<GateDecl, Type_gate>> type_gates(Environment gamma, EList<GateDecl> l) {
-		return proveMutuallyTranslate(gamma, l, this::translate_gate, this::type_gate,
-				"SosADL.SosADL.GateDecl_name", GateDecl::getName,
-				"SosADL.TypeSystem.gateDecl_to_EGateOrDuty", (y) -> null);
 	}
 	
 	private Type_assertion type_assertion(Environment gamma, AssertionDecl a) {
@@ -500,8 +484,8 @@ public class TypeChecker extends TypeCheckerExpression {
 				.filter((p) -> p.getB() != null);
 	}
 	
-	private static EnvContent formalParameterEnvContent(FormalParameter p) {
-		DataType t = p.getType();
+	private static EnvContent formalParameterEnvContent(FormalParameter p, FormalParameter p1) {
+		DataType t = p1.getType();
 		if(t == null) {
 			return null;
 		} else {

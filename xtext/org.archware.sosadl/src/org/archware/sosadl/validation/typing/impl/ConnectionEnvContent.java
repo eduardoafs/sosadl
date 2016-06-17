@@ -1,32 +1,32 @@
 package org.archware.sosadl.validation.typing.impl;
 
-import org.archware.sosadl.sosADL.DataType;
+import org.archware.sosadl.sosADL.Connection;
 import org.archware.sosadl.validation.typing.EnvContent;
 import org.archware.sosadl.validation.typing.proof.CoqConstructor;
 import org.archware.sosadl.validation.typing.proof.CoqTransient;
 import org.archware.sosadl.validation.typing.proof.Mandatory;
 import org.eclipse.emf.ecore.EObject;
 
-@CoqConstructor("EVariable")
-public class VariableEnvContent implements EnvContent {
+@CoqConstructor("EConnection")
+public class ConnectionEnvContent implements EnvContent {
 	@CoqTransient
 	private final EObject binder;
 
 	@Mandatory
-	private final DataType type;
+	private final Connection connection;
 
-	public VariableEnvContent(EObject binder, DataType type) {
+	public ConnectionEnvContent(EObject binder, Connection connection) {
 		super();
 		this.binder = binder;
-		this.type = type;
+		this.connection = connection;
 	}
 
 	public EObject getBinder() {
 		return binder;
 	}
 
-	public DataType getType() {
-		return type;
+	public Connection getConnection() {
+		return connection;
 	}
 
 }

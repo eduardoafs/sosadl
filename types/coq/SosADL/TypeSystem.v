@@ -1456,7 +1456,7 @@ Gates and duties are typed in a similar way.
 
 Inductive type_connection: env -> SosADL.SosADL.t_Connection -> SosADL.SosADL.t_Connection -> env -> Prop :=
 
-| type_Connection:
+| type_Connection_simple:
     forall (Gamma: env)
       (name: string)
       (k: bool)
@@ -1480,10 +1480,11 @@ Inductive type_gate: env -> SosADL.SosADL.t_GateDecl -> SosADL.SosADL.t_GateDecl
       (name: string)
       (conns: list SosADL.SosADL.t_Connection)
       (conns1: list SosADL.SosADL.t_Connection)
+      (Gamma2: env)
       (p: SosADL.SosADL.t_ProtocolDecl)
       (Gamma1: env)
-      (p1: type_connections Gamma conns conns1 Gamma1)
-      (p2: protocol p well typed in Gamma1)
+      (p1: type_connections Gamma conns conns1 Gamma2)
+      (p2: protocol p well typed in Gamma2)
     ,
       type_gate Gamma (SosADL.SosADL.GateDecl (Some name) conns (Some p))
                 (SosADL.SosADL.GateDecl (Some name) conns1 (Some p)) Gamma1

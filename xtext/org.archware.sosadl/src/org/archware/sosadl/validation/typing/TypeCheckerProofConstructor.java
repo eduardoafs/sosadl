@@ -6,6 +6,7 @@ import java.util.List;
 import org.archware.sosadl.sosADL.ArchitectureDecl;
 import org.archware.sosadl.sosADL.AssertionDecl;
 import org.archware.sosadl.sosADL.BehaviorDecl;
+import org.archware.sosadl.sosADL.Connection;
 import org.archware.sosadl.sosADL.DataType;
 import org.archware.sosadl.sosADL.DataTypeDecl;
 import org.archware.sosadl.sosADL.EntityBlock;
@@ -16,6 +17,8 @@ import org.archware.sosadl.sosADL.FunctionDecl;
 import org.archware.sosadl.sosADL.GateDecl;
 import org.archware.sosadl.sosADL.Import;
 import org.archware.sosadl.sosADL.MediatorDecl;
+import org.archware.sosadl.sosADL.ModeType;
+import org.archware.sosadl.sosADL.ProtocolDecl;
 import org.archware.sosadl.sosADL.SystemDecl;
 import org.archware.sosadl.sosADL.TupleElement;
 import org.archware.sosadl.sosADL.Unit;
@@ -54,7 +57,7 @@ public abstract class TypeCheckerProofConstructor extends TypeCheckerInference {
 			EList<GateDecl> gates, Environment gamma3, BehaviorDecl bhv, AssertionDecl assrt,
 			Mutually_translate<FormalParameter, Type_formalParameter> p1,
 			Incrementally<DataTypeDecl, Type_datatypeDecl> p2,
-			Mutually_translate<GateDecl,Type_gate> p3, Type_behavior p4,
+			Ex<List<GateDecl>, Mutually_translate<GateDecl, Type_gate>> p3, Type_behavior p4,
 			Optionally<AssertionDecl, Type_assertion> p5) {
 		return new Type_SystemDecl(gamma, name, params, params2, gamma1, datatypes, gamma2, gates, gamma3, bhv, assrt,
 				p1, p2, p3, p4, p5);
@@ -466,5 +469,16 @@ public abstract class TypeCheckerProofConstructor extends TypeCheckerInference {
 	protected Type_valuing createType_Valuing_inferred(Environment gamma, String x, Expression e, DataType tau__e,
 			Type_expression p1) {
 		return new Type_Valuing_inferred(gamma, x, e, tau__e, p1);
+	}
+
+	protected Type_gate createType_GateDecl(Environment gamma, String name, EList<Connection> conns,
+			EList<Connection> conns1, Environment gamma2, ProtocolDecl p, Environment gamma1,
+			Mutually_translate<Connection, Type_connection> p1, Type_protocol p2) {
+		return new Type_GateDecl(gamma, name, conns, conns1, gamma2, p, gamma1, p1, p2);
+	}
+
+	protected Type_connection createType_Connection_simple(Environment gamma, String name, boolean k, ModeType m,
+			DataType t, DataType t1, Environment gamma1, Type_datatype p1) {
+		return new Type_Connection_simple(gamma, name, k, m, t, t1, gamma1, p1);
 	}
 }

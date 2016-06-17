@@ -77,8 +77,8 @@ public interface ProofTerm {
 	 */
 	default FieldDescriptor[] getDeclaredFields() {
 		Class<?> c = this.getClass();
-		FieldDescriptor[] f = Stream.of(c.getDeclaredFields()).map(this::describeField)
-				.toArray((s) -> new FieldDescriptor[s]);
+		FieldDescriptor[] f = Stream.of(c.getDeclaredFields()).filter((x) -> !x.isAnnotationPresent(CoqTransient.class))
+				.map(this::describeField).toArray((s) -> new FieldDescriptor[s]);
 		return f;
 	}
 
@@ -121,7 +121,13 @@ public interface ProofTerm {
 			};
 		} else {
 			try {
-				Method getter = f.getDeclaringClass().getMethod("get" + StringExtensions.toFirstUpper(f.getName()));
+				String prefix;
+				if (boolean.class.equals(f.getType())) {
+					prefix = "is";
+				} else {
+					prefix = "get";
+				}
+				Method getter = f.getDeclaringClass().getMethod(prefix + StringExtensions.toFirstUpper(f.getName()));
 				Object content = getter.invoke(this);
 				if ((content != null && content instanceof List) || List.class.isAssignableFrom(f.getType())) {
 					if (f.isAnnotationPresent(CoqLiteral.class)) {
