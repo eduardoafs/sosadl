@@ -305,7 +305,6 @@ public class TypeChecker extends TypeCheckerConnections {
 											createReflexivity()))))))),
 									gamma1);
 						} else {
-							error("(p5.getA() != null && t != null)", f, null);
 							return new Pair<>(null, gamma);
 						}
 					} else {
@@ -315,11 +314,9 @@ public class TypeChecker extends TypeCheckerConnections {
 						return new Pair<>(null, gamma);
 					}
 				} else {
-					error("(p2.getA() != null && p2.getB() != null)", f, null);
 					return new Pair<>(null, gamma);
 				}
 			} else {
-				error("op3.isPresent()", f, null);
 				return new Pair<>(null, gamma);
 			}
 		} else {
