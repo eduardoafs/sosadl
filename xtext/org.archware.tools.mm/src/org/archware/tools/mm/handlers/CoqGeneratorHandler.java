@@ -185,7 +185,7 @@ public class CoqGeneratorHandler extends AbstractHandler {
 			EList<EClassifier> classifiers, List<EEnum> enums,
 			Map<String, EClass> namedClasses, Map<String, Set<String>> cases,
 			GenPackage genPackage) throws ExecutionException {
-		IPath path = new Path(file.getRawLocation().lastSegment())
+		IPath path = new Path(file.getRawLocation().removeFileExtension().lastSegment() + "CoqGenerator")
 				.removeFileExtension().addFileExtension("xtend");
 		IFile out = file.getParent().getFile(path);
 		IWorkbenchWindow window = HandlerUtil

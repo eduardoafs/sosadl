@@ -1,6 +1,6 @@
 package org.archware.sosadl.sosADL.generator;
 
-public class FactorizingCoqGenerator extends CoqGenerator {
+public class FactorizingCoqGenerator extends SosADLCoqGenerator {
 	private final Factorizor factorizor;
 
 	public FactorizingCoqGenerator(Factorizor f) {

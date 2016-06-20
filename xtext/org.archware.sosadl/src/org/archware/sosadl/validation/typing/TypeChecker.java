@@ -388,7 +388,7 @@ public class TypeChecker extends TypeCheckerBehavior {
 
 	private Pair<Type_valuing, Environment> type_valuing(Environment gamma, Valuing v) {
 		Expression e = v.getExpression();
-		String x = v.getVariable();
+		String x = v.getName();
 		if (e != null && x != null) {
 			Pair<Type_expression, DataType> pt1 = type_expression(gamma, e);
 			Type_expression p1 = pt1.getA();
@@ -419,8 +419,8 @@ public class TypeChecker extends TypeCheckerBehavior {
 			if (v.getExpression() == null) {
 				error("The valuing must contain an expression", v, SosADLPackage.Literals.VALUING__EXPRESSION);
 			}
-			if (v.getVariable() == null) {
-				error("The valuing must contain a variable name", v, SosADLPackage.Literals.VALUING__VARIABLE);
+			if (v.getName() == null) {
+				error("The valuing must contain a variable name", v, SosADLPackage.Literals.VALUING__NAME);
 			}
 			return new Pair<>(null, gamma);
 		}

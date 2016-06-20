@@ -93,16 +93,16 @@ Protocol:
 ;
 
 ProtocolStatement:
-	Valuing
-	| Assert
+	{ValuingProtocol} valuing=Valuing
+	| {AssertProtocol} assertion=Assert
 	| ProtocolAction
 	| {AnyAction} 'anyaction'
 	| {RepeatProtocol} 'repeat' repeated=Protocol
 	| {IfThenElseProtocol} 'if' condition=Expression 'then' ifTrue=Protocol ('else' ifFalse=Protocol)?
 	| {ChooseProtocol} 'choose' branches+=Protocol  ('or' branches+=Protocol)+
 	| {ForEachProtocol} 'foreach' variable=Name 'in' setOfValues=Expression repeated=Protocol
-	| {DoExpr} 'do' expression=Expression
-	| {Done} 'done'
+	| {DoExprProtocol} 'do' expression=Expression
+	| {DoneProtocol} 'done'
 ;
 
 ProtocolAction:
@@ -125,15 +125,15 @@ Behavior:
 ;
 
 BehaviorStatement:
-	Valuing
-	| Assert
+	{ValuingBehavior} valuing=Valuing
+	| {AssertBehavior} assertion=Assert
 	| Action
 	| {RepeatBehavior} 'repeat' repeated=Behavior
 	| {IfThenElseBehavior} 'if' condition=Expression 'then' ifTrue=Behavior ('else' ifFalse=Behavior)?
 	| {ChooseBehavior} 'choose' branches+=Behavior  ('or' branches+=Behavior )+
 	| {ForEachBehavior} 'foreach' variable=Name 'in' setOfValues=Expression repeated=Behavior
-	| {DoExpr} 'do' expression=Expression
-	| {Done} 'done'
+	| {DoExprBehavior} 'do' expression=Expression
+	| {DoneBehavior} 'done'
 	| {RecursiveCall} 'behavior' '(' (parameters+=Expression (',' parameters+=Expression)*)? ')'
 ;
 
@@ -230,7 +230,7 @@ ComplexName:
 ;
 
 Valuing:
-	'value' variable=Name ('is' type=DataType)? '=' expression=Expression;
+	'value' name=Name ('is' type=DataType)? '=' expression=Expression;
 
 Value returns Expression:
 	BaseValue

@@ -6,11 +6,12 @@ import org.archware.sosadl.sosADL.Behavior;
 import org.archware.sosadl.sosADL.BehaviorDecl;
 import org.archware.sosadl.sosADL.BehaviorStatement;
 import org.archware.sosadl.sosADL.DataType;
-import org.archware.sosadl.sosADL.DoExpr;
-import org.archware.sosadl.sosADL.Done;
+import org.archware.sosadl.sosADL.DoExprBehavior;
+import org.archware.sosadl.sosADL.DoneBehavior;
 import org.archware.sosadl.sosADL.Expression;
 import org.archware.sosadl.sosADL.SosADLPackage;
 import org.archware.sosadl.sosADL.Valuing;
+import org.archware.sosadl.sosADL.ValuingBehavior;
 import org.archware.sosadl.validation.typing.impl.VariableEnvContent;
 import org.archware.sosadl.validation.typing.proof.ProofTerm;
 import org.archware.sosadl.validation.typing.proof.Type_behavior;
@@ -45,7 +46,7 @@ public abstract class TypeCheckerBehavior extends TypeCheckerConnections {
 		} else {
 			BehaviorStatement first = b.get(0);
 			EList<BehaviorStatement> l = cdr(b);
-			if (first instanceof Done) {
+			if (first instanceof DoneBehavior) {
 				if (l.isEmpty()) {
 					return saveProof(first, createType_finalbody_Done(gamma));
 				} else {
@@ -66,8 +67,8 @@ public abstract class TypeCheckerBehavior extends TypeCheckerConnections {
 
 	private <T extends ProofTerm> Type_bodyprefix<T> type_bodyprefix(Environment gamma, BehaviorStatement s,
 			Function<Environment, T> tail) {
-		if (s instanceof DoExpr) {
-			DoExpr de = (DoExpr) s;
+		if (s instanceof DoExprBehavior) {
+			DoExprBehavior de = (DoExprBehavior) s;
 			Expression e = de.getExpression();
 			if (e != null) {
 				Pair<Type_expression, DataType> pt = type_expression(gamma, e);
@@ -78,12 +79,12 @@ public abstract class TypeCheckerBehavior extends TypeCheckerConnections {
 					return null;
 				}
 			} else {
-				error("An expression is expected", s, SosADLPackage.Literals.DO_EXPR__EXPRESSION);
+				error("An expression is expected", s, SosADLPackage.Literals.DO_EXPR_BEHAVIOR__EXPRESSION);
 				return null;
 			}
-		} else if (s instanceof Valuing) {
-			Valuing v = (Valuing) s;
-			String x = v.getVariable();
+		} else if (s instanceof ValuingBehavior) {
+			Valuing v = ((ValuingBehavior) s).getValuing();
+			String x = v.getName();
 			Expression e = v.getExpression();
 			if (x != null && e != null) {
 				Pair<Type_expression, DataType> pt = type_expression(gamma, e);
@@ -95,7 +96,7 @@ public abstract class TypeCheckerBehavior extends TypeCheckerConnections {
 								createType_bodyprefix_Valuing_inferred(gamma, x, e, pt.getB(), pt.getA(), p2));
 					} else {
 						return saveProof(s, createType_bodyprefix_Valuing_typed(gamma, x, e, tau, pt.getB(), pt.getA(),
-								subtype(pt.getB(), tau, s, SosADLPackage.Literals.VALUING__EXPRESSION).orElse(null),
+								subtype(pt.getB(), tau, v, SosADLPackage.Literals.VALUING__EXPRESSION).orElse(null),
 								p2));
 					}
 				} else {
@@ -103,10 +104,10 @@ public abstract class TypeCheckerBehavior extends TypeCheckerConnections {
 				}
 			} else {
 				if (x == null) {
-					error("The variable must have a name", s, SosADLPackage.Literals.VALUING__VARIABLE);
+					error("The variable must have a name", v, SosADLPackage.Literals.VALUING__NAME);
 				}
 				if (e == null) {
-					error("The variable must be assigned an expression", s, SosADLPackage.Literals.VALUING__EXPRESSION);
+					error("The variable must be assigned an expression", v, SosADLPackage.Literals.VALUING__EXPRESSION);
 				}
 				return null;
 			}

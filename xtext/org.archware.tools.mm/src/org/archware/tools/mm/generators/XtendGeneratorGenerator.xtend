@@ -40,7 +40,8 @@ class XtendGeneratorGenerator extends MyAbstractGenerator {
 		«cases.values.flatten.toSet.map[c|'''import «genClasses.get(c).qualifiedInterfaceName»'''].join(lineSeparator())»
 		
 		@Generated(value = "«genPackage.getEcorePackage.name»")
-		class CoqGenerator {
+		class «genPackage.getEcorePackage.name.toFirstUpper»CoqGenerator {
+
 			def _hook(CharSequence x) { return x; }
 		
 			def <T> _generateO(T t, Function1<? super T, ? extends CharSequence> gen) {
@@ -53,7 +54,7 @@ class XtendGeneratorGenerator extends MyAbstractGenerator {
 
 			def <T> _generateL(List<T> l, Function1<? super T, ? extends CharSequence> gen) {
 				if (l.empty) {
-					return «"'''"»[]«"'''"»
+					return "[]"
 				} else {
 					return _hook(«"'''"»[«"«"»l.map(gen).join("; ")»]«"'''"»)
 				}
@@ -69,9 +70,9 @@ class XtendGeneratorGenerator extends MyAbstractGenerator {
 
 			def generateZ(int i) {
 				if (i >= 0) {
-					return _hook(Integer.toString(i))
+					return Integer.toString(i);
 				} else {
-					return _hook(«"'''(«"»Integer.toString(i)«"»)'''"»)
+					return «"'''"»(«"«"»Integer.toString(i)»)«"'''"»
 				}
 			}
 

@@ -1253,7 +1253,7 @@ enforces some rules on the last statement of a sequence.%}% *)
       (p1: expression e has type tau in Gamma)
       (p2: R Gamma)
     ,
-      statement (SosADL.SosADL.BehaviorStatement_DoExpr (Some e)) prefixing R well typed in Gamma
+      statement (SosADL.SosADL.DoExprBehavior (Some e)) prefixing R well typed in Gamma
 
 | type_bodyprefix_Valuing_inferred:
     forall
@@ -1264,7 +1264,7 @@ enforces some rules on the last statement of a sequence.%}% *)
       (p1: expression e has type tau__e in Gamma)
       (p2: R (Gamma [| x <- EVariable tau__e |]))
     ,
-      statement (SosADL.SosADL.BehaviorStatement_Valuing (Some x) None (Some e)) prefixing R well typed in Gamma
+      statement (SosADL.SosADL.ValuingBehavior (Some (SosADL.SosADL.Valuing (Some x) None (Some e)))) prefixing R well typed in Gamma
 
 | type_bodyprefix_Valuing_typed:
     forall
@@ -1277,7 +1277,7 @@ enforces some rules on the last statement of a sequence.%}% *)
       (p2: tau__e </ tau)
       (p3: R (Gamma [| x <- EVariable  tau |]))
     ,
-      statement (SosADL.SosADL.BehaviorStatement_Valuing (Some x) (Some tau) (Some e)) prefixing R well typed in Gamma
+      statement (SosADL.SosADL.ValuingBehavior (Some (SosADL.SosADL.Valuing (Some x) (Some tau) (Some e)))) prefixing R well typed in Gamma
 
 
        (*
@@ -1420,7 +1420,7 @@ Inductive type_finalbody: env -> list SosADL.SosADL.t_BehaviorStatement -> Prop 
     forall
       (Gamma: env)
     ,
-      final body (SosADL.SosADL.BehaviorStatement_Done :: nil) well typed in Gamma
+      final body (SosADL.SosADL.DoneBehavior :: nil) well typed in Gamma
 
 where "'final' 'body' b 'well' 'typed' 'in' Gamma" := (type_finalbody Gamma b)
 .
@@ -1558,7 +1558,7 @@ Inductive type_valuing: env -> SosADL.SosADL.t_Valuing -> env -> Prop :=
       (p1: expression e has type tau__e in Gamma)
       (p2: tau__e </ tau)
     ,
-      valuing (SosADL.SosADL.Valuing_Valuing (Some x) (Some tau) (Some e))
+      valuing (SosADL.SosADL.Valuing (Some x) (Some tau) (Some e))
               well typed in Gamma
                               yields to (Gamma [| x <- EVariable tau |])
 
@@ -1569,7 +1569,7 @@ Inductive type_valuing: env -> SosADL.SosADL.t_Valuing -> env -> Prop :=
       (tau__e: SosADL.SosADL.t_DataType)
       (p1: expression e has type tau__e in Gamma)
     ,
-      valuing (SosADL.SosADL.Valuing_Valuing (Some x) None (Some e))
+      valuing (SosADL.SosADL.Valuing (Some x) None (Some e))
               well typed in Gamma
                               yields to (Gamma [| x <- EVariable tau__e |])
 

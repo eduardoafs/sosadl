@@ -7,7 +7,7 @@ import org.archware.sosadl.sosADL.SosADL
 import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.xtext.generator.IFileSystemAccess
 import org.eclipse.xtext.generator.IGenerator
-import org.archware.sosadl.sosADL.generator.CoqGenerator
+import org.archware.sosadl.sosADL.generator.SosADLCoqGenerator
 
 //import org.archware.iosts.ui.contentassist.AbstractIoSTSProposalProvider
 /**
@@ -43,7 +43,7 @@ class SosADL2CoqGenerator implements IGenerator {
 		Local Open Scope Z_scope.
 		
 		Definition ast :=
-		«(new CoqGenerator).generatet_SosADL(s)».
+		«(new SosADLCoqGenerator).generatet_SosADL(s)».
 		
 		(*
 		Local Variables:

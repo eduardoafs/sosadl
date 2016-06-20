@@ -19,20 +19,23 @@ import org.archware.sosadl.sosADL.AssertionDecl
 import org.archware.sosadl.sosADL.Behavior
 import org.archware.sosadl.sosADL.BehaviorDecl
 import org.archware.sosadl.sosADL.Action
+import org.archware.sosadl.sosADL.AssertBehavior
 import org.archware.sosadl.sosADL.ChooseBehavior
-import org.archware.sosadl.sosADL.DoExpr
-import org.archware.sosadl.sosADL.Done
+import org.archware.sosadl.sosADL.DoExprBehavior
+import org.archware.sosadl.sosADL.DoneBehavior
 import org.archware.sosadl.sosADL.ForEachBehavior
 import org.archware.sosadl.sosADL.IfThenElseBehavior
 import org.archware.sosadl.sosADL.RecursiveCall
 import org.archware.sosadl.sosADL.RepeatBehavior
-import org.archware.sosadl.sosADL.Valuing
+import org.archware.sosadl.sosADL.ValuingBehavior
 import org.archware.sosadl.sosADL.Quantify
 import org.archware.sosadl.sosADL.Relay
 import org.archware.sosadl.sosADL.Unify
 import org.archware.sosadl.sosADL.ComplexName
 import org.archware.sosadl.sosADL.Connection
 import org.archware.sosadl.sosADL.Constituent
+import org.archware.sosadl.sosADL.Sequence
+import org.archware.sosadl.sosADL.Tuple
 import org.archware.sosadl.sosADL.BooleanType
 import org.archware.sosadl.sosADL.ConnectionType
 import org.archware.sosadl.sosADL.IntegerType
@@ -53,8 +56,6 @@ import org.archware.sosadl.sosADL.IntegerValue
 import org.archware.sosadl.sosADL.Map
 import org.archware.sosadl.sosADL.MethodCall
 import org.archware.sosadl.sosADL.Select
-import org.archware.sosadl.sosADL.Sequence
-import org.archware.sosadl.sosADL.Tuple
 import org.archware.sosadl.sosADL.UnaryExpression
 import org.archware.sosadl.sosADL.UnobservableValue
 import org.archware.sosadl.sosADL.FieldDecl
@@ -69,19 +70,25 @@ import org.archware.sosadl.sosADL.ReceiveProtocolAction
 import org.archware.sosadl.sosADL.SendProtocolAction
 import org.archware.sosadl.sosADL.ProtocolDecl
 import org.archware.sosadl.sosADL.AnyAction
+import org.archware.sosadl.sosADL.AssertProtocol
 import org.archware.sosadl.sosADL.ChooseProtocol
+import org.archware.sosadl.sosADL.DoExprProtocol
+import org.archware.sosadl.sosADL.DoneProtocol
 import org.archware.sosadl.sosADL.ForEachProtocol
 import org.archware.sosadl.sosADL.IfThenElseProtocol
 import org.archware.sosadl.sosADL.ProtocolAction
 import org.archware.sosadl.sosADL.RepeatProtocol
+import org.archware.sosadl.sosADL.ValuingProtocol
 import org.archware.sosadl.sosADL.SosADL
 import org.archware.sosadl.sosADL.SystemDecl
 import org.archware.sosadl.sosADL.TupleElement
 import org.archware.sosadl.sosADL.Library
 import org.archware.sosadl.sosADL.SoS
+import org.archware.sosadl.sosADL.Valuing
 
 @Generated(value = "sosADL")
-class CoqGenerator {
+class SosADLCoqGenerator {
+
 	def _hook(CharSequence x) { return x; }
 
 	def <T> _generateO(T t, Function1<? super T, ? extends CharSequence> gen) {
@@ -94,7 +101,7 @@ class CoqGenerator {
 
 	def <T> _generateL(List<T> l, Function1<? super T, ? extends CharSequence> gen) {
 		if (l.empty) {
-			return '''[]'''
+			return "[]"
 		} else {
 			return _hook('''[«l.map(gen).join("; ")»]''')
 		}
@@ -110,9 +117,9 @@ class CoqGenerator {
 
 	def generateZ(int i) {
 		if (i >= 0) {
-			return _hook(Integer.toString(i))
+			return Integer.toString(i);
 		} else {
-			return _hook('''(«Integer.toString(i)»)''')
+			return '''(«Integer.toString(i)»)'''
 		}
 	}
 
@@ -182,9 +189,9 @@ class CoqGenerator {
 	
 	def CharSequence generatet_ArchitectureDecl(ArchitectureDecl n) { return _hook('''(ArchitectureDecl «_generateO(n.getName(), [generatestring])» «_generateL(n.getParameters(), [generatet_FormalParameter])» «_generateL(n.getDatatypes(), [generatet_DataTypeDecl])» «_generateL(n.getGates(), [generatet_GateDecl])» «_generateO(n.getBehavior(), [generatet_ArchBehaviorDecl])» «_generateO(n.getAssertion(), [generatet_AssertionDecl])»)'''); }
 	
-	def dispatch CharSequence generatet_Assert(AskAssertion n) { return _hook('''(Assert_AskAssertion «_generateO(n.getName(), [generatestring])» «_generateO(n.getExpression(), [generatet_Expression])»)'''); }
+	def dispatch CharSequence generatet_Assert(AskAssertion n) { return _hook('''(AskAssertion «_generateO(n.getName(), [generatestring])» «_generateO(n.getExpression(), [generatet_Expression])»)'''); }
 	
-	def dispatch CharSequence generatet_Assert(TellAssertion n) { return _hook('''(Assert_TellAssertion «_generateO(n.getName(), [generatestring])» «_generateO(n.getExpression(), [generatet_Expression])»)'''); }
+	def dispatch CharSequence generatet_Assert(TellAssertion n) { return _hook('''(TellAssertion «_generateO(n.getName(), [generatestring])» «_generateO(n.getExpression(), [generatet_Expression])»)'''); }
 	
 	def CharSequence generatet_AssertionDecl(AssertionDecl n) { return _hook('''(AssertionDecl «_generateO(n.getName(), [generatestring])» «_generateO(n.getBody(), [generatet_Protocol])»)'''); }
 	
@@ -194,13 +201,13 @@ class CoqGenerator {
 	
 	def dispatch CharSequence generatet_BehaviorStatement(Action n) { return _hook('''(Action «_generateO(n.getComplexName(), [generatet_ComplexName])» «_generateO(n.getSuite(), [generatet_ActionSuite])»)'''); }
 	
-	def dispatch CharSequence generatet_BehaviorStatement(AskAssertion n) { return _hook('''(BehaviorStatement_AskAssertion «_generateO(n.getName(), [generatestring])» «_generateO(n.getExpression(), [generatet_Expression])»)'''); }
+	def dispatch CharSequence generatet_BehaviorStatement(AssertBehavior n) { return _hook('''(AssertBehavior «_generateO(n.getAssertion(), [generatet_Assert])»)'''); }
 	
 	def dispatch CharSequence generatet_BehaviorStatement(ChooseBehavior n) { return _hook('''(ChooseBehavior «_generateL(n.getBranches(), [generatet_Behavior])»)'''); }
 	
-	def dispatch CharSequence generatet_BehaviorStatement(DoExpr n) { return _hook('''(BehaviorStatement_DoExpr «_generateO(n.getExpression(), [generatet_Expression])»)'''); }
+	def dispatch CharSequence generatet_BehaviorStatement(DoExprBehavior n) { return _hook('''(DoExprBehavior «_generateO(n.getExpression(), [generatet_Expression])»)'''); }
 	
-	def dispatch CharSequence generatet_BehaviorStatement(Done n) { return _hook('''BehaviorStatement_Done'''); }
+	def dispatch CharSequence generatet_BehaviorStatement(DoneBehavior n) { return _hook('''DoneBehavior'''); }
 	
 	def dispatch CharSequence generatet_BehaviorStatement(ForEachBehavior n) { return _hook('''(ForEachBehavior «_generateO(n.getVariable(), [generatestring])» «_generateO(n.getSetOfValues(), [generatet_Expression])» «_generateO(n.getRepeated(), [generatet_Behavior])»)'''); }
 	
@@ -210,9 +217,7 @@ class CoqGenerator {
 	
 	def dispatch CharSequence generatet_BehaviorStatement(RepeatBehavior n) { return _hook('''(RepeatBehavior «_generateO(n.getRepeated(), [generatet_Behavior])»)'''); }
 	
-	def dispatch CharSequence generatet_BehaviorStatement(TellAssertion n) { return _hook('''(BehaviorStatement_TellAssertion «_generateO(n.getName(), [generatestring])» «_generateO(n.getExpression(), [generatet_Expression])»)'''); }
-	
-	def dispatch CharSequence generatet_BehaviorStatement(Valuing n) { return _hook('''(BehaviorStatement_Valuing «_generateO(n.getVariable(), [generatestring])» «_generateO(n.getType(), [generatet_DataType])» «_generateO(n.getExpression(), [generatet_Expression])»)'''); }
+	def dispatch CharSequence generatet_BehaviorStatement(ValuingBehavior n) { return _hook('''(ValuingBehavior «_generateO(n.getValuing(), [generatet_Valuing])»)'''); }
 	
 	def dispatch CharSequence generatet_Binding(Quantify n) { return _hook('''(Binding_Quantify «_generateO(n.getQuantifier(), [generateQuantifier])» «_generateL(n.getElements(), [generatet_ElementInConstituent])» «_generateO(n.getBindings(), [generatet_Expression])»)'''); }
 	
@@ -225,6 +230,10 @@ class CoqGenerator {
 	def CharSequence generatet_Connection(Connection n) { return _hook('''(Connection «_generateO(n.isEnvironment(), [generatebool])» «_generateO(n.getName(), [generatestring])» «_generateO(n.getMode(), [generateModeType])» «_generateO(n.getValueType(), [generatet_DataType])»)'''); }
 	
 	def CharSequence generatet_Constituent(Constituent n) { return _hook('''(Constituent «_generateO(n.getName(), [generatestring])» «_generateO(n.getValue(), [generatet_Expression])»)'''); }
+	
+	def dispatch CharSequence generatet_ConstructedValue(Sequence n) { return _hook('''(ConstructedValue_Sequence «_generateL(n.getElements(), [generatet_Expression])»)'''); }
+	
+	def dispatch CharSequence generatet_ConstructedValue(Tuple n) { return _hook('''(ConstructedValue_Tuple «_generateL(n.getElements(), [generatet_TupleElement])»)'''); }
 	
 	def dispatch CharSequence generatet_DataType(BooleanType n) { return _hook('''BooleanType'''); }
 	
@@ -270,9 +279,9 @@ class CoqGenerator {
 	
 	def dispatch CharSequence generatet_Expression(Select n) { return _hook('''(Select «_generateO(n.getObject(), [generatet_Expression])» «_generateO(n.getVariable(), [generatestring])» «_generateO(n.getCondition(), [generatet_Expression])»)'''); }
 	
-	def dispatch CharSequence generatet_Expression(Sequence n) { return _hook('''(Sequence «_generateL(n.getElements(), [generatet_Expression])»)'''); }
+	def dispatch CharSequence generatet_Expression(Sequence n) { return _hook('''(Expression_Sequence «_generateL(n.getElements(), [generatet_Expression])»)'''); }
 	
-	def dispatch CharSequence generatet_Expression(Tuple n) { return _hook('''(Tuple «_generateL(n.getElements(), [generatet_TupleElement])»)'''); }
+	def dispatch CharSequence generatet_Expression(Tuple n) { return _hook('''(Expression_Tuple «_generateL(n.getElements(), [generatet_TupleElement])»)'''); }
 	
 	def dispatch CharSequence generatet_Expression(UnaryExpression n) { return _hook('''(UnaryExpression «_generateO(n.getOp(), [generatestring])» «_generateO(n.getRight(), [generatet_Expression])»)'''); }
 	
@@ -304,13 +313,13 @@ class CoqGenerator {
 	
 	def dispatch CharSequence generatet_ProtocolStatement(AnyAction n) { return _hook('''AnyAction'''); }
 	
-	def dispatch CharSequence generatet_ProtocolStatement(AskAssertion n) { return _hook('''(ProtocolStatement_AskAssertion «_generateO(n.getName(), [generatestring])» «_generateO(n.getExpression(), [generatet_Expression])»)'''); }
+	def dispatch CharSequence generatet_ProtocolStatement(AssertProtocol n) { return _hook('''(AssertProtocol «_generateO(n.getAssertion(), [generatet_Assert])»)'''); }
 	
 	def dispatch CharSequence generatet_ProtocolStatement(ChooseProtocol n) { return _hook('''(ChooseProtocol «_generateL(n.getBranches(), [generatet_Protocol])»)'''); }
 	
-	def dispatch CharSequence generatet_ProtocolStatement(DoExpr n) { return _hook('''(ProtocolStatement_DoExpr «_generateO(n.getExpression(), [generatet_Expression])»)'''); }
+	def dispatch CharSequence generatet_ProtocolStatement(DoExprProtocol n) { return _hook('''(DoExprProtocol «_generateO(n.getExpression(), [generatet_Expression])»)'''); }
 	
-	def dispatch CharSequence generatet_ProtocolStatement(Done n) { return _hook('''ProtocolStatement_Done'''); }
+	def dispatch CharSequence generatet_ProtocolStatement(DoneProtocol n) { return _hook('''DoneProtocol'''); }
 	
 	def dispatch CharSequence generatet_ProtocolStatement(ForEachProtocol n) { return _hook('''(ForEachProtocol «_generateO(n.getVariable(), [generatestring])» «_generateO(n.getSetOfValues(), [generatet_Expression])» «_generateO(n.getRepeated(), [generatet_Protocol])»)'''); }
 	
@@ -320,9 +329,7 @@ class CoqGenerator {
 	
 	def dispatch CharSequence generatet_ProtocolStatement(RepeatProtocol n) { return _hook('''(RepeatProtocol «_generateO(n.getRepeated(), [generatet_Protocol])»)'''); }
 	
-	def dispatch CharSequence generatet_ProtocolStatement(TellAssertion n) { return _hook('''(ProtocolStatement_TellAssertion «_generateO(n.getName(), [generatestring])» «_generateO(n.getExpression(), [generatet_Expression])»)'''); }
-	
-	def dispatch CharSequence generatet_ProtocolStatement(Valuing n) { return _hook('''(ProtocolStatement_Valuing «_generateO(n.getVariable(), [generatestring])» «_generateO(n.getType(), [generatet_DataType])» «_generateO(n.getExpression(), [generatet_Expression])»)'''); }
+	def dispatch CharSequence generatet_ProtocolStatement(ValuingProtocol n) { return _hook('''(ValuingProtocol «_generateO(n.getValuing(), [generatet_Valuing])»)'''); }
 	
 	def CharSequence generatet_SosADL(SosADL n) { return _hook('''(SosADL «_generateL(n.getImports(), [generatet_Import])» «_generateO(n.getContent(), [generatet_Unit])»)'''); }
 	
@@ -334,5 +341,5 @@ class CoqGenerator {
 	
 	def dispatch CharSequence generatet_Unit(SoS n) { return _hook('''(SoS «_generateO(n.getName(), [generatestring])» «_generateO(n.getDecls(), [generatet_EntityBlock])»)'''); }
 	
-	def CharSequence generatet_Valuing(Valuing n) { return _hook('''(Valuing_Valuing «_generateO(n.getVariable(), [generatestring])» «_generateO(n.getType(), [generatet_DataType])» «_generateO(n.getExpression(), [generatet_Expression])»)'''); }
+	def CharSequence generatet_Valuing(Valuing n) { return _hook('''(Valuing «_generateO(n.getName(), [generatestring])» «_generateO(n.getType(), [generatet_DataType])» «_generateO(n.getExpression(), [generatet_Expression])»)'''); }
 }
