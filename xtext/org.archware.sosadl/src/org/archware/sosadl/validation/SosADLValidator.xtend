@@ -41,6 +41,6 @@ class SosADLValidator extends AbstractSosADLValidator {
 	}
 	
 	private def notifyError(ValidationError e) {
-		error(e.message, e.target, e.feature);
+		error(e.message, e.target, e.feature, e.index);
 	}
 }

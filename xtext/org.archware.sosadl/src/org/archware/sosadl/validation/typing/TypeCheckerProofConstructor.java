@@ -6,6 +6,7 @@ import java.util.List;
 import org.archware.sosadl.sosADL.ArchitectureDecl;
 import org.archware.sosadl.sosADL.AssertionDecl;
 import org.archware.sosadl.sosADL.BehaviorDecl;
+import org.archware.sosadl.sosADL.BehaviorStatement;
 import org.archware.sosadl.sosADL.Connection;
 import org.archware.sosadl.sosADL.DataType;
 import org.archware.sosadl.sosADL.DataTypeDecl;
@@ -480,5 +481,34 @@ public abstract class TypeCheckerProofConstructor extends TypeCheckerInference {
 	protected Type_connection createType_Connection_simple(Environment gamma, String name, boolean k, ModeType m,
 			DataType t, DataType t1, Environment gamma1, Type_datatype p1) {
 		return new Type_Connection_simple(gamma, name, k, m, t, t1, gamma1, p1);
+	}
+
+	protected Type_behavior createType_BehaviorDecl(Environment gamma, String name, EList<BehaviorStatement> b,
+			Type_finalbody p1) {
+		return new Type_BehaviorDecl(gamma, name, b, p1);
+	}
+
+	protected Type_finalbody createType_finalbody_Done(Environment gamma) {
+		return new Type_finalbody_Done(gamma);
+	}
+
+	protected Type_finalbody createType_finalbody_prefix(Environment gamma, BehaviorStatement s,
+			EList<BehaviorStatement> l, Type_bodyprefix<Type_finalbody> p1) {
+		return new Type_finalbody_prefix(gamma, s, l, p1);
+	}
+
+	protected <T extends ProofTerm> Type_bodyprefix<T> createType_bodyprefix_DoExpr(Environment gamma, Expression e,
+			DataType tau, Type_expression p1, T p2) {
+		return new Type_bodyprefix_DoExpr<T>(gamma, e, tau, p1, p2);
+	}
+
+	protected <T extends ProofTerm> Type_bodyprefix<T> createType_bodyprefix_Valuing_inferred(Environment gamma,
+			String x, Expression e, DataType tau__e, Type_expression p1, T p2) {
+		return new Type_bodyprefix_Valuing_inferred<T>(gamma, x, e, tau__e, p1, p2);
+	}
+
+	protected <T extends ProofTerm> Type_bodyprefix<T> createType_bodyprefix_Valuing_typed(Environment gamma, String x,
+			Expression e, DataType tau, DataType tau__e, Type_expression p1, Subtype p2, T p3) {
+		return new Type_bodyprefix_Valuing_typed<T>(gamma, x, e, tau, tau__e, p1, p2, p3);
 	}
 }

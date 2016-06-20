@@ -23,4 +23,5 @@ public interface ErrorCollector {
 	 */
 	void error(String message, EObject target, EStructuralFeature feature);
 
+	void error(String message, EObject target, EStructuralFeature feature, int index);
 }

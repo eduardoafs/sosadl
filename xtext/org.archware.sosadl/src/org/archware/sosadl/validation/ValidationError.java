@@ -9,12 +9,15 @@ public class ValidationError {
 	public final EObject target;
 	
 	public final EStructuralFeature feature;
+	
+	public final int index;
 
-	public ValidationError(String message, EObject target, EStructuralFeature feature) {
+	public ValidationError(String message, EObject target, EStructuralFeature feature, int index) {
 		super();
 		this.message = message;
 		this.target = target;
 		this.feature = feature;
+		this.index = index;
 	}
 
 	public String getMessage() {
@@ -27,5 +30,9 @@ public class ValidationError {
 
 	public EStructuralFeature getFeature() {
 		return feature;
+	}
+	
+	public int getIndex() {
+		return index;
 	}
 }

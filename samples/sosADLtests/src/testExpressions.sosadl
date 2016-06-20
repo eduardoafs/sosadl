@@ -61,13 +61,16 @@ library testDone is {
       connection connection1 is in{type1}
     } guarantee {
       protocol gate1protocol is {
-        // empty protocol: will not generate any iosts process.
+        // empty protocol: will not generate any iosts process
         done
       }
     }
     
     behavior test is {
-      // empty behavior: will not generate any iosts process.
+      do 1+1
+      do 2*3
+      do 4+7
+      value a = 3
       done
     }
   }

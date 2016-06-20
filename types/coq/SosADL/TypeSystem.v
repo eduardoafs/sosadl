@@ -356,7 +356,9 @@ Reserved Notation "'archbehavior' b 'well' 'typed' 'in' Gamma" (at level 200, Ga
 Reserved Notation "'behavior' b 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
 Reserved Notation "'assertion' a 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
 Reserved Notation "'protocol' p 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
-Reserved Notation "'body' b 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
+Reserved Notation "'final' 'body' b 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
+Reserved Notation "'statement' b 'prefixing' r 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
+Reserved Notation "'nonfinal' 'body' b 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
 Reserved Notation "'valuing' v 'well' 'typed' 'in' Gamma 'yields' 'to' Gamma1" (at level 200, Gamma at level 1, no associativity).
 
 (**
@@ -1207,15 +1209,6 @@ with type_architectureblock: env -> SosADL.SosADL.t_ArchitectureDecl -> Prop :=
 
 with type_archbehavior: env ->  SosADL.SosADL.t_ArchBehaviorDecl -> Prop :=
 
-(** ** Behavior *)
-
-with type_behavior: env -> SosADL.SosADL.t_BehaviorDecl -> Prop :=
-| type_BehaviorDecl:
-    forall Gamma name b,
-      (body b well typed in Gamma)
-      ->
-      behavior (SosADL.SosADL.BehaviorDecl (Some name) (Some (SosADL.SosADL.Behavior b))) well typed in Gamma
-
 (** ** Assertion *)
 
 (** %\todo{TBD}% *)
@@ -1228,8 +1221,19 @@ with type_assertion: env -> SosADL.SosADL.t_AssertionDecl -> Prop :=
 
 with type_protocol: env -> SosADL.SosADL.t_ProtocolDecl -> Prop :=
 
+
+where "'mediator' m 'well' 'typed' 'in' Gamma" := (type_mediator Gamma m)
+and "'mediatorblock' m 'well' 'typed' 'in' Gamma" := (type_mediatorblock Gamma m)
+and "'architecture' a 'well' 'typed' 'in' Gamma" := (type_architecture Gamma a)
+and "'architectureblock' a 'well' 'typed' 'in' Gamma" := (type_architectureblock Gamma a)
+and "'archbehavior' b 'well' 'typed' 'in' Gamma" := (type_archbehavior Gamma b)
+and "'assertion' a 'well' 'typed' 'in' Gamma" := (type_assertion Gamma a)
+and "'protocol' p 'well' 'typed' 'in' Gamma" := (type_protocol Gamma p)
+.
+
 (** ** Body *)
 
+Inductive type_bodyprefix (R: env -> Prop): env -> SosADL.SosADL.t_BehaviorStatement -> Prop :=
 (** %\note{%The typing rules enforce that statements [RepeatBehavior],
 [ChooseBehavior], [RecursiveCall] and [Done] must be the last
 statement of a sequence. However, the typing rule [type_EmptyBody]
@@ -1241,27 +1245,42 @@ followed by subsequent statements. In summary, the typing rules are
 inconsistent in regard to the question whether the type system
 enforces some rules on the last statement of a sequence.%}% *)
 
-with type_body: env -> list SosADL.SosADL.t_BehaviorStatement -> Prop :=
+| type_bodyprefix_DoExpr:
+    forall
+      (Gamma: env)
+      (e: SosADL.SosADL.t_Expression)
+      (tau: SosADL.SosADL.t_DataType)
+      (p1: expression e has type tau in Gamma)
+      (p2: R Gamma)
+    ,
+      statement (SosADL.SosADL.BehaviorStatement_DoExpr (Some e)) prefixing R well typed in Gamma
+
+| type_bodyprefix_Valuing_inferred:
+    forall
+      (Gamma: env)
+      (x: string)
+      (e: SosADL.SosADL.t_Expression)
+      (tau__e: SosADL.SosADL.t_DataType)
+      (p1: expression e has type tau__e in Gamma)
+      (p2: R (Gamma [| x <- EVariable tau__e |]))
+    ,
+      statement (SosADL.SosADL.BehaviorStatement_Valuing (Some x) None (Some e)) prefixing R well typed in Gamma
+
+| type_bodyprefix_Valuing_typed:
+    forall
+      (Gamma: env)
+      (x: string)
+      (e: SosADL.SosADL.t_Expression)
+      (tau: SosADL.SosADL.t_DataType)
+      (tau__e: SosADL.SosADL.t_DataType)
+      (p1: expression e has type tau__e in Gamma)
+      (p2: tau__e </ tau)
+      (p3: R (Gamma [| x <- EVariable  tau |]))
+    ,
+      statement (SosADL.SosADL.BehaviorStatement_Valuing (Some x) (Some tau) (Some e)) prefixing R well typed in Gamma
+
+
        (*
-| type_EmptyBody:
-    forall Gamma,
-      body nil well typed in Gamma
-
-| type_Valuing_None:
-    forall Gamma x e tau l,
-      (expression e has type tau in Gamma)
-      /\ (body l well typed in Gamma [| x <- EVariable tau |])
-      ->
-      body (SosADL.SosADL.BehaviorStatement_Valuing (Some x) None (Some e) :: l) well typed in Gamma
-
-| type_Valuing_Some:
-    forall Gamma x e tau tau__e l,
-      (expression e has type tau__e in Gamma)
-      /\ (tau__e </ tau)
-      /\ (body l well typed in Gamma [| x <- EVariable  tau |])
-      ->
-      body (SosADL.SosADL.BehaviorStatement_Valuing (Some x) (Some tau) (Some e) :: l) well typed in Gamma
-
 | type_Repeat:
     forall Gamma b,
       (body b well typed in Gamma)
@@ -1379,31 +1398,46 @@ gate-or-duty, connection.%}% *)
                        (Some (SosADL.SosADL.SendAction (Some e))) :: l)
            well typed in Gamma
 
-| type_DoExpr:
-    forall Gamma e tau l,
-      (expression e has type tau in Gamma)
-      /\ (body l well typed in Gamma)
-      ->
-      body (SosADL.SosADL.BehaviorStatement_DoExpr (Some e) :: l) well typed in Gamma
 
-| type_Done:
-    forall Gamma,
-      body (SosADL.SosADL.BehaviorStatement_Done :: nil) well typed in Gamma
-*)
+        *)
 
-where "'mediator' m 'well' 'typed' 'in' Gamma" := (type_mediator Gamma m)
-and "'mediatorblock' m 'well' 'typed' 'in' Gamma" := (type_mediatorblock Gamma m)
-and "'architecture' a 'well' 'typed' 'in' Gamma" := (type_architecture Gamma a)
-and "'architectureblock' a 'well' 'typed' 'in' Gamma" := (type_architectureblock Gamma a)
-and "'archbehavior' b 'well' 'typed' 'in' Gamma" := (type_archbehavior Gamma b)
-and "'behavior' b 'well' 'typed' 'in' Gamma" := (type_behavior Gamma b)
-and "'assertion' a 'well' 'typed' 'in' Gamma" := (type_assertion Gamma a)
-and "'protocol' p 'well' 'typed' 'in' Gamma" := (type_protocol Gamma p)
-and "'body' b 'well' 'typed' 'in' Gamma" := (type_body Gamma b)
+where "'statement' b 'prefixing' r 'well' 'typed' 'in' Gamma" := (type_bodyprefix r Gamma b)
 .
 
-Definition type_mediators Gamma l Gamma1 := @incrementally _ (simple_increment _ type_mediator SosADL.SosADL.MediatorDecl_name (fun x => Some (EMediator x))) Gamma l Gamma1.
-Definition type_architectures Gamma l Gamma1 := @incrementally _ (simple_increment _ type_architecture SosADL.SosADL.ArchitectureDecl_name (fun x => Some (EArchitecture x))) Gamma l Gamma1.
+Inductive type_finalbody: env -> list SosADL.SosADL.t_BehaviorStatement -> Prop :=
+
+| type_finalbody_prefix:
+    forall
+      (Gamma: env)
+      (s: SosADL.SosADL.t_BehaviorStatement)
+      (l: list SosADL.SosADL.t_BehaviorStatement)
+      (p1: statement s prefixing (fun g => final body l well typed in g)
+                     well typed in Gamma)
+    ,
+      final body (s :: l) well typed in Gamma
+
+| type_finalbody_Done:
+    forall
+      (Gamma: env)
+    ,
+      final body (SosADL.SosADL.BehaviorStatement_Done :: nil) well typed in Gamma
+
+where "'final' 'body' b 'well' 'typed' 'in' Gamma" := (type_finalbody Gamma b)
+.
+  
+(** ** Behavior *)
+
+Inductive type_behavior: env -> SosADL.SosADL.t_BehaviorDecl -> Prop :=
+| type_BehaviorDecl:
+    forall (Gamma: env)
+      (name: string)
+      (b: list SosADL.SosADL.t_BehaviorStatement)
+      (p1: final body b well typed in Gamma)
+    ,
+      behavior (SosADL.SosADL.BehaviorDecl (Some name) (Some (SosADL.SosADL.Behavior b))) well typed in Gamma
+
+where "'behavior' b 'well' 'typed' 'in' Gamma" := (type_behavior Gamma b)
+.
 
 (**
  ** Formal parameters
@@ -1686,6 +1720,9 @@ where "'system' s 'well' 'typed' 'in' Gamma" := (type_system Gamma s)
 .
 
 Definition type_systems Gamma l Gamma1 := @incrementally _ (simple_increment _ type_system SosADL.SosADL.SystemDecl_name (fun x => Some (ESystem x))) Gamma l Gamma1.
+
+Definition type_mediators Gamma l Gamma1 := @incrementally _ (simple_increment _ type_mediator SosADL.SosADL.MediatorDecl_name (fun x => Some (EMediator x))) Gamma l Gamma1.
+Definition type_architectures Gamma l Gamma1 := @incrementally _ (simple_increment _ type_architecture SosADL.SosADL.ArchitectureDecl_name (fun x => Some (EArchitecture x))) Gamma l Gamma1.
 
 (** ** Entity *)
 
