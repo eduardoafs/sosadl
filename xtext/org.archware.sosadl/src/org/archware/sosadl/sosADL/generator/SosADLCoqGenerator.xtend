@@ -28,14 +28,9 @@ import org.archware.sosadl.sosADL.IfThenElseBehavior
 import org.archware.sosadl.sosADL.RecursiveCall
 import org.archware.sosadl.sosADL.RepeatBehavior
 import org.archware.sosadl.sosADL.ValuingBehavior
-import org.archware.sosadl.sosADL.Quantify
-import org.archware.sosadl.sosADL.Relay
-import org.archware.sosadl.sosADL.Unify
 import org.archware.sosadl.sosADL.ComplexName
 import org.archware.sosadl.sosADL.Connection
 import org.archware.sosadl.sosADL.Constituent
-import org.archware.sosadl.sosADL.Sequence
-import org.archware.sosadl.sosADL.Tuple
 import org.archware.sosadl.sosADL.BooleanType
 import org.archware.sosadl.sosADL.ConnectionType
 import org.archware.sosadl.sosADL.IntegerType
@@ -55,8 +50,13 @@ import org.archware.sosadl.sosADL.IdentExpression
 import org.archware.sosadl.sosADL.IntegerValue
 import org.archware.sosadl.sosADL.Map
 import org.archware.sosadl.sosADL.MethodCall
+import org.archware.sosadl.sosADL.Quantify
+import org.archware.sosadl.sosADL.Relay
 import org.archware.sosadl.sosADL.Select
+import org.archware.sosadl.sosADL.Sequence
+import org.archware.sosadl.sosADL.Tuple
 import org.archware.sosadl.sosADL.UnaryExpression
+import org.archware.sosadl.sosADL.Unify
 import org.archware.sosadl.sosADL.UnobservableValue
 import org.archware.sosadl.sosADL.FieldDecl
 import org.archware.sosadl.sosADL.FormalParameter
@@ -219,21 +219,11 @@ class SosADLCoqGenerator {
 	
 	def dispatch CharSequence generatet_BehaviorStatement(ValuingBehavior n) { return _hook('''(ValuingBehavior «_generateO(n.getValuing(), [generatet_Valuing])»)'''); }
 	
-	def dispatch CharSequence generatet_Binding(Quantify n) { return _hook('''(Binding_Quantify «_generateO(n.getQuantifier(), [generateQuantifier])» «_generateL(n.getElements(), [generatet_ElementInConstituent])» «_generateO(n.getBindings(), [generatet_Expression])»)'''); }
-	
-	def dispatch CharSequence generatet_Binding(Relay n) { return _hook('''(Binding_Relay «_generateO(n.getConnLeft(), [generatet_ComplexName])» «_generateO(n.getConnRight(), [generatet_ComplexName])»)'''); }
-	
-	def dispatch CharSequence generatet_Binding(Unify n) { return _hook('''(Binding_Unify «_generateO(n.getMultLeft(), [generateMultiplicity])» «_generateO(n.getConnLeft(), [generatet_ComplexName])» «_generateO(n.getMultRight(), [generateMultiplicity])» «_generateO(n.getConnRight(), [generatet_ComplexName])»)'''); }
-	
 	def CharSequence generatet_ComplexName(ComplexName n) { return _hook('''(ComplexName «_generateL(n.getName(), [generatestring])»)'''); }
 	
 	def CharSequence generatet_Connection(Connection n) { return _hook('''(Connection «_generateO(n.isEnvironment(), [generatebool])» «_generateO(n.getName(), [generatestring])» «_generateO(n.getMode(), [generateModeType])» «_generateO(n.getValueType(), [generatet_DataType])»)'''); }
 	
 	def CharSequence generatet_Constituent(Constituent n) { return _hook('''(Constituent «_generateO(n.getName(), [generatestring])» «_generateO(n.getValue(), [generatet_Expression])»)'''); }
-	
-	def dispatch CharSequence generatet_ConstructedValue(Sequence n) { return _hook('''(ConstructedValue_Sequence «_generateL(n.getElements(), [generatet_Expression])»)'''); }
-	
-	def dispatch CharSequence generatet_ConstructedValue(Tuple n) { return _hook('''(ConstructedValue_Tuple «_generateL(n.getElements(), [generatet_TupleElement])»)'''); }
 	
 	def dispatch CharSequence generatet_DataType(BooleanType n) { return _hook('''BooleanType'''); }
 	
@@ -273,19 +263,19 @@ class SosADLCoqGenerator {
 	
 	def dispatch CharSequence generatet_Expression(MethodCall n) { return _hook('''(MethodCall «_generateO(n.getObject(), [generatet_Expression])» «_generateO(n.getMethod(), [generatestring])» «_generateL(n.getParameters(), [generatet_Expression])»)'''); }
 	
-	def dispatch CharSequence generatet_Expression(Quantify n) { return _hook('''(Expression_Quantify «_generateO(n.getQuantifier(), [generateQuantifier])» «_generateL(n.getElements(), [generatet_ElementInConstituent])» «_generateO(n.getBindings(), [generatet_Expression])»)'''); }
+	def dispatch CharSequence generatet_Expression(Quantify n) { return _hook('''(Quantify «_generateO(n.getQuantifier(), [generateQuantifier])» «_generateL(n.getElements(), [generatet_ElementInConstituent])» «_generateO(n.getBindings(), [generatet_Expression])»)'''); }
 	
-	def dispatch CharSequence generatet_Expression(Relay n) { return _hook('''(Expression_Relay «_generateO(n.getConnLeft(), [generatet_ComplexName])» «_generateO(n.getConnRight(), [generatet_ComplexName])»)'''); }
+	def dispatch CharSequence generatet_Expression(Relay n) { return _hook('''(Relay «_generateO(n.getConnLeft(), [generatet_ComplexName])» «_generateO(n.getConnRight(), [generatet_ComplexName])»)'''); }
 	
 	def dispatch CharSequence generatet_Expression(Select n) { return _hook('''(Select «_generateO(n.getObject(), [generatet_Expression])» «_generateO(n.getVariable(), [generatestring])» «_generateO(n.getCondition(), [generatet_Expression])»)'''); }
 	
-	def dispatch CharSequence generatet_Expression(Sequence n) { return _hook('''(Expression_Sequence «_generateL(n.getElements(), [generatet_Expression])»)'''); }
+	def dispatch CharSequence generatet_Expression(Sequence n) { return _hook('''(Sequence «_generateL(n.getElements(), [generatet_Expression])»)'''); }
 	
-	def dispatch CharSequence generatet_Expression(Tuple n) { return _hook('''(Expression_Tuple «_generateL(n.getElements(), [generatet_TupleElement])»)'''); }
+	def dispatch CharSequence generatet_Expression(Tuple n) { return _hook('''(Tuple «_generateL(n.getElements(), [generatet_TupleElement])»)'''); }
 	
 	def dispatch CharSequence generatet_Expression(UnaryExpression n) { return _hook('''(UnaryExpression «_generateO(n.getOp(), [generatestring])» «_generateO(n.getRight(), [generatet_Expression])»)'''); }
 	
-	def dispatch CharSequence generatet_Expression(Unify n) { return _hook('''(Expression_Unify «_generateO(n.getMultLeft(), [generateMultiplicity])» «_generateO(n.getConnLeft(), [generatet_ComplexName])» «_generateO(n.getMultRight(), [generateMultiplicity])» «_generateO(n.getConnRight(), [generatet_ComplexName])»)'''); }
+	def dispatch CharSequence generatet_Expression(Unify n) { return _hook('''(Unify «_generateO(n.getMultLeft(), [generateMultiplicity])» «_generateO(n.getConnLeft(), [generatet_ComplexName])» «_generateO(n.getMultRight(), [generateMultiplicity])» «_generateO(n.getConnRight(), [generatet_ComplexName])»)'''); }
 	
 	def dispatch CharSequence generatet_Expression(UnobservableValue n) { return _hook('''UnobservableValue'''); }
 	
