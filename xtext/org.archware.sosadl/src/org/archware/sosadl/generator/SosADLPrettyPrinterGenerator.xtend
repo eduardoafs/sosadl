@@ -371,15 +371,6 @@ class SosADLPrettyPrinterGenerator implements IGenerator {
 	
 	def compile(Constituent c)'''«c.name» is «c.value.compile»'''
 
-    def compile(Binding b)'''«
-    IF b instanceof Relay»«
-      (b as Relay).compile»«
-    ELSEIF b instanceof Unify»«
-      (b as Unify).compile»«
-    ELSEIF b instanceof Quantify»«
-      (b as Quantify).compile»«
-    ENDIF»
-    '''
     
     def compile(Relay r)'''
     relay «r.connLeft.compile» to «r.connRight.compile»
@@ -468,17 +459,17 @@ class SosADLPrettyPrinterGenerator implements IGenerator {
 	
 	def compile(Any a)'''any'''
 	
+	
 	def compile(Tuple t)'''tuple{«t.elements.map[compile].join(", ")»}'''
 	
 	def compile(TupleElement t)'''«t.label»=«t.value.compile»'''
 	
 	def compile(Sequence s)'''sequence{«s.elements.map[compile].join(", ")»}'''
 
-    def compile(Expression e)'''«
+    def CharSequence compile(Expression e)'''«
 	//IF e instanceof BinaryExpression»(«(e as BinaryExpression).left.compile») «(e as BinaryExpression).op» («(e as BinaryExpression).right.compile»)«
 	IF e instanceof BinaryExpression»(«(e as BinaryExpression).compile»)«
     ELSEIF e instanceof UnaryExpression»«(e as UnaryExpression).compile»«
-	ELSEIF e instanceof Binding»«(e as Binding).compile»«
 	ELSEIF e instanceof CallExpression»«(e as CallExpression).compile»«
 	ELSEIF e instanceof IdentExpression»«(e as IdentExpression).compile»«
 	ELSEIF e instanceof UnobservableValue»«(e as UnobservableValue).compile»«
@@ -490,7 +481,17 @@ class SosADLPrettyPrinterGenerator implements IGenerator {
     ELSEIF e instanceof Select»«(e as Select).compile»«
     ELSEIF e instanceof Map»«(e as Map).compile»«
     ELSEIF e instanceof MethodCall»«(e as MethodCall).compile»«
-	ENDIF»'''
+    ELSEIF e instanceof Relay»«
+      (e as Relay).compile»«
+    ELSEIF e instanceof Unify»«
+      (e as Unify).compile»«
+    ELSEIF e instanceof Quantify»«
+      (e as Quantify).compile»«
+    ELSEIF e instanceof Tuple»«
+      (e as Tuple).compile»«
+    ELSEIF e instanceof Sequence»«
+      (e as Sequence).compile»«
+    ENDIF»'''
 	
 	def compile(BinaryExpression e)'''(«e.left.compile») «e.op» («e.right.compile»)'''
 	

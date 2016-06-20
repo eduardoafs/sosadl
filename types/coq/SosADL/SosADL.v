@@ -60,11 +60,6 @@ with t_BehaviorStatement: Set :=
 | RepeatBehavior: option t_Behavior ->  t_BehaviorStatement
 | ValuingBehavior: option t_Valuing ->  t_BehaviorStatement
 
-with t_Binding: Set :=
-| Binding_Quantify: option Quantifier -> list t_ElementInConstituent -> option t_Expression ->  t_Binding
-| Binding_Relay: option t_ComplexName -> option t_ComplexName ->  t_Binding
-| Binding_Unify: option Multiplicity -> option t_ComplexName -> option Multiplicity -> option t_ComplexName ->  t_Binding
-
 with t_ComplexName: Set :=
 | ComplexName: list string ->  t_ComplexName
 
@@ -104,13 +99,13 @@ with t_Expression: Set :=
 | IntegerValue: option Z ->  t_Expression
 | Map: option t_Expression -> option string -> option t_Expression ->  t_Expression
 | MethodCall: option t_Expression -> option string -> list t_Expression ->  t_Expression
-| Expression_Quantify: option Quantifier -> list t_ElementInConstituent -> option t_Expression ->  t_Expression
-| Expression_Relay: option t_ComplexName -> option t_ComplexName ->  t_Expression
+| Quantify: option Quantifier -> list t_ElementInConstituent -> option t_Expression ->  t_Expression
+| Relay: option t_ComplexName -> option t_ComplexName ->  t_Expression
 | Select: option t_Expression -> option string -> option t_Expression ->  t_Expression
 | Sequence: list t_Expression ->  t_Expression
 | Tuple: list t_TupleElement ->  t_Expression
 | UnaryExpression: option string -> option t_Expression ->  t_Expression
-| Expression_Unify: option Multiplicity -> option t_ComplexName -> option Multiplicity -> option t_ComplexName ->  t_Expression
+| Unify: option Multiplicity -> option t_ComplexName -> option Multiplicity -> option t_ComplexName ->  t_Expression
 | UnobservableValue: t_Expression
 
 with t_FieldDecl: Set :=

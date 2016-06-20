@@ -15,7 +15,6 @@ import org.archware.sosadl.sosADL.AssertionDecl
 import org.archware.sosadl.sosADL.Behavior
 import org.archware.sosadl.sosADL.BehaviorDecl
 import org.archware.sosadl.sosADL.BehaviorStatement
-import org.archware.sosadl.sosADL.Binding
 import org.archware.sosadl.sosADL.ComplexName
 import org.archware.sosadl.sosADL.Connection
 import org.archware.sosadl.sosADL.Constituent
@@ -166,7 +165,6 @@ class TypingProofGenerator2 {
 	def dispatch generatorFunction(Behavior content) { return coqGenerator.generatet_Behavior(content) }
 	def dispatch generatorFunction(BehaviorDecl content) { return coqGenerator.generatet_BehaviorDecl(content) }
 	def dispatch generatorFunction(BehaviorStatement content) { return coqGenerator.generatet_BehaviorStatement(content) }
-	def dispatch generatorFunction(Binding content) { return coqGenerator.generatet_Binding(content) }
 	def dispatch generatorFunction(ComplexName content) { return coqGenerator.generatet_ComplexName(content) }
 	def dispatch generatorFunction(Connection content) { return coqGenerator.generatet_Connection(content) }
 	def dispatch generatorFunction(Constituent content) { return coqGenerator.generatet_Constituent(content) }

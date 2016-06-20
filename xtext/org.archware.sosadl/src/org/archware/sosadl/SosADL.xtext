@@ -162,7 +162,7 @@ Constituent:
 	name=Name 'is' value=Expression
 ;
 
-Binding:
+Binding returns Expression:
 	{Relay} 'relay' connLeft=ComplexName 'to' connRight=ComplexName
 	| {Unify} 'unify' multLeft=Multiplicity '{' connLeft=ComplexName '}' 'to' multRight=Multiplicity '{' connRight=ComplexName '}'
 	| {Quantify} quantifier=Quantifier '{' elements+=ElementInConstituent (',' elements+=ElementInConstituent)* 'suchthat' bindings=Expression '}'
