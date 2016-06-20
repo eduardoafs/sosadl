@@ -40,17 +40,25 @@ class XtendGeneratorGenerator extends MyAbstractGenerator {
 		«cases.values.flatten.toSet.map[c|'''import «genClasses.get(c).qualifiedInterfaceName»'''].join(lineSeparator())»
 		
 		@Generated(value = "«genPackage.getEcorePackage.name»")
-		class CoqGenerator {
+		class «genPackage.getEcorePackage.name.toFirstUpper»CoqGenerator {
+
+			def _hook(CharSequence x) { return x; }
 		
 			def <T> _generateO(T t, Function1<? super T, ? extends CharSequence> gen) {
 				if (t == null) {
 					return "None"
 				} else {
-					return «"'''"»(Some «"«"»gen.apply(t)»)«"'''"»
+					return _hook(«"'''"»(Some «"«"»gen.apply(t)»)«"'''"»)
 				}
 			}
 
-			def <T> _generateL(List<T> l, Function1<? super T, ? extends CharSequence> gen) «"'''"»[«"«"»l.map(gen).join("; ")»]«"'''"»
+			def <T> _generateL(List<T> l, Function1<? super T, ? extends CharSequence> gen) {
+				if (l.empty) {
+					return "[]"
+				} else {
+					return _hook(«"'''"»[«"«"»l.map(gen).join("; ")»]«"'''"»)
+				}
+			}
 
 			def generatebool(boolean b) {
 				if (b) {
@@ -61,10 +69,14 @@ class XtendGeneratorGenerator extends MyAbstractGenerator {
 			}
 
 			def generateZ(int i) {
-				return Integer.toString(i)
+				if (i >= 0) {
+					return Integer.toString(i);
+				} else {
+					return «"'''"»(«"«"»Integer.toString(i)»)«"'''"»
+				}
 			}
 
-			def generatestring(String i) «"'''"»"«"«"»i»"«"'''"»
+			def generatestring(String i) { return _hook(«"'''"»"«"«"»i»"«"'''"»); }
 		
 			«genPackage.genEnums.map[generateForEnum].join(lineSeparator())»
 		
@@ -102,7 +114,7 @@ class XtendGeneratorGenerator extends MyAbstractGenerator {
 		def dispatch «generateMethod(typ, c)»
 	'''
 	
-	def generateMethod(String typ, String c) '''CharSequence generate«namedClasses.get(typ).generateBaseType»(«c» n) «"'''"»«generateText(typ, c)»«"'''"»'''
+	def generateMethod(String typ, String c) '''CharSequence generate«namedClasses.get(typ).generateBaseType»(«c» n) { return _hook(«"'''"»«generateText(typ, c)»«"'''"»); }'''
 	
 	def generateText(String typ, String c) {
 		val gc = genClasses.get(c)
