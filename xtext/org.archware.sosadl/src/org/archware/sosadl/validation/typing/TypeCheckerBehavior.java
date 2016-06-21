@@ -1,7 +1,5 @@
 package org.archware.sosadl.validation.typing;
 
-import java.util.function.Function;
-
 import org.archware.sosadl.sosADL.Behavior;
 import org.archware.sosadl.sosADL.BehaviorDecl;
 import org.archware.sosadl.sosADL.BehaviorStatement;
@@ -18,7 +16,6 @@ import org.archware.sosadl.sosADL.ValuingBehavior;
 import org.archware.sosadl.validation.typing.impl.VariableEnvContent;
 import org.archware.sosadl.validation.typing.proof.Condition_false;
 import org.archware.sosadl.validation.typing.proof.Condition_true;
-import org.archware.sosadl.validation.typing.proof.ProofTerm;
 import org.archware.sosadl.validation.typing.proof.Type_behavior;
 import org.archware.sosadl.validation.typing.proof.Type_bodyprefix;
 import org.archware.sosadl.validation.typing.proof.Type_expression;
@@ -103,8 +100,8 @@ public abstract class TypeCheckerBehavior extends TypeCheckerCondition {
 											(gamma_) -> p(Type_finalbody.class, gammat.getA(),
 													(gammat_) -> p(Type_finalbody.class, gammae.getA(),
 															(gammae_) -> createType_finalbody_IfThenElse_general(gamma_,
-																	c, gammat_, ts, gammae_, es, p1,
-																	gammat.getB(), p3, gammae.getB(), p5)))));
+																	c, gammat_, ts, gammae_, es, p1, gammat.getB(), p3,
+																	gammae.getB(), p5)))));
 						} else {
 							return null;
 						}
@@ -128,11 +125,12 @@ public abstract class TypeCheckerBehavior extends TypeCheckerCondition {
 					return null;
 				}
 			} else {
-				Type_bodyprefix<Type_finalbody> p1 = type_bodyprefix(gamma, first,
-						(g) -> type_finalbody(g, l, behavior, index + 1));
-				if (p1 != null) {
-					return saveProof(first, p(Type_finalbody.class, gamma,
-							(gamma_) -> createType_finalbody_prefix(gamma_, first, l, p1)));
+				Pair<Environment, Type_bodyprefix> p1 = type_bodyprefix(gamma, first);
+				if (p1 != null && p1.getA() != null && p1.getB() != null) {
+					Type_finalbody p2 = type_finalbody(p1.getA(), l, behavior, index + 1);
+					return saveProof(first, p(Type_finalbody.class, gamma, (gamma_) -> p(Type_finalbody.class,
+							p1.getA(),
+							(gamma1_) -> createType_finalbody_prefix(gamma_, first, gamma1_, l, p1.getB(), p2))));
 				} else {
 					return null;
 				}
@@ -147,30 +145,28 @@ public abstract class TypeCheckerBehavior extends TypeCheckerCondition {
 		} else {
 			BehaviorStatement first = b.get(0);
 			EList<BehaviorStatement> l = cdr(b);
-			Type_bodyprefix<Type_nonfinalbody> p1 = type_bodyprefix(gamma, first,
-					(g) -> type_nonfinalbody(g, l, behavior, index + 1));
-			if (p1 != null) {
-				return saveProof(first, p(Type_nonfinalbody.class, gamma,
-						(gamma_) -> createType_nonfinalbody_prefix(gamma_, first, l, p1)));
+			Pair<Environment, Type_bodyprefix> p1 = type_bodyprefix(gamma, first);
+			if (p1 != null && p1.getA() != null && p1.getB() != null) {
+				Type_nonfinalbody p2 = type_nonfinalbody(p1.getA(), l, behavior, index + 1);
+				return saveProof(first, p(Type_nonfinalbody.class, gamma, (gamma_) -> p(Type_nonfinalbody.class,
+						p1.getA(),
+						(gamma1_) -> createType_nonfinalbody_prefix(gamma_, first, gamma1_, l, p1.getB(), p2))));
 			} else {
 				return null;
 			}
 		}
 	}
 
-	private <T extends ProofTerm> Type_bodyprefix<T> type_bodyprefix(Environment gamma, BehaviorStatement s,
-			Function<Environment, T> tail) {
+	private Pair<Environment, Type_bodyprefix> type_bodyprefix(Environment gamma, BehaviorStatement s) {
 		if (s instanceof DoExprBehavior) {
 			DoExprBehavior de = (DoExprBehavior) s;
 			Expression e = de.getExpression();
 			if (e != null) {
 				Pair<Type_expression, DataType> pt = type_expression(gamma, e);
 				if (pt.getA() != null && pt.getB() != null) {
-					T p2 = tail.apply(gamma);
-					@SuppressWarnings("unchecked")
-					Type_bodyprefix<T> proof = p(Type_bodyprefix.class, gamma, (gamma_) -> p(Type_bodyprefix.class,
-							pt.getB(), (tau_) -> createType_bodyprefix_DoExpr(gamma_, e, tau_, pt.getA(), p2)));
-					return saveProof(s, proof);
+					Type_bodyprefix proof = p(Type_bodyprefix.class, gamma, (gamma_) -> p(Type_bodyprefix.class,
+							pt.getB(), (tau_) -> createType_bodyprefix_DoExpr(gamma_, e, tau_, pt.getA())));
+					return new Pair<>(gamma, saveProof(s, proof));
 				} else {
 					return null;
 				}
@@ -188,26 +184,22 @@ public abstract class TypeCheckerBehavior extends TypeCheckerCondition {
 				if (pt.getA() != null && tau__e != null) {
 					DataType tau = v.getType();
 					if (tau == null) {
-						T p2 = tail.apply(gamma.put(x, new VariableEnvContent(s, tau__e)));
-						@SuppressWarnings("unchecked")
-						Type_bodyprefix<T> proof = p(Type_bodyprefix.class, gamma,
-								(gamma_) -> p(Type_bodyprefix.class, tau__e,
-										(tau__e_) -> createType_bodyprefix_Valuing_inferred(gamma_, x, e, tau__e_,
-												pt.getA(), p2)));
-						return saveProof(s, proof);
+						Environment gamma1 = gamma.put(x, new VariableEnvContent(s, tau__e));
+						Type_bodyprefix proof = p(Type_bodyprefix.class, gamma, (gamma_) -> p(Type_bodyprefix.class,
+								tau__e,
+								(tau__e_) -> createType_bodyprefix_Valuing_inferred(gamma_, x, e, tau__e_, pt.getA())));
+						return new Pair<>(gamma1, saveProof(s, proof));
 					} else {
-						T p2 = tail.apply(gamma.put(x, new VariableEnvContent(s, tau)));
-						@SuppressWarnings("unchecked")
-						Type_bodyprefix<T> proof = p(Type_bodyprefix.class, gamma,
+						Environment gamma1 = gamma.put(x, new VariableEnvContent(s, tau));
+						Type_bodyprefix proof = p(Type_bodyprefix.class, gamma,
 								(gamma_) -> p(Type_bodyprefix.class, tau__e,
 										(tau__e_) -> p(Type_bodyprefix.class, tau,
 												(tau_) -> createType_bodyprefix_Valuing_typed(gamma_, x, e, tau_,
 														tau__e_, pt.getA(),
 														subtype(tau__e_, tau_, v,
 																SosADLPackage.Literals.VALUING__EXPRESSION)
-																		.orElse(null),
-														p2))));
-						return saveProof(s, proof);
+																		.orElse(null)))));
+						return new Pair<>(gamma1, saveProof(s, proof));
 					}
 				} else {
 					return null;

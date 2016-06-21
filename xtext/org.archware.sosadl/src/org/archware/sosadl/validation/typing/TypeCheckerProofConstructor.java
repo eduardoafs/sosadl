@@ -507,9 +507,9 @@ public abstract class TypeCheckerProofConstructor extends TypeCheckerInference {
 		return new Type_finalbody_RecursiveCall(gamma);
 	}
 
-	protected Type_finalbody createType_finalbody_prefix(Environment gamma, BehaviorStatement s,
-			EList<BehaviorStatement> l, Type_bodyprefix<Type_finalbody> p1) {
-		return new Type_finalbody_prefix(gamma, s, l, p1);
+	protected Type_finalbody createType_finalbody_prefix(Environment gamma, BehaviorStatement s, Environment gamma1,
+			EList<BehaviorStatement> l, Type_bodyprefix p1, Type_finalbody p2) {
+		return new Type_finalbody_prefix(gamma, s, gamma1, l, p1, p2);
 	}
 
 	protected Type_nonfinalbody createType_nonfinalbody_empty(Environment gamma) {
@@ -517,23 +517,23 @@ public abstract class TypeCheckerProofConstructor extends TypeCheckerInference {
 	}
 
 	protected Type_nonfinalbody createType_nonfinalbody_prefix(Environment gamma, BehaviorStatement s,
-			EList<BehaviorStatement> l, Type_bodyprefix<Type_nonfinalbody> p1) {
-		return new Type_nonfinalbody_prefix(gamma, s, l, p1);
+			Environment gamma1, EList<BehaviorStatement> l, Type_bodyprefix p1, Type_nonfinalbody p2) {
+		return new Type_nonfinalbody_prefix(gamma, s, gamma1, l, p1, p2);
 	}
 
-	protected <T extends ProofTerm> Type_bodyprefix<T> createType_bodyprefix_DoExpr(Environment gamma, Expression e,
-			DataType tau, Type_expression p1, T p2) {
-		return new Type_bodyprefix_DoExpr<T>(gamma, e, tau, p1, p2);
+	protected Type_bodyprefix createType_bodyprefix_DoExpr(Environment gamma, Expression e, DataType tau,
+			Type_expression p1) {
+		return new Type_bodyprefix_DoExpr(gamma, e, tau, p1);
 	}
 
-	protected <T extends ProofTerm> Type_bodyprefix<T> createType_bodyprefix_Valuing_inferred(Environment gamma,
-			String x, Expression e, DataType tau__e, Type_expression p1, T p2) {
-		return new Type_bodyprefix_Valuing_inferred<T>(gamma, x, e, tau__e, p1, p2);
+	protected Type_bodyprefix createType_bodyprefix_Valuing_inferred(Environment gamma, String x, Expression e,
+			DataType tau__e, Type_expression p1) {
+		return new Type_bodyprefix_Valuing_inferred(gamma, x, e, tau__e, p1);
 	}
 
-	protected <T extends ProofTerm> Type_bodyprefix<T> createType_bodyprefix_Valuing_typed(Environment gamma, String x,
-			Expression e, DataType tau, DataType tau__e, Type_expression p1, Subtype p2, T p3) {
-		return new Type_bodyprefix_Valuing_typed<T>(gamma, x, e, tau, tau__e, p1, p2, p3);
+	protected Type_bodyprefix createType_bodyprefix_Valuing_typed(Environment gamma, String x, Expression e,
+			DataType tau, DataType tau__e, Type_expression p1, Subtype p2) {
+		return new Type_bodyprefix_Valuing_typed(gamma, x, e, tau, tau__e, p1, p2);
 	}
 
 	protected Condition_true createCondition_true_general(Environment gamma, Expression c) {

@@ -357,7 +357,7 @@ Reserved Notation "'behavior' b 'well' 'typed' 'in' Gamma" (at level 200, Gamma 
 Reserved Notation "'assertion' a 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
 Reserved Notation "'protocol' p 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
 Reserved Notation "'final' 'body' b 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
-Reserved Notation "'statement' b 'prefixing' r 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
+Reserved Notation "'statement' b 'well' 'typed' 'in' Gamma 'yields' 'to' Gamma1" (at level 200, Gamma at level 1, no associativity).
 Reserved Notation "'nonfinal' 'body' b 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
 Reserved Notation "'valuing' v 'well' 'typed' 'in' Gamma 'yields' 'to' Gamma1" (at level 200, Gamma at level 1, no associativity).
 
@@ -1436,7 +1436,7 @@ and "'protocol' p 'well' 'typed' 'in' Gamma" := (type_protocol Gamma p)
 
 (** ** Body *)
 
-Inductive type_bodyprefix (R: env -> Prop): env -> SosADL.SosADL.t_BehaviorStatement -> Prop :=
+Inductive type_bodyprefix: env -> SosADL.SosADL.t_BehaviorStatement -> env -> Prop :=
 (** %\note{%The typing rules enforce that statements [RepeatBehavior],
 [ChooseBehavior], [RecursiveCall] and [Done] must be the last
 statement of a sequence. [IfThenElse] statement may or may not be the last statement of a sequence.
@@ -1448,9 +1448,8 @@ statement of a sequence. [IfThenElse] statement may or may not be the last state
       (e: SosADL.SosADL.t_Expression)
       (tau: SosADL.SosADL.t_DataType)
       (p1: expression e has type tau in Gamma)
-      (p2: R Gamma)
     ,
-      statement (SosADL.SosADL.DoExprBehavior (Some e)) prefixing R well typed in Gamma
+      statement (SosADL.SosADL.DoExprBehavior (Some e)) well typed in Gamma yields to Gamma
 
 | type_bodyprefix_Valuing_inferred:
     forall
@@ -1459,9 +1458,8 @@ statement of a sequence. [IfThenElse] statement may or may not be the last state
       (e: SosADL.SosADL.t_Expression)
       (tau__e: SosADL.SosADL.t_DataType)
       (p1: expression e has type tau__e in Gamma)
-      (p2: R (Gamma [| x <- EVariable tau__e |]))
     ,
-      statement (SosADL.SosADL.ValuingBehavior (Some (SosADL.SosADL.Valuing (Some x) None (Some e)))) prefixing R well typed in Gamma
+      statement (SosADL.SosADL.ValuingBehavior (Some (SosADL.SosADL.Valuing (Some x) None (Some e)))) well typed in Gamma yields to (Gamma [| x <- EVariable tau__e |])
 
 | type_bodyprefix_Valuing_typed:
     forall
@@ -1472,10 +1470,40 @@ statement of a sequence. [IfThenElse] statement may or may not be the last state
       (tau__e: SosADL.SosADL.t_DataType)
       (p1: expression e has type tau__e in Gamma)
       (p2: tau__e </ tau)
-      (p3: R (Gamma [| x <- EVariable tau |]))
     ,
-      statement (SosADL.SosADL.ValuingBehavior (Some (SosADL.SosADL.Valuing (Some x) (Some tau) (Some e)))) prefixing R well typed in Gamma
+      statement (SosADL.SosADL.ValuingBehavior (Some (SosADL.SosADL.Valuing (Some x) (Some tau) (Some e)))) well typed in Gamma yields to (Gamma [| x <- EVariable tau |])
 
+| type_bodyprefix_IfThen:
+    forall
+      (Gamma: env)
+      (c: SosADL.SosADL.t_Expression)
+      (Gammat: env)
+      (t: list SosADL.SosADL.t_BehaviorStatement)
+      (p1: expression c has type SosADL.SosADL.BooleanType in Gamma)
+      (p2: condition_true Gamma c Gammat)
+      (p3: nonfinal body t well typed in Gammat)
+    ,
+      statement (SosADL.SosADL.IfThenElseBehavior (Some c) (Some (SosADL.SosADL.Behavior t)) None)
+                well typed in Gamma
+                                yields to Gamma
+
+| type_bodyprefix_IfThenElse:
+    forall
+      (Gamma: env)
+      (c: SosADL.SosADL.t_Expression)
+      (Gammat: env)
+      (t: list SosADL.SosADL.t_BehaviorStatement)
+      (Gammae: env)
+      (e: list SosADL.SosADL.t_BehaviorStatement)
+      (p1: expression c has type SosADL.SosADL.BooleanType in Gamma)
+      (p2: condition_true Gamma c Gammat)
+      (p3: nonfinal body t well typed in Gammat)
+      (p4: condition_false Gamma c Gammae)
+      (p5: nonfinal body e well typed in Gammae)
+    ,
+      statement (SosADL.SosADL.IfThenElseBehavior (Some c) (Some (SosADL.SosADL.Behavior t)) (Some (SosADL.SosADL.Behavior e)))
+                well typed in Gamma
+                                yields to Gamma
 
        (*
 
@@ -1580,10 +1608,7 @@ gate-or-duty, connection.%}% *)
 
         *)
 
-where "'statement' b 'prefixing' r 'well' 'typed' 'in' Gamma" := (type_bodyprefix r Gamma b)
-.
-
-Inductive type_nonfinalbody: env -> list SosADL.SosADL.t_BehaviorStatement -> Prop :=
+with type_nonfinalbody: env -> list SosADL.SosADL.t_BehaviorStatement -> Prop :=
 
 | type_nonfinalbody_empty:
     forall
@@ -1595,12 +1620,14 @@ Inductive type_nonfinalbody: env -> list SosADL.SosADL.t_BehaviorStatement -> Pr
     forall
       (Gamma: env)
       (s: SosADL.SosADL.t_BehaviorStatement)
+      (Gamma1: env)
       (l: list SosADL.SosADL.t_BehaviorStatement)
-      (p1: statement s prefixing (fun g => nonfinal body l well typed in g)
-                     well typed in Gamma)
+      (p1: statement s well typed in Gamma yields to Gamma1)
+      (p2: nonfinal body l well typed in Gamma1)
     ,
       nonfinal body (s :: l) well typed in Gamma
-where "'nonfinal' 'body' b 'well' 'typed' 'in' Gamma" := (type_nonfinalbody Gamma b)
+where "'statement' b 'well' 'typed' 'in' Gamma 'yields' 'to' Gamma1" := (type_bodyprefix Gamma b Gamma1)
+and "'nonfinal' 'body' b 'well' 'typed' 'in' Gamma" := (type_nonfinalbody Gamma b)
 .
 
 Inductive type_finalbody: env -> list SosADL.SosADL.t_BehaviorStatement -> Prop :=
@@ -1609,9 +1636,11 @@ Inductive type_finalbody: env -> list SosADL.SosADL.t_BehaviorStatement -> Prop 
     forall
       (Gamma: env)
       (s: SosADL.SosADL.t_BehaviorStatement)
+      (Gamma1: env)
       (l: list SosADL.SosADL.t_BehaviorStatement)
-      (p1: statement s prefixing (fun g => final body l well typed in g)
-                     well typed in Gamma)
+      (p1: statement s
+                     well typed in Gamma yields to Gamma1)
+      (p2: final body l well typed in Gamma1)
     ,
       final body (s :: l) well typed in Gamma
 

@@ -4,9 +4,7 @@ import org.archware.sosadl.sosADL.DataType;
 import org.archware.sosadl.sosADL.Expression;
 import org.archware.sosadl.validation.typing.Environment;
 
-public class Type_bodyprefix_Valuing_inferred<T extends ProofTerm> implements Type_bodyprefix<T> {
-	@Eluded
-	private final Object r = null;
+public class Type_bodyprefix_Valuing_inferred implements Type_bodyprefix {
 
 	@Mandatory
 	private final Environment gamma;
@@ -23,22 +21,14 @@ public class Type_bodyprefix_Valuing_inferred<T extends ProofTerm> implements Ty
 	@Mandatory
 	private final Type_expression p1;
 
-	@Mandatory
-	private final T p2;
-
 	public Type_bodyprefix_Valuing_inferred(Environment gamma, String x, Expression e, DataType tau__e,
-			Type_expression p1, T p2) {
+			Type_expression p1) {
 		super();
 		this.gamma = gamma;
 		this.x = x;
 		this.e = e;
 		this.tau__e = tau__e;
 		this.p1 = p1;
-		this.p2 = p2;
-	}
-
-	public Object getR() {
-		return r;
 	}
 
 	public Environment getGamma() {
@@ -59,10 +49,6 @@ public class Type_bodyprefix_Valuing_inferred<T extends ProofTerm> implements Ty
 
 	public Type_expression getP1() {
 		return p1;
-	}
-
-	public T getP2() {
-		return p2;
 	}
 
 }
