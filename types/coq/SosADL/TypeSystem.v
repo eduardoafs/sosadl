@@ -133,7 +133,7 @@ Fixpoint field_type (l: list SosADL.SosADL.t_FieldDecl) (n: string) {struct l}: 
 \def\todo#1{{\color{red}TODO: #1}}
 \def\note#1{{\color{blue}NOTE: #1}}
 %
-*)
+ *)
 
 (** * Subtyping relation *)
 
@@ -1106,6 +1106,209 @@ and "'expression' 'node' e 'has' 'type' t 'in' Gamma" := (type_expression_node G
 .
 
 
+(** * Conditional statements *)
+
+Inductive smallest: SosADL.SosADL.t_Expression -> SosADL.SosADL.t_Expression -> SosADL.SosADL.t_Expression -> Prop :=
+| smallest_l:
+    forall (m: SosADL.SosADL.t_Expression)
+      (l: SosADL.SosADL.t_Expression)
+      (r: SosADL.SosADL.t_Expression)
+      (p1: l <= m)
+      (p2: l <= r)
+    ,
+      smallest m l r
+| smallest_r:
+    forall (m: SosADL.SosADL.t_Expression)
+      (l: SosADL.SosADL.t_Expression)
+      (r: SosADL.SosADL.t_Expression)
+      (p1: r <= m)
+      (p2: r <= l)
+    ,
+      smallest m l r
+.
+
+Inductive greatest: SosADL.SosADL.t_Expression -> SosADL.SosADL.t_Expression -> SosADL.SosADL.t_Expression -> Prop :=
+| greatest_l:
+    forall (m: SosADL.SosADL.t_Expression)
+      (l: SosADL.SosADL.t_Expression)
+      (r: SosADL.SosADL.t_Expression)
+      (p1: m <= l)
+      (p2: r <= l)
+    ,
+      greatest m l r
+| greatest_r:
+    forall (m: SosADL.SosADL.t_Expression)
+      (l: SosADL.SosADL.t_Expression)
+      (r: SosADL.SosADL.t_Expression)
+      (p1: m <= r)
+      (p2: l <= r)
+    ,
+      greatest m l r
+.
+
+Definition negated_comparison op :=
+  match op with
+  | "<" => Some ">="
+  | "<=" => Some ">"
+  | ">" => Some "<="
+  | ">=" => Some "<"
+  | _ => None
+  end.
+
+Definition symmetric_comparison op :=
+  match op with
+  | "<" => Some ">"
+  | "<=" => Some ">="
+  | ">" => Some "<"
+  | ">=" => Some "<="
+  | _ => None
+  end.
+
+Inductive condition_true: env -> SosADL.SosADL.t_Expression -> env -> Prop :=
+| condition_true_general:
+    forall (Gamma: env)
+      (c: SosADL.SosADL.t_Expression)
+    ,
+      condition_true Gamma c Gamma
+
+| condition_true_not:
+    forall (Gamma: env)
+      (c: SosADL.SosADL.t_Expression)
+      (Gamma1: env)
+      (p1: condition_false Gamma c Gamma1)
+    ,
+      condition_true Gamma (SosADL.SosADL.UnaryExpression (Some "not") (Some c)) Gamma
+
+| condition_true_and:
+    forall (Gamma: env)
+      (c1: SosADL.SosADL.t_Expression)
+      (Gamma1: env)
+      (c2: SosADL.SosADL.t_Expression)
+      (Gamma2: env)
+      (p1: condition_true Gamma c1 Gamma1)
+      (p2: condition_true Gamma1 c2 Gamma2)
+    ,
+      condition_true Gamma (SosADL.SosADL.BinaryExpression (Some c1) (Some "and") (Some c2)) Gamma2
+
+| condition_true_lt:
+    forall (Gamma: env)
+      (x: string)
+      (x_min: SosADL.SosADL.t_Expression)
+      (x_max: SosADL.SosADL.t_Expression)
+      (x_max_: SosADL.SosADL.t_Expression)
+      (r: SosADL.SosADL.t_Expression)
+      (r_min: SosADL.SosADL.t_Expression)
+      (r_max: SosADL.SosADL.t_Expression)
+      (Gamma1: env)
+      (p1: expression (SosADL.SosADL.IdentExpression (Some x)) has type (SosADL.SosADL.RangeType (Some x_min) (Some x_max)) in Gamma)
+      (p2: expression r has type (SosADL.SosADL.RangeType (Some r_min) (Some r_max)) in Gamma)
+      (p3: smallest x_max_ x_max (SosADL.SosADL.BinaryExpression (Some r_max) (Some "-") (Some (SosADL.SosADL.IntegerValue (Some 1%Z)))))
+      (p4: type (SosADL.SosADL.RangeType (Some x_min) (Some x_max_)) looks fine)
+      (p5: condition_true (Gamma [| x <- EVariable (SosADL.SosADL.RangeType (Some x_min) (Some x_max_)) |]) (SosADL.SosADL.BinaryExpression (Some r) (Some ">") (Some (SosADL.SosADL.IdentExpression (Some x)))) Gamma1)
+    ,
+      condition_true Gamma (SosADL.SosADL.BinaryExpression (Some (SosADL.SosADL.IdentExpression (Some x))) (Some "<") (Some r)) Gamma1
+
+| condition_true_le:
+    forall (Gamma: env)
+      (x: string)
+      (x_min: SosADL.SosADL.t_Expression)
+      (x_max: SosADL.SosADL.t_Expression)
+      (x_max_: SosADL.SosADL.t_Expression)
+      (r: SosADL.SosADL.t_Expression)
+      (r_min: SosADL.SosADL.t_Expression)
+      (r_max: SosADL.SosADL.t_Expression)
+      (Gamma1: env)
+      (p1: expression (SosADL.SosADL.IdentExpression (Some x)) has type (SosADL.SosADL.RangeType (Some x_min) (Some x_max)) in Gamma)
+      (p2: expression r has type (SosADL.SosADL.RangeType (Some r_min) (Some r_max)) in Gamma)
+      (p3: smallest x_max_ x_max r_max)
+      (p4: type (SosADL.SosADL.RangeType (Some x_min) (Some x_max_)) looks fine)
+      (p5: condition_true (Gamma [| x <- EVariable (SosADL.SosADL.RangeType (Some x_min) (Some x_max_)) |]) (SosADL.SosADL.BinaryExpression (Some r) (Some ">=") (Some (SosADL.SosADL.IdentExpression (Some x)))) Gamma1)
+    ,
+      condition_true Gamma (SosADL.SosADL.BinaryExpression (Some (SosADL.SosADL.IdentExpression (Some x))) (Some "<=") (Some r)) Gamma1
+
+| condition_true_ge:
+    forall (Gamma: env)
+      (x: string)
+      (x_min: SosADL.SosADL.t_Expression)
+      (x_min_: SosADL.SosADL.t_Expression)
+      (x_max: SosADL.SosADL.t_Expression)
+      (r: SosADL.SosADL.t_Expression)
+      (r_min: SosADL.SosADL.t_Expression)
+      (r_max: SosADL.SosADL.t_Expression)
+      (Gamma1: env)
+      (p1: expression (SosADL.SosADL.IdentExpression (Some x)) has type (SosADL.SosADL.RangeType (Some x_min) (Some x_max)) in Gamma)
+      (p2: expression r has type (SosADL.SosADL.RangeType (Some r_min) (Some r_max)) in Gamma)
+      (p3: greatest x_min_ x_min r_min)
+      (p4: type (SosADL.SosADL.RangeType (Some x_min_) (Some x_max)) looks fine)
+      (p5: condition_true (Gamma [| x <- EVariable (SosADL.SosADL.RangeType (Some x_min_) (Some x_max)) |]) (SosADL.SosADL.BinaryExpression (Some r) (Some "<=") (Some (SosADL.SosADL.IdentExpression (Some x)))) Gamma1)
+    ,
+      condition_true Gamma (SosADL.SosADL.BinaryExpression (Some (SosADL.SosADL.IdentExpression (Some x))) (Some ">=") (Some r)) Gamma1
+
+| condition_true_gt:
+    forall (Gamma: env)
+      (x: string)
+      (x_min: SosADL.SosADL.t_Expression)
+      (x_min_: SosADL.SosADL.t_Expression)
+      (x_max: SosADL.SosADL.t_Expression)
+      (r: SosADL.SosADL.t_Expression)
+      (r_min: SosADL.SosADL.t_Expression)
+      (r_max: SosADL.SosADL.t_Expression)
+      (Gamma1: env)
+      (p1: expression (SosADL.SosADL.IdentExpression (Some x)) has type (SosADL.SosADL.RangeType (Some x_min) (Some x_max)) in Gamma)
+      (p2: expression r has type (SosADL.SosADL.RangeType (Some r_min) (Some r_max)) in Gamma)
+      (p3: greatest x_min_ x_min (SosADL.SosADL.BinaryExpression (Some r_min) (Some "+") (Some (SosADL.SosADL.IntegerValue (Some 1%Z)))))
+      (p4: type (SosADL.SosADL.RangeType (Some x_min_) (Some x_max)) looks fine)
+      (p5: condition_true (Gamma [| x <- EVariable (SosADL.SosADL.RangeType (Some x_min_) (Some x_max)) |]) (SosADL.SosADL.BinaryExpression (Some r) (Some "<") (Some (SosADL.SosADL.IdentExpression (Some x)))) Gamma1)
+    ,
+      condition_true Gamma (SosADL.SosADL.BinaryExpression (Some (SosADL.SosADL.IdentExpression (Some x))) (Some ">") (Some r)) Gamma1
+
+| condition_true_sym:
+    forall (Gamma: env)
+      (l: SosADL.SosADL.t_Expression)
+      (op: string)
+      (r: SosADL.SosADL.t_Expression)
+      (Gamma1: env)
+      (p1: condition_true Gamma (SosADL.SosADL.BinaryExpression (Some r) (symmetric_comparison op) (Some l)) Gamma1)
+    ,
+      condition_true Gamma (SosADL.SosADL.BinaryExpression (Some l) (Some op) (Some r)) Gamma1
+
+with condition_false: env -> SosADL.SosADL.t_Expression -> env -> Prop :=
+| condition_false_general:
+    forall (Gamma: env)
+      (c: SosADL.SosADL.t_Expression)
+    ,
+      condition_false Gamma c Gamma
+
+| condition_false_not:
+    forall (Gamma: env)
+      (c: SosADL.SosADL.t_Expression)
+      (Gamma1: env)
+      (p1: condition_true Gamma c Gamma1)
+    ,
+      condition_false Gamma (SosADL.SosADL.UnaryExpression (Some "not") (Some c)) Gamma
+
+| condition_false_or:
+    forall (Gamma: env)
+      (c1: SosADL.SosADL.t_Expression)
+      (Gamma1: env)
+      (c2: SosADL.SosADL.t_Expression)
+      (Gamma2: env)
+      (p1: condition_false Gamma c1 Gamma1)
+      (p2: condition_false Gamma1 c2 Gamma2)
+    ,
+      condition_false Gamma (SosADL.SosADL.BinaryExpression (Some c1) (Some "or") (Some c2)) Gamma2
+
+| condition_false_cmp:
+    forall (Gamma: env)
+      (l: SosADL.SosADL.t_Expression)
+      (op: string)
+      (r: SosADL.SosADL.t_Expression)
+      (Gamma1: env)
+      (p1: condition_true Gamma (SosADL.SosADL.BinaryExpression (Some l) (negated_comparison op) (Some r)) Gamma1)
+    ,
+      condition_false Gamma (SosADL.SosADL.BinaryExpression (Some l) (Some op) (Some r)) Gamma1
+.
+
 
 (** ** Mediator *)
 
@@ -1236,14 +1439,8 @@ and "'protocol' p 'well' 'typed' 'in' Gamma" := (type_protocol Gamma p)
 Inductive type_bodyprefix (R: env -> Prop): env -> SosADL.SosADL.t_BehaviorStatement -> Prop :=
 (** %\note{%The typing rules enforce that statements [RepeatBehavior],
 [ChooseBehavior], [RecursiveCall] and [Done] must be the last
-statement of a sequence. However, the typing rule [type_EmptyBody]
-allows the last statement of a sequence to be of any kind. Last, the
-branches of an [IfThen] or [IfThenElse] statement may terminate with
-one of the terminating statements ([RepeatBehavior], [ChooseBehavior],
-[RecursiveCall] or [Done]) while the conditional statement might be
-followed by subsequent statements. In summary, the typing rules are
-inconsistent in regard to the question whether the type system
-enforces some rules on the last statement of a sequence.%}% *)
+statement of a sequence. [IfThenElse] statement may or may not be the last statement of a sequence.
+%}% *)
 
 | type_bodyprefix_DoExpr:
     forall
@@ -1275,17 +1472,12 @@ enforces some rules on the last statement of a sequence.%}% *)
       (tau__e: SosADL.SosADL.t_DataType)
       (p1: expression e has type tau__e in Gamma)
       (p2: tau__e </ tau)
-      (p3: R (Gamma [| x <- EVariable  tau |]))
+      (p3: R (Gamma [| x <- EVariable tau |]))
     ,
       statement (SosADL.SosADL.ValuingBehavior (Some (SosADL.SosADL.Valuing (Some x) (Some tau) (Some e)))) prefixing R well typed in Gamma
 
 
        (*
-| type_Repeat:
-    forall Gamma b,
-      (body b well typed in Gamma)
-      ->
-      body (SosADL.SosADL.RepeatBehavior (Some (SosADL.SosADL.Behavior b)) :: nil) well typed in Gamma
 
 | type_Choose:
     forall Gamma branches,
@@ -1302,15 +1494,6 @@ enforces some rules on the last statement of a sequence.%}% *)
       ->
       body (SosADL.SosADL.IfThenElseBehavior (Some c) (Some (SosADL.SosADL.Behavior t)) None :: l) well typed in Gamma
 
-| type_IfThenElse:
-    forall Gamma c t e,
-      (expression c has type SosADL.SosADL.BooleanType in Gamma)
-      /\ (body t well typed in Gamma)
-      /\ (body e well typed in Gamma)
-      ->
-      body (SosADL.SosADL.IfThenElseBehavior (Some c) (Some (SosADL.SosADL.Behavior t)) (Some (SosADL.SosADL.Behavior e)) :: nil)
-           well typed in Gamma
-
 | type_ForEach:
     forall Gamma x tau vals b l,
       (expression vals has type (SosADL.SosADL.SequenceType (Some tau)) in Gamma)
@@ -1318,10 +1501,6 @@ enforces some rules on the last statement of a sequence.%}% *)
       /\ (body l well typed in Gamma)
       ->
       body (SosADL.SosADL.ForEachBehavior (Some x) (Some vals) (Some (SosADL.SosADL.Behavior b)) :: l) well typed in Gamma
-
-| type_RecursiveCall:
-    forall Gamma,
-      body (SosADL.SosADL.RecursiveCall nil :: nil) well typed in Gamma
 
 | type_TellStatement:
     forall Gamma name e l,
@@ -1404,6 +1583,26 @@ gate-or-duty, connection.%}% *)
 where "'statement' b 'prefixing' r 'well' 'typed' 'in' Gamma" := (type_bodyprefix r Gamma b)
 .
 
+Inductive type_nonfinalbody: env -> list SosADL.SosADL.t_BehaviorStatement -> Prop :=
+
+| type_nonfinalbody_empty:
+    forall
+      (Gamma: env)
+    ,
+      nonfinal body nil well typed in Gamma
+
+| type_nonfinalbody_prefix:
+    forall
+      (Gamma: env)
+      (s: SosADL.SosADL.t_BehaviorStatement)
+      (l: list SosADL.SosADL.t_BehaviorStatement)
+      (p1: statement s prefixing (fun g => nonfinal body l well typed in g)
+                     well typed in Gamma)
+    ,
+      nonfinal body (s :: l) well typed in Gamma
+where "'nonfinal' 'body' b 'well' 'typed' 'in' Gamma" := (type_nonfinalbody Gamma b)
+.
+
 Inductive type_finalbody: env -> list SosADL.SosADL.t_BehaviorStatement -> Prop :=
 
 | type_finalbody_prefix:
@@ -1416,11 +1615,42 @@ Inductive type_finalbody: env -> list SosADL.SosADL.t_BehaviorStatement -> Prop 
     ,
       final body (s :: l) well typed in Gamma
 
+| type_finalbody_Repeat:
+    forall
+      (Gamma: env)
+      (b: list SosADL.SosADL.t_BehaviorStatement)
+      (p1: nonfinal body b well typed in Gamma)
+    ,
+      final body (SosADL.SosADL.RepeatBehavior (Some (SosADL.SosADL.Behavior b)) :: nil) well typed in Gamma
+
+| type_finalbody_IfThenElse_general:
+    forall
+      (Gamma: env)
+      (c: SosADL.SosADL.t_Expression)
+      (Gammat: env)
+      (t: list SosADL.SosADL.t_BehaviorStatement)
+      (Gammae: env)
+      (e: list SosADL.SosADL.t_BehaviorStatement)
+      (p1: expression c has type SosADL.SosADL.BooleanType in Gamma)
+      (p2: condition_true Gamma c Gammat)
+      (p3: final body t well typed in Gammat)
+      (p4: condition_false Gamma c Gammae)
+      (p5: final body e well typed in Gammae)
+    ,
+      final body (SosADL.SosADL.IfThenElseBehavior (Some c) (Some (SosADL.SosADL.Behavior t)) (Some (SosADL.SosADL.Behavior e)) :: nil)
+           well typed in Gamma
+
 | type_finalbody_Done:
     forall
       (Gamma: env)
     ,
       final body (SosADL.SosADL.DoneBehavior :: nil) well typed in Gamma
+
+| type_finalbody_RecursiveCall:
+    forall
+      (Gamma: env)
+    ,
+      final body ((SosADL.SosADL.RecursiveCall nil) :: nil) well typed in Gamma
 
 where "'final' 'body' b 'well' 'typed' 'in' Gamma" := (type_finalbody Gamma b)
 .

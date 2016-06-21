@@ -71,7 +71,20 @@ library testDone is {
       do 2*3
       do 4+7
       value a = 3
-      done
+      value b is sequence {integer{0..0}} = sequence{0}
+      value c = sequence{}
+      do a+4
+      value toto is integer{0..5} = 4
+      if toto < 3 and toto >= 1 then {
+      	value titi is integer{1..2} = toto
+      	if titi > 0 and titi <= 1 then {
+      		done
+      	} else {
+      		repeat { do 1+1 }
+      	}
+      } else {
+      	behavior()
+      }
     }
   }
 }

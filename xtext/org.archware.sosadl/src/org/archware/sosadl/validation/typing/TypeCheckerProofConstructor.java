@@ -488,13 +488,37 @@ public abstract class TypeCheckerProofConstructor extends TypeCheckerInference {
 		return new Type_BehaviorDecl(gamma, name, b, p1);
 	}
 
+	protected Type_finalbody createType_finalbody_Repeat(Environment gamma, EList<BehaviorStatement> b,
+			Type_nonfinalbody p1) {
+		return new Type_finalbody_Repeat(gamma, b, p1);
+	}
+
+	protected Type_finalbody createType_finalbody_IfThenElse_general(Environment gamma, Expression c,
+			Environment gammat, EList<BehaviorStatement> t, Environment gammae, EList<BehaviorStatement> e,
+			Type_expression p1, Condition_true p2, Type_finalbody p3, Condition_false p4, Type_finalbody p5) {
+		return new Type_finalbody_IfThenElse_general(gamma, c, gammat, t, gammae, e, p1, p2, p3, p4, p5);
+	}
+
 	protected Type_finalbody createType_finalbody_Done(Environment gamma) {
 		return new Type_finalbody_Done(gamma);
+	}
+
+	protected Type_finalbody createType_finalbody_RecursiveCall(Environment gamma) {
+		return new Type_finalbody_RecursiveCall(gamma);
 	}
 
 	protected Type_finalbody createType_finalbody_prefix(Environment gamma, BehaviorStatement s,
 			EList<BehaviorStatement> l, Type_bodyprefix<Type_finalbody> p1) {
 		return new Type_finalbody_prefix(gamma, s, l, p1);
+	}
+
+	protected Type_nonfinalbody createType_nonfinalbody_empty(Environment gamma) {
+		return new Type_nonfinalbody_empty(gamma);
+	}
+
+	protected Type_nonfinalbody createType_nonfinalbody_prefix(Environment gamma, BehaviorStatement s,
+			EList<BehaviorStatement> l, Type_bodyprefix<Type_nonfinalbody> p1) {
+		return new Type_nonfinalbody_prefix(gamma, s, l, p1);
 	}
 
 	protected <T extends ProofTerm> Type_bodyprefix<T> createType_bodyprefix_DoExpr(Environment gamma, Expression e,
@@ -510,5 +534,83 @@ public abstract class TypeCheckerProofConstructor extends TypeCheckerInference {
 	protected <T extends ProofTerm> Type_bodyprefix<T> createType_bodyprefix_Valuing_typed(Environment gamma, String x,
 			Expression e, DataType tau, DataType tau__e, Type_expression p1, Subtype p2, T p3) {
 		return new Type_bodyprefix_Valuing_typed<T>(gamma, x, e, tau, tau__e, p1, p2, p3);
+	}
+
+	protected Condition_true createCondition_true_general(Environment gamma, Expression c) {
+		return new Condition_true_general(gamma, c);
+	}
+
+	protected Condition_true createCondition_true_not(Environment gamma, Expression c, Environment gamma1,
+			Condition_false p1) {
+		return new Condition_true_not(gamma, c, gamma1, p1);
+	}
+
+	protected Condition_true createCondition_true_and(Environment gamma, Expression c1, Environment gamma1,
+			Expression c2, Environment gamma2, Condition_true p1, Condition_true p2) {
+		return new Condition_true_and(gamma, c1, gamma1, c2, gamma2, p1, p2);
+	}
+
+	protected Condition_true createCondition_true_lt(Environment gamma, String x, Expression x_min, Expression x_max,
+			Expression x_max_, Expression r, Expression r_min, Expression r_max, Environment gamma1, Type_expression p1,
+			Type_expression p2, Smallest p3, Check_datatype p4, Condition_true p5) {
+		return new Condition_true_lt(gamma, x, x_min, x_max, x_max_, r, r_min, r_max, gamma1, p1, p2, p3, p4, p5);
+	}
+
+	protected Condition_true createCondition_true_le(Environment gamma, String x, Expression x_min, Expression x_max,
+			Expression x_max_, Expression r, Expression r_min, Expression r_max, Environment gamma1, Type_expression p1,
+			Type_expression p2, Smallest p3, Check_datatype p4, Condition_true p5) {
+		return new Condition_true_le(gamma, x, x_min, x_max, x_max_, r, r_min, r_max, gamma1, p1, p2, p3, p4, p5);
+	}
+
+	protected Condition_true createCondition_true_gt(Environment gamma, String x, Expression x_min, Expression x_min_,
+			Expression x_max, Expression r, Expression r_min, Expression r_max, Environment gamma1, Type_expression p1,
+			Type_expression p2, Greatest p3, Check_datatype p4, Condition_true p5) {
+		return new Condition_true_gt(gamma, x, x_min, x_min_, x_max, r, r_min, r_max, gamma1, p1, p2, p3, p4, p5);
+	}
+
+	protected Condition_true createCondition_true_ge(Environment gamma, String x, Expression x_min, Expression x_min_,
+			Expression x_max, Expression r, Expression r_min, Expression r_max, Environment gamma1, Type_expression p1,
+			Type_expression p2, Greatest p3, Check_datatype p4, Condition_true p5) {
+		return new Condition_true_ge(gamma, x, x_min, x_min_, x_max, r, r_min, r_max, gamma1, p1, p2, p3, p4, p5);
+	}
+
+	protected Condition_true createCondition_true_sym(Environment gamma, Expression l, String op, Expression r,
+			Environment gamma1, Condition_true p1) {
+		return new Condition_true_sym(gamma, l, op, r, gamma1, p1);
+	}
+
+	protected Condition_false createCondition_false_general(Environment gamma, Expression c) {
+		return new Condition_false_general(gamma, c);
+	}
+
+	protected Condition_false createCondition_false_not(Environment gamma, Expression c, Environment gamma1,
+			Condition_true p1) {
+		return new Condition_false_not(gamma, c, gamma1, p1);
+	}
+
+	protected Condition_false createCondition_false_or(Environment gamma, Expression c1, Environment gamma1,
+			Expression c2, Environment gamma2, Condition_false p1, Condition_false p2) {
+		return new Condition_false_or(gamma, c1, gamma1, c2, gamma2, p1, p2);
+	}
+
+	protected Condition_false createCondition_false_cmp(Environment gamma, Expression c1, String op, Expression c2,
+			Environment gamma1, Condition_true p1) {
+		return new Condition_false_cmp(gamma, c1, op, c2, gamma1, p1);
+	}
+
+	protected Smallest createSmallest_l(Expression m, Expression l, Expression r, Expression_le p1, Expression_le p2) {
+		return new Smallest_l(m, l, r, p1, p2);
+	}
+
+	protected Smallest createSmallest_r(Expression m, Expression l, Expression r, Expression_le p1, Expression_le p2) {
+		return new Smallest_r(m, l, r, p1, p2);
+	}
+
+	protected Greatest createGreatest_l(Expression m, Expression l, Expression r, Expression_le p1, Expression_le p2) {
+		return new Greatest_l(m, l, r, p1, p2);
+	}
+
+	protected Greatest createGreatest_r(Expression m, Expression l, Expression r, Expression_le p1, Expression_le p2) {
+		return new Greatest_r(m, l, r, p1, p2);
 	}
 }

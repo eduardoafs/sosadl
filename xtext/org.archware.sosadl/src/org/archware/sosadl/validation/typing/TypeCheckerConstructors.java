@@ -35,21 +35,6 @@ public class TypeCheckerConstructors extends TypeCheckerAnnotate {
 		return r;
 	}
 
-	@SuppressWarnings("unused")
-	private static RangeType createRangeType(int min, Expression max) {
-		return createRangeType(createIntegerValue(min), max);
-	}
-
-	@SuppressWarnings("unused")
-	private static RangeType createRangeType(Expression min, int max) {
-		return createRangeType(min, createIntegerValue(max));
-	}
-
-	@SuppressWarnings("unused")
-	private static RangeType createRangeType(int min, int max) {
-		return createRangeType(createIntegerValue(min), createIntegerValue(max));
-	}
-
 	protected static BooleanType createBooleanType() {
 		return SosADLFactory.eINSTANCE.createBooleanType();
 	}
@@ -79,6 +64,10 @@ public class TypeCheckerConstructors extends TypeCheckerAnnotate {
 		ret.setOp(o);
 		ret.setRight(copy(r));
 		return ret;
+	}
+
+	protected static Expression createBinaryExpression(Expression l, String o, int r) {
+		return createBinaryExpression(l, o, createIntegerValue(r));
 	}
 
 	protected static TupleType createTupleType(Iterable<FieldDecl> fields) {

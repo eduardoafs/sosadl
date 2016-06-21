@@ -69,7 +69,7 @@ public class ProofTermPlaceHolder<T extends ProofTerm> implements ProofTerm {
 		if (clazz.isInstance(p)) {
 			this.proxy = Optional.of(p);
 		} else {
-			throw new IllegalArgumentException("Not an instance of " + clazz.toString());
+			throw new IllegalArgumentException("Not an instance of " + clazz.toString() + " (" + p + ")");
 		}
 	}
 
