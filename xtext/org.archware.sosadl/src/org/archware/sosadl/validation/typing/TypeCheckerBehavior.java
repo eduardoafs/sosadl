@@ -8,12 +8,15 @@ import org.archware.sosadl.sosADL.DataType;
 import org.archware.sosadl.sosADL.DoExprBehavior;
 import org.archware.sosadl.sosADL.DoneBehavior;
 import org.archware.sosadl.sosADL.Expression;
+import org.archware.sosadl.sosADL.ForEachBehavior;
 import org.archware.sosadl.sosADL.IfThenElseBehavior;
 import org.archware.sosadl.sosADL.RecursiveCall;
 import org.archware.sosadl.sosADL.RepeatBehavior;
+import org.archware.sosadl.sosADL.SequenceType;
 import org.archware.sosadl.sosADL.SosADLPackage;
 import org.archware.sosadl.sosADL.Valuing;
 import org.archware.sosadl.sosADL.ValuingBehavior;
+import org.archware.sosadl.tv.typeCheckerHelper.TypeVariable;
 import org.archware.sosadl.validation.typing.impl.VariableEnvContent;
 import org.archware.sosadl.validation.typing.proof.And;
 import org.archware.sosadl.validation.typing.proof.Condition_false;
@@ -275,7 +278,49 @@ public abstract class TypeCheckerBehavior extends TypeCheckerCondition {
 					(x) -> type_nonfinalbody(gamma, x.getStatements(), x, 0));
 			return new Pair<>(gamma, saveProof(s,
 					p(Type_bodyprefix.class, gamma, (gamma_) -> createType_bodyprefix_Choose(gamma_, branches, p1))));
-
+		} else if (s instanceof ForEachBehavior) {
+			ForEachBehavior f = (ForEachBehavior) s;
+			String x = f.getVariable();
+			Expression vals = f.getSetOfValues();
+			Behavior r = f.getRepeated();
+			if (x != null && vals != null && r != null) {
+				Pair<Type_expression, DataType> pt = type_expression(gamma, vals);
+				Type_expression p1 = pt.getA();
+				DataType tauVals = pt.getB();
+				if (p1 != null && tauVals != null) {
+					TypeVariable tau__x = createFreshTypeVariable(s, SosADLPackage.Literals.FOR_EACH_BEHAVIOR__VARIABLE,
+							TypeInferenceSolver::upperOrLowerSolver);
+					TypeInferenceSolver.streamVariables(tauVals).forEach((a) -> inference.addDependency(tau__x, a));
+					inference.addConstraint(tauVals, createSequenceType(tau__x), s,
+							SosADLPackage.Literals.FOR_EACH_BEHAVIOR__SET_OF_VALUES);
+					Environment gamma1 = gamma.put(x, new VariableEnvContent(s, tau__x));
+					EList<BehaviorStatement> b = r.getStatements();
+					Type_nonfinalbody p2 = type_nonfinalbody(gamma1, b, r, 0);
+					return new Pair<>(gamma,
+							saveProof(s,
+									p(Type_bodyprefix.class, gamma, (gamma_) -> p(Type_bodyprefix.class, tauVals,
+											(tauVals_) -> p(Type_bodyprefix.class, tau__x,
+													(tau__x_) -> createType_bodyprefix_ForEach(gamma_, x, vals,
+															((SequenceType) tauVals_).getType(), tau__x_, b, p1, p2,
+															subtype(((SequenceType) tauVals_).getType(), tau__x_, s,
+																	SosADLPackage.Literals.FOR_EACH_BEHAVIOR__SET_OF_VALUES)
+																			.orElse(null)))))));
+				} else {
+					return null;
+				}
+			} else {
+				if (x == null) {
+					error("A variable name must be given", s, SosADLPackage.Literals.FOR_EACH_BEHAVIOR__VARIABLE);
+				}
+				if (vals == null) {
+					error("A sequence expression is expected", s,
+							SosADLPackage.Literals.FOR_EACH_BEHAVIOR__SET_OF_VALUES);
+				}
+				if (r == null) {
+					error("A body is expected", s, SosADLPackage.Literals.FOR_EACH_BEHAVIOR__REPEATED);
+				}
+				return null;
+			}
 		} else {
 			error("Statement `" + labelOf(s) + "' must be at tail position", s, null);
 			return null;
@@ -291,6 +336,8 @@ public abstract class TypeCheckerBehavior extends TypeCheckerCondition {
 			return "if";
 		} else if (s instanceof ChooseBehavior) {
 			return "choose";
+		} else if (s instanceof ForEachBehavior) {
+			return "foreach";
 		} else if (s instanceof DoExprBehavior) {
 			return "do";
 		} else if (s instanceof DoneBehavior) {

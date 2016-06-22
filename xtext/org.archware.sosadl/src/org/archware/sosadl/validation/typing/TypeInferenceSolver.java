@@ -211,7 +211,7 @@ public final class TypeInferenceSolver {
 	 *            constraint is attached, for error reports
 	 */
 	public void addConstraint(DataType sub, DataType sup, EObject originObject, EStructuralFeature originFeature) {
-		Constraint c = new Constraint(reprOrType(sub), reprOrType(sup), originObject, originFeature);
+		Constraint c = new Constraint(reprOrSubstitute(sub), reprOrSubstitute(sup), originObject, originFeature);
 		addConstraint(c);
 	}
 
@@ -233,6 +233,26 @@ public final class TypeInferenceSolver {
 	private void addConstraint(String n, DataType t) {
 		TypeVariable v = variables.get(n);
 		addConstraint(v, t, v.getConcernedObject(), v.eContainingFeature());
+	}
+
+	/**
+	 * Records a new constraint.
+	 * 
+	 * <p>
+	 * In the newly created constraint, the greatest type in the inequation is
+	 * the owned type variable identified by its name {@value n}. The constraint
+	 * is attached to the object and feature to which the type variable is
+	 * attached.
+	 * 
+	 * @param t
+	 *            biggest type in the inequation
+	 * @param n
+	 *            name of the type variable to be used as the greatest type in
+	 *            the inequation
+	 */
+	private void addConstraint(DataType t, String n) {
+		TypeVariable v = variables.get(n);
+		addConstraint(t, v, v.getConcernedObject(), v.eContainingFeature());
 	}
 
 	/**
@@ -266,11 +286,13 @@ public final class TypeInferenceSolver {
 	 *            to-be-added constraint
 	 */
 	private void addConstraint(Constraint c) {
-		if(c.originObject == null) {
+		log(typeToString(c.sub) + " <= " + typeToString(c.sup));
+		if (c.originObject == null) {
 			throw new NullPointerException();
 		}
-		if(c.originObject.eContainer() == null) {
-			throw new IllegalArgumentException("The given EObject (" + c.originObject.toString() + ") is not contained in any object");
+		if (c.originObject.eContainer() == null) {
+			throw new IllegalArgumentException(
+					"The given EObject (" + c.originObject.toString() + ") is not contained in any object");
 		}
 		if (c.sub != c.sup) {
 			if (isDetermined(c.sub)) {
@@ -331,6 +353,20 @@ public final class TypeInferenceSolver {
 	private DataType reprOrType(DataType t) {
 		if (t instanceof TypeVariable) {
 			return repr((TypeVariable) t);
+		} else {
+			return t;
+		}
+	}
+
+	private DataType reprOrSubstitute(DataType t) {
+		if (t instanceof TypeVariable) {
+			TypeVariable v = repr((TypeVariable) t);
+			DataType s = substitute(v);
+			if (s == null) {
+				return v;
+			} else {
+				return s;
+			}
 		} else {
 			return t;
 		}
@@ -597,16 +633,20 @@ public final class TypeInferenceSolver {
 	private static class VariableSpec {
 		public final String name;
 		public final Optional<Constraint> lowerBound;
+		public final boolean hasSmallerVariables;
 		public final TypeVariable variable;
 		public final Optional<Constraint> upperBound;
+		public final boolean hasGreaterVariables;
 
-		public VariableSpec(String name, Optional<Constraint> lowerBound, TypeVariable variable,
-				Optional<Constraint> upperBound) {
+		public VariableSpec(String name, Optional<Constraint> lowerBound, boolean hasSmallerVariables,
+				TypeVariable variable, Optional<Constraint> upperBound, boolean hasGreaterVariables) {
 			super();
 			this.name = name;
 			this.lowerBound = lowerBound;
+			this.hasSmallerVariables = hasSmallerVariables;
 			this.variable = variable;
 			this.upperBound = upperBound;
+			this.hasGreaterVariables = hasGreaterVariables;
 		}
 	}
 
@@ -692,7 +732,7 @@ public final class TypeInferenceSolver {
 						Map.Entry<String, Deque<Constraint>> e = clb.get();
 						Deque<Constraint> constraints = lowerBounds.remove(e.getKey());
 						Optional<DataType> union = union(e.getKey(), constraints);
-						union.ifPresent((i) -> addConstraint(e.getKey(), i));
+						union.ifPresent((i) -> addConstraint(i, e.getKey()));
 						if (!union.isPresent()) {
 							return;
 						} else {
@@ -708,41 +748,63 @@ public final class TypeInferenceSolver {
 								.map((e) -> new VariableSpec(e.getKey(),
 										getTheOneOf(
 												lowerBounds.getOrDefault(e.getKey(), new ConcurrentLinkedDeque<>())),
+										varVarConstraints.stream().anyMatch((c) -> contains(c.sup, repr(e.getValue()))),
 										e.getValue(),
 										getTheOneOf(
-												upperBounds.getOrDefault(e.getKey(), new ConcurrentLinkedDeque<>()))))
+												upperBounds.getOrDefault(e.getKey(), new ConcurrentLinkedDeque<>())),
+										varVarConstraints.stream()
+												.anyMatch((c) -> contains(c.sub, repr(e.getValue())))))
 								.collect(Collectors.toCollection(ConcurrentLinkedDeque::new));
-						Optional<VariableSpec> toSolve = v.stream()
-								.filter((x) -> x.lowerBound.isPresent() && x.upperBound.isPresent()).findAny();
+						// try first those variables that have a lower bound and
+						// an upper bound, but do not appear in any var-var
+						// constraint
+						Optional<VariableSpec> toSolve = v.stream().filter((x) -> x.lowerBound.isPresent()
+								&& x.upperBound.isPresent() && !x.hasSmallerVariables && !x.hasGreaterVariables)
+								.findAny();
 						if (!toSolve.isPresent()) {
-							toSolve = v.stream().filter((x) -> x.lowerBound.isPresent() || x.upperBound.isPresent())
-									.findAny();
+							// if no such variable exist, try to find one that
+							// has either a lower bound or an upper bound, but
+							// no variable as the same kind of bound
+							toSolve = v.stream().filter((x) -> (x.lowerBound.isPresent() && !x.hasSmallerVariables)
+									|| (x.upperBound.isPresent() && !x.hasGreaterVariables)).findAny();
 							if (!toSolve.isPresent()) {
-								toSolve = v.stream().findAny();
+								// yet another try, ignore the var-var
+								// constraints
+								toSolve = v.stream().filter((x) -> x.lowerBound.isPresent() || x.upperBound.isPresent())
+										.findAny();
 								if (!toSolve.isPresent()) {
-									if (isSolved()) {
-										return;
-									} else {
-										// if there is no eligible type
-										// variable,
-										// then don't know what to do...
-										// the situation is probably due to the
-										// fact
-										// that there is a dependency cycle
-										// between
-										// type variables
-										throw new IllegalArgumentException(
-												"there is probably a dependency cycle between type variables");
+									toSolve = v.stream().findAny();
+									if (!toSolve.isPresent()) {
+										if (isSolved()) {
+											return;
+										} else {
+											// if there is no eligible type
+											// variable,
+											// then don't know what to do...
+											// the situation is probably due to
+											// the
+											// fact
+											// that there is a dependency cycle
+											// between
+											// type variables
+											throw new IllegalArgumentException(
+													"there is probably a dependency cycle between type variables");
+										}
 									}
 								}
 							}
 						}
 						VariableSpec x = toSolve.get();
-						Optional<DataType> solution = getLLSolver(x.variable).apply(x.lowerBound.map((c) -> c.sub),
-								x.upperBound.map((c) -> c.sup));
+						Optional<DataType> lb = x.lowerBound.map((c) -> c.sub);
+						Optional<DataType> ub = x.upperBound.map((c) -> c.sup);
+						Optional<DataType> rlb = lb
+								.filter((t) -> (!x.hasSmallerVariables) || (!ub.isPresent()) || x.hasGreaterVariables);
+						Optional<DataType> rub = ub
+								.filter((t) -> (!x.hasGreaterVariables) || (!lb.isPresent()) || x.hasSmallerVariables);
+						Optional<DataType> solution = getLLSolver(x.variable).apply(rlb, rub);
 						if (solution.isPresent()) {
 							DataType t = solution.get();
-							if (contains(t, x.variable)) {
+							if (contains(t, repr(x.variable))) {
 								// the substitute is not allowed to contain the
 								// substituted variable
 								log.error(
@@ -758,6 +820,10 @@ public final class TypeInferenceSolver {
 								// correctness
 								// of the solution is checked at the next
 								// iteration
+								log(typeToString(x.variable) + " := " + typeToString(t) + "[" + typeToString(rlb)
+										+ " ... " + typeToString(rub) + "] [" + typeToString(lb) + " / "
+										+ x.hasSmallerVariables + " ... " + typeToString(ub) + " / "
+										+ x.hasGreaterVariables + "]");
 								doSubstitute(x.variable, t);
 								reSortConstraints();
 								continue;
@@ -861,11 +927,11 @@ public final class TypeInferenceSolver {
 	 * @return {@value true} if {@value r} contains {@value l}, {@value false}
 	 *         otherwise
 	 */
-	public static boolean contains(DataType r, TypeVariable l) {
+	public boolean contains(DataType r, TypeVariable l) {
 		if (l == r) {
 			return true;
 		} else if (r instanceof TypeVariable) {
-			return ((TypeVariable) r).getName().equals(l.getName());
+			return repr((TypeVariable) r).getName().equals(l.getName());
 		} else if (r instanceof BooleanType) {
 			return false;
 		} else if (r instanceof RangeType) {
@@ -875,7 +941,7 @@ public final class TypeInferenceSolver {
 		} else if (r instanceof SequenceType) {
 			return contains(((SequenceType) r).getType(), l);
 		} else if (r instanceof TupleType) {
-			return ((TupleType) r).getFields().stream().map(FieldDecl::getType).anyMatch((x) -> contains(r, l));
+			return ((TupleType) r).getFields().stream().map(FieldDecl::getType).anyMatch((x) -> contains(x, l));
 		} else {
 			throw new IllegalArgumentException("unknown type");
 		}
@@ -1300,6 +1366,10 @@ public final class TypeInferenceSolver {
 		}
 	}
 
+	private static String typeToString(Optional<DataType> t) {
+		return t.map(TypeInferenceSolver::typeToString).orElse("-");
+	}
+
 	/**
 	 * Copy of a type, unless it is a type variable.
 	 * 
@@ -1360,8 +1430,12 @@ public final class TypeInferenceSolver {
 	private EList<TypeVariable> getLLDependencies(TypeVariable dependent) {
 		return variables.get(dependent.getName()).getDependencies();
 	}
-	
+
 	public void addDependency(TypeVariable dependent, TypeVariable dependence) {
 		getLLDependencies(dependent).add(dependence);
+	}
+
+	private static void log(String msg) {
+		// System.out.println("TypeInferenceSolver: " + msg);
 	}
 }

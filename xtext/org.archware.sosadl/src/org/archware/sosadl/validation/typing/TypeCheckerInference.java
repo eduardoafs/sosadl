@@ -19,6 +19,7 @@ import org.archware.sosadl.validation.typing.impl.VariableEnvContent;
 import org.archware.sosadl.validation.typing.proof.ProofTerm;
 import org.archware.sosadl.validation.typing.proof.ProofTermPlaceHolder;
 import org.archware.sosadl.validation.typing.proof.Type_sosADL;
+import org.archware.utils.OptionalUtils;
 import org.archware.utils.Pair;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EStructuralFeature;
@@ -95,6 +96,10 @@ public abstract class TypeCheckerInference extends TypeCheckerUtils {
 
 	private static <A, B> boolean containsVariable(List<Pair<A, Pair<B, DataType>>> l) {
 		return l.stream().map(Pair::getB).map(Pair::getB).anyMatch(TypeCheckerInference::containsVariable);
+	}
+
+	protected static Optional<DataType> chooseBetweenOrElse(Optional<DataType> lb, Optional<DataType> ub, Optional<DataType> other) {
+		return OptionalUtils.orElse(lb, OptionalUtils.orElse(ub, other));
 	}
 
 	protected <T extends ProofTerm> T p(Class<T> itf, DataType t, Function<DataType, T> f) {

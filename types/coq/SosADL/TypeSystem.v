@@ -1555,16 +1555,22 @@ Inductive type_bodyprefix: env -> SosADL.SosADL.t_BehaviorStatement -> env -> Pr
     ,
       statement (SosADL.SosADL.ChooseBehavior branches) well typed in Gamma yields to Gamma
 
+| type_bodyprefix_ForEach:
+    forall (Gamma: env)
+      (x: string)
+      (vals: SosADL.SosADL.t_Expression)
+      (tau: SosADL.SosADL.t_DataType)
+      (tau__x: SosADL.SosADL.t_DataType)
+      (b: list SosADL.SosADL.t_BehaviorStatement)
+      (p1: expression vals has type (SosADL.SosADL.SequenceType (Some tau)) in Gamma)
+      (p2: nonfinal body b well typed in Gamma [| x <- EVariable tau__x |])
+      (p3: tau </ tau__x)
+    ,
+      statement (SosADL.SosADL.ForEachBehavior (Some x) (Some vals) (Some (SosADL.SosADL.Behavior b))) well typed in Gamma yields to Gamma
+
        (*
 
 
-| type_ForEach:
-    forall Gamma x tau vals b l,
-      (expression vals has type (SosADL.SosADL.SequenceType (Some tau)) in Gamma)
-      /\ (body b well typed in Gamma [| x <- EVariable tau |])
-      /\ (body l well typed in Gamma)
-      ->
-      body (SosADL.SosADL.ForEachBehavior (Some x) (Some vals) (Some (SosADL.SosADL.Behavior b)) :: l) well typed in Gamma
 
 | type_TellStatement:
     forall Gamma name e l,

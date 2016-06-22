@@ -553,6 +553,11 @@ public abstract class TypeCheckerProofConstructor extends TypeCheckerInference {
 		return new Type_bodyprefix_Choose(gamma, branches, p1);
 	}
 
+	protected Type_bodyprefix createType_bodyprefix_ForEach(Environment gamma, String x, Expression vals, DataType tau,
+			DataType tau__x, EList<BehaviorStatement> b, Type_expression p1, Type_nonfinalbody p2, Subtype p3) {
+		return new Type_bodyprefix_ForEach(gamma, x, vals, tau, tau__x, b, p1, p2, p3);
+	}
+
 	protected Condition_true createCondition_true_general(Environment gamma, Expression c) {
 		return new Condition_true_general(gamma, c);
 	}
