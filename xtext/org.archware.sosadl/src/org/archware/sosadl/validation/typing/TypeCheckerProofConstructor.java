@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.archware.sosadl.sosADL.ArchitectureDecl;
 import org.archware.sosadl.sosADL.AssertionDecl;
+import org.archware.sosadl.sosADL.Behavior;
 import org.archware.sosadl.sosADL.BehaviorDecl;
 import org.archware.sosadl.sosADL.BehaviorStatement;
 import org.archware.sosadl.sosADL.Connection;
@@ -536,6 +537,12 @@ public abstract class TypeCheckerProofConstructor extends TypeCheckerInference {
 		return new Type_bodyprefix_Valuing_typed(gamma, x, e, tau, tau__e, p1, p2);
 	}
 
+	protected Type_bodyprefix createType_bodyprefix_IfThenElse(Environment gamma, Expression c, Environment gammat,
+			EList<BehaviorStatement> t, Behavior oe, Type_expression p1, Condition_true p2, Type_nonfinalbody p3,
+			Optionally<Behavior, Ex<Environment, And<Condition_false, Type_nonfinalbody>>> p4) {
+		return new Type_bodyprefix_IfThenElse(gamma, c, gammat, t, oe, p1, p2, p3, p4);
+	}
+
 	protected Condition_true createCondition_true_general(Environment gamma, Expression c) {
 		return new Condition_true_general(gamma, c);
 	}
@@ -560,6 +567,13 @@ public abstract class TypeCheckerProofConstructor extends TypeCheckerInference {
 			Expression x_max_, Expression r, Expression r_min, Expression r_max, Environment gamma1, Type_expression p1,
 			Type_expression p2, Smallest p3, Check_datatype p4, Condition_true p5) {
 		return new Condition_true_le(gamma, x, x_min, x_max, x_max_, r, r_min, r_max, gamma1, p1, p2, p3, p4, p5);
+	}
+
+	protected Condition_true createCondition_true_eq(Environment gamma, String x, Expression x_min, Expression x_min_,
+			Expression x_max, Expression x_max_, Expression r, Expression r_min, Expression r_max, Environment gamma1,
+			Type_expression p1, Type_expression p2, Greatest p3, Smallest p4, Check_datatype p5, Condition_true p6) {
+		return new Condition_true_eq(gamma, x, x_min, x_min_, x_max, x_max_, r, r_min, r_max, gamma1, p1, p2, p3, p4,
+				p5, p6);
 	}
 
 	protected Condition_true createCondition_true_gt(Environment gamma, String x, Expression x_min, Expression x_min_,

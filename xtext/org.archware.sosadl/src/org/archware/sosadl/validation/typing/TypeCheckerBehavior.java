@@ -14,8 +14,11 @@ import org.archware.sosadl.sosADL.SosADLPackage;
 import org.archware.sosadl.sosADL.Valuing;
 import org.archware.sosadl.sosADL.ValuingBehavior;
 import org.archware.sosadl.validation.typing.impl.VariableEnvContent;
+import org.archware.sosadl.validation.typing.proof.And;
 import org.archware.sosadl.validation.typing.proof.Condition_false;
 import org.archware.sosadl.validation.typing.proof.Condition_true;
+import org.archware.sosadl.validation.typing.proof.Ex;
+import org.archware.sosadl.validation.typing.proof.Optionally;
 import org.archware.sosadl.validation.typing.proof.Type_behavior;
 import org.archware.sosadl.validation.typing.proof.Type_bodyprefix;
 import org.archware.sosadl.validation.typing.proof.Type_expression;
@@ -88,7 +91,7 @@ public abstract class TypeCheckerBehavior extends TypeCheckerCondition {
 						Type_expression p1 = pt.getA();
 						DataType dt = pt.getB();
 						if (p1 != null && dt != null) {
-							inference.addConstraint(dt, createBooleanType(), e);
+							inference.addConstraint(dt, createBooleanType(), c);
 							EList<BehaviorStatement> ts = t.getStatements();
 							Pair<Environment, Condition_true> gammat = condition_true(gamma, c, t);
 							Type_finalbody p3 = type_finalbody(gammat.getA(), ts, t, 0);
@@ -210,6 +213,49 @@ public abstract class TypeCheckerBehavior extends TypeCheckerCondition {
 				}
 				if (e == null) {
 					error("The variable must be assigned an expression", v, SosADLPackage.Literals.VALUING__EXPRESSION);
+				}
+				return null;
+			}
+		} else if (s instanceof IfThenElseBehavior) {
+			IfThenElseBehavior ite = (IfThenElseBehavior) s;
+			Expression c = ite.getCondition();
+			Behavior t = ite.getIfTrue();
+			Behavior oe = ite.getIfFalse();
+			if (c != null && t != null) {
+				Pair<Type_expression, DataType> pt = type_expression(gamma, c);
+				Type_expression p1 = pt.getA();
+				DataType dt = pt.getB();
+				if (p1 != null && dt != null) {
+					inference.addConstraint(dt, createBooleanType(), c);
+					EList<BehaviorStatement> ts = t.getStatements();
+					Pair<Environment, Condition_true> gammat = condition_true(gamma, c, t);
+					Type_nonfinalbody p3 = type_nonfinalbody(gammat.getA(), ts, t, 0);
+					Optionally<Behavior, Ex<Environment, And<Condition_false, Type_nonfinalbody>>> p4 = proveOptionally(
+							gamma, oe, (g, e) -> {
+								Pair<Environment, Condition_false> gammae = condition_false(g, c, e);
+								@SuppressWarnings("unchecked")
+								Ex<Environment, And<Condition_false, Type_nonfinalbody>> proof = p(Ex.class,
+										gammae.getA(), (gammae_) -> createEx_intro(gammae_, createConj(gammae.getB(),
+												type_nonfinalbody(gammae_, e.getStatements(), e, 0))));
+								return proof;
+							});
+					return new Pair<>(gamma,
+							saveProof(s,
+									p(Type_bodyprefix.class, gamma,
+											(gamma_) -> p(Type_bodyprefix.class, gammat.getA(),
+													(gammat_) -> createType_bodyprefix_IfThenElse(gamma_, c, gammat_,
+															ts, oe, p1, gammat.getB(), p3, p4)))));
+				} else {
+					return null;
+				}
+			} else {
+				if (c == null) {
+					error("The `if' statement must have a condition", s,
+							SosADLPackage.Literals.IF_THEN_ELSE_BEHAVIOR__CONDITION);
+				}
+				if (t == null) {
+					error("The `if' statement must have a `then' clause", s,
+							SosADLPackage.Literals.IF_THEN_ELSE_BEHAVIOR__IF_TRUE);
 				}
 				return null;
 			}

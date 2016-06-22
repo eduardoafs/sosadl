@@ -83,6 +83,10 @@ public abstract class TypeCheckerCondition extends TypeCheckerConnections {
 			return "<=";
 		case ">=":
 			return "<";
+		case "=":
+			return "<>";
+		case "<>":
+			return "=";
 		default:
 			return null;
 		}
@@ -271,6 +275,36 @@ public abstract class TypeCheckerCondition extends TypeCheckerConnections {
 			} else {
 				throw new IllegalArgumentException();
 			}
+		} else if ("=".equals(op)) {
+			Pair<Expression, Greatest> ep3 = greatest(x_min, r_min);
+			Expression x_min_ = ep3.getA();
+			Greatest p3 = ep3.getB();
+			Pair<Expression, Smallest> ep4 = smallest(x_max, r_max);
+			Expression x_max_ = ep4.getA();
+			Smallest p4 = ep4.getB();
+			if (x_min_ != null && x_max_ != null && p3 != null && p4 != null) {
+				if (isLe(x_min_, x_max_)) {
+					RangeType t = createRangeType(x_min_, x_max_);
+					Check_datatype p5 = check_datatype(t);
+					if (p5 != null) {
+						Pair<Environment, Condition_true> p6 = maybe_condition_true(rebindVariable(gamma, x, t),
+								symExpr, sym, branch);
+						return new Pair<>(p6.getA(),
+								p(Condition_true.class, gamma,
+										(gamma_) -> p(Condition_true.class, p6.getA(),
+												(gamma1_) -> createCondition_true_eq(gamma_, x, x_min, x_min_, x_max,
+														x_max_, r, r_min, r_max, gamma1_, p1, p2, p3, p4, p5,
+														p6.getB()))));
+					} else {
+						throw new IllegalArgumentException();
+					}
+				} else {
+					error("This branch is dead", branch, null);
+					return new Pair<>(gamma, null);
+				}
+			} else {
+				throw new IllegalArgumentException();
+			}
 		} else {
 			return new Pair<>(gamma,
 					p(Condition_true.class, gamma, (gamma_) -> createCondition_true_general(gamma_, c)));
@@ -322,6 +356,8 @@ public abstract class TypeCheckerCondition extends TypeCheckerConnections {
 			return "<";
 		case ">=":
 			return "<=";
+		case "=":
+			return "=";
 		default:
 			return null;
 		}

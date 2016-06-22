@@ -75,10 +75,17 @@ library testDone is {
       value c = sequence{}
       do a+4
       value toto is integer{0..5} = 4
+      if toto=0 then { value titi is integer{0..0} = toto }
+      if toto>1 then { value titi is integer{2..5} = toto } else { value tutu is integer{0..1} = toto }
       if toto < 3 and toto >= 1 then {
       	value titi is integer{1..2} = toto
       	if titi > 0 and titi <= 1 then {
-      		done
+      		if titi=1 then {
+      			value tata is integer{1..1} = titi
+      			done
+      		} else {
+      			done
+      		}
       	} else {
       		repeat { do 1+1 }
       	}

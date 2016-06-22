@@ -1152,6 +1152,8 @@ Definition negated_comparison op :=
   | "<=" => Some ">"
   | ">" => Some "<="
   | ">=" => Some "<"
+  | "=" => Some "<>"
+  | "<>" => Some "="
   | _ => None
   end.
 
@@ -1161,6 +1163,8 @@ Definition symmetric_comparison op :=
   | "<=" => Some ">="
   | ">" => Some "<"
   | ">=" => Some "<="
+  | "=" => Some "="
+  | "<>" => Some "<>"
   | _ => None
   end.
 
@@ -1225,6 +1229,26 @@ Inductive condition_true: env -> SosADL.SosADL.t_Expression -> env -> Prop :=
       (p5: condition_true (Gamma [| x <- EVariable (SosADL.SosADL.RangeType (Some x_min) (Some x_max_)) |]) (SosADL.SosADL.BinaryExpression (Some r) (Some ">=") (Some (SosADL.SosADL.IdentExpression (Some x)))) Gamma1)
     ,
       condition_true Gamma (SosADL.SosADL.BinaryExpression (Some (SosADL.SosADL.IdentExpression (Some x))) (Some "<=") (Some r)) Gamma1
+
+| condition_true_eq:
+    forall (Gamma: env)
+      (x: string)
+      (x_min: SosADL.SosADL.t_Expression)
+      (x_min_: SosADL.SosADL.t_Expression)
+      (x_max: SosADL.SosADL.t_Expression)
+      (x_max_: SosADL.SosADL.t_Expression)
+      (r: SosADL.SosADL.t_Expression)
+      (r_min: SosADL.SosADL.t_Expression)
+      (r_max: SosADL.SosADL.t_Expression)
+      (Gamma1: env)
+      (p1: expression (SosADL.SosADL.IdentExpression (Some x)) has type (SosADL.SosADL.RangeType (Some x_min) (Some x_max)) in Gamma)
+      (p2: expression r has type (SosADL.SosADL.RangeType (Some r_min) (Some r_max)) in Gamma)
+      (p3: greatest x_min_ x_min r_min)
+      (p4: smallest x_max_ x_max r_max)
+      (p5: type (SosADL.SosADL.RangeType (Some x_min_) (Some x_max_)) looks fine)
+      (p6: condition_true (Gamma [| x <- EVariable (SosADL.SosADL.RangeType (Some x_min_) (Some x_max_)) |]) (SosADL.SosADL.BinaryExpression (Some r) (Some "=") (Some (SosADL.SosADL.IdentExpression (Some x)))) Gamma1)
+    ,
+      condition_true Gamma (SosADL.SosADL.BinaryExpression (Some (SosADL.SosADL.IdentExpression (Some x))) (Some "=") (Some r)) Gamma1
 
 | condition_true_ge:
     forall (Gamma: env)
@@ -1473,20 +1497,28 @@ statement of a sequence. [IfThenElse] statement may or may not be the last state
     ,
       statement (SosADL.SosADL.ValuingBehavior (Some (SosADL.SosADL.Valuing (Some x) (Some tau) (Some e)))) well typed in Gamma yields to (Gamma [| x <- EVariable tau |])
 
-| type_bodyprefix_IfThen:
+| type_bodyprefix_IfThenElse:
     forall
       (Gamma: env)
       (c: SosADL.SosADL.t_Expression)
       (Gammat: env)
       (t: list SosADL.SosADL.t_BehaviorStatement)
+      (oe: option SosADL.SosADL.t_Behavior)
       (p1: expression c has type SosADL.SosADL.BooleanType in Gamma)
       (p2: condition_true Gamma c Gammat)
       (p3: nonfinal body t well typed in Gammat)
+      (p4: @optionally _
+                       (fun g e =>
+                          exists (Gammae: env),
+                            condition_false g c Gammae
+                            /\ (nonfinal body (SosADL.SosADL.Behavior_statements e) well typed in Gammae))
+                       Gamma oe)
     ,
-      statement (SosADL.SosADL.IfThenElseBehavior (Some c) (Some (SosADL.SosADL.Behavior t)) None)
+      statement (SosADL.SosADL.IfThenElseBehavior (Some c) (Some (SosADL.SosADL.Behavior t)) oe)
                 well typed in Gamma
                                 yields to Gamma
 
+                                (*
 | type_bodyprefix_IfThenElse:
     forall
       (Gamma: env)
@@ -1504,6 +1536,7 @@ statement of a sequence. [IfThenElse] statement may or may not be the last state
       statement (SosADL.SosADL.IfThenElseBehavior (Some c) (Some (SosADL.SosADL.Behavior t)) (Some (SosADL.SosADL.Behavior e)))
                 well typed in Gamma
                                 yields to Gamma
+*)
 
        (*
 
