@@ -1106,7 +1106,7 @@ and "'expression' 'node' e 'has' 'type' t 'in' Gamma" := (type_expression_node G
 .
 
 
-(** * Conditional statements *)
+(** ** Conditional statements *)
 
 Inductive smallest: SosADL.SosADL.t_Expression -> SosADL.SosADL.t_Expression -> SosADL.SosADL.t_Expression -> Prop :=
 | smallest_l:
@@ -1461,10 +1461,29 @@ and "'protocol' p 'well' 'typed' 'in' Gamma" := (type_protocol Gamma p)
 (** ** Body *)
 
 Inductive type_bodyprefix: env -> SosADL.SosADL.t_BehaviorStatement -> env -> Prop :=
-(** %\note{%The typing rules enforce that statements [RepeatBehavior],
-[ChooseBehavior], [RecursiveCall] and [Done] must be the last
-statement of a sequence. [IfThenElse] statement may or may not be the last statement of a sequence.
-%}% *)
+  
+(** The typing rules enforce tail statement requirements.
+ [RepeatBehavior], [RecursiveCall] and [DoneBehavior] are tail
+ statements, i.e., they cannot be followed by any subsequent
+ statement.
+
+[Valuing], [AssertBehavior], [Action], [ForEachBehavior] and
+[DoExprBehavior] are non-tail statements. They must mandatorily be
+followed by subsequent statement.
+
+ [IfThenElseBehavior] statements may or may not be the last statement
+ of a sequence. When an [IfThenElseBehavior] statement is at a tail
+ position, it must contain both [then] and [else] clauses, and the
+ branches must be terminated by a tail statement.
+
+ At non-tail position, the [else] clause is optional and the branches
+ must not contain any tail statement.  Futhermore, the typing rule
+ adjust the typing environment in each branch according to the
+ condition. See [condition_true] and [condition_false] for further
+ details.
+
+[ChooseBehavior] statements behave like [IfThenElseBehavior]
+statements.  *)
 
 | type_bodyprefix_DoExpr:
     forall
@@ -1517,26 +1536,6 @@ statement of a sequence. [IfThenElse] statement may or may not be the last state
       statement (SosADL.SosADL.IfThenElseBehavior (Some c) (Some (SosADL.SosADL.Behavior t)) oe)
                 well typed in Gamma
                                 yields to Gamma
-
-                                (*
-| type_bodyprefix_IfThenElse:
-    forall
-      (Gamma: env)
-      (c: SosADL.SosADL.t_Expression)
-      (Gammat: env)
-      (t: list SosADL.SosADL.t_BehaviorStatement)
-      (Gammae: env)
-      (e: list SosADL.SosADL.t_BehaviorStatement)
-      (p1: expression c has type SosADL.SosADL.BooleanType in Gamma)
-      (p2: condition_true Gamma c Gammat)
-      (p3: nonfinal body t well typed in Gammat)
-      (p4: condition_false Gamma c Gammae)
-      (p5: nonfinal body e well typed in Gammae)
-    ,
-      statement (SosADL.SosADL.IfThenElseBehavior (Some c) (Some (SosADL.SosADL.Behavior t)) (Some (SosADL.SosADL.Behavior e)))
-                well typed in Gamma
-                                yields to Gamma
-*)
 
        (*
 
