@@ -3,6 +3,7 @@ package org.archware.sosadl.validation.typing;
 import org.archware.sosadl.sosADL.Behavior;
 import org.archware.sosadl.sosADL.BehaviorDecl;
 import org.archware.sosadl.sosADL.BehaviorStatement;
+import org.archware.sosadl.sosADL.ChooseBehavior;
 import org.archware.sosadl.sosADL.DataType;
 import org.archware.sosadl.sosADL.DoExprBehavior;
 import org.archware.sosadl.sosADL.DoneBehavior;
@@ -18,6 +19,7 @@ import org.archware.sosadl.validation.typing.proof.And;
 import org.archware.sosadl.validation.typing.proof.Condition_false;
 import org.archware.sosadl.validation.typing.proof.Condition_true;
 import org.archware.sosadl.validation.typing.proof.Ex;
+import org.archware.sosadl.validation.typing.proof.Forall;
 import org.archware.sosadl.validation.typing.proof.Optionally;
 import org.archware.sosadl.validation.typing.proof.Type_behavior;
 import org.archware.sosadl.validation.typing.proof.Type_bodyprefix;
@@ -123,6 +125,13 @@ public abstract class TypeCheckerBehavior extends TypeCheckerCondition {
 						}
 						return null;
 					}
+				} else if (first instanceof ChooseBehavior) {
+					ChooseBehavior c = (ChooseBehavior) first;
+					EList<Behavior> branches = c.getBranches();
+					Forall<Behavior, Type_finalbody> p1 = proveForall(branches,
+							(x) -> type_finalbody(gamma, x.getStatements(), x, 0));
+					return saveProof(first, p(Type_finalbody.class, gamma,
+							(gamma_) -> createType_finalbody_Choose(gamma_, branches, p1)));
 				} else {
 					error("Statement `" + labelOf(first) + "' is not allowed at tail position", first, null);
 					return null;
@@ -259,6 +268,14 @@ public abstract class TypeCheckerBehavior extends TypeCheckerCondition {
 				}
 				return null;
 			}
+		} else if (s instanceof ChooseBehavior) {
+			ChooseBehavior c = (ChooseBehavior) s;
+			EList<Behavior> branches = c.getBranches();
+			Forall<Behavior, Type_nonfinalbody> p1 = proveForall(branches,
+					(x) -> type_nonfinalbody(gamma, x.getStatements(), x, 0));
+			return new Pair<>(gamma, saveProof(s,
+					p(Type_bodyprefix.class, gamma, (gamma_) -> createType_bodyprefix_Choose(gamma_, branches, p1))));
+
 		} else {
 			error("Statement `" + labelOf(s) + "' must be at tail position", s, null);
 			return null;
@@ -272,6 +289,8 @@ public abstract class TypeCheckerBehavior extends TypeCheckerCondition {
 			return "repeat";
 		} else if (s instanceof IfThenElseBehavior) {
 			return "if";
+		} else if (s instanceof ChooseBehavior) {
+			return "choose";
 		} else if (s instanceof DoExprBehavior) {
 			return "do";
 		} else if (s instanceof DoneBehavior) {

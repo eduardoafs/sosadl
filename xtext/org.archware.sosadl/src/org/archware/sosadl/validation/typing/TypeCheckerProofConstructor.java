@@ -500,6 +500,11 @@ public abstract class TypeCheckerProofConstructor extends TypeCheckerInference {
 		return new Type_finalbody_IfThenElse_general(gamma, c, gammat, t, gammae, e, p1, p2, p3, p4, p5);
 	}
 
+	protected Type_finalbody createType_finalbody_Choose(Environment gamma, EList<Behavior> branches,
+			Forall<Behavior, Type_finalbody> p1) {
+		return new Type_finalbody_Choose(gamma, branches, p1);
+	}
+
 	protected Type_finalbody createType_finalbody_Done(Environment gamma) {
 		return new Type_finalbody_Done(gamma);
 	}
@@ -541,6 +546,11 @@ public abstract class TypeCheckerProofConstructor extends TypeCheckerInference {
 			EList<BehaviorStatement> t, Behavior oe, Type_expression p1, Condition_true p2, Type_nonfinalbody p3,
 			Optionally<Behavior, Ex<Environment, And<Condition_false, Type_nonfinalbody>>> p4) {
 		return new Type_bodyprefix_IfThenElse(gamma, c, gammat, t, oe, p1, p2, p3, p4);
+	}
+
+	protected Type_bodyprefix createType_bodyprefix_Choose(Environment gamma, EList<Behavior> branches,
+			Forall<Behavior, Type_nonfinalbody> p1) {
+		return new Type_bodyprefix_Choose(gamma, branches, p1);
 	}
 
 	protected Condition_true createCondition_true_general(Environment gamma, Expression c) {

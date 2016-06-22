@@ -1460,30 +1460,40 @@ and "'protocol' p 'well' 'typed' 'in' Gamma" := (type_protocol Gamma p)
 
 (** ** Body *)
 
-Inductive type_bodyprefix: env -> SosADL.SosADL.t_BehaviorStatement -> env -> Prop :=
   
 (** The typing rules enforce tail statement requirements.
- [RepeatBehavior], [RecursiveCall] and [DoneBehavior] are tail
- statements, i.e., they cannot be followed by any subsequent
- statement.
 
-[Valuing], [AssertBehavior], [Action], [ForEachBehavior] and
-[DoExprBehavior] are non-tail statements. They must mandatorily be
-followed by subsequent statement.
+- [RepeatBehavior], [RecursiveCall] and [DoneBehavior] are tail
+  statements, i.e., they cannot be followed by any subsequent
+  statement.
 
- [IfThenElseBehavior] statements may or may not be the last statement
- of a sequence. When an [IfThenElseBehavior] statement is at a tail
- position, it must contain both [then] and [else] clauses, and the
- branches must be terminated by a tail statement.
+- [Valuing], [AssertBehavior], [Action], [ForEachBehavior] and
+  [DoExprBehavior] are non-tail statements. They must mandatorily be
+  followed by subsequent statement.
 
- At non-tail position, the [else] clause is optional and the branches
- must not contain any tail statement.  Futhermore, the typing rule
- adjust the typing environment in each branch according to the
- condition. See [condition_true] and [condition_false] for further
- details.
+- [IfThenElseBehavior] statements may or may not be the last statement
+  of a sequence. When an [IfThenElseBehavior] statement is at a tail
+  position, it must contain both [then] and [else] clauses, and the
+  branches must be terminated by a tail statement.
 
-[ChooseBehavior] statements behave like [IfThenElseBehavior]
-statements.  *)
+  At non-tail position, the [else] clause is optional and the branches
+  must not contain any tail statement.  Futhermore, the typing rule
+  adjust the typing environment in each branch according to the
+  condition. See [condition_true] and [condition_false] for further
+  details.
+
+- [ChooseBehavior] statements behave like [IfThenElseBehavior]
+  statements. Note that the rules for [ChooseBehavior] do not enforce any restriction on the branches, such as the usual requirement that each branch starts with a blocking communication statement.
+
+The typing rules for behavior bodies are structured as follow:
+
+- [type_bodyprefix] types a single non-tail statement and synthetizes
+  the new environment for subsequent statements.
+- [type_nonfinalbody] types a non-final body of statements, i.e., with no tail statement.
+- [type_finalbody] types a final body of statements, i.e., terminated by a tail statement.
+  *)
+
+Inductive type_bodyprefix: env -> SosADL.SosADL.t_BehaviorStatement -> env -> Prop :=
 
 | type_bodyprefix_DoExpr:
     forall
@@ -1537,22 +1547,16 @@ statements.  *)
                 well typed in Gamma
                                 yields to Gamma
 
+| type_bodyprefix_Choose:
+    forall (Gamma: env)
+      (branches: list SosADL.SosADL.t_Behavior)
+      (p1: for each b of branches,
+           nonfinal body (SosADL.SosADL.Behavior_statements b) well typed in Gamma)
+    ,
+      statement (SosADL.SosADL.ChooseBehavior branches) well typed in Gamma yields to Gamma
+
        (*
 
-| type_Choose:
-    forall Gamma branches,
-      (for each b of branches,
-       body (SosADL.SosADL.Behavior_statements b) well typed in Gamma)
-      ->
-      body (SosADL.SosADL.ChooseBehavior branches :: nil) well typed in Gamma
-
-| type_IfThen:
-    forall Gamma c t l,
-      (expression c has type SosADL.SosADL.BooleanType in Gamma)
-      /\ (body t well typed in Gamma)
-      /\ (body l well typed in Gamma)
-      ->
-      body (SosADL.SosADL.IfThenElseBehavior (Some c) (Some (SosADL.SosADL.Behavior t)) None :: l) well typed in Gamma
 
 | type_ForEach:
     forall Gamma x tau vals b l,
@@ -1700,6 +1704,14 @@ Inductive type_finalbody: env -> list SosADL.SosADL.t_BehaviorStatement -> Prop 
     ,
       final body (SosADL.SosADL.IfThenElseBehavior (Some c) (Some (SosADL.SosADL.Behavior t)) (Some (SosADL.SosADL.Behavior e)) :: nil)
            well typed in Gamma
+
+| type_finalbody_Choose:
+    forall (Gamma: env)
+      (branches: list SosADL.SosADL.t_Behavior)
+      (p1: for each b of branches,
+           final body (SosADL.SosADL.Behavior_statements b) well typed in Gamma)
+    ,
+      final body (SosADL.SosADL.ChooseBehavior branches :: nil) well typed in Gamma
 
 | type_finalbody_Done:
     forall
