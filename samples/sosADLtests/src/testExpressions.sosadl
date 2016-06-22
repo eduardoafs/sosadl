@@ -49,7 +49,7 @@ library testDone is {
     }
     
     gate gate1 is {
-      connection connection1 is in{type1}
+      connection connection1 is out{type1}
     } guarantee {
       protocol gate1protocol is {
         // empty protocol: will not generate any iosts process.
@@ -73,6 +73,8 @@ library testDone is {
       value a = 3
       value b is sequence {integer{0..0}} = sequence{0}
       value c = sequence{}
+      via gate1::connection1 send 1
+      via gate1::connection1 send a
       do a+4
       foreach x in sequence{1,2,3,4} { value y is integer{2..5} = x+1 }
       value v1 = tuple { a=1, b=3 }

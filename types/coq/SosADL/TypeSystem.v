@@ -50,6 +50,29 @@ Inductive env_content: Set :=
 Definition env := environment env_content.
 
 (**
+ * Communication helpers
+*)
+
+Definition connection_defined
+           (l: list SosADL.SosADL.t_Connection)
+           (is_env: bool)
+           (conn: string)
+           (mode: SosADL.SosADL.ModeType)
+           (tau: SosADL.SosADL.t_DataType)
+  := exists (i: Z), match List.nth_error l (Z.to_nat i) with
+               | Some c => c = SosADL.SosADL.Connection (Some is_env) (Some conn) (Some mode) (Some tau)
+               | None => False
+               end.
+
+Inductive mode_send: SosADL.SosADL.ModeType -> Prop :=
+| mode_send_out: mode_send SosADL.SosADL.ModeTypeOut
+| mode_send_inout: mode_send SosADL.SosADL.ModeTypeInout.
+
+Inductive mode_receive: SosADL.SosADL.ModeType -> Prop :=
+| mode_receive_in: mode_receive SosADL.SosADL.ModeTypeIn
+| mode_receive_inout: mode_receive SosADL.SosADL.ModeTypeInout.
+
+(**
  * Utilities
  *)
 
@@ -1568,6 +1591,26 @@ Inductive type_bodyprefix: env -> SosADL.SosADL.t_BehaviorStatement -> env -> Pr
     ,
       statement (SosADL.SosADL.ForEachBehavior (Some x) (Some vals) (Some (SosADL.SosADL.Behavior b))) well typed in Gamma yields to Gamma
 
+| type_bodyprefix_Send:
+    forall (Gamma: env)
+      (gd: string)
+      (endpoints: list SosADL.SosADL.t_Connection)
+      (is_env: bool)
+      (conn: string)
+      (mode: SosADL.SosADL.ModeType)
+      (conn__tau: SosADL.SosADL.t_DataType)
+      (e: SosADL.SosADL.t_Expression)
+      (tau__e: SosADL.SosADL.t_DataType)
+      (p1: contains Gamma gd (EGateOrDuty endpoints))
+      (p2: connection_defined endpoints is_env conn mode conn__tau)
+      (p3: mode_send mode)
+      (p4: expression e has type tau__e in Gamma)
+      (p5: tau__e </ conn__tau)
+    ,
+      statement (SosADL.SosADL.Action (Some (SosADL.SosADL.ComplexName (gd :: conn :: nil)))
+                                      (Some (SosADL.SosADL.SendAction (Some e))))
+           well typed in Gamma yields to Gamma
+
        (*
 
 
@@ -1623,17 +1666,6 @@ gate-or-duty, connection.%}% *)
                        (Some (SosADL.SosADL.ReceiveAction (Some x))) :: l)
            well typed in Gamma
 
-| type_SendStatement_Out:
-    forall Gamma gd E conn conn__tau e tau l,
-      (contains Gamma gd (EGateOrDuty E))
-      /\ (contains E conn (GDConnection SosADL.SosADL.ModeTypeOut conn__tau))
-      /\ (expression e has type tau in Gamma)
-      /\ (tau </ conn__tau)
-      /\ (body l well typed in Gamma)
-      ->
-      body (SosADL.SosADL.Action (Some (SosADL.SosADL.ComplexName (gd :: conn :: nil)))
-                       (Some (SosADL.SosADL.SendAction (Some e))) :: l)
-           well typed in Gamma
 
 | type_SendStatement_InOut:
     forall Gamma gd E conn conn__tau e tau l,

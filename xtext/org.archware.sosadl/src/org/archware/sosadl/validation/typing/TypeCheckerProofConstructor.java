@@ -558,6 +558,21 @@ public abstract class TypeCheckerProofConstructor extends TypeCheckerInference {
 		return new Type_bodyprefix_ForEach(gamma, x, vals, tau, tau__x, b, p1, p2, p3);
 	}
 
+	protected Type_bodyprefix createType_bodyprefix_Send(Environment gamma, String gd, EList<Connection> endpoints,
+			boolean is_env, String conn, ModeType mode, DataType conn__tau, Expression e, DataType tau__e, Equality p1,
+			Ex<BigInteger, Equality> p2, Mode_send p3, Type_expression p4, Subtype p5) {
+		return new Type_bodyprefix_Send(gamma, gd, endpoints, is_env, conn, mode, conn__tau, e, tau__e, p1, p2, p3, p4,
+				p5);
+	}
+
+	protected Mode_send createMode_send_out() {
+		return new Mode_send_out();
+	}
+
+	protected Mode_send createMode_send_inout() {
+		return new Mode_send_inout();
+	}
+
 	protected Condition_true createCondition_true_general(Environment gamma, Expression c) {
 		return new Condition_true_general(gamma, c);
 	}
