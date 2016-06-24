@@ -18,28 +18,41 @@ Require Import BinInt.
 \def\todo#1{{\color{red}TODO: #1}}
 \def\note#1{{\color{blue}NOTE: #1}}
 %
-*)
-
-(**
- * Environment
  *)
 
 (**
- ** Objects in [Gamma], the main environment
+
+The definition of the type system is structured in several
+pieces. First come the definition of the environment, which is a map
+from (bound) names to type information. Then come few helper
+definitions in order to ease dealing with connections, methods and
+tuple fields. The helper definitions provides the semantics for
+resolution. They are followed by a definition for subtyping. Next come
+a couple of generic meta-judgments and meta-rules that capture some
+specific patterns. A simple notion for constant expressions is then
+defined before the typing judgments.
+
+ *)
+
+(** * Environment
+
+An environment captures the type information for bound names. Its
+management implements scoping, visibility and masking.
 
 We choose to have a single environment for all the kinds of objects,
 hence to have a single namespace. The following type describes all the
 objects that can be stored in the typing environment. The main kinds of objects are:
 
-- [EType]: data type declaration
+- [EType]: data type declaration and its associated methods
+- [ESystem], [EMediator] and [EArchitecture]: declaration of an architectural entity
 - [EGateOrDuty]: list of connections for a gate or a duty
 - [EVariable]: value-storing variable
+- [EConnection] a single connection, within a gate or a duty
 
  *)
 
 Inductive env_content: Set :=
 | EType: SosADL.SosADL.t_DataTypeDecl -> SosADL.SosADL.t_DataType -> list SosADL.SosADL.t_FunctionDecl -> env_content
-| EFunction: SosADL.SosADL.t_FunctionDecl -> env_content
 | ESystem: SosADL.SosADL.t_SystemDecl -> env_content
 | EMediator: SosADL.SosADL.t_MediatorDecl -> env_content
 | EArchitecture: SosADL.SosADL.t_ArchitectureDecl -> env_content
@@ -50,7 +63,11 @@ Inductive env_content: Set :=
 Definition env := environment env_content.
 
 (**
- * Communication helpers
+ * Utilities
+ *)
+
+(**
+ ** Communication helpers
 *)
 
 Definition connection_defined
@@ -73,7 +90,7 @@ Inductive mode_receive: SosADL.SosADL.ModeType -> Prop :=
 | mode_receive_inout: mode_receive SosADL.SosADL.ModeTypeInout.
 
 (**
- * Utilities
+ ** Method helpers
  *)
 
 (** The following notations is a shortcut to look for a method in a
@@ -135,6 +152,10 @@ Notation "'method' m 'defined' 'in' d 'with' tau 'parameters' f 'returns' r" :=
   (method_defined m d tau f r)
     (at level 200, no associativity).
 
+(**
+ ** Field helpers
+ *)
+
 (** [field_has_type] is a predicate to look for a field in a list of
 field declarations. *)
 
@@ -151,12 +172,6 @@ Fixpoint field_type (l: list SosADL.SosADL.t_FieldDecl) (n: string) {struct l}: 
 
 (*Hypothesis names_of_expression: SosADL.SosADL.t_Expression -> list string.*)
 
-(**
-%
-\def\todo#1{{\color{red}TODO: #1}}
-\def\note#1{{\color{blue}NOTE: #1}}
-%
- *)
 
 (** * Subtyping relation *)
 
