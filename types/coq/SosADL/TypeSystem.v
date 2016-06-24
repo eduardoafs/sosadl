@@ -1591,6 +1591,10 @@ Inductive type_bodyprefix: env -> SosADL.SosADL.t_BehaviorStatement -> env -> Pr
     ,
       statement (SosADL.SosADL.ForEachBehavior (Some x) (Some vals) (Some (SosADL.SosADL.Behavior b))) well typed in Gamma yields to Gamma
 
+(** %\note{%[type_bodyprefix_Send] and [type_bodyprefix_Receive]
+assume that the complex name is a pair: gate-or-duty, connection.%}%
+*)
+
 | type_bodyprefix_Send:
     forall (Gamma: env)
       (gd: string)
@@ -1610,6 +1614,26 @@ Inductive type_bodyprefix: env -> SosADL.SosADL.t_BehaviorStatement -> env -> Pr
       statement (SosADL.SosADL.Action (Some (SosADL.SosADL.ComplexName (gd :: conn :: nil)))
                                       (Some (SosADL.SosADL.SendAction (Some e))))
            well typed in Gamma yields to Gamma
+
+| type_bodyprefix_Receive:
+    forall (Gamma: env)
+      (gd: string)
+      (endpoints: list SosADL.SosADL.t_Connection)
+      (is_env: bool)
+      (conn: string)
+      (mode: SosADL.SosADL.ModeType)
+      (conn__tau: SosADL.SosADL.t_DataType)
+      (x: string)
+      (Gamma1: env)
+      (p1: contains Gamma gd (EGateOrDuty endpoints))
+      (p2: connection_defined endpoints is_env conn mode conn__tau)
+      (p3: mode_receive mode)
+      (p4: Gamma1 = Gamma[| x <- EVariable conn__tau |])
+    ,
+      statement (SosADL.SosADL.Action (Some (SosADL.SosADL.ComplexName (gd :: conn :: nil)))
+                                      (Some (SosADL.SosADL.ReceiveAction (Some x))))
+                well typed in Gamma
+                                yields to Gamma1
 
        (*
 
@@ -1639,48 +1663,6 @@ are done in [ee] merged in [Gamma]. *)
       body (SosADL.SosADL.BehaviorStatement_AskAssertion (Some name) (Some e) :: l) well typed in Gamma
 *)
 
-(** %\note{%The [type_ReceiveStatement_In],
-[type_ReceiveStatement_InOut], [type_SendStatement_Out] and
-[type_SendStatement_InOut] assume that the complex name is a pair:
-gate-or-duty, connection.%}% *)
-
-       (*
-| type_ReceiveStatement_In:
-    forall Gamma gd E conn x conn__tau l,
-      (contains Gamma gd (EGateOrDuty E))
-      /\ (contains E conn (GDConnection SosADL.SosADL.ModeTypeIn conn__tau))
-      /\ (body l well typed in Gamma [| x <- EVariable conn__tau |])
-      ->
-      body (SosADL.SosADL.Action (Some (SosADL.SosADL.ComplexName (gd :: conn :: nil)))
-                       (Some (SosADL.SosADL.ReceiveAction (Some x))) :: l)
-           well typed in Gamma
-
-
-| type_ReceiveStatement_InOut:
-    forall Gamma gd E conn x conn__tau l,
-      (contains Gamma gd (EGateOrDuty E))
-      /\ (contains E conn (GDConnection SosADL.SosADL.ModeTypeInout conn__tau))
-      /\ (body l well typed in Gamma [| x <- EVariable conn__tau |])
-      ->
-      body (SosADL.SosADL.Action (Some (SosADL.SosADL.ComplexName (gd :: conn :: nil)))
-                       (Some (SosADL.SosADL.ReceiveAction (Some x))) :: l)
-           well typed in Gamma
-
-
-| type_SendStatement_InOut:
-    forall Gamma gd E conn conn__tau e tau l,
-      (contains Gamma gd (EGateOrDuty E))
-      /\ (contains E conn (GDConnection SosADL.SosADL.ModeTypeInout conn__tau))
-      /\ (expression e has type tau in Gamma)
-      /\ (tau </ conn__tau)
-      /\ (body l well typed in Gamma)
-      ->
-      body (SosADL.SosADL.Action (Some (SosADL.SosADL.ComplexName (gd :: conn :: nil)))
-                       (Some (SosADL.SosADL.SendAction (Some e))) :: l)
-           well typed in Gamma
-
-
-        *)
 
 with type_nonfinalbody: env -> list SosADL.SosADL.t_BehaviorStatement -> Prop :=
 

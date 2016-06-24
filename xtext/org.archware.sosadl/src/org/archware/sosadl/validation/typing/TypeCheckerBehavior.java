@@ -35,6 +35,7 @@ import org.archware.sosadl.validation.typing.proof.Condition_false;
 import org.archware.sosadl.validation.typing.proof.Condition_true;
 import org.archware.sosadl.validation.typing.proof.Ex;
 import org.archware.sosadl.validation.typing.proof.Forall;
+import org.archware.sosadl.validation.typing.proof.Mode_receive;
 import org.archware.sosadl.validation.typing.proof.Mode_send;
 import org.archware.sosadl.validation.typing.proof.Optionally;
 import org.archware.sosadl.validation.typing.proof.Type_behavior;
@@ -364,7 +365,9 @@ public abstract class TypeCheckerBehavior extends TypeCheckerCondition {
 										return type_bodyprefix_Send(gamma, s, cn, gd, conn, endpoints, rank, is_env,
 												mode, conn__tau, sa);
 									} else if (as instanceof ReceiveAction) {
-										throw new UnsupportedOperationException();
+										ReceiveAction ra = (ReceiveAction) as;
+										return type_bodyprefix_Receive(gamma, s, cn, gd, conn, endpoints, rank, is_env,
+												mode, conn__tau, ra);
 									} else {
 										error("Unknown action command", s, SosADLPackage.Literals.ACTION__SUITE);
 										return null;
@@ -408,6 +411,31 @@ public abstract class TypeCheckerBehavior extends TypeCheckerCondition {
 		}
 	}
 
+	private Pair<Environment, Type_bodyprefix> type_bodyprefix_Receive(Environment gamma, BehaviorStatement s,
+			ComplexName cn, String gd, String conn, EList<Connection> endpoints, BigInteger rank, boolean is_env,
+			ModeType mode, DataType conn__tau, ReceiveAction ra) {
+		String x = ra.getVariable();
+		if (x != null) {
+			Mode_receive p3 = proveReceiveMode(mode, conn, cn);
+			if (p3 != null) {
+				Environment gamma1 = gamma.put(x, new VariableEnvContent(ra, conn__tau));
+				Type_bodyprefix proof = p(Type_bodyprefix.class, gamma,
+						(gamma_) -> p(Type_bodyprefix.class, gamma1,
+								(gamma1_) -> p(Type_bodyprefix.class, conn__tau,
+										(conn__tau_) -> createType_bodyprefix_Receive(gamma_, gd, endpoints, is_env,
+												conn, mode, conn__tau_, x, gamma1_, createReflexivity(),
+												createEx_intro(rank, createReflexivity()), p3, createReflexivity()))));
+				return new Pair<>(gamma1, saveProof(s, proof));
+			} else {
+				return null;
+			}
+		} else {
+			error("A variable name is expected in the `receive' command", ra,
+					SosADLPackage.Literals.RECEIVE_ACTION__VARIABLE);
+			return null;
+		}
+	}
+
 	private Pair<Environment, Type_bodyprefix> type_bodyprefix_Send(Environment gamma, BehaviorStatement s,
 			ComplexName cn, String gd, String conn, EList<Connection> endpoints, BigInteger rank, boolean is_env,
 			ModeType mode, DataType conn__tau, SendAction sa) {
@@ -418,26 +446,22 @@ public abstract class TypeCheckerBehavior extends TypeCheckerCondition {
 			Type_expression p4 = pt.getA();
 			DataType tau__e = pt.getB();
 			if (p3 != null && p4 != null && tau__e != null) {
-				inference.addConstraint(tau__e, conn__tau, sa,
-						SosADLPackage.Literals.SEND_ACTION__EXPRESSION);
-				Type_bodyprefix proof = p(Type_bodyprefix.class, gamma, (gamma_) -> p(
-						Type_bodyprefix.class, conn__tau,
-						(conn__tau_) -> p(Type_bodyprefix.class, tau__e,
-								(tau__e_) -> createType_bodyprefix_Send(gamma_, gd,
-										endpoints, is_env, conn, mode, conn__tau_, e,
-										tau__e_, createReflexivity(),
-										createEx_intro(rank, createReflexivity()), p3,
-										p4,
-										subtype(tau__e_, conn__tau_, sa,
-												SosADLPackage.Literals.SEND_ACTION__EXPRESSION)
-														.orElse(null)))));
+				inference.addConstraint(tau__e, conn__tau, sa, SosADLPackage.Literals.SEND_ACTION__EXPRESSION);
+				Type_bodyprefix proof = p(Type_bodyprefix.class, gamma,
+						(gamma_) -> p(Type_bodyprefix.class, conn__tau,
+								(conn__tau_) -> p(Type_bodyprefix.class, tau__e,
+										(tau__e_) -> createType_bodyprefix_Send(gamma_, gd, endpoints, is_env, conn,
+												mode, conn__tau_, e, tau__e_, createReflexivity(),
+												createEx_intro(rank, createReflexivity()), p3, p4,
+												subtype(tau__e_, conn__tau_, sa,
+														SosADLPackage.Literals.SEND_ACTION__EXPRESSION)
+																.orElse(null)))));
 				return new Pair<>(gamma, saveProof(s, proof));
 			} else {
 				return null;
 			}
 		} else {
-			error("An expression is expected after `send'", sa,
-					SosADLPackage.Literals.SEND_ACTION__EXPRESSION);
+			error("An expression is expected after `send'", sa, SosADLPackage.Literals.SEND_ACTION__EXPRESSION);
 			return null;
 		}
 	}
@@ -452,6 +476,20 @@ public abstract class TypeCheckerBehavior extends TypeCheckerCondition {
 			error("Connection `" + conn + "' is a `in' connection that cannot be used by a `send' action", cn,
 					SosADLPackage.Literals.COMPLEX_NAME__NAME, 1);
 			return null;
+		}
+		throw new IllegalArgumentException();
+	}
+
+	private Mode_receive proveReceiveMode(ModeType mode, String conn, ComplexName cn) {
+		switch (mode) {
+		case MODE_TYPE_OUT:
+			error("Connection `" + conn + "' is a `out' connection that cannot be used by a `receive' action", cn,
+					SosADLPackage.Literals.COMPLEX_NAME__NAME, 1);
+			return null;
+		case MODE_TYPE_INOUT:
+			return createMode_receive_inout();
+		case MODE_TYPE_IN:
+			return createMode_receive_in();
 		}
 		throw new IllegalArgumentException();
 	}

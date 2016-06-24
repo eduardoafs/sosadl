@@ -74,7 +74,9 @@ library testDone is {
       value b is sequence {integer{0..0}} = sequence{0}
       value c = sequence{}
       via gate1::connection1 send 1
+      via gate2::connection1 receive message
       via gate1::connection1 send a
+      via gate1::connection1 send message
       do a+4
       foreach x in sequence{1,2,3,4} { value y is integer{2..5} = x+1 }
       value v1 = tuple { a=1, b=3 }
