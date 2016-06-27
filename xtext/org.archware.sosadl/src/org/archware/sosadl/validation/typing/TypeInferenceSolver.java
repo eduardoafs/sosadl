@@ -286,7 +286,7 @@ public final class TypeInferenceSolver {
 	 *            to-be-added constraint
 	 */
 	private void addConstraint(Constraint c) {
-		log(typeToString(c.sub) + " <= " + typeToString(c.sup));
+		debug(typeToString(c.sub) + " <= " + typeToString(c.sup));
 		if (c.originObject == null) {
 			throw new NullPointerException();
 		}
@@ -709,69 +709,94 @@ public final class TypeInferenceSolver {
 					return;
 				}
 			} else {
-				Optional<Map.Entry<String, Deque<Constraint>>> cub = upperBounds.entrySet().stream()
-						.filter((e) -> e.getValue().size() >= 2).findAny();
-				if (cub.isPresent()) {
-					// 2) merge the constraints when a single variable has
-					// several (at least two) upper bounds
-					Map.Entry<String, Deque<Constraint>> e = cub.get();
-					Deque<Constraint> constraints = upperBounds.remove(e.getKey());
-					Optional<DataType> inter = intersect(e.getKey(), constraints);
-					inter.ifPresent((i) -> addConstraint(e.getKey(), i));
-					if (!inter.isPresent()) {
-						return;
+				Optional<Pair<Constraint, Constraint>> p = varVarConstraints.stream()
+						.map((l) -> varVarConstraints.stream().filter((r) -> l != r).filter((r) -> l.sup == r.sub)
+								.filter((r) -> varVarConstraints.stream()
+										.noneMatch((c) -> c.sub == l.sub && c.sup == r.sup))
+								.findAny().map((r) -> new Pair<>(l, r)))
+						.filter(Optional::isPresent).findAny().flatMap((x) -> x);
+				if (p.isPresent()) {
+					// 2) find two var-var constraints x <= y /\ y <= z such
+					// that x <= z is not in the set of constraints yet
+					Pair<Constraint, Constraint> cc = p.get();
+					TypeVariable l = (TypeVariable) cc.getA().sub;
+					TypeVariable r = (TypeVariable) cc.getB().sup;
+					if (l == r) {
+						// 2.a) if x = z, then substitute x/z with y
+						debug(typeToString(l) + " := " + typeToString(r));
+						doSubstituteVars(l, (TypeVariable) cc.getA().sup);
+						reSortConstraints();
+						continue;
 					} else {
+						// 2.b) otherwise, add the new constraint x <= z
+						addConstraint(l, r, cc.getA().originObject, cc.getA().originFeature);
 						continue;
 					}
 				} else {
-					Optional<Map.Entry<String, Deque<Constraint>>> clb = lowerBounds.entrySet().stream()
+					Optional<Map.Entry<String, Deque<Constraint>>> cub = upperBounds.entrySet().stream()
 							.filter((e) -> e.getValue().size() >= 2).findAny();
-					if (clb.isPresent()) {
+					if (cub.isPresent()) {
 						// 3) merge the constraints when a single variable has
-						// several (at least two) lower bounds
-						Map.Entry<String, Deque<Constraint>> e = clb.get();
-						Deque<Constraint> constraints = lowerBounds.remove(e.getKey());
-						Optional<DataType> union = union(e.getKey(), constraints);
-						union.ifPresent((i) -> addConstraint(i, e.getKey()));
-						if (!union.isPresent()) {
+						// several (at least two) upper bounds
+						Map.Entry<String, Deque<Constraint>> e = cub.get();
+						Deque<Constraint> constraints = upperBounds.remove(e.getKey());
+						Optional<DataType> inter = intersect(e.getKey(), constraints);
+						inter.ifPresent((i) -> addConstraint(e.getKey(), i));
+						if (!inter.isPresent()) {
 							return;
 						} else {
 							continue;
 						}
 					} else {
-						// each type variable has at most one lower bound and
-						// one upper bound; find the variables whose
-						// dependencies are determined
-						Deque<VariableSpec> v = variables.entrySet().stream()
-								.filter((e) -> getLLSubstitute(e.getValue()) == null
-										&& getLLDependencies(e.getValue()).stream().allMatch(this::isDetermined))
-								.map((e) -> new VariableSpec(e.getKey(),
-										getTheOneOf(
-												lowerBounds.getOrDefault(e.getKey(), new ConcurrentLinkedDeque<>())),
-										varVarConstraints.stream().anyMatch((c) -> contains(c.sup, repr(e.getValue()))),
-										e.getValue(),
-										getTheOneOf(
-												upperBounds.getOrDefault(e.getKey(), new ConcurrentLinkedDeque<>())),
-										varVarConstraints.stream()
-												.anyMatch((c) -> contains(c.sub, repr(e.getValue())))))
-								.collect(Collectors.toCollection(ConcurrentLinkedDeque::new));
-						// try first those variables that have a lower bound and
-						// an upper bound, but do not appear in any var-var
-						// constraint
-						Optional<VariableSpec> toSolve = v.stream().filter((x) -> x.lowerBound.isPresent()
-								&& x.upperBound.isPresent() && !x.hasSmallerVariables && !x.hasGreaterVariables)
-								.findAny();
-						if (!toSolve.isPresent()) {
-							// if no such variable exist, try to find one that
-							// has either a lower bound or an upper bound, but
-							// no variable as the same kind of bound
-							toSolve = v.stream().filter((x) -> (x.lowerBound.isPresent() && !x.hasSmallerVariables)
-									|| (x.upperBound.isPresent() && !x.hasGreaterVariables)).findAny();
+						Optional<Map.Entry<String, Deque<Constraint>>> clb = lowerBounds.entrySet().stream()
+								.filter((e) -> e.getValue().size() >= 2).findAny();
+						if (clb.isPresent()) {
+							// 4) merge the constraints when a single variable
+							// has
+							// several (at least two) lower bounds
+							Map.Entry<String, Deque<Constraint>> e = clb.get();
+							Deque<Constraint> constraints = lowerBounds.remove(e.getKey());
+							Optional<DataType> union = union(e.getKey(), constraints);
+							union.ifPresent((i) -> addConstraint(i, e.getKey()));
+							if (!union.isPresent()) {
+								return;
+							} else {
+								continue;
+							}
+						} else {
+							// each type variable has at most one lower bound
+							// and
+							// one upper bound; find the variables whose
+							// dependencies are determined
+							Deque<VariableSpec> v = variables.entrySet().stream()
+									.filter((e) -> getLLSubstitute(e.getValue()) == null
+											&& getLLDependencies(e.getValue()).stream().allMatch(this::isDetermined))
+									.map((e) -> new VariableSpec(e.getKey(),
+											getTheOneOf(lowerBounds.getOrDefault(e.getKey(),
+													new ConcurrentLinkedDeque<>())),
+											varVarConstraints.stream()
+													.anyMatch((c) -> contains(c.sup, repr(e.getValue()))),
+											e.getValue(),
+											getTheOneOf(upperBounds.getOrDefault(e.getKey(),
+													new ConcurrentLinkedDeque<>())),
+											varVarConstraints.stream()
+													.anyMatch((c) -> contains(c.sub, repr(e.getValue())))))
+									.collect(Collectors.toCollection(ConcurrentLinkedDeque::new));
+							// try first those variables that have a lower bound
+							// and
+							// an upper bound, but do not appear in any var-var
+							// constraint
+							Optional<VariableSpec> toSolve = v.stream().filter((x) -> x.lowerBound.isPresent()
+									&& x.upperBound.isPresent() && !x.hasSmallerVariables && !x.hasGreaterVariables)
+									.findAny();
 							if (!toSolve.isPresent()) {
-								// yet another try, ignore the var-var
-								// constraints
-								toSolve = v.stream().filter((x) -> x.lowerBound.isPresent() || x.upperBound.isPresent())
-										.findAny();
+								// if no such variable exist, try to find one
+								// that
+								// has either a lower bound or an upper bound,
+								// but
+								// no variable as the same kind of bound
+								toSolve = v.stream().filter((x) -> (x.lowerBound.isPresent() && !x.hasSmallerVariables)
+										|| (x.upperBound.isPresent() && !x.hasGreaterVariables)).findAny();
 								if (!toSolve.isPresent()) {
 									toSolve = v.stream().findAny();
 									if (!toSolve.isPresent()) {
@@ -781,10 +806,12 @@ public final class TypeInferenceSolver {
 											// if there is no eligible type
 											// variable,
 											// then don't know what to do...
-											// the situation is probably due to
+											// the situation is probably due
+											// to
 											// the
 											// fact
-											// that there is a dependency cycle
+											// that there is a dependency
+											// cycle
 											// between
 											// type variables
 											throw new IllegalArgumentException(
@@ -793,54 +820,86 @@ public final class TypeInferenceSolver {
 									}
 								}
 							}
-						}
-						VariableSpec x = toSolve.get();
-						Optional<DataType> lb = x.lowerBound.map((c) -> c.sub);
-						Optional<DataType> ub = x.upperBound.map((c) -> c.sup);
-						Optional<DataType> rlb = lb
-								.filter((t) -> (!x.hasSmallerVariables) || (!ub.isPresent()) || x.hasGreaterVariables);
-						Optional<DataType> rub = ub
-								.filter((t) -> (!x.hasGreaterVariables) || (!lb.isPresent()) || x.hasSmallerVariables);
-						Optional<DataType> solution = getLLSolver(x.variable).apply(rlb, rub);
-						if (solution.isPresent()) {
-							DataType t = solution.get();
-							if (contains(t, repr(x.variable))) {
-								// the substitute is not allowed to contain the
-								// substituted variable
-								log.error(
-										x.name + ": cannot substitute " + typeToString(x.variable) + " with "
-												+ typeToString(t),
+							VariableSpec x = toSolve.get();
+							Optional<DataType> lb = x.lowerBound.map((c) -> c.sub);
+							Optional<DataType> ub = x.upperBound.map((c) -> c.sup);
+							Optional<DataType> rlb = lb.filter(
+									(t) -> (!x.hasSmallerVariables) || (!ub.isPresent()) || x.hasGreaterVariables);
+							Optional<DataType> rub = ub.filter(
+									(t) -> (!x.hasGreaterVariables) || (!lb.isPresent()) || x.hasSmallerVariables);
+							Optional<DataType> solution = getLLSolver(x.variable).apply(rlb, rub);
+							if (solution.isPresent()) {
+								DataType t = solution.get();
+								if (contains(t, repr(x.variable))) {
+									// the substitute is not allowed to contain
+									// the
+									// substituted variable
+									log.error(
+											x.name + ": cannot substitute " + typeToString(x.variable) + " with "
+													+ typeToString(t),
+											x.variable.getConcernedObject(),
+											x.variable.getConcernedStructuralFeature());
+									return;
+								} else {
+									// don't remove any of the
+									// taken-into-account
+									// constraints, since reSortConstraints will
+									// move these constraints (after
+									// substitution)
+									// to the determined set, such that the
+									// correctness
+									// of the solution is checked at the next
+									// iteration
+									debug(typeToString(x.variable) + " := " + typeToString(t) + "[" + typeToString(rlb)
+											+ " ... " + typeToString(rub) + "] [" + typeToString(lb) + " / "
+											+ x.hasSmallerVariables + " ... " + typeToString(ub) + " / "
+											+ x.hasGreaterVariables + "]");
+									doSubstitute(x.variable, t);
+									reSortConstraints();
+									continue;
+								}
+							} else {
+								// if the variable-specific solver does not
+								// return a
+								// inferred type, this is the indication that an
+								// error has occurred... nothing else can be
+								// done in
+								// such a case. just in case, issue an
+								// additional
+								// error message
+								log.error(x.variable.getName() + ": cannot infer the type",
 										x.variable.getConcernedObject(), x.variable.getConcernedStructuralFeature());
 								return;
-							} else {
-								// don't remove any of the taken-into-account
-								// constraints, since reSortConstraints will
-								// move these constraints (after substitution)
-								// to the determined set, such that the
-								// correctness
-								// of the solution is checked at the next
-								// iteration
-								log(typeToString(x.variable) + " := " + typeToString(t) + "[" + typeToString(rlb)
-										+ " ... " + typeToString(rub) + "] [" + typeToString(lb) + " / "
-										+ x.hasSmallerVariables + " ... " + typeToString(ub) + " / "
-										+ x.hasGreaterVariables + "]");
-								doSubstitute(x.variable, t);
-								reSortConstraints();
-								continue;
 							}
-						} else {
-							// if the variable-specific solver does not return a
-							// inferred type, this is the indication that an
-							// error has occurred... nothing else can be done in
-							// such a case. just in case, issue an additional
-							// error message
-							log.error(x.variable.getName() + ": cannot infer the type", x.variable.getConcernedObject(),
-									x.variable.getConcernedStructuralFeature());
-							return;
 						}
 					}
 				}
 			}
+		}
+	}
+
+	private void doSubstituteVars(TypeVariable a, TypeVariable b) {
+		TypeVariable ra = repr(a);
+		if (ra != a) {
+			throw new IllegalArgumentException();
+		} else if (getLLSubstitute(ra) != null) {
+			throw new IllegalArgumentException();
+		}
+		TypeVariable rb = repr(b);
+		if (rb != b) {
+			throw new IllegalArgumentException();
+		} else if (getLLSubstitute(rb) != null) {
+			throw new IllegalArgumentException();
+		}
+		String na = ra.getName();
+		String nb = rb.getName();
+		int cmp = na.compareTo(nb);
+		if (cmp < 0) {
+			setLLSubstitute(a, b);
+		} else if (cmp > 0) {
+			setLLSubstitute(b, a);
+		} else {
+			throw new IllegalArgumentException();
 		}
 	}
 
@@ -860,6 +919,9 @@ public final class TypeInferenceSolver {
 		if (getLLSubstitute(a) != null) {
 			throw new IllegalArgumentException("the type variable should not have been substituted already");
 		} else {
+			if (b instanceof TypeVariable) {
+				throw new IllegalArgumentException();
+			}
 			setLLSubstitute(a, reprOrType(b));
 		}
 	}
@@ -1435,7 +1497,7 @@ public final class TypeInferenceSolver {
 		getLLDependencies(dependent).add(dependence);
 	}
 
-	private static void log(String msg) {
+	private static void debug(String msg) {
 		// System.out.println("TypeInferenceSolver: " + msg);
 	}
 }

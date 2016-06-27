@@ -34,8 +34,7 @@ public abstract class TypeCheckerValuing extends TypeCheckerCondition {
 							(tau_) -> p(Type_valuing.class, tau__e, (tau__e_) -> {
 								Optional<Subtype> st = subtype(tau__e_, tau_, v,
 										SosADLPackage.Literals.VALUING__EXPRESSION);
-								return st.map((st_) -> createType_Valuing_typed(gamma_, x, tau_, e, tau__e_, p1, st_))
-										.orElse(null);
+								return createType_Valuing_typed(gamma_, x, tau_, e, tau__e_, p1, st.orElse(null));
 							})))), gamma.put(x, new VariableEnvContent(v, tau)));
 				} else {
 					return new Pair<>(
@@ -60,7 +59,8 @@ public abstract class TypeCheckerValuing extends TypeCheckerCondition {
 		}
 	}
 
-	protected Pair<Incrementally<Valuing, Type_valuing>, Environment> type_valuings(Environment gamma, EList<Valuing> l) {
+	protected Pair<Incrementally<Valuing, Type_valuing>, Environment> type_valuings(Environment gamma,
+			EList<Valuing> l) {
 		return proveIncrementally(gamma, l, this::type_valuing);
 	}
 
