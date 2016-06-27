@@ -14,6 +14,34 @@ Require Import ZArith.Zquot.
 Local Open Scope list_scope.
 Local Open Scope string_scope.
 
+
+Lemma incrementally_fold_left:
+  forall {T: Set} (P: env -> T -> env -> Prop) (name: T -> option string)
+         (content: T -> option env_content)
+         (p: forall g x g', P g x g' -> g' = augment_env g (name x) (content x))
+         (l: list T)
+         (Gamma: env) (Gamma': env)
+         (s: @incrementally T P Gamma l Gamma'),
+    Gamma' = fold_left (fun r x => augment_env r (name x) (content x)) l Gamma.
+Proof.
+  intros.
+  induction s.
+  - auto.
+  - apply p in p1. subst. auto.
+Qed.
+
+Lemma simple_incrementally_fold_left:
+  forall {T: Set} (P: env -> T -> Prop) (name: T -> option string)
+         (content: T -> option env_content)
+         (l: list T)
+         (Gamma: env) (Gamma': env)
+         (s: @incrementally T (simple_increment T P name content) Gamma l Gamma'),
+    Gamma' = fold_left (fun r x => augment_env r (name x) (content x)) l Gamma.
+Proof.
+  intros T P name content l Gamma Gamma'. apply incrementally_fold_left. intros g x g' H.
+  destruct H. auto.
+Qed.
+
 Lemma interpInZ_implies_constexpr: forall e f (H: interp_in_Z e = Interpreted f), expression e is constant integer.
 Proof.
   intros.
