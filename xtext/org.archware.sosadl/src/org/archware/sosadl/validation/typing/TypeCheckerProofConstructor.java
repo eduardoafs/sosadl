@@ -532,14 +532,8 @@ public abstract class TypeCheckerProofConstructor extends TypeCheckerInference {
 		return new Type_bodyprefix_DoExpr(gamma, e, tau, p1);
 	}
 
-	protected Type_bodyprefix createType_bodyprefix_Valuing_inferred(Environment gamma, String x, Expression e,
-			DataType tau__e, Type_expression p1) {
-		return new Type_bodyprefix_Valuing_inferred(gamma, x, e, tau__e, p1);
-	}
-
-	protected Type_bodyprefix createType_bodyprefix_Valuing_typed(Environment gamma, String x, Expression e,
-			DataType tau, DataType tau__e, Type_expression p1, Subtype p2) {
-		return new Type_bodyprefix_Valuing_typed(gamma, x, e, tau, tau__e, p1, p2);
+	protected Type_bodyprefix createType_bodyprefix_Valuing(Environment gamma, Valuing v, Environment gamma1, Type_valuing p1) {
+		return new Type_bodyprefix_Valuing(gamma, v, gamma1, p1);
 	}
 
 	protected Type_bodyprefix createType_bodyprefix_IfThenElse(Environment gamma, Expression c, Environment gammat,

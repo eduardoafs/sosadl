@@ -43,12 +43,13 @@ import org.archware.sosadl.validation.typing.proof.Type_bodyprefix;
 import org.archware.sosadl.validation.typing.proof.Type_expression;
 import org.archware.sosadl.validation.typing.proof.Type_finalbody;
 import org.archware.sosadl.validation.typing.proof.Type_nonfinalbody;
+import org.archware.sosadl.validation.typing.proof.Type_valuing;
 import org.archware.utils.IntPair;
 import org.archware.utils.Pair;
 import org.archware.utils.StreamUtils;
 import org.eclipse.emf.common.util.EList;
 
-public abstract class TypeCheckerBehavior extends TypeCheckerCondition {
+public abstract class TypeCheckerBehavior extends TypeCheckerValuing {
 
 	protected Type_behavior type_behavior(Environment gamma, BehaviorDecl b) {
 		if (b.getName() != null && b.getBody() != null) {
@@ -209,41 +210,14 @@ public abstract class TypeCheckerBehavior extends TypeCheckerCondition {
 			}
 		} else if (s instanceof ValuingBehavior) {
 			Valuing v = ((ValuingBehavior) s).getValuing();
-			String x = v.getName();
-			Expression e = v.getExpression();
-			if (x != null && e != null) {
-				Pair<Type_expression, DataType> pt = type_expression(gamma, e);
-				DataType tau__e = pt.getB();
-				if (pt.getA() != null && tau__e != null) {
-					DataType tau = v.getType();
-					if (tau == null) {
-						Environment gamma1 = gamma.put(x, new VariableEnvContent(s, tau__e));
-						Type_bodyprefix proof = p(Type_bodyprefix.class, gamma, (gamma_) -> p(Type_bodyprefix.class,
-								tau__e,
-								(tau__e_) -> createType_bodyprefix_Valuing_inferred(gamma_, x, e, tau__e_, pt.getA())));
-						return new Pair<>(gamma1, saveProof(s, proof));
-					} else {
-						Environment gamma1 = gamma.put(x, new VariableEnvContent(s, tau));
-						Type_bodyprefix proof = p(Type_bodyprefix.class, gamma,
-								(gamma_) -> p(Type_bodyprefix.class, tau__e,
-										(tau__e_) -> p(Type_bodyprefix.class, tau,
-												(tau_) -> createType_bodyprefix_Valuing_typed(gamma_, x, e, tau_,
-														tau__e_, pt.getA(),
-														subtype(tau__e_, tau_, v,
-																SosADLPackage.Literals.VALUING__EXPRESSION)
-																		.orElse(null)))));
-						return new Pair<>(gamma1, saveProof(s, proof));
-					}
-				} else {
-					return null;
-				}
+			Pair<Type_valuing, Environment> pe = type_valuing(gamma, v);
+			Environment gamma1 = pe.getB();
+			Type_valuing p1 = pe.getA();
+			if (pe != null && p1 != null && gamma1 != null) {
+				Type_bodyprefix proof = p(Type_bodyprefix.class, gamma, (gamma_) -> p(Type_bodyprefix.class, gamma1,
+						(gamma1_) -> createType_bodyprefix_Valuing(gamma_, v, gamma1_, p1)));
+				return new Pair<>(gamma1, saveProof(s, proof));
 			} else {
-				if (x == null) {
-					error("The variable must have a name", v, SosADLPackage.Literals.VALUING__NAME);
-				}
-				if (e == null) {
-					error("The variable must be assigned an expression", v, SosADLPackage.Literals.VALUING__EXPRESSION);
-				}
 				return null;
 			}
 		} else if (s instanceof IfThenElseBehavior) {

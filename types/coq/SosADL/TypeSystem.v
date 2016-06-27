@@ -1304,6 +1304,45 @@ where "'expression' e 'has' 'type' t 'in' Gamma" := (type_expression Gamma e t)
 and "'expression' 'node' e 'has' 'type' t 'in' Gamma" := (type_expression_node Gamma e t)
 .
 
+(** ** Valuings *)
+
+(** In a list, the valuings are handled one after the other, using
+[incrementally].
+
+When the type of a valuing is missing, the computed type of the
+expression is used instead.  *)
+
+Inductive type_valuing: env -> SosADL.SosADL.t_Valuing -> env -> Prop :=
+
+| type_Valuing_typed:
+    forall (Gamma: env)
+      (x: string)
+      (tau: SosADL.SosADL.t_DataType)
+      (e: SosADL.SosADL.t_Expression)
+      (tau__e: SosADL.SosADL.t_DataType)
+      (p1: expression e has type tau__e in Gamma)
+      (p2: tau__e </ tau)
+    ,
+      valuing (valuing x is tau = e)%sosadl
+              well typed in Gamma
+                              yields to (Gamma [| x <- EVariable tau |])
+
+| type_Valuing_inferred:
+    forall (Gamma: env)
+      (x: string)
+      (e: SosADL.SosADL.t_Expression)
+      (tau__e: SosADL.SosADL.t_DataType)
+      (p1: expression e has type tau__e in Gamma)
+    ,
+      valuing (valuing x = e)%sosadl
+              well typed in Gamma
+                              yields to (Gamma [| x <- EVariable tau__e |])
+
+where "'valuing' v 'well' 'typed' 'in' Gamma 'yields' 'to' Gamma1"
+        := (type_valuing Gamma v Gamma1)
+.
+
+Definition type_valuings Gamma l Gamma1 := @incrementally _ type_valuing Gamma l Gamma1.
 
 (** ** Conditional statements *)
 
@@ -1765,33 +1804,15 @@ Inductive type_bodyprefix:
     ,
       statement (SosADL.SosADL.DoExprBehavior (Some e)) well typed in Gamma yields to Gamma
 
-(** %\todo{%[type_bodyprefix_Valuing_inferred] and [type_Valuing_inferred] have to be deduplicated.%}% *)
-
-| type_bodyprefix_Valuing_inferred:
+| type_bodyprefix_Valuing:
     forall
       (Gamma: env)
-      (x: string)
-      (e: SosADL.SosADL.t_Expression)
-      (tau__e: SosADL.SosADL.t_DataType)
-      (p1: expression e has type tau__e in Gamma)
+      (v: SosADL.SosADL.t_Valuing)
+      (Gamma1: env)
+      (p1: valuing v well typed in Gamma yields to Gamma1)
     ,
-      statement (SosADL.SosADL.ValuingBehavior (Some (valuing x = e)%sosadl))
-                well typed in Gamma yields to (Gamma [| x <- EVariable tau__e |])
-
-(** %\todo{%[type_bodyprefix_Valuing_typed] and [type_Valuing_typed] have to be deduplicated.%}% *)
-
-| type_bodyprefix_Valuing_typed:
-    forall
-      (Gamma: env)
-      (x: string)
-      (e: SosADL.SosADL.t_Expression)
-      (tau: SosADL.SosADL.t_DataType)
-      (tau__e: SosADL.SosADL.t_DataType)
-      (p1: expression e has type tau__e in Gamma)
-      (p2: tau__e </ tau)
-    ,
-      statement (SosADL.SosADL.ValuingBehavior (Some (valuing x is tau = e)%sosadl))
-                well typed in Gamma yields to (Gamma [| x <- EVariable tau |])
+      statement (SosADL.SosADL.ValuingBehavior (Some v))
+                well typed in Gamma yields to Gamma1
 
 | type_bodyprefix_IfThenElse:
     forall
@@ -2151,46 +2172,6 @@ Inductive type_duty: env -> SosADL.SosADL.t_DutyDecl -> Prop :=
 where "'duty' d 'well' 'typed' 'in' Gamma" := (type_duty Gamma d)
 .
 *)
-
-(** ** Valuings *)
-
-(** In a list, the valuings are handled one after the other, using
-[incrementally].
-
-When the type of a valuing is missing, the computed type of the
-expression is used instead.  *)
-
-Inductive type_valuing: env -> SosADL.SosADL.t_Valuing -> env -> Prop :=
-
-| type_Valuing_typed:
-    forall (Gamma: env)
-      (x: string)
-      (tau: SosADL.SosADL.t_DataType)
-      (e: SosADL.SosADL.t_Expression)
-      (tau__e: SosADL.SosADL.t_DataType)
-      (p1: expression e has type tau__e in Gamma)
-      (p2: tau__e </ tau)
-    ,
-      valuing (valuing x is tau = e)%sosadl
-              well typed in Gamma
-                              yields to (Gamma [| x <- EVariable tau |])
-
-| type_Valuing_inferred:
-    forall (Gamma: env)
-      (x: string)
-      (e: SosADL.SosADL.t_Expression)
-      (tau__e: SosADL.SosADL.t_DataType)
-      (p1: expression e has type tau__e in Gamma)
-    ,
-      valuing (valuing x = e)%sosadl
-              well typed in Gamma
-                              yields to (Gamma [| x <- EVariable tau__e |])
-
-where "'valuing' v 'well' 'typed' 'in' Gamma 'yields' 'to' Gamma1"
-        := (type_valuing Gamma v Gamma1)
-.
-
-Definition type_valuings Gamma l Gamma1 := @incrementally _ type_valuing Gamma l Gamma1.
 
 (** ** Function declaration *)
 
