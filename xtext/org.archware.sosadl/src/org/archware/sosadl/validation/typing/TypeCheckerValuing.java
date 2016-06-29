@@ -9,6 +9,7 @@ import org.archware.sosadl.sosADL.Valuing;
 import org.archware.sosadl.validation.typing.impl.VariableEnvContent;
 import org.archware.sosadl.validation.typing.proof.Incrementally;
 import org.archware.sosadl.validation.typing.proof.Subtype;
+import org.archware.sosadl.validation.typing.proof.Type_datatype;
 import org.archware.sosadl.validation.typing.proof.Type_expression;
 import org.archware.sosadl.validation.typing.proof.Type_valuing;
 import org.archware.utils.Pair;
@@ -30,12 +31,23 @@ public abstract class TypeCheckerValuing extends TypeCheckerCondition {
 			if (p1 != null && tau__e != null) {
 				DataType tau = v.getType();
 				if (tau != null) {
-					return new Pair<>(saveProof(v, p(Type_valuing.class, gamma, (gamma_) -> p(Type_valuing.class, tau,
-							(tau_) -> p(Type_valuing.class, tau__e, (tau__e_) -> {
-								Optional<Subtype> st = subtype(tau__e_, tau_, v,
-										SosADLPackage.Literals.VALUING__EXPRESSION);
-								return createType_Valuing_typed(gamma_, x, tau_, e, tau__e_, p1, st.orElse(null));
-							})))), gamma.put(x, new VariableEnvContent(v, tau)));
+					Pair<DataType, Type_datatype> pt = type_datatype(gamma, tau);
+					DataType tau1 = pt.getA();
+					Type_datatype p3 = pt.getB();
+					if (tau1 != null && p3 != null) {
+						return new Pair<>(saveProof(v,
+								p(Type_valuing.class, gamma,
+										(gamma_) -> p(Type_valuing.class, tau, (tau_) -> p(Type_valuing.class, tau1,
+												(tau1_) -> p(Type_valuing.class, tau__e, (tau__e_) -> {
+													Optional<Subtype> st = subtype(tau__e_, tau1_, v,
+															SosADLPackage.Literals.VALUING__EXPRESSION);
+													return createType_Valuing_typed(gamma_, x, tau_, tau1_, e, tau__e_,
+															p1, st.orElse(null), p3);
+												}))))),
+								gamma.put(x, new VariableEnvContent(v, tau1)));
+					} else {
+						return new Pair<>(null, gamma);
+					}
 				} else {
 					return new Pair<>(
 							saveProof(v,

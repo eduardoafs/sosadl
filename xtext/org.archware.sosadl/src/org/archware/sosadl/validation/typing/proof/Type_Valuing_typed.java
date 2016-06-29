@@ -15,6 +15,9 @@ public class Type_Valuing_typed implements Type_valuing {
 	private final DataType tau;
 
 	@Mandatory
+	private final DataType tau1;
+
+	@Mandatory
 	private final Expression e;
 
 	@Mandatory
@@ -26,16 +29,21 @@ public class Type_Valuing_typed implements Type_valuing {
 	@Mandatory
 	private final Subtype p2;
 
-	public Type_Valuing_typed(Environment gamma, String x, DataType tau, Expression e, DataType tau__e,
-			Type_expression p1, Subtype p2) {
+	@Mandatory
+	private final Type_datatype p3;
+
+	public Type_Valuing_typed(Environment gamma, String x, DataType tau, DataType tau1, Expression e, DataType tau__e,
+			Type_expression p1, Subtype p2, Type_datatype p3) {
 		super();
 		this.gamma = gamma;
 		this.x = x;
 		this.tau = tau;
+		this.tau1 = tau1;
 		this.e = e;
 		this.tau__e = tau__e;
 		this.p1 = p1;
 		this.p2 = p2;
+		this.p3 = p3;
 	}
 
 	public Environment getGamma() {
@@ -48,6 +56,10 @@ public class Type_Valuing_typed implements Type_valuing {
 
 	public DataType getTau() {
 		return tau;
+	}
+
+	public DataType getTau1() {
+		return tau1;
 	}
 
 	public Expression getE() {
@@ -64,6 +76,10 @@ public class Type_Valuing_typed implements Type_valuing {
 
 	public Subtype getP2() {
 		return p2;
+	}
+
+	public Type_datatype getP3() {
+		return p3;
 	}
 
 }

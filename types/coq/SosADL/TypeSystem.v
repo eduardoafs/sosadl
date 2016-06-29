@@ -1318,14 +1318,16 @@ Inductive type_valuing: env -> SosADL.SosADL.t_Valuing -> env -> Prop :=
     forall (Gamma: env)
       (x: string)
       (tau: SosADL.SosADL.t_DataType)
+      (tau1: SosADL.SosADL.t_DataType)
       (e: SosADL.SosADL.t_Expression)
       (tau__e: SosADL.SosADL.t_DataType)
       (p1: expression e has type tau__e in Gamma)
-      (p2: tau__e </ tau)
+      (p2: tau__e </ tau1)
+      (p3: type tau is tau1 in Gamma)
     ,
       valuing (valuing x is tau = e)%sosadl
               well typed in Gamma
-                              yields to (Gamma [| x <- EVariable tau |])
+                              yields to (Gamma [| x <- EVariable tau1 |])
 
 | type_Valuing_inferred:
     forall (Gamma: env)
@@ -1767,7 +1769,7 @@ and "'protocol' p 'well' 'typed' 'in' Gamma" := (type_protocol Gamma p)
   branches must be terminated by a tail statement.
 
   At non-tail position, the [else] clause is optional and the branches
-  must not contain any tail statement.  Futhermore, the typing rule
+  must not contain any tail statement. Futhermore, the typing rule
   adjusts the typing environment in each branch according to the
   condition. See [condition_true] and [condition_false] for further
   details.
