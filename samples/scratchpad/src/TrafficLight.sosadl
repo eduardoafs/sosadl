@@ -1,0 +1,100 @@
+// Jean's traffic light example, extended
+
+sos TrafficLight is {
+	
+	/** Light color encoding:
+	 *     red: 0
+	 *  orange: 1
+	 *   green: 2
+	 */
+	
+	system Car() is {
+		gate unusedGate is {
+			connection unusedConnection is in{integer{0..0}}
+		} guarantee { protocol allowAll is { repeat{anyaction}}}
+		behavior behav is {
+			ask canPass is {
+				exists { i in x suchthat carlight::get(i) = 2 }
+			}
+			//pass
+			done
+		}
+	}
+	
+	system Pedestrian() is {
+		gate button is {
+			connection push is out{integer{0..0}}
+		} guarantee { protocol allowAll is { repeat{anyaction}}}
+		behavior behav is {
+			via button::push send 0
+			ask canPass is {
+				exists { i in x suchthat pedLight::get(i) = 2 }
+			}
+			//pass
+			done
+		}
+	}
+	
+	system TrafficLight() is {
+		gate button is {
+			connection push is in{integer{0..0}}
+		} guarantee { protocol allowAll is { repeat{anyaction}}}
+		behavior behav is {
+			value self = 1
+			tell invariant is {
+				forall { i in x suchthat // TODO what is the domain of i?
+					not (carLight::get(i) = 2 and pedLight::get(i) = 2)
+				}
+			}
+			tell green is { carLight::get(1) = 2 and pedLight::get(1) = 0}
+			repeat {
+				via button::push receive signal
+				// NOTE (to_orange -> green) /\ (to_orange -> orange)
+				tell to_orange is {
+					(carLight::get(1) = 2 or carLight::get(1) = 1)
+					and pedLight::get(1) = 0
+				}
+				// TODO unsaid { green }
+				// NOTE orange asserts that the reconfiguration is completed
+				tell orange is { carLight::get(1) = 1 and pedLight::get(1) = 0}
+				// TODO unsaid { to_orange }
+				
+				// should wait here
+				
+				tell to_red is {
+					(carLight::get(1) = 1 and pedLight::get(1) = 0)
+					or (carLight::get(1) = 0 and pedLight::get(1) = 2)
+				}
+				// TODO unsaid { orange }
+				tell red is { carLight = 0 and pedLight = 2}
+				// TODO unsaid { to_red }
+				
+				// should wait here
+				
+				tell to_green is {
+					(carLight::get(1) = 0 and pedLight::get(1) = 2)
+					or (carLight::get(1) = 2 and pedLight::get(1) = 0)
+				}
+				// TODO unsaid { red }
+				tell green is { carLight::get(1) = 2 and pedLight::get(1) = 0}
+				// TODO unsaid { to_green }
+			}
+		}
+	}
+	
+	architecture Crossing() is {
+		gate unusedGate is {
+			connection unusedConnection is in{integer}
+		} guarantee { protocol allowAll is { repeat{anyaction}}}
+		behavior streetcrossing is compose {
+				light is TrafficLight()
+			    pedestrians is sequence { Pedestrian }
+			    cars is sequence { Car }
+		} binding {
+			forall { p in pedestrians  suchthat
+				           unify one {p::button::push}
+				              to one {light::button::push}
+		           }
+		}
+	}
+}

@@ -113,8 +113,7 @@ library simple is {
 				choose {
 					via read::c send v
 				} or {
-					// TODO must be behavior()
-					via write::c receive v2
+					behavior()
 				}
 			}
 		}
