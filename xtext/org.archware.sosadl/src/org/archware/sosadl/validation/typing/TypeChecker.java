@@ -2,7 +2,6 @@ package org.archware.sosadl.validation.typing;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Consumer;
 
 import org.archware.sosadl.sosADL.ArchitectureDecl;
 import org.archware.sosadl.sosADL.AssertionDecl;
@@ -52,25 +51,26 @@ import org.archware.sosadl.validation.typing.proof.Type_valuing;
 import org.archware.utils.Pair;
 import org.eclipse.emf.common.util.ECollections;
 import org.eclipse.emf.common.util.EList;
-import org.eclipse.emf.ecore.EObject;
-import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 
 /**
  * Implementation of the type system.
  * 
  * <p>
- * Like stated by the name of the class, a type checker for SoSADL. The entry
- * point of the type checker is the unique public method
- * {@link #typecheck(SosADL)}. This implementation also builds a proof term that
- * can be later checked against against the type system, e.g., using some proof
- * assistant like Coq.
+ * Like stated by the name of the class, it implements a type checker for
+ * SoSADL. In order to reduce the length of the class, it is split in several
+ * classes, which use inheritance as an hard-coded scheme for mixin
+ * linearization. The entry point of the type checker is the unique (inherited)
+ * public method {@link TypeCheckerInference#typecheck(SosADL)}. In addition to
+ * type checking, this implementation also builds a proof term that can be later
+ * checked against against the type system, e.g., using some proof assistant
+ * like Coq.
  * 
  * <p>
  * The type checker is implemented following the structure of the type system.
  * Namely, each type judgment is implemented by a method that attempts to prove
  * that judgment. This method selects the appropriate typing rule, and
- * (recursively) call the other methods to prove the premises of the rule. The
+ * (recursively) calls the other methods to prove the premises of the rule. The
  * parameters of such a method are the input used to drive the selection of the
  * right typing rule. In most of the cases, the parameters are the (abstract
  * syntax) subtree to type check as well as the local typing environment. Each
@@ -80,16 +80,15 @@ import org.eclipse.emf.ecore.util.EcoreUtil;
  * <p>
  * Specific cases occurs:
  * <ul>
- * <li>For some judgments, several prover may coexist depending on the context.
- * This is typically the case of the <code>subtype</code> judgment. See, e.g.,
- * {@link #smallestSuperType(Class, String, DataType, DataType, EObject, EStructuralFeature)}
- * and {@link #subtype(DataType, DataType, Consumer)}.</li>
+ * <li>For some judgments, several provers may coexist depending on the context.
  * <li>For some judgments, the method computes synthesized attributes, which are
  * thus returned in addition to the proof term. These methods typically return
  * {@link Pair} objects. This is typically the case of the
  * <code>type_expression</code> and <code>type_expression_node> judgments. See,
- * e.g., {@link #type_expression(Environment, Expression)} or
- * {@link #type_expression_node(Environment, Expression)}.</li>
+ * e.g., {@link TypeCheckerExpression#type_expression(Environment, Expression)}
+ * or
+ * {@link TypeCheckerExpression#type_expression_node(Environment, Expression)}.
+ * </li>
  * </ul>
  * 
  * <p>

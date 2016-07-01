@@ -45,6 +45,7 @@ public abstract class TypeCheckerInference extends TypeCheckerUtils {
 			long t1 = System.nanoTime();
 			System.out.println("typecheck " + file.eResource().getURI().trimFileExtension().lastSegment() + " "
 					+ (t1 - t0) + "ns");
+			saveInference(file, inference);
 		} catch (Throwable t) {
 			t.printStackTrace();
 			error("Bug in the type checker", file, null);
@@ -98,7 +99,8 @@ public abstract class TypeCheckerInference extends TypeCheckerUtils {
 		return l.stream().map(Pair::getB).map(Pair::getB).anyMatch(TypeCheckerInference::containsVariable);
 	}
 
-	protected static Optional<DataType> chooseBetweenOrElse(Optional<DataType> lb, Optional<DataType> ub, Optional<DataType> other) {
+	protected static Optional<DataType> chooseBetweenOrElse(Optional<DataType> lb, Optional<DataType> ub,
+			Optional<DataType> other) {
 		return OptionalUtils.orElse(lb, OptionalUtils.orElse(ub, other));
 	}
 

@@ -17,6 +17,15 @@ public class TypeCheckerAnnotate extends AccumulatingValidator {
 	public static final String MAX = "Max";
 	public static final String TYPE = "Type";
 	public static final String BINDER = "Binder";
+	public static final String INFERENCE = "Inference";
+	
+	public static void saveInference(EObject eObject, TypeInferenceSolver i) {
+		AttributeAdapter.adapterOf(eObject).putAttribute(INFERENCE, i);
+	}
+	
+	public static TypeInferenceSolver getInference(EObject eObject) {
+		return (TypeInferenceSolver) AttributeAdapter.adapterOf(eObject).getAttribute(INFERENCE);
+	}
 
 	public static DataType saveType(EObject eObject, DataType t) {
 		AttributeAdapter.adapterOf(eObject).putAttribute(TYPE, t);
