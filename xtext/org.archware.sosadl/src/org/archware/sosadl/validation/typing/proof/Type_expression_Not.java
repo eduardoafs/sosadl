@@ -4,7 +4,7 @@ import org.archware.sosadl.sosADL.DataType;
 import org.archware.sosadl.sosADL.Expression;
 import org.archware.sosadl.validation.typing.Environment;
 
-public class Type_expression_Not implements Type_expression_node {
+public class Type_expression_Not<T> implements Type_expression_node<T> {
 	@Mandatory
 	private final Environment gamma;
 
@@ -15,12 +15,12 @@ public class Type_expression_Not implements Type_expression_node {
 	private final DataType tau;
 
 	@Mandatory
-	private final Type_expression p1;
+	private final T p1;
 
 	@Mandatory
 	private final Subtype p2;
 
-	public Type_expression_Not(Environment gamma, Expression e, DataType tau, Type_expression p1, Subtype p2) {
+	public Type_expression_Not(Environment gamma, Expression e, DataType tau, T p1, Subtype p2) {
 		super();
 		this.gamma = gamma;
 		this.e = e;
@@ -41,7 +41,7 @@ public class Type_expression_Not implements Type_expression_node {
 		return tau;
 	}
 
-	public Type_expression getP1() {
+	public T getP1() {
 		return p1;
 	}
 

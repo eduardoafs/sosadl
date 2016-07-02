@@ -115,12 +115,12 @@ public abstract class TypeCheckerProofConstructor extends TypeCheckerInference {
 				p5, p6, p7);
 	}
 
-	protected Type_expression_node createType_expression_IntegerValue(Environment gamma, BigInteger v) {
-		return new Type_expression_IntegerValue(gamma, v);
+	protected <T> Type_expression_node<T> createType_expression_IntegerValue(Environment gamma, BigInteger v) {
+		return new Type_expression_IntegerValue<>(gamma, v);
 	}
 
 	protected Type_expression createType_expression_and_type(Environment gamma, Expression e, DataType t,
-			Type_expression_node p1, Check_datatype p2) {
+			Type_expression_node<Type_expression> p1, Check_datatype p2) {
 		return new Type_expression_and_type(gamma, e, t, p1, p2);
 	}
 
@@ -236,162 +236,163 @@ public abstract class TypeCheckerProofConstructor extends TypeCheckerInference {
 		return new Type_FormalParameter_typed(gamma, n, t, t1, gamma1, p1);
 	}
 
-	protected Type_expression_node createType_expression_Same(Environment gamma, Expression e, DataType tau,
-			Expression min, Expression max, Type_expression p1, Subtype p2) {
-		return new Type_expression_Same(gamma, e, tau, min, max, p1, p2);
+	protected <T> Type_expression_node<T> createType_expression_Same(Environment gamma, Expression e, DataType tau,
+			Expression min, Expression max, T p1, Subtype p2) {
+		return new Type_expression_Same<>(gamma, e, tau, min, max, p1, p2);
 	}
 
-	protected Type_expression_node createType_expression_Opposite(Environment gamma, Expression e, DataType tau,
-			Expression min, Expression max, Type_expression p1, Subtype p2) {
-		return new Type_expression_Opposite(gamma, e, tau, min, max, p1, p2);
+	protected <T> Type_expression_node<T> createType_expression_Opposite(Environment gamma, Expression e, DataType tau,
+			Expression min, Expression max, T p1, Subtype p2) {
+		return new Type_expression_Opposite<>(gamma, e, tau, min, max, p1, p2);
 	}
 
-	protected Type_expression_node createType_expression_Not(Environment gamma, Expression e, DataType tau,
-			Type_expression p1, Subtype p2) {
-		return new Type_expression_Not(gamma, e, tau, p1, p2);
+	protected <T> Type_expression_node<T> createType_expression_Not(Environment gamma, Expression e, DataType tau, T p1,
+			Subtype p2) {
+		return new Type_expression_Not<>(gamma, e, tau, p1, p2);
 	}
 
-	protected Type_expression_node createType_expression_Add(Environment gamma, Expression l, DataType l__tau,
+	protected <T> Type_expression_node<T> createType_expression_Add(Environment gamma, Expression l, DataType l__tau,
 			Expression l__min, Expression l__max, Expression r, DataType r__tau, Expression r__min, Expression r__max,
-			Type_expression p1, Subtype p2, Type_expression p3, Subtype p4) {
-		return new Type_expression_Add(gamma, l, l__tau, l__min, l__max, r, r__tau, r__min, r__max, p1, p2, p3, p4);
+			T p1, Subtype p2, T p3, Subtype p4) {
+		return new Type_expression_Add<>(gamma, l, l__tau, l__min, l__max, r, r__tau, r__min, r__max, p1, p2, p3, p4);
 	}
 
-	protected Type_expression_node createType_expression_Sub(Environment gamma, Expression l, DataType l__tau,
+	protected <T> Type_expression_node<T> createType_expression_Sub(Environment gamma, Expression l, DataType l__tau,
 			Expression l__min, Expression l__max, Expression r, DataType r__tau, Expression r__min, Expression r__max,
-			Type_expression p1, Subtype p2, Type_expression p3, Subtype p4) {
-		return new Type_expression_Sub(gamma, l, l__tau, l__min, l__max, r, r__tau, r__min, r__max, p1, p2, p3, p4);
+			T p1, Subtype p2, T p3, Subtype p4) {
+		return new Type_expression_Sub<>(gamma, l, l__tau, l__min, l__max, r, r__tau, r__min, r__max, p1, p2, p3, p4);
 	}
 
-	protected Type_expression_node createType_expression_Mul(Environment gamma, Expression l, DataType l__tau,
+	protected <T> Type_expression_node<T> createType_expression_Mul(Environment gamma, Expression l, DataType l__tau,
 			Expression l__min, Expression l__max, Expression r, DataType r__tau, Expression r__min, Expression r__max,
-			Expression min, Expression max, Type_expression p1, Subtype p2, Type_expression p3, Subtype p4,
-			Expression_le p5, Expression_le p6, Expression_le p7, Expression_le p8, Expression_le p9, Expression_le pa,
-			Expression_le pb, Expression_le pc) {
-		return new Type_expression_Mul(gamma, l, l__tau, l__min, l__max, r, r__tau, r__min, r__max, min, max, p1, p2,
+			Expression min, Expression max, T p1, Subtype p2, T p3, Subtype p4, Expression_le p5, Expression_le p6,
+			Expression_le p7, Expression_le p8, Expression_le p9, Expression_le pa, Expression_le pb,
+			Expression_le pc) {
+		return new Type_expression_Mul<>(gamma, l, l__tau, l__min, l__max, r, r__tau, r__min, r__max, min, max, p1, p2,
 				p3, p4, p5, p6, p7, p8, p9, pa, pb, pc);
 	}
 
-	protected Type_expression_node createType_expression_Div_pos(Environment gamma, Expression l, DataType l__tau,
-			Expression l__min, Expression l__max, Expression r, DataType r__tau, Expression r__min, Expression r__max,
-			Expression min, Expression max, Type_expression p1, Subtype p2, Type_expression p3, Subtype p4,
-			Expression_le p5, Expression_le p6, Expression_le p7, Expression_le p8, Expression_le p9, Expression_le pa,
-			Expression_le pb, Expression_le pc, Expression_le pd) {
-		return new Type_expression_Div_pos(gamma, l, l__tau, l__min, l__max, r, r__tau, r__min, r__max, min, max, p1,
+	protected <T> Type_expression_node<T> createType_expression_Div_pos(Environment gamma, Expression l,
+			DataType l__tau, Expression l__min, Expression l__max, Expression r, DataType r__tau, Expression r__min,
+			Expression r__max, Expression min, Expression max, T p1, Subtype p2, T p3, Subtype p4, Expression_le p5,
+			Expression_le p6, Expression_le p7, Expression_le p8, Expression_le p9, Expression_le pa, Expression_le pb,
+			Expression_le pc, Expression_le pd) {
+		return new Type_expression_Div_pos<T>(gamma, l, l__tau, l__min, l__max, r, r__tau, r__min, r__max, min, max, p1,
 				p2, p3, p4, p5, p6, p7, p8, p9, pa, pb, pc, pd);
 	}
 
-	protected Type_expression_node createType_expression_Div_neg(Environment gamma, Expression l, DataType l__tau,
-			Expression l__min, Expression l__max, Expression r, DataType r__tau, Expression r__min, Expression r__max,
-			Expression min, Expression max, Type_expression p1, Subtype p2, Type_expression p3, Subtype p4,
-			Expression_le p5, Expression_le p6, Expression_le p7, Expression_le p8, Expression_le p9, Expression_le pa,
-			Expression_le pb, Expression_le pc, Expression_le pd) {
-		return new Type_expression_Div_neg(gamma, l, l__tau, l__min, l__max, r, r__tau, r__min, r__max, min, max, p1,
+	protected <T> Type_expression_node<T> createType_expression_Div_neg(Environment gamma, Expression l,
+			DataType l__tau, Expression l__min, Expression l__max, Expression r, DataType r__tau, Expression r__min,
+			Expression r__max, Expression min, Expression max, T p1, Subtype p2, T p3, Subtype p4, Expression_le p5,
+			Expression_le p6, Expression_le p7, Expression_le p8, Expression_le p9, Expression_le pa, Expression_le pb,
+			Expression_le pc, Expression_le pd) {
+		return new Type_expression_Div_neg<>(gamma, l, l__tau, l__min, l__max, r, r__tau, r__min, r__max, min, max, p1,
 				p2, p3, p4, p5, p6, p7, p8, p9, pa, pb, pc, pd);
 	}
 
-	protected Type_expression_node createType_expression_Mod(Environment gamma, Expression l, DataType l__tau,
+	protected <T> Type_expression_node<T> createType_expression_Mod(Environment gamma, Expression l, DataType l__tau,
 			Expression l__min, Expression l__max, Expression r, DataType r__tau, Expression r__min, Expression r__max,
-			Expression min, Expression max, Type_expression p1, Subtype p2, Type_expression p3, Subtype p4,
-			Range_modulo_min p5, Range_modulo_max p6) {
-		return new Type_expression_Mod(gamma, l, l__tau, l__min, l__max, r, r__tau, r__min, r__max, min, max, p1, p2,
+			Expression min, Expression max, T p1, Subtype p2, T p3, Subtype p4, Range_modulo_min p5,
+			Range_modulo_max p6) {
+		return new Type_expression_Mod<>(gamma, l, l__tau, l__min, l__max, r, r__tau, r__min, r__max, min, max, p1, p2,
 				p3, p4, p5, p6);
 	}
 
-	protected Type_expression_node createType_expression_Implies(Environment gamma, Expression l, DataType l__tau,
-			Expression r, DataType r__tau, Type_expression p1, Subtype p2, Type_expression p3, Subtype p4) {
-		return new Type_expression_Implies(gamma, l, l__tau, r, r__tau, p1, p2, p3, p4);
+	protected <T> Type_expression_node<T> createType_expression_Implies(Environment gamma, Expression l,
+			DataType l__tau, Expression r, DataType r__tau, T p1, Subtype p2, T p3, Subtype p4) {
+		return new Type_expression_Implies<>(gamma, l, l__tau, r, r__tau, p1, p2, p3, p4);
 	}
 
-	protected Type_expression_node createType_expression_Or(Environment gamma, Expression l, DataType l__tau,
-			Expression r, DataType r__tau, Type_expression p1, Subtype p2, Type_expression p3, Subtype p4) {
-		return new Type_expression_Or(gamma, l, l__tau, r, r__tau, p1, p2, p3, p4);
+	protected <T> Type_expression_node<T> createType_expression_Or(Environment gamma, Expression l, DataType l__tau,
+			Expression r, DataType r__tau, T p1, Subtype p2, T p3, Subtype p4) {
+		return new Type_expression_Or<>(gamma, l, l__tau, r, r__tau, p1, p2, p3, p4);
 	}
 
-	protected Type_expression_node createType_expression_Xor(Environment gamma, Expression l, DataType l__tau,
-			Expression r, DataType r__tau, Type_expression p1, Subtype p2, Type_expression p3, Subtype p4) {
-		return new Type_expression_Xor(gamma, l, l__tau, r, r__tau, p1, p2, p3, p4);
+	protected <T> Type_expression_node<T> createType_expression_Xor(Environment gamma, Expression l, DataType l__tau,
+			Expression r, DataType r__tau, T p1, Subtype p2, T p3, Subtype p4) {
+		return new Type_expression_Xor<>(gamma, l, l__tau, r, r__tau, p1, p2, p3, p4);
 	}
 
-	protected Type_expression_node createType_expression_And(Environment gamma, Expression l, DataType l__tau,
-			Expression r, DataType r__tau, Type_expression p1, Subtype p2, Type_expression p3, Subtype p4) {
-		return new Type_expression_And(gamma, l, l__tau, r, r__tau, p1, p2, p3, p4);
+	protected <T> Type_expression_node<T> createType_expression_And(Environment gamma, Expression l, DataType l__tau,
+			Expression r, DataType r__tau, T p1, Subtype p2, T p3, Subtype p4) {
+		return new Type_expression_And<>(gamma, l, l__tau, r, r__tau, p1, p2, p3, p4);
 	}
 
-	protected Type_expression_node createType_expression_Equal(Environment gamma, Expression l, DataType l__tau,
+	protected <T> Type_expression_node<T> createType_expression_Equal(Environment gamma, Expression l, DataType l__tau,
 			Expression l__min, Expression l__max, Expression r, DataType r__tau, Expression r__min, Expression r__max,
-			Type_expression p1, Subtype p2, Type_expression p3, Subtype p4) {
-		return new Type_expression_Equal(gamma, l, l__tau, l__min, l__max, r, r__tau, r__min, r__max, p1, p2, p3, p4);
+			T p1, Subtype p2, T p3, Subtype p4) {
+		return new Type_expression_Equal<>(gamma, l, l__tau, l__min, l__max, r, r__tau, r__min, r__max, p1, p2, p3, p4);
 	}
 
-	protected Type_expression_node createType_expression_Diff(Environment gamma, Expression l, DataType l__tau,
+	protected <T> Type_expression_node<T> createType_expression_Diff(Environment gamma, Expression l, DataType l__tau,
 			Expression l__min, Expression l__max, Expression r, DataType r__tau, Expression r__min, Expression r__max,
-			Type_expression p1, Subtype p2, Type_expression p3, Subtype p4) {
-		return new Type_expression_Diff(gamma, l, l__tau, l__min, l__max, r, r__tau, r__min, r__max, p1, p2, p3, p4);
+			T p1, Subtype p2, T p3, Subtype p4) {
+		return new Type_expression_Diff<>(gamma, l, l__tau, l__min, l__max, r, r__tau, r__min, r__max, p1, p2, p3, p4);
 	}
 
-	protected Type_expression_node createType_expression_Lt(Environment gamma, Expression l, DataType l__tau,
+	protected <T> Type_expression_node<T> createType_expression_Lt(Environment gamma, Expression l, DataType l__tau,
 			Expression l__min, Expression l__max, Expression r, DataType r__tau, Expression r__min, Expression r__max,
-			Type_expression p1, Subtype p2, Type_expression p3, Subtype p4) {
-		return new Type_expression_Lt(gamma, l, l__tau, l__min, l__max, r, r__tau, r__min, r__max, p1, p2, p3, p4);
+			T p1, Subtype p2, T p3, Subtype p4) {
+		return new Type_expression_Lt<>(gamma, l, l__tau, l__min, l__max, r, r__tau, r__min, r__max, p1, p2, p3, p4);
 	}
 
-	protected Type_expression_node createType_expression_Le(Environment gamma, Expression l, DataType l__tau,
+	protected <T> Type_expression_node<T> createType_expression_Le(Environment gamma, Expression l, DataType l__tau,
 			Expression l__min, Expression l__max, Expression r, DataType r__tau, Expression r__min, Expression r__max,
-			Type_expression p1, Subtype p2, Type_expression p3, Subtype p4) {
-		return new Type_expression_Le(gamma, l, l__tau, l__min, l__max, r, r__tau, r__min, r__max, p1, p2, p3, p4);
+			T p1, Subtype p2, T p3, Subtype p4) {
+		return new Type_expression_Le<>(gamma, l, l__tau, l__min, l__max, r, r__tau, r__min, r__max, p1, p2, p3, p4);
 	}
 
-	protected Type_expression_node createType_expression_Gt(Environment gamma, Expression l, DataType l__tau,
+	protected <T> Type_expression_node<T> createType_expression_Gt(Environment gamma, Expression l, DataType l__tau,
 			Expression l__min, Expression l__max, Expression r, DataType r__tau, Expression r__min, Expression r__max,
-			Type_expression p1, Subtype p2, Type_expression p3, Subtype p4) {
-		return new Type_expression_Gt(gamma, l, l__tau, l__min, l__max, r, r__tau, r__min, r__max, p1, p2, p3, p4);
+			T p1, Subtype p2, T p3, Subtype p4) {
+		return new Type_expression_Gt<>(gamma, l, l__tau, l__min, l__max, r, r__tau, r__min, r__max, p1, p2, p3, p4);
 	}
 
-	protected Type_expression_node createType_expression_Ge(Environment gamma, Expression l, DataType l__tau,
+	protected <T> Type_expression_node<T> createType_expression_Ge(Environment gamma, Expression l, DataType l__tau,
 			Expression l__min, Expression l__max, Expression r, DataType r__tau, Expression r__min, Expression r__max,
-			Type_expression p1, Subtype p2, Type_expression p3, Subtype p4) {
-		return new Type_expression_Ge(gamma, l, l__tau, l__min, l__max, r, r__tau, r__min, r__max, p1, p2, p3, p4);
+			T p1, Subtype p2, T p3, Subtype p4) {
+		return new Type_expression_Ge<>(gamma, l, l__tau, l__min, l__max, r, r__tau, r__min, r__max, p1, p2, p3, p4);
 	}
 
-	protected Type_expression_node createType_expression_Ident(Environment gamma, String x, DataType tau, Equality p) {
-		return new Type_expression_Ident(gamma, x, tau, p);
+	protected <T> Type_expression_node<T> createType_expression_Ident(Environment gamma, String x, DataType tau,
+			Equality p) {
+		return new Type_expression_Ident<>(gamma, x, tau, p);
 	}
 
-	protected Type_expression_node createType_expression_MethodCall(Environment gamma, Expression self, DataType t,
-			DataTypeDecl typeDecl, DataType tau, EList<FunctionDecl> methods, String name,
-			EList<FormalParameter> formalparams, DataType ret, EList<Expression> params, Type_expression p1,
+	protected <T> Type_expression_node<T> createType_expression_MethodCall(Environment gamma, Expression self,
+			DataType t, DataTypeDecl typeDecl, DataType tau, EList<FunctionDecl> methods, String name,
+			EList<FormalParameter> formalparams, DataType ret, EList<Expression> params, T p1,
 			Ex<BigInteger, Equality> p2, Subtype p4,
 			Ex<BigInteger, And<Equality, And<Equality, And<Equality, Equality>>>> p5,
-			Forall2<FormalParameter, Expression, Ex<DataType, And<Equality, Ex<DataType, And<Type_expression, Subtype>>>>> p6) {
-		return new Type_expression_MethodCall(gamma, self, t, typeDecl, tau, methods, name, formalparams, ret, params,
+			Forall2<FormalParameter, Expression, Ex<DataType, And<Equality, Ex<DataType, And<T, Subtype>>>>> p6) {
+		return new Type_expression_MethodCall<>(gamma, self, t, typeDecl, tau, methods, name, formalparams, ret, params,
 				p1, p2, p4, p5, p6);
 	}
 
-	protected Type_expression_node createType_expression_Tuple(Environment gamma, EList<TupleElement> elts,
+	protected <T> Type_expression_node<T> createType_expression_Tuple(Environment gamma, EList<TupleElement> elts,
 			EList<FieldDecl> typ, Equality p1, Forall2<TupleElement, FieldDecl, Equality> p2,
-			Forall2<TupleElement, FieldDecl, Ex<Expression, And<Equality, Ex<DataType, And<Equality, Type_expression>>>>> p3) {
-		return new Type_expression_Tuple(gamma, elts, typ, p1, p2, p3);
+			Forall2<TupleElement, FieldDecl, Ex<Expression, And<Equality, Ex<DataType, And<Equality, T>>>>> p3) {
+		return new Type_expression_Tuple<>(gamma, elts, typ, p1, p2, p3);
 	}
 
-	protected Type_expression_node createType_expression_Field(Environment gamma, Expression self, EList<FieldDecl> tau,
-			String name, DataType tau__f, Type_expression p1, Equality p2) {
-		return new Type_expression_Field(gamma, self, tau, name, tau__f, p1, p2);
+	protected <T> Type_expression_node<T> createType_expression_Field(Environment gamma, Expression self,
+			EList<FieldDecl> tau, String name, DataType tau__f, T p1, Equality p2) {
+		return new Type_expression_Field<>(gamma, self, tau, name, tau__f, p1, p2);
 	}
 
-	protected Type_expression_node createType_expression_Sequence(Environment gamma, EList<Expression> elts,
-			DataType tau, Forall<Expression, Ex<DataType, And<Type_expression, Subtype>>> p1) {
-		return new Type_expression_Sequence(gamma, elts, tau, p1);
+	protected <T> Type_expression_node<T> createType_expression_Sequence(Environment gamma, EList<Expression> elts,
+			DataType tau, Forall<Expression, Ex<DataType, And<T, Subtype>>> p1) {
+		return new Type_expression_Sequence<>(gamma, elts, tau, p1);
 	}
 
-	protected Type_expression_node createType_expression_Map(Environment gamma, Expression object, DataType tau,
-			String variable, Expression expression, DataType tau__e, Type_expression p1, Type_expression p2) {
-		return new Type_expression_Map(gamma, object, tau, variable, expression, tau__e, p1, p2);
+	protected <T> Type_expression_node<T> createType_expression_Map(Environment gamma, Expression object, DataType tau,
+			String variable, Expression expression, DataType tau__e, T p1, T p2) {
+		return new Type_expression_Map<>(gamma, object, tau, variable, expression, tau__e, p1, p2);
 	}
 
-	protected Type_expression_node createType_expression_Select(Environment gamma, Expression object, DataType tau,
-			String variable, Expression expression, Type_expression p1, Type_expression p2) {
-		return new Type_expression_Select(gamma, object, tau, variable, expression, p1, p2);
+	protected <T> Type_expression_node<T> createType_expression_Select(Environment gamma, Expression object,
+			DataType tau, String variable, Expression expression, T p1, T p2) {
+		return new Type_expression_Select<>(gamma, object, tau, variable, expression, p1, p2);
 	}
 
 	protected Range_modulo_min createRange_modulo_min_pos(Expression lmin, Expression lmax, Expression rmin,

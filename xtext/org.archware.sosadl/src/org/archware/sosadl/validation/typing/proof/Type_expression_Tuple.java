@@ -7,7 +7,7 @@ import org.archware.sosadl.sosADL.TupleElement;
 import org.archware.sosadl.validation.typing.Environment;
 import org.eclipse.emf.common.util.EList;
 
-public class Type_expression_Tuple implements Type_expression_node {
+public class Type_expression_Tuple<T> implements Type_expression_node<T> {
 	@Mandatory
 	private final Environment gamma;
 
@@ -22,11 +22,11 @@ public class Type_expression_Tuple implements Type_expression_node {
 	private final Forall2<TupleElement, FieldDecl, Equality> p2;
 
 	@Mandatory
-	private final Forall2<TupleElement, FieldDecl, Ex<Expression, And<Equality, Ex<DataType, And<Equality, Type_expression>>>>> p3;
+	private final Forall2<TupleElement, FieldDecl, Ex<Expression, And<Equality, Ex<DataType, And<Equality, T>>>>> p3;
 
 	public Type_expression_Tuple(Environment gamma, EList<TupleElement> elts, EList<FieldDecl> typ, Equality p1,
 			Forall2<TupleElement, FieldDecl, Equality> p2,
-			Forall2<TupleElement, FieldDecl, Ex<Expression, And<Equality, Ex<DataType, And<Equality, Type_expression>>>>> p3) {
+			Forall2<TupleElement, FieldDecl, Ex<Expression, And<Equality, Ex<DataType, And<Equality, T>>>>> p3) {
 		super();
 		this.gamma = gamma;
 		this.elts = elts;
@@ -56,7 +56,7 @@ public class Type_expression_Tuple implements Type_expression_node {
 		return p2;
 	}
 
-	public Forall2<TupleElement, FieldDecl, Ex<Expression, And<Equality, Ex<DataType, And<Equality, Type_expression>>>>> getP3() {
+	public Forall2<TupleElement, FieldDecl, Ex<Expression, And<Equality, Ex<DataType, And<Equality, T>>>>> getP3() {
 		return p3;
 	}
 

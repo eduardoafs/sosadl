@@ -4,7 +4,7 @@ import org.archware.sosadl.sosADL.DataType;
 import org.archware.sosadl.sosADL.Expression;
 import org.archware.sosadl.validation.typing.Environment;
 
-public class Type_expression_Div_neg implements Type_expression_node {
+public class Type_expression_Div_neg<T> implements Type_expression_node<T> {
 	@Mandatory
 	private final Environment gamma;
 
@@ -39,13 +39,13 @@ public class Type_expression_Div_neg implements Type_expression_node {
 	private final Expression max;
 
 	@Mandatory
-	private final Type_expression p1;
+	private final T p1;
 
 	@Mandatory
 	private final Subtype p2;
 
 	@Mandatory
-	private final Type_expression p3;
+	private final T p3;
 
 	@Mandatory
 	private final Subtype p4;
@@ -79,9 +79,9 @@ public class Type_expression_Div_neg implements Type_expression_node {
 
 	public Type_expression_Div_neg(Environment gamma, Expression l, DataType l__tau, Expression l__min,
 			Expression l__max, Expression r, DataType r__tau, Expression r__min, Expression r__max, Expression min,
-			Expression max, Type_expression p1, Subtype p2, Type_expression p3, Subtype p4, Expression_le p5,
-			Expression_le p6, Expression_le p7, Expression_le p8, Expression_le p9, Expression_le pa, Expression_le pb,
-			Expression_le pc, Expression_le pd) {
+			Expression max, T p1, Subtype p2, T p3, Subtype p4, Expression_le p5, Expression_le p6, Expression_le p7,
+			Expression_le p8, Expression_le p9, Expression_le pa, Expression_le pb, Expression_le pc,
+			Expression_le pd) {
 		super();
 		this.gamma = gamma;
 		this.l = l;
@@ -153,7 +153,7 @@ public class Type_expression_Div_neg implements Type_expression_node {
 		return max;
 	}
 
-	public Type_expression getP1() {
+	public T getP1() {
 		return p1;
 	}
 
@@ -161,7 +161,7 @@ public class Type_expression_Div_neg implements Type_expression_node {
 		return p2;
 	}
 
-	public Type_expression getP3() {
+	public T getP3() {
 		return p3;
 	}
 

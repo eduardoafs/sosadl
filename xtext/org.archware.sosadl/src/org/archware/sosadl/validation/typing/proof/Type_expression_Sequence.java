@@ -5,7 +5,7 @@ import org.archware.sosadl.sosADL.Expression;
 import org.archware.sosadl.validation.typing.Environment;
 import org.eclipse.emf.common.util.EList;
 
-public class Type_expression_Sequence implements Type_expression_node {
+public class Type_expression_Sequence<T> implements Type_expression_node<T> {
 	@Mandatory
 	private final Environment gamma;
 
@@ -15,10 +15,10 @@ public class Type_expression_Sequence implements Type_expression_node {
 	private final DataType tau;
 
 	@Mandatory
-	private final Forall<Expression, Ex<DataType, And<Type_expression, Subtype>>> p1;
+	private final Forall<Expression, Ex<DataType, And<T, Subtype>>> p1;
 
 	public Type_expression_Sequence(Environment gamma, EList<Expression> elts, DataType tau,
-			Forall<Expression, Ex<DataType, And<Type_expression, Subtype>>> p1) {
+			Forall<Expression, Ex<DataType, And<T, Subtype>>> p1) {
 		super();
 		this.gamma = gamma;
 		this.elts = elts;
@@ -38,7 +38,7 @@ public class Type_expression_Sequence implements Type_expression_node {
 		return tau;
 	}
 
-	public Forall<Expression, Ex<DataType, And<Type_expression, Subtype>>> getP1() {
+	public Forall<Expression, Ex<DataType, And<T, Subtype>>> getP1() {
 		return p1;
 	}
 

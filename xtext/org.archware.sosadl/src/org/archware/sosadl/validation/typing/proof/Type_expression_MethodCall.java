@@ -10,7 +10,7 @@ import org.archware.sosadl.sosADL.FunctionDecl;
 import org.archware.sosadl.validation.typing.Environment;
 import org.eclipse.emf.common.util.EList;
 
-public class Type_expression_MethodCall implements Type_expression_node {
+public class Type_expression_MethodCall<T> implements Type_expression_node<T> {
 	@Mandatory
 	private final Environment gamma;
 
@@ -39,7 +39,7 @@ public class Type_expression_MethodCall implements Type_expression_node {
 	private final EList<Expression> params;
 
 	@Mandatory
-	private final Type_expression p1;
+	private final T p1;
 
 	@Mandatory
 	private final Ex<BigInteger, Equality> p2;
@@ -51,13 +51,13 @@ public class Type_expression_MethodCall implements Type_expression_node {
 	private final Ex<BigInteger, And<Equality, And<Equality, And<Equality, Equality>>>> p5;
 
 	@Mandatory
-	private final Forall2<FormalParameter, Expression, Ex<DataType, And<Equality, Ex<DataType, And<Type_expression, Subtype>>>>> p6;
+	private final Forall2<FormalParameter, Expression, Ex<DataType, And<Equality, Ex<DataType, And<T, Subtype>>>>> p6;
 
 	public Type_expression_MethodCall(Environment gamma, Expression self, DataType t, DataTypeDecl typeDecl,
 			DataType tau, EList<FunctionDecl> methods, String name, EList<FormalParameter> formalparams, DataType ret,
-			EList<Expression> params, Type_expression p1, Ex<BigInteger, Equality> p2, Subtype p4,
+			EList<Expression> params, T p1, Ex<BigInteger, Equality> p2, Subtype p4,
 			Ex<BigInteger, And<Equality, And<Equality, And<Equality, Equality>>>> p5,
-			Forall2<FormalParameter, Expression, Ex<DataType, And<Equality, Ex<DataType, And<Type_expression, Subtype>>>>> p6) {
+			Forall2<FormalParameter, Expression, Ex<DataType, And<Equality, Ex<DataType, And<T, Subtype>>>>> p6) {
 		super();
 		this.gamma = gamma;
 		this.self = self;
@@ -116,7 +116,7 @@ public class Type_expression_MethodCall implements Type_expression_node {
 		return params;
 	}
 
-	public Type_expression getP1() {
+	public T getP1() {
 		return p1;
 	}
 
@@ -132,7 +132,7 @@ public class Type_expression_MethodCall implements Type_expression_node {
 		return p5;
 	}
 
-	public Forall2<FormalParameter, Expression, Ex<DataType, And<Equality, Ex<DataType, And<Type_expression, Subtype>>>>> getP6() {
+	public Forall2<FormalParameter, Expression, Ex<DataType, And<Equality, Ex<DataType, And<T, Subtype>>>>> getP6() {
 		return p6;
 	}
 

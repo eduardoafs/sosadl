@@ -461,7 +461,8 @@ Reserved Notation "'architecture' a 'well' 'typed' 'in' Gamma" (at level 200, Ga
 Reserved Notation "'architectureblock' a 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
 Reserved Notation "'expression' e 'has' 'type' t 'in' Gamma"
          (at level 200, no associativity, Gamma at level 1).
-Reserved Notation "'expression' 'node' e 'has' 'type' t 'in' Gamma" (at level 200, no associativity, Gamma at level 1).
+Reserved Notation "'expression' 'node' e 'has' 'type' t 'in' Gamma"
+         (at level 200, no associativity, Gamma at level 1).
 Reserved Notation "'archbehavior' b 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
 Reserved Notation "'behavior' b 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
 Reserved Notation "'assertion' a 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
@@ -835,30 +836,19 @@ The rules are structured in two sets of mutually recursive judgements:
 - [type_expression_node] contains the actual typing rules.
  *)
 
-Inductive type_expression:
+Inductive type_expression_node
+          {type_expression: env -> SosADL.SosADL.t_Expression -> SosADL.SosADL.t_DataType -> Prop}:
   env -> SosADL.SosADL.t_Expression -> SosADL.SosADL.t_DataType -> Prop :=
-  
-| type_expression_and_type:
-    forall
-      (Gamma: env)
-      (e: SosADL.SosADL.t_Expression)
-      (t: SosADL.SosADL.t_DataType)
-      (p1: expression node e has type t in Gamma)
-      (p2: type t looks fine)
-    ,
-      expression e has type t in Gamma
-
-with type_expression_node:
-       env -> SosADL.SosADL.t_Expression -> SosADL.SosADL.t_DataType -> Prop :=
                       
 | type_expression_IntegerValue:
     forall
       (Gamma: env)
       (v: BinInt.Z)
     ,
-      expression node (SosADL.SosADL.IntegerValue (Some v))
-                 has type [(SosADL.SosADL.IntegerValue (Some v)),
-                           (SosADL.SosADL.IntegerValue (Some v))]%sosadl in Gamma
+      type_expression_node Gamma
+                            (SosADL.SosADL.IntegerValue (Some v))
+                            [(SosADL.SosADL.IntegerValue (Some v)),
+                             (SosADL.SosADL.IntegerValue (Some v))]%sosadl
 
 | type_expression_Opposite:
     forall
@@ -867,10 +857,12 @@ with type_expression_node:
       (tau: SosADL.SosADL.t_DataType)
       (min: SosADL.SosADL.t_Expression)
       (max: SosADL.SosADL.t_Expression)
-      (p1: expression e has type tau in Gamma)
+      (p1: type_expression Gamma e tau)
       (p2: tau </ [min, max]%sosadl)
     ,
-      expression node (- e)%sosadl has type [- max, - min]%sosadl in Gamma
+      type_expression_node Gamma
+                           (- e)%sosadl
+                           [- max, - min]%sosadl
 
 | type_expression_Same:
     forall
@@ -879,21 +871,24 @@ with type_expression_node:
       (tau: SosADL.SosADL.t_DataType)
       (min: SosADL.SosADL.t_Expression)
       (max: SosADL.SosADL.t_Expression)
-      (p1: expression e has type tau in Gamma)
+      (p1: type_expression Gamma e tau)
       (p2: tau </ [min, max]%sosadl)
     ,
-      expression node (+ e)%sosadl has type [min, max]%sosadl in Gamma
-
+      type_expression_node Gamma
+                           (+ e)%sosadl
+                           [min, max]%sosadl
 
 | type_expression_Not:
     forall
       (Gamma: env)
       (e: SosADL.SosADL.t_Expression)
       (tau: SosADL.SosADL.t_DataType)
-      (p1: expression e has type tau in Gamma)
+      (p1: type_expression Gamma e tau)
       (p2: tau </ SosADL.SosADL.BooleanType)
     ,
-      expression node (! e)%sosadl has type SosADL.SosADL.BooleanType in Gamma
+      type_expression_node Gamma
+                           (! e)%sosadl
+                           SosADL.SosADL.BooleanType
 
 | type_expression_Add:
     forall
@@ -906,13 +901,14 @@ with type_expression_node:
       (r__tau: SosADL.SosADL.t_DataType)
       (r__min: SosADL.SosADL.t_Expression)
       (r__max: SosADL.SosADL.t_Expression)
-      (p1: expression l has type l__tau in Gamma)
+      (p1: type_expression Gamma l l__tau)
       (p2: l__tau </ [l__min, l__max]%sosadl)
-      (p3: expression r has type r__tau in Gamma)
+      (p3: type_expression Gamma r r__tau)
       (p4: r__tau </ [r__min, r__max]%sosadl)
     ,
-      expression node (l + r)%sosadl
-                 has type [ l__min + r__min, l__max + r__max ]%sosadl in Gamma
+      type_expression_node Gamma
+                           (l + r)%sosadl
+                           [ l__min + r__min, l__max + r__max ]%sosadl
 
 | type_expression_Sub:
     forall
@@ -925,13 +921,14 @@ with type_expression_node:
       (r__tau: SosADL.SosADL.t_DataType)
       (r__min: SosADL.SosADL.t_Expression)
       (r__max: SosADL.SosADL.t_Expression)
-      (p1: expression l has type l__tau in Gamma)
+      (p1: type_expression Gamma l l__tau)
       (p2: l__tau </ [l__min, l__max]%sosadl)
-      (p3: expression r has type r__tau in Gamma)
+      (p3: type_expression Gamma r r__tau)
       (p4: r__tau </ [r__min, r__max]%sosadl)
     ,
-      expression node (l - r)%sosadl
-                 has type [ l__min - r__max, l__max - r__min ]%sosadl in Gamma
+      type_expression_node Gamma
+                           (l - r)%sosadl
+                           [ l__min - r__max, l__max - r__min ]%sosadl
 
 | type_expression_Mul:
     forall
@@ -946,9 +943,9 @@ with type_expression_node:
       (r__max: SosADL.SosADL.t_Expression)
       (min: SosADL.SosADL.t_Expression)
       (max: SosADL.SosADL.t_Expression)
-      (p1: expression l has type l__tau in Gamma)
+      (p1: type_expression Gamma l l__tau)
       (p2: l__tau </ [l__min, l__max]%sosadl)
-      (p3: expression r has type r__tau in Gamma)
+      (p3: type_expression Gamma r r__tau)
       (p4: r__tau </ [r__min, r__max]%sosadl)
       (p5: min <= (l__min * r__min)%sosadl)
       (p6: min <= (l__min * r__max)%sosadl)
@@ -959,7 +956,9 @@ with type_expression_node:
       (pb: (l__max *  r__min)%sosadl <= max)
       (pc: (l__max * r__max)%sosadl <= max)
     ,
-      expression node (l * r)%sosadl has type [min, max]%sosadl in Gamma
+      type_expression_node Gamma
+                           (l * r)%sosadl
+                           [min, max]%sosadl
 
 | type_expression_Div_pos:
     forall
@@ -974,9 +973,9 @@ with type_expression_node:
       (r__max: SosADL.SosADL.t_Expression)
       (min: SosADL.SosADL.t_Expression)
       (max: SosADL.SosADL.t_Expression)
-      (p1: expression l has type l__tau in Gamma)
+      (p1: type_expression Gamma l l__tau)
       (p2: l__tau </ [l__min, l__max]%sosadl)
-      (p3: expression r has type r__tau in Gamma)
+      (p3: type_expression Gamma r r__tau)
       (p4: r__tau </ [r__min, r__max]%sosadl)
       (p5: (SosADL.SosADL.IntegerValue (Some 1%Z)) <= r__min)
       (p6: min <= (l__min / r__min)%sosadl)
@@ -988,7 +987,9 @@ with type_expression_node:
       (pc: (l__max / r__min)%sosadl <= max)
       (pd: (l__max / r__max)%sosadl <= max)
     ,
-      expression node (l / r)%sosadl has type [min, max]%sosadl in Gamma
+      type_expression_node Gamma
+                           (l / r)%sosadl
+                           [min, max]%sosadl
 
 | type_expression_Div_neg:
     forall
@@ -1003,9 +1004,9 @@ with type_expression_node:
       (r__max: SosADL.SosADL.t_Expression)
       (min: SosADL.SosADL.t_Expression)
       (max: SosADL.SosADL.t_Expression)
-      (p1: expression l has type l__tau in Gamma)
+      (p1: type_expression Gamma l l__tau)
       (p2: l__tau </ [l__min, l__max]%sosadl)
-      (p3: expression r has type r__tau in Gamma)
+      (p3: type_expression Gamma r r__tau)
       (p4: r__tau </ [r__min, r__max]%sosadl)
       (p5: (r__max <= (- (SosADL.SosADL.IntegerValue (Some 1%Z)))%sosadl))
       (p6: min <= (l__min / r__min)%sosadl)
@@ -1017,7 +1018,9 @@ with type_expression_node:
       (pc: (l__max / r__min)%sosadl <= max)
       (pd: (l__max / r__max)%sosadl <= max)
     ,
-      expression node (l / r)%sosadl has type [min, max]%sosadl in Gamma
+      type_expression_node Gamma
+                           (l / r)%sosadl
+                           [min, max]%sosadl
 
 | type_expression_Mod:
     forall
@@ -1032,14 +1035,16 @@ with type_expression_node:
       (r__max: SosADL.SosADL.t_Expression)
       (min: SosADL.SosADL.t_Expression)
       (max: SosADL.SosADL.t_Expression)
-      (p1: expression l has type l__tau in Gamma)
+      (p1: type_expression Gamma l l__tau)
       (p2: l__tau </ [l__min, l__max]%sosadl)
-      (p3: expression r has type r__tau in Gamma)
+      (p3: type_expression Gamma r r__tau)
       (p4: r__tau </ [r__min, r__max]%sosadl)
       (p5: range_modulo_min l__min l__max r__min r__max min)
       (p6: range_modulo_max l__min l__max r__min r__max max)
     ,
-      expression node (l mod r)%sosadl has type [min, max]%sosadl in Gamma
+      type_expression_node Gamma
+                           (l mod r)%sosadl
+                           [min, max]%sosadl
 
 | type_expression_Implies:
     forall (Gamma: env)
@@ -1047,12 +1052,14 @@ with type_expression_node:
       (l__tau: SosADL.SosADL.t_DataType)
       (r: SosADL.SosADL.t_Expression)
       (r__tau: SosADL.SosADL.t_DataType)
-      (p1: expression l has type l__tau in Gamma)
+      (p1: type_expression Gamma l l__tau)
       (p2: l__tau </ SosADL.SosADL.BooleanType)
-      (p3: expression r has type r__tau in Gamma)
+      (p3: type_expression Gamma r r__tau)
       (p4: r__tau </ SosADL.SosADL.BooleanType)
     ,
-     expression node (l -> r)%sosadl has type SosADL.SosADL.BooleanType in Gamma
+      type_expression_node Gamma
+                           (l -> r)%sosadl
+                           SosADL.SosADL.BooleanType
 
 | type_expression_Or:
     forall (Gamma: env)
@@ -1060,12 +1067,14 @@ with type_expression_node:
       (l__tau: SosADL.SosADL.t_DataType)
       (r: SosADL.SosADL.t_Expression)
       (r__tau: SosADL.SosADL.t_DataType)
-      (p1: expression l has type l__tau in Gamma)
+      (p1: type_expression Gamma l l__tau)
       (p2: l__tau </ SosADL.SosADL.BooleanType)
-      (p3: expression r has type r__tau in Gamma)
+      (p3: type_expression Gamma r r__tau)
       (p4: r__tau </ SosADL.SosADL.BooleanType)
     ,
-     expression node (l || r)%sosadl has type SosADL.SosADL.BooleanType in Gamma
+      type_expression_node Gamma
+                           (l || r)%sosadl
+                           SosADL.SosADL.BooleanType
 
 | type_expression_Xor:
     forall (Gamma: env)
@@ -1073,12 +1082,14 @@ with type_expression_node:
       (l__tau: SosADL.SosADL.t_DataType)
       (r: SosADL.SosADL.t_Expression)
       (r__tau: SosADL.SosADL.t_DataType)
-      (p1: expression l has type l__tau in Gamma)
+      (p1: type_expression Gamma l l__tau)
       (p2: l__tau </ SosADL.SosADL.BooleanType)
-      (p3: expression r has type r__tau in Gamma)
+      (p3: type_expression Gamma r r__tau)
       (p4: r__tau </ SosADL.SosADL.BooleanType)
     ,
-     expression node (l ^^ r)%sosadl has type SosADL.SosADL.BooleanType in Gamma
+      type_expression_node Gamma
+                           (l ^^ r)%sosadl
+                           SosADL.SosADL.BooleanType
 
 | type_expression_And:
     forall (Gamma: env)
@@ -1086,12 +1097,14 @@ with type_expression_node:
       (l__tau: SosADL.SosADL.t_DataType)
       (r: SosADL.SosADL.t_Expression)
       (r__tau: SosADL.SosADL.t_DataType)
-      (p1: expression l has type l__tau in Gamma)
+      (p1: type_expression Gamma l l__tau)
       (p2: l__tau </ SosADL.SosADL.BooleanType)
-      (p3: expression r has type r__tau in Gamma)
+      (p3: type_expression Gamma r r__tau)
       (p4: r__tau </ SosADL.SosADL.BooleanType)
     ,
-     expression node (l && r)%sosadl has type SosADL.SosADL.BooleanType in Gamma
+      type_expression_node Gamma
+                           (l && r)%sosadl
+                           SosADL.SosADL.BooleanType
 
 | type_expression_Equal:
     forall (Gamma: env)
@@ -1103,12 +1116,14 @@ with type_expression_node:
       (r__tau: SosADL.SosADL.t_DataType)
       (r__min: SosADL.SosADL.t_Expression)
       (r__max: SosADL.SosADL.t_Expression)
-      (p1: expression l has type l__tau in Gamma)
+      (p1: type_expression Gamma l l__tau)
       (p2: l__tau </ [l__min, l__max]%sosadl)
-      (p3: expression r has type r__tau in Gamma)
+      (p3: type_expression Gamma r r__tau)
       (p4: r__tau </ [r__min, r__max]%sosadl)
     ,
-      expression node (l = r)%sosadl has type SosADL.SosADL.BooleanType in Gamma
+      type_expression_node Gamma
+                           (l = r)%sosadl
+                           SosADL.SosADL.BooleanType
 
 | type_expression_Diff:
     forall (Gamma: env)
@@ -1120,12 +1135,14 @@ with type_expression_node:
       (r__tau: SosADL.SosADL.t_DataType)
       (r__min: SosADL.SosADL.t_Expression)
       (r__max: SosADL.SosADL.t_Expression)
-      (p1: expression l has type l__tau in Gamma)
+      (p1: type_expression Gamma l l__tau)
       (p2: l__tau </ [l__min, l__max]%sosadl)
-      (p3: expression r has type r__tau in Gamma)
+      (p3: type_expression Gamma r r__tau)
       (p4: r__tau </ [r__min, r__max]%sosadl)
     ,
-      expression node (l <> r)%sosadl has type SosADL.SosADL.BooleanType in Gamma
+      type_expression_node Gamma
+                           (l <> r)%sosadl
+                           SosADL.SosADL.BooleanType
 
 | type_expression_Lt:
     forall (Gamma: env)
@@ -1137,12 +1154,14 @@ with type_expression_node:
       (r__tau: SosADL.SosADL.t_DataType)
       (r__min: SosADL.SosADL.t_Expression)
       (r__max: SosADL.SosADL.t_Expression)
-      (p1: expression l has type l__tau in Gamma)
+      (p1: type_expression Gamma l l__tau)
       (p2: l__tau </ [l__min, l__max]%sosadl)
-      (p3: expression r has type r__tau in Gamma)
+      (p3: type_expression Gamma r r__tau)
       (p4: r__tau </ [r__min, r__max]%sosadl)
     ,
-      expression node (l < r)%sosadl has type SosADL.SosADL.BooleanType in Gamma
+      type_expression_node Gamma
+                           (l < r)%sosadl
+                           SosADL.SosADL.BooleanType
 
 | type_expression_Le:
     forall (Gamma: env)
@@ -1154,12 +1173,14 @@ with type_expression_node:
       (r__tau: SosADL.SosADL.t_DataType)
       (r__min: SosADL.SosADL.t_Expression)
       (r__max: SosADL.SosADL.t_Expression)
-      (p1: expression l has type l__tau in Gamma)
+      (p1: type_expression Gamma l l__tau)
       (p2: l__tau </ [l__min, l__max]%sosadl)
-      (p3: expression r has type r__tau in Gamma)
+      (p3: type_expression Gamma r r__tau)
       (p4: r__tau </ [r__min, r__max]%sosadl)
     ,
-      expression node (l <= r)%sosadl has type SosADL.SosADL.BooleanType in Gamma
+      type_expression_node Gamma
+                           (l <= r)%sosadl
+                           SosADL.SosADL.BooleanType
 
 | type_expression_Gt:
     forall (Gamma: env)
@@ -1171,12 +1192,14 @@ with type_expression_node:
       (r__tau: SosADL.SosADL.t_DataType)
       (r__min: SosADL.SosADL.t_Expression)
       (r__max: SosADL.SosADL.t_Expression)
-      (p1: expression l has type l__tau in Gamma)
+      (p1: type_expression Gamma l l__tau)
       (p2: l__tau </ [l__min, l__max]%sosadl)
-      (p3: expression r has type r__tau in Gamma)
+      (p3: type_expression Gamma r r__tau)
       (p4: r__tau </ [r__min, r__max]%sosadl)
     ,
-      expression node (l > r)%sosadl has type SosADL.SosADL.BooleanType in Gamma
+      type_expression_node Gamma
+                           (l > r)%sosadl
+                           SosADL.SosADL.BooleanType
 
 | type_expression_Ge:
     forall (Gamma: env)
@@ -1188,12 +1211,14 @@ with type_expression_node:
       (r__tau: SosADL.SosADL.t_DataType)
       (r__min: SosADL.SosADL.t_Expression)
       (r__max: SosADL.SosADL.t_Expression)
-      (p1: expression l has type l__tau in Gamma)
+      (p1: type_expression Gamma l l__tau)
       (p2: l__tau </ [l__min, l__max]%sosadl)
-      (p3: expression r has type r__tau in Gamma)
+      (p3: type_expression Gamma r r__tau)
       (p4: r__tau </ [r__min, r__max]%sosadl)
     ,
-      expression node (l >= r)%sosadl has type SosADL.SosADL.BooleanType in Gamma
+      type_expression_node Gamma
+                           (l >= r)%sosadl
+                           SosADL.SosADL.BooleanType
 
 | type_expression_Ident:
     forall (Gamma: env)
@@ -1201,7 +1226,9 @@ with type_expression_node:
       (tau: SosADL.SosADL.t_DataType)
       (p: contains Gamma x (EVariable tau))
     ,
-      expression node (SosADL.SosADL.IdentExpression (Some x)) has type tau in Gamma
+      type_expression_node Gamma
+                           (SosADL.SosADL.IdentExpression (Some x))
+                           tau
 
 (** %\note{%The rule [type_expression_MethodCall] accept any method
  declaration with the correct name and compatible parameter and [self]
@@ -1219,20 +1246,20 @@ with type_expression_node:
       (formalparams: list SosADL.SosADL.t_FormalParameter)
       (ret: SosADL.SosADL.t_DataType)
       (params: list SosADL.SosADL.t_Expression)
-      (p1: expression self has type t in Gamma)
+      (p1: type_expression Gamma self t)
       (p2: binds Gamma (EType typeDecl tau methods))
       (p4: t </ tau)
       (p5: method name defined in methods
        with tau parameters formalparams returns ret)
       (p6: for each fp p of formalparams params,
            (exists t, SosADL.SosADL.FormalParameter_type fp = Some t
-                 /\ (exists tp, (expression p has type tp in Gamma)
+                 /\ (exists tp, (type_expression Gamma p tp)
                           /\ tp </ t)))
     ,
-      expression node (SosADL.SosADL.MethodCall
-                         (Some self) (Some name) params)
-                 has type ret in Gamma
-
+      type_expression_node Gamma
+                           (SosADL.SosADL.MethodCall
+                              (Some self) (Some name) params)
+                           ret
 
 | type_expression_Tuple:
     forall (Gamma: env)
@@ -1247,10 +1274,11 @@ with type_expression_node:
             SosADL.SosADL.TupleElement_value e = Some e'
             /\ exists (f': SosADL.SosADL.t_DataType),
                 SosADL.SosADL.FieldDecl_type f = Some f'
-                /\ expression e' has type f' in Gamma))
+                /\ type_expression Gamma e' f'))
     ,
-      expression node (SosADL.SosADL.Tuple elts)
-                 has type (SosADL.SosADL.TupleType typ) in Gamma
+      type_expression_node Gamma
+                           (SosADL.SosADL.Tuple elts)
+                           (SosADL.SosADL.TupleType typ)
 
 | type_expression_Field:
     forall (Gamma: env)
@@ -1258,21 +1286,24 @@ with type_expression_node:
       (tau: list SosADL.SosADL.t_FieldDecl)
       (name: string)
       (tau__f: SosADL.SosADL.t_DataType)
-      (p1: expression self has type (SosADL.SosADL.TupleType tau) in Gamma)
+      (p1: type_expression Gamma self (SosADL.SosADL.TupleType tau))
       (p2: field_type tau name = Some tau__f)
     ,
-      expression node (self ::: name)%sosadl has type tau__f in Gamma
+      type_expression_node Gamma
+                           (self ::: name)%sosadl
+                           tau__f
 
 | type_expression_Sequence:
     forall (Gamma: env)
       (elts: list SosADL.SosADL.t_Expression)
       (tau: SosADL.SosADL.t_DataType)
       (p1: for each e of elts,
-           exists t, (expression e has type t in Gamma)
+           exists t, (type_expression Gamma e t)
                 /\ t </ tau)
     ,
-      expression node (SosADL.SosADL.Sequence elts)
-                 has type (SosADL.SosADL.SequenceType (Some tau)) in Gamma
+      type_expression_node Gamma
+                           (SosADL.SosADL.Sequence elts)
+                           (SosADL.SosADL.SequenceType (Some tau))
 
 | type_expression_Map:
     forall (Gamma: env)
@@ -1281,11 +1312,12 @@ with type_expression_node:
       (x: string)
       (e: SosADL.SosADL.t_Expression)
       (tau__e: SosADL.SosADL.t_DataType)
-      (p1: expression obj has type (SosADL.SosADL.SequenceType (Some tau)) in Gamma)
-      (p2: expression e has type tau__e in Gamma [| x <- EVariable tau |])
+      (p1: type_expression Gamma obj (SosADL.SosADL.SequenceType (Some tau)))
+      (p2: type_expression (Gamma [| x <- EVariable tau |]) e tau__e)
     ,
-      expression node (obj :: { x -> e})%sosadl
-                 has type (SosADL.SosADL.SequenceType (Some tau__e)) in Gamma
+      type_expression_node Gamma
+                           (obj :: { x -> e})%sosadl
+                           (SosADL.SosADL.SequenceType (Some tau__e))
 
 | type_expression_Select:
     forall (Gamma: env)
@@ -1293,15 +1325,28 @@ with type_expression_node:
       (tau: SosADL.SosADL.t_DataType)
       (x: string)
       (e: SosADL.SosADL.t_Expression)
-      (p1: expression obj has type (SosADL.SosADL.SequenceType (Some tau)) in Gamma)
-      (p2: expression e has type SosADL.SosADL.BooleanType
-        in Gamma [| x <- EVariable tau |])
+      (p1: type_expression Gamma obj (SosADL.SosADL.SequenceType (Some tau)))
+      (p2: type_expression (Gamma [| x <- EVariable tau |]) e SosADL.SosADL.BooleanType)
     ,
-      expression node (obj :: { x | e})%sosadl
-                 has type (SosADL.SosADL.SequenceType (Some tau)) in Gamma
+      type_expression_node Gamma
+                           (obj :: { x | e})%sosadl
+                           (SosADL.SosADL.SequenceType (Some tau))
 
+.
+
+Inductive type_expression:
+  env -> SosADL.SosADL.t_Expression -> SosADL.SosADL.t_DataType -> Prop :=
+  
+| type_expression_and_type:
+    forall
+      (Gamma: env)
+      (e: SosADL.SosADL.t_Expression)
+      (t: SosADL.SosADL.t_DataType)
+      (p1: @type_expression_node type_expression Gamma e t)
+      (p2: type t looks fine)
+    ,
+      expression e has type t in Gamma
 where "'expression' e 'has' 'type' t 'in' Gamma" := (type_expression Gamma e t)
-and "'expression' 'node' e 'has' 'type' t 'in' Gamma" := (type_expression_node Gamma e t)
 .
 
 (** ** Valuings *)

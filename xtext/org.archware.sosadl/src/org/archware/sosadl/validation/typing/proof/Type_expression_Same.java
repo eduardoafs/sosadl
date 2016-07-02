@@ -4,7 +4,7 @@ import org.archware.sosadl.sosADL.DataType;
 import org.archware.sosadl.sosADL.Expression;
 import org.archware.sosadl.validation.typing.Environment;
 
-public class Type_expression_Same implements Type_expression_node {
+public class Type_expression_Same<T> implements Type_expression_node<T> {
 	@Mandatory
 	private final Environment gamma;
 
@@ -21,13 +21,13 @@ public class Type_expression_Same implements Type_expression_node {
 	private final Expression max;
 
 	@Mandatory
-	private final Type_expression p1;
+	private final T p1;
 
 	@Mandatory
 	private final Subtype p2;
 
-	public Type_expression_Same(Environment gamma, Expression e, DataType tau, Expression min, Expression max,
-			Type_expression p1, Subtype p2) {
+	public Type_expression_Same(Environment gamma, Expression e, DataType tau, Expression min, Expression max, T p1,
+			Subtype p2) {
 		super();
 		this.gamma = gamma;
 		this.e = e;
@@ -58,7 +58,7 @@ public class Type_expression_Same implements Type_expression_node {
 		return max;
 	}
 
-	public Type_expression getP1() {
+	public T getP1() {
 		return p1;
 	}
 

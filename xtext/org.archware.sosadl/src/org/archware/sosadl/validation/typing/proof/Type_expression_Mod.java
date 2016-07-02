@@ -4,7 +4,7 @@ import org.archware.sosadl.sosADL.DataType;
 import org.archware.sosadl.sosADL.Expression;
 import org.archware.sosadl.validation.typing.Environment;
 
-public class Type_expression_Mod implements Type_expression_node {
+public class Type_expression_Mod<T> implements Type_expression_node<T> {
 	@Mandatory
 	private final Environment gamma;
 
@@ -39,13 +39,13 @@ public class Type_expression_Mod implements Type_expression_node {
 	private final Expression max;
 
 	@Mandatory
-	private final Type_expression p1;
+	private final T p1;
 
 	@Mandatory
 	private final Subtype p2;
 
 	@Mandatory
-	private final Type_expression p3;
+	private final T p3;
 
 	@Mandatory
 	private final Subtype p4;
@@ -57,8 +57,8 @@ public class Type_expression_Mod implements Type_expression_node {
 	private final Range_modulo_max p6;
 
 	public Type_expression_Mod(Environment gamma, Expression l, DataType l__tau, Expression l__min, Expression l__max,
-			Expression r, DataType r__tau, Expression r__min, Expression r__max, Expression min, Expression max,
-			Type_expression p1, Subtype p2, Type_expression p3, Subtype p4, Range_modulo_min p5, Range_modulo_max p6) {
+			Expression r, DataType r__tau, Expression r__min, Expression r__max, Expression min, Expression max, T p1,
+			Subtype p2, T p3, Subtype p4, Range_modulo_min p5, Range_modulo_max p6) {
 		super();
 		this.gamma = gamma;
 		this.l = l;
@@ -123,7 +123,7 @@ public class Type_expression_Mod implements Type_expression_node {
 		return max;
 	}
 
-	public Type_expression getP1() {
+	public T getP1() {
 		return p1;
 	}
 
@@ -131,7 +131,7 @@ public class Type_expression_Mod implements Type_expression_node {
 		return p2;
 	}
 
-	public Type_expression getP3() {
+	public T getP3() {
 		return p3;
 	}
 
