@@ -2,6 +2,7 @@ package org.archware.sosadl.validation.typing;
 
 import java.math.BigInteger;
 import java.util.Collection;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentLinkedDeque;
@@ -539,14 +540,33 @@ public abstract class TypeCheckerExpressionNode extends TypeCheckerDataType {
 		private final BinaryTypeInfo2<T, ?> binop2Ge = new CmpBinaryTypeInfo<>(">=",
 				TypeCheckerExpressionNode.this::createType_expression_Ge, this::binopSolverCmp);
 
-		@SuppressWarnings("unchecked")
-		public final UnaryTypeInfo2<T, ?>[] unaryTypeInformations2 = new UnaryTypeInfo2[] { unop2Same, unop2Opposite,
-				unop2Not };
+		public final Collection<UnaryTypeInfo2<T, ?>> unaryTypeInformations2;
 
-		@SuppressWarnings("unchecked")
-		public final BinaryTypeInfo2<T, ?>[] binaryTypeInformations2 = new BinaryTypeInfo2[] { binop2Add, binop2Sub,
-				binop2Mul, binop2Div, binop2Mod, binop2Implies, binop2Or, binop2Xor, binop2And, binop2Equal, binop2Diff,
-				binop2Lt, binop2Le, binop2Gt, binop2Ge };
+		public final Collection<BinaryTypeInfo2<T, ?>> binaryTypeInformations2;
+
+		public TypeInfo() {
+			unaryTypeInformations2 = new LinkedList<>();
+			unaryTypeInformations2.add(unop2Same);
+			unaryTypeInformations2.add(unop2Opposite);
+			unaryTypeInformations2.add(unop2Not);
+
+			binaryTypeInformations2 = new LinkedList<>();
+			binaryTypeInformations2.add(binop2Add);
+			binaryTypeInformations2.add(binop2Sub);
+			binaryTypeInformations2.add(binop2Mul);
+			binaryTypeInformations2.add(binop2Div);
+			binaryTypeInformations2.add(binop2Mod);
+			binaryTypeInformations2.add(binop2Implies);
+			binaryTypeInformations2.add(binop2Or);
+			binaryTypeInformations2.add(binop2Xor);
+			binaryTypeInformations2.add(binop2And);
+			binaryTypeInformations2.add(binop2Equal);
+			binaryTypeInformations2.add(binop2Diff);
+			binaryTypeInformations2.add(binop2Lt);
+			binaryTypeInformations2.add(binop2Le);
+			binaryTypeInformations2.add(binop2Gt);
+			binaryTypeInformations2.add(binop2Ge);
+		}
 	}
 
 	protected <T> Pair<Type_expression_node<T>, DataType> type_expression_node(Environment gamma, Expression e,
