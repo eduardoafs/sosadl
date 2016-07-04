@@ -1941,14 +1941,97 @@ where "'behavior' b 'well' 'typed' 'in' Gamma" := (type_behavior Gamma b)
 (** ** Protocol and assertion
 
 Protocols are handled similarly to behaviors, with the noticeable
-exception that [Any] is allowed in expressions.
+exception that [Any] is allowed in expressions, and [AnyAction] as a
+prefix statement.
 
 *)
 
 (** %\todo{% %}% *)
+Inductive type_bodyprotocol:
+  env -> SosADL.SosADL.t_ProtocolStatement -> env -> Prop :=
+
+with type_nonfinalprotocol: env -> list SosADL.SosADL.t_ProtocolStatement -> Prop :=
+
+| type_nonfinalprotocol_empty:
+    forall
+      (Gamma: env)
+    ,
+      nonfinal protocol nil well typed in Gamma
+
+| type_nonfinalprotocol_prefix:
+    forall
+      (Gamma: env)
+      (s: SosADL.SosADL.t_ProtocolStatement)
+      (Gamma1: env)
+      (l: list SosADL.SosADL.t_ProtocolStatement)
+      (p1: protocol statement s well typed in Gamma yields to Gamma1)
+      (p2: nonfinal protocol l well typed in Gamma1)
+    ,
+      nonfinal protocol (s :: l) well typed in Gamma
+
+where "'protocol' 'statement' b 'well' 'typed' 'in' Gamma 'yields' 'to' Gamma1"
+        := (type_bodyprotocol Gamma b Gamma1)
+and "'nonfinal' 'protocol' b 'well' 'typed' 'in' Gamma"
+               := (type_nonfinalprotocol Gamma b)
+.
 
 Inductive type_finalprotocol: env -> list SosADL.SosADL.t_ProtocolStatement -> Prop :=
 
+| type_finalprotocol_prefix:
+    forall
+      (Gamma: env)
+      (s: SosADL.SosADL.t_ProtocolStatement)
+      (Gamma1: env)
+      (l: list SosADL.SosADL.t_ProtocolStatement)
+      (p1: protocol statement s well typed in Gamma yields to Gamma1)
+      (p2: final protocol l well typed in Gamma1)
+    ,
+      final protocol (s :: l) well typed in Gamma
+
+| type_finalprotocol_Repeat:
+    forall
+      (Gamma: env)
+      (b: list SosADL.SosADL.t_ProtocolStatement)
+      (p1: nonfinal protocol b well typed in Gamma)
+    ,
+      final protocol [SosADL.SosADL.RepeatProtocol
+                        (Some (SosADL.SosADL.Protocol b))]
+            well typed in Gamma
+
+| type_finalprotocol_IfThenElse:
+    forall
+      (Gamma: env)
+      (c: SosADL.SosADL.t_Expression)
+      (Gammat: env)
+      (t: list SosADL.SosADL.t_ProtocolStatement)
+      (Gammae: env)
+      (e: list SosADL.SosADL.t_ProtocolStatement)
+      (p1: expression c has type SosADL.SosADL.BooleanType in Gamma)
+      (p2: condition_true Gamma c Gammat)
+      (p3: final protocol t well typed in Gammat)
+      (p4: condition_false Gamma c Gammae)
+      (p5: final protocol e well typed in Gammae)
+    ,
+      final protocol [SosADL.SosADL.IfThenElseProtocol
+                        (Some c)
+                        (Some (SosADL.SosADL.Protocol t))
+                        (Some (SosADL.SosADL.Protocol e))]
+            well typed in Gamma
+
+| type_finalprotocol_Choose:
+    forall (Gamma: env)
+      (branches: list SosADL.SosADL.t_Protocol)
+      (p1: for each b of branches,
+           final protocol (SosADL.SosADL.Protocol_statements b) well typed in Gamma)
+    ,
+      final protocol [SosADL.SosADL.ChooseProtocol branches] well typed in Gamma
+
+| type_finalprotocol_Done:
+    forall
+      (Gamma: env)
+    ,
+      final protocol [SosADL.SosADL.DoneProtocol] well typed in Gamma
+  
 where "'final' 'protocol' p 'well' 'typed' 'in' Gamma" := (type_finalprotocol Gamma p)
 .
 

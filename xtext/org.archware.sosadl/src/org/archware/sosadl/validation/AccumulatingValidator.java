@@ -37,8 +37,8 @@ public class AccumulatingValidator implements ErrorCollector {
 
 	@Override
 	public void error(String message, EObject target, EStructuralFeature feature, int index) {
-		if (target == null) {
-			throw new NullPointerException();
+		if (target.eResource() == null) {
+			throw new IllegalArgumentException("no resource");
 		}
 		errors.add(new ValidationError(message, target, feature, index));
 	}

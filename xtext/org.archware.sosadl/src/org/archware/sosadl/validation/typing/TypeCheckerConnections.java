@@ -54,7 +54,7 @@ public abstract class TypeCheckerConnections extends TypeCheckerProtocol {
 	private Type_gate type_gate(Environment gamma, GateDecl g, GateDecl g1, Environment gamma1,
 			Pair<Environment, Mutually_translate<Connection, Type_connection>> p1) {
 		return saveProof(g, createType_GateDecl(gamma, g1.getName(), g.getConnections(), g1.getConnections(), p1.getA(),
-				g1.getProtocol(), gamma1, p1.getB(), type_protocol(p1.getA(), g1.getProtocol())));
+				g1.getProtocol(), gamma1, p1.getB(), type_protocol(p1.getA(), g.getProtocol())));
 	}
 
 	private Pair<GateDecl, Pair<Environment, Mutually_translate<Connection, Type_connection>>> translate_gate(
@@ -84,7 +84,7 @@ public abstract class TypeCheckerConnections extends TypeCheckerProtocol {
 		return saveProof(g,
 				createType_DutyDecl(gamma, g1.getName(), g.getConnections(), g1.getConnections(), p1.getA(),
 						g1.getAssertion(), g1.getProtocol(), gamma1, p1.getB(),
-						type_assertion(p1.getA(), g1.getAssertion()), type_protocol(p1.getA(), g1.getProtocol())));
+						type_assertion(p1.getA(), g.getAssertion()), type_protocol(p1.getA(), g.getProtocol())));
 	}
 
 	private Pair<DutyDecl, Pair<Environment, Mutually_translate<Connection, Type_connection>>> translate_duty(

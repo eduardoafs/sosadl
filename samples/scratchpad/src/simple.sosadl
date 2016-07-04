@@ -90,7 +90,6 @@ library simple is {
 		}
 	}
 	
-	// TODO must be a mediator
 	mediator shared_memory() is {
 		datatype t
 	
@@ -120,7 +119,7 @@ library simple is {
 				choose {
 					via read::c send v
 				} or {
-					// behavior()
+					// TODO behavior()
 					via write::c receive v2
 				}
 			}

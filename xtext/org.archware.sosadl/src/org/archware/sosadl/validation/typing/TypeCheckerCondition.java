@@ -1,6 +1,5 @@
 package org.archware.sosadl.validation.typing;
 
-import org.archware.sosadl.sosADL.Behavior;
 import org.archware.sosadl.sosADL.BinaryExpression;
 import org.archware.sosadl.sosADL.DataType;
 import org.archware.sosadl.sosADL.Expression;
@@ -15,23 +14,24 @@ import org.archware.sosadl.validation.typing.proof.Greatest;
 import org.archware.sosadl.validation.typing.proof.Smallest;
 import org.archware.sosadl.validation.typing.proof.Type_expression;
 import org.archware.utils.Pair;
+import org.eclipse.emf.ecore.EObject;
 
-public abstract class TypeCheckerCondition extends TypeCheckerConnections {
+public abstract class TypeCheckerCondition extends TypeCheckerExpression {
 
 	public TypeCheckerCondition() {
 		super();
 	}
 
-	protected Pair<Environment, Condition_false> condition_false(Environment gamma, Expression c, Behavior branch) {
+	protected Pair<Environment, Condition_false> condition_false(Environment gamma, Expression c, EObject branch) {
 		return condition_false(gamma, c, true, branch);
 	}
 
-	protected Pair<Environment, Condition_true> condition_true(Environment gamma, Expression c, Behavior branch) {
+	protected Pair<Environment, Condition_true> condition_true(Environment gamma, Expression c, EObject branch) {
 		return condition_true(gamma, c, true, branch);
 	}
 
 	protected Pair<Environment, Condition_false> condition_false(Environment gamma, Expression c, boolean sym,
-			Behavior branch) {
+			EObject branch) {
 		if (c instanceof UnaryExpression) {
 			UnaryExpression u = (UnaryExpression) c;
 			String op = u.getOp();
@@ -93,7 +93,7 @@ public abstract class TypeCheckerCondition extends TypeCheckerConnections {
 	}
 
 	protected Pair<Environment, Condition_true> condition_true(Environment gamma, Expression c, boolean sym,
-			Behavior branch) {
+			EObject branch) {
 		if (c instanceof UnaryExpression) {
 			UnaryExpression u = (UnaryExpression) c;
 			String op = u.getOp();
@@ -169,8 +169,8 @@ public abstract class TypeCheckerCondition extends TypeCheckerConnections {
 	}
 
 	private Pair<Environment, Condition_true> doComparisons(Environment gamma, Expression c, boolean sym,
-			Behavior branch, String op, Expression r, Expression symExpr, String x, Type_expression p1,
-			Expression x_min, Expression x_max, Type_expression p2, Expression r_min, Expression r_max) {
+			EObject branch, String op, Expression r, Expression symExpr, String x, Type_expression p1, Expression x_min,
+			Expression x_max, Type_expression p2, Expression r_min, Expression r_max) {
 		if ("<".equals(op)) {
 			Pair<Expression, Smallest> ep3 = smallest(x_max, createBinaryExpression(r_max, "-", 1));
 			Expression x_max_ = ep3.getA();
@@ -312,7 +312,7 @@ public abstract class TypeCheckerCondition extends TypeCheckerConnections {
 	}
 
 	private Pair<Environment, Condition_true> maybe_condition_true(Environment gamma, Expression c, boolean sym,
-			Behavior branch) {
+			EObject branch) {
 		if (sym) {
 			return condition_true(gamma, c, false, branch);
 		} else {

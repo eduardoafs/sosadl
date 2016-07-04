@@ -130,7 +130,7 @@ import org.eclipse.emf.ecore.util.EcoreUtil;
  * 
  * @author Jeremy Buisson
  */
-public class TypeChecker extends TypeCheckerBehavior {
+public class TypeChecker extends TypeCheckerConnections {
 	@Override
 	protected Type_sosADL type_sosADL(SosADL file) {
 		// type_SosADL:

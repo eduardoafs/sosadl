@@ -21,6 +21,7 @@ import org.archware.sosadl.sosADL.GateDecl;
 import org.archware.sosadl.sosADL.Import;
 import org.archware.sosadl.sosADL.MediatorDecl;
 import org.archware.sosadl.sosADL.ModeType;
+import org.archware.sosadl.sosADL.Protocol;
 import org.archware.sosadl.sosADL.ProtocolDecl;
 import org.archware.sosadl.sosADL.ProtocolStatement;
 import org.archware.sosadl.sosADL.SystemDecl;
@@ -696,5 +697,39 @@ public abstract class TypeCheckerProofConstructor extends TypeCheckerInference {
 	protected Type_assertion createType_AssertionDecl(Environment gamma, String name, EList<ProtocolStatement> body,
 			Type_finalprotocol p1) {
 		return new Type_AssertionDecl(gamma, name, body, p1);
+	}
+
+	protected Type_finalprotocol createType_finalprotocol_Repeat(Environment gamma, EList<ProtocolStatement> b,
+			Type_nonfinalprotocol p1) {
+		return new Type_finalprotocol_Repeat(gamma, b, p1);
+	}
+
+	protected Type_finalprotocol createType_finalprotocol_IfThenElse(Environment gamma, Expression c,
+			Environment gammat, EList<ProtocolStatement> t, Environment gammae, EList<ProtocolStatement> e,
+			Type_expression p1, Condition_true p2, Type_finalprotocol p3, Condition_false p4, Type_finalprotocol p5) {
+		return new Type_finalprotocol_IfThenElse(gamma, c, gammat, t, gammae, e, p1, p2, p3, p4, p5);
+	}
+
+	protected Type_finalprotocol createType_finalprotocol_Choose(Environment gamma, EList<Protocol> branches,
+			Forall<Protocol, Type_finalprotocol> p1) {
+		return new Type_finalprotocol_Choose(gamma, branches, p1);
+	}
+
+	protected Type_finalprotocol createType_finalprotocol_Done(Environment gamma) {
+		return new Type_finalprotocol_Done(gamma);
+	}
+
+	protected Type_finalprotocol createType_finalprotocol_prefix(Environment gamma, ProtocolStatement s,
+			Environment gamma1, EList<ProtocolStatement> l, Type_bodyprotocol p1, Type_finalprotocol p2) {
+		return new Type_finalprotocol_prefix(gamma, s, gamma1, l, p1, p2);
+	}
+
+	protected Type_nonfinalprotocol createType_nonfinalprotocol_prefix(Environment gamma, ProtocolStatement s,
+			Environment gamma1, EList<ProtocolStatement> l, Type_bodyprotocol p1, Type_nonfinalprotocol p2) {
+		return new Type_nonfinalprotocol_prefix(gamma, s, gamma1, l, p1, p2);
+	}
+
+	protected Type_nonfinalprotocol createType_nonfinalprotocol_empty(Environment gamma) {
+		return new Type_nonfinalprotocol_empty(gamma);
 	}
 }
