@@ -513,7 +513,7 @@ Inductive constexpr_expression: SosADL.SosADL.t_Expression -> Prop :=
     forall
       (v: BinInt.Z)
     ,
-      expression (SosADL.SosADL.IntegerValue (Some v)) is constant integer
+      expression (# v)%sosadl is constant integer
 
 | constexpr_Opposite:
     forall
@@ -715,8 +715,8 @@ Inductive range_modulo_min:
       (rmin: SosADL.SosADL.t_Expression)
       (rmax: SosADL.SosADL.t_Expression)
       (min: SosADL.SosADL.t_Expression)
-      (p1: (SosADL.SosADL.IntegerValue (Some 1%Z)) <= rmin)
-      (p2: min <= ((SosADL.SosADL.IntegerValue (Some 1%Z)) - rmax)%sosadl)
+      (p1: (# 1%Z)%sosadl <= rmin)
+      (p2: min <= (# 1%Z - rmax)%sosadl)
     ,
       range_modulo_min lmin lmax rmin rmax min
 
@@ -727,8 +727,8 @@ Inductive range_modulo_min:
       (rmin: SosADL.SosADL.t_Expression)
       (rmax: SosADL.SosADL.t_Expression)
       (min: SosADL.SosADL.t_Expression)
-      (p1: (SosADL.SosADL.IntegerValue (Some 0%Z)) <= lmin)
-      (p2: min <= (SosADL.SosADL.IntegerValue (Some 0%Z)))
+      (p1: (# 0%Z)%sosadl <= lmin)
+      (p2: min <= (# 0%Z)%sosadl)
     ,
       range_modulo_min lmin lmax rmin rmax min
 
@@ -739,8 +739,8 @@ Inductive range_modulo_min:
       (rmin: SosADL.SosADL.t_Expression)
       (rmax: SosADL.SosADL.t_Expression)
       (min: SosADL.SosADL.t_Expression)
-      (p1: rmax <= (- (SosADL.SosADL.IntegerValue (Some 1%Z)))%sosadl)
-      (p2: min <= (rmin + (SosADL.SosADL.IntegerValue (Some 1%Z)))%sosadl)
+      (p1: rmax <= (- # 1%Z)%sosadl)
+      (p2: min <= (rmin + # 1%Z)%sosadl)
     ,
       range_modulo_min lmin lmax rmin rmax min
 .
@@ -756,8 +756,8 @@ Inductive range_modulo_max:
       (rmin: SosADL.SosADL.t_Expression)
       (rmax: SosADL.SosADL.t_Expression)
       (max: SosADL.SosADL.t_Expression)
-      (p1: (SosADL.SosADL.IntegerValue (Some 1%Z)) <= rmin)
-      (p2: (rmax - (SosADL.SosADL.IntegerValue (Some 1%Z)))%sosadl <= max)
+      (p1: (# 1%Z)%sosadl <= rmin)
+      (p2: (rmax - # 1%Z)%sosadl <= max)
     ,
       range_modulo_max lmin lmax rmin rmax max
 
@@ -768,8 +768,8 @@ Inductive range_modulo_max:
       (rmin: SosADL.SosADL.t_Expression)
       (rmax: SosADL.SosADL.t_Expression)
       (max: SosADL.SosADL.t_Expression)
-      (p1: lmax <= (SosADL.SosADL.IntegerValue (Some 0%Z)))
-      (p2: (SosADL.SosADL.IntegerValue (Some 0%Z)) <= max)
+      (p1: lmax <= (# 0%Z)%sosadl)
+      (p2: (# 0%Z)%sosadl <= max)
     ,
       range_modulo_max lmin lmax rmin rmax max
 
@@ -780,8 +780,8 @@ Inductive range_modulo_max:
       (rmin: SosADL.SosADL.t_Expression)
       (rmax: SosADL.SosADL.t_Expression)
       (max: SosADL.SosADL.t_Expression)
-      (p1: rmax <= (- (SosADL.SosADL.IntegerValue (Some 1%Z)))%sosadl)
-      (p2: ((- (SosADL.SosADL.IntegerValue (Some 1%Z))) - rmin)%sosadl <= max)
+      (p1: rmax <= (- # 1%Z)%sosadl)
+      (p2: ((- # 1%Z) - rmin)%sosadl <= max)
     ,
       range_modulo_max lmin lmax rmin rmax max
 .
@@ -813,9 +813,8 @@ Inductive type_expression_node
       (v: BinInt.Z)
     ,
       type_expression_node Gamma
-                            (SosADL.SosADL.IntegerValue (Some v))
-                            [(SosADL.SosADL.IntegerValue (Some v)),
-                             (SosADL.SosADL.IntegerValue (Some v))]%sosadl
+                            (# v)%sosadl
+                            [# v, # v]%sosadl
 
 | type_expression_Opposite:
     forall
@@ -944,7 +943,7 @@ Inductive type_expression_node
       (p2: l__tau </ [l__min, l__max]%sosadl)
       (p3: type_expression Gamma r r__tau)
       (p4: r__tau </ [r__min, r__max]%sosadl)
-      (p5: (SosADL.SosADL.IntegerValue (Some 1%Z)) <= r__min)
+      (p5: (# 1%Z)%sosadl <= r__min)
       (p6: min <= (l__min / r__min)%sosadl)
       (p7: min <= (l__min / r__max)%sosadl)
       (p8: min <= (l__max / r__min)%sosadl)
@@ -975,7 +974,7 @@ Inductive type_expression_node
       (p2: l__tau </ [l__min, l__max]%sosadl)
       (p3: type_expression Gamma r r__tau)
       (p4: r__tau </ [r__min, r__max]%sosadl)
-      (p5: (r__max <= (- (SosADL.SosADL.IntegerValue (Some 1%Z)))%sosadl))
+      (p5: (r__max <= (- # 1%Z)%sosadl))
       (p6: min <= (l__min / r__min)%sosadl)
       (p7: min <= (l__min / r__max)%sosadl)
       (p8: min <= (l__max / r__min)%sosadl)
@@ -1497,7 +1496,7 @@ Inductive condition_true: env -> SosADL.SosADL.t_Expression -> env -> Prop :=
                       has type [x_min, x_max]%sosadl in Gamma)
       (p2: expression r has type [r_min, r_max]%sosadl in Gamma)
       (p3: smallest x_max_
-                    x_max (r_max - (SosADL.SosADL.IntegerValue (Some 1%Z)))%sosadl)
+                    x_max (r_max - # 1%Z)%sosadl)
       (p4: type [x_min, x_max_]%sosadl looks fine)
       (p5: condition_true (Gamma [| x <- EVariable [x_min, x_max_]%sosadl |])
                           (r > (SosADL.SosADL.IdentExpression (Some x)))%sosadl
@@ -1585,7 +1584,7 @@ Inductive condition_true: env -> SosADL.SosADL.t_Expression -> env -> Prop :=
                       has type [x_min, x_max]%sosadl in Gamma)
       (p2: expression r has type [r_min, r_max]%sosadl in Gamma)
       (p3: greatest x_min_ x_min
-                    (r_min + (SosADL.SosADL.IntegerValue (Some 1%Z)))%sosadl)
+                    (r_min + # 1%Z)%sosadl)
       (p4: type [x_min_, x_max]%sosadl looks fine)
       (p5: condition_true (Gamma [| x <- EVariable [x_min_, x_max]%sosadl |])
                           (r < (SosADL.SosADL.IdentExpression (Some x)))%sosadl
