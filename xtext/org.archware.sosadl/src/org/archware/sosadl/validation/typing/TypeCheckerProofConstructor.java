@@ -108,8 +108,8 @@ public abstract class TypeCheckerProofConstructor extends TypeCheckerInference {
 			EList<FormalParameter> params, EList<FormalParameter> params2, Environment gammap, DataType rettype,
 			DataType rettype2, EList<Valuing> vals, Environment gammav, Expression retexpr, DataType tau,
 			Environment gamma1, Equality p1, Type_datatype p2,
-			Mutually_translate<FormalParameter, Type_formalParameter> p3, Incrementally<Valuing, Type_valuing> p4,
-			Type_expression p5, Subtype p6, Equality p7) {
+			Mutually_translate<FormalParameter, Type_formalParameter> p3,
+			Incrementally<Valuing, Type_valuing<Type_expression>> p4, Type_expression p5, Subtype p6, Equality p7) {
 		return new Type_FunctionDecl_Method(gamma, dataName, dataTypeName, dataTypeDecl, dataTypeReal, dataTypeMethods,
 				name, params, params2, gammap, rettype, rettype2, vals, gammav, retexpr, tau, gamma1, p1, p2, p3, p4,
 				p5, p6, p7);
@@ -464,14 +464,14 @@ public abstract class TypeCheckerProofConstructor extends TypeCheckerInference {
 		return new Check_BooleanType();
 	}
 
-	protected Type_valuing createType_Valuing_typed(Environment gamma, String x, DataType tau, DataType tau1,
-			Expression e, DataType tau__e, Type_expression p1, Subtype p2, Type_datatype p3) {
-		return new Type_Valuing_typed(gamma, x, tau, tau1, e, tau__e, p1, p2, p3);
+	protected <T> Type_valuing<T> createType_Valuing_typed(Environment gamma, String x, DataType tau, DataType tau1,
+			Expression e, DataType tau__e, T p1, Subtype p2, Type_datatype p3) {
+		return new Type_Valuing_typed<>(gamma, x, tau, tau1, e, tau__e, p1, p2, p3);
 	}
 
-	protected Type_valuing createType_Valuing_inferred(Environment gamma, String x, Expression e, DataType tau__e,
-			Type_expression p1) {
-		return new Type_Valuing_inferred(gamma, x, e, tau__e, p1);
+	protected <T> Type_valuing<T> createType_Valuing_inferred(Environment gamma, String x, Expression e,
+			DataType tau__e, T p1) {
+		return new Type_Valuing_inferred<>(gamma, x, e, tau__e, p1);
 	}
 
 	protected Type_gate createType_GateDecl(Environment gamma, String name, EList<Connection> conns,
@@ -534,7 +534,7 @@ public abstract class TypeCheckerProofConstructor extends TypeCheckerInference {
 	}
 
 	protected Type_bodyprefix createType_bodyprefix_Valuing(Environment gamma, Valuing v, Environment gamma1,
-			Type_valuing p1) {
+			Type_valuing<Type_expression> p1) {
 		return new Type_bodyprefix_Valuing(gamma, v, gamma1, p1);
 	}
 

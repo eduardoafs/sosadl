@@ -210,9 +210,9 @@ public abstract class TypeCheckerBehavior extends TypeCheckerValuing {
 			}
 		} else if (s instanceof ValuingBehavior) {
 			Valuing v = ((ValuingBehavior) s).getValuing();
-			Pair<Type_valuing, Environment> pe = type_valuing(gamma, v);
+			Pair<Type_valuing<Type_expression>, Environment> pe = type_valuing(this::type_expression, gamma, v);
 			Environment gamma1 = pe.getB();
-			Type_valuing p1 = pe.getA();
+			Type_valuing<Type_expression> p1 = pe.getA();
 			if (pe != null && p1 != null && gamma1 != null) {
 				Type_bodyprefix proof = p(Type_bodyprefix.class, gamma, (gamma_) -> p(Type_bodyprefix.class, gamma1,
 						(gamma1_) -> createType_bodyprefix_Valuing(gamma_, v, gamma1_, p1)));

@@ -1,4 +1,4 @@
 package org.archware.sosadl.validation.typing.proof;
 
-public interface Type_valuing extends ProofTerm {
+public interface Type_valuing<T> extends ProofTerm {
 }

@@ -470,7 +470,6 @@ Reserved Notation "'protocol' p 'well' 'typed' 'in' Gamma" (at level 200, Gamma 
 Reserved Notation "'final' 'body' b 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
 Reserved Notation "'statement' b 'well' 'typed' 'in' Gamma 'yields' 'to' Gamma1" (at level 200, Gamma at level 1, no associativity).
 Reserved Notation "'nonfinal' 'body' b 'well' 'typed' 'in' Gamma" (at level 200, Gamma at level 1, no associativity).
-Reserved Notation "'valuing' v 'well' 'typed' 'in' Gamma 'yields' 'to' Gamma1" (at level 200, Gamma at level 1, v at level 1, no associativity).
 
 (**
  ** SoSADL notations
@@ -480,43 +479,10 @@ Reserved Notation "'valuing' v 'well' 'typed' 'in' Gamma 'yields' 'to' Gamma1" (
 provide convenient notations for SoSADL expressions.  *)
 
 Import ListNotations.
+Require Import SosADLNotations.
 Local Open Scope list_scope.
 Local Open Scope string_scope.
 Delimit Scope sosadl_scope with sosadl.
-
-Notation "- x" := (SosADL.SosADL.UnaryExpression (Some "-") (Some x)) : sosadl_scope.
-Notation "+ x" := (SosADL.SosADL.UnaryExpression (Some "+") (Some x)) (at level 35, x at level 35) : sosadl_scope.
-
-Notation "l * r" := (SosADL.SosADL.BinaryExpression (Some l) (Some "*") (Some r)) : sosadl_scope.
-Notation "l / r" := (SosADL.SosADL.BinaryExpression (Some l) (Some "/") (Some r)) : sosadl_scope.
-Notation "l 'mod' r" :=
-  (SosADL.SosADL.BinaryExpression (Some l) (Some "mod") (Some r)) : sosadl_scope.
-
-Notation "l + r" := (SosADL.SosADL.BinaryExpression (Some l) (Some "+") (Some r)) : sosadl_scope.
-Notation "l - r" := (SosADL.SosADL.BinaryExpression (Some l) (Some "-") (Some r)) : sosadl_scope.
-
-Notation "l < r" := (SosADL.SosADL.BinaryExpression (Some l) (Some "<") (Some r)) : sosadl_scope.
-Notation "l <= r" := (SosADL.SosADL.BinaryExpression (Some l) (Some "<=") (Some r)) : sosadl_scope.
-Notation "l > r" := (SosADL.SosADL.BinaryExpression (Some l) (Some ">") (Some r)) : sosadl_scope.
-Notation "l >= r" := (SosADL.SosADL.BinaryExpression (Some l) (Some ">=") (Some r)) : sosadl_scope.
-Notation "l = r" := (SosADL.SosADL.BinaryExpression (Some l) (Some "=") (Some r)) : sosadl_scope.
-Notation "l <> r" := (SosADL.SosADL.BinaryExpression (Some l) (Some "<>") (Some r)) : sosadl_scope.
-
-Notation "l '->' r" := (SosADL.SosADL.BinaryExpression (Some l) (Some "implies") (Some r)) : sosadl_scope.
-Notation "l '&&' r" := (SosADL.SosADL.BinaryExpression (Some l) (Some "and") (Some r)) : sosadl_scope.
-Notation "l '||' r" := (SosADL.SosADL.BinaryExpression (Some l) (Some "or") (Some r)) : sosadl_scope.
-Notation "l '^^' r" := (SosADL.SosADL.BinaryExpression (Some l) (Some "xor") (Some r)) (at level 50, left associativity) : sosadl_scope.
-Notation "! x" := (SosADL.SosADL.UnaryExpression (Some "not") (Some x)) (at level 35, x at level 35) : sosadl_scope.
-
-Notation "[ l , r ]" := (SosADL.SosADL.RangeType (Some l) (Some r)) (at level 0, l at level 200, r at level 200) : sosadl_scope.
-
-Notation "s :: { x -> e }" := (SosADL.SosADL.Map (Some s) (Some x) (Some e)) (at level 59, x at level 1, e at level 200, left associativity) : sosadl_scope.
-Notation "s :: { x | e }" := (SosADL.SosADL.Select (Some s) (Some x) (Some e)) (at level 59, x at level 1, e at level 200, left associativity) : sosadl_scope.
-
-Notation "s ::: f" := (SosADL.SosADL.Field (Some s) (Some f)) (at level 59, f at level 1, left associativity) : sosadl_scope.
-
-Notation "'valuing' x = e" := (SosADL.SosADL.Valuing (Some x) None (Some e)) (at level 200, x at level 1) : sosadl_scope.
-Notation "'valuing' x 'is' t = e" := (SosADL.SosADL.Valuing (Some x) (Some t) (Some e)) (at level 200, x at level 1, t at level 1) : sosadl_scope.
 
 (**
  * The type system
@@ -837,7 +803,8 @@ The rules are structured in two sets of mutually recursive judgements:
  *)
 
 Inductive type_expression_node
-          {type_expression: env -> SosADL.SosADL.t_Expression -> SosADL.SosADL.t_DataType -> Prop}:
+          {type_expression: env -> SosADL.SosADL.t_Expression
+                            -> SosADL.SosADL.t_DataType -> Prop}:
   env -> SosADL.SosADL.t_Expression -> SosADL.SosADL.t_DataType -> Prop :=
                       
 | type_expression_IntegerValue:
@@ -1357,7 +1324,10 @@ where "'expression' e 'has' 'type' t 'in' Gamma" := (type_expression Gamma e t)
 When the type of a valuing is missing, the computed type of the
 expression is used instead.  *)
 
-Inductive type_valuing: env -> SosADL.SosADL.t_Valuing -> env -> Prop :=
+Inductive type_valuing
+          {type_expression': env -> SosADL.SosADL.t_Expression
+                             -> SosADL.SosADL.t_DataType -> Prop}:
+  env -> SosADL.SosADL.t_Valuing -> env -> Prop :=
 
 | type_Valuing_typed:
     forall (Gamma: env)
@@ -1366,30 +1336,32 @@ Inductive type_valuing: env -> SosADL.SosADL.t_Valuing -> env -> Prop :=
       (tau1: SosADL.SosADL.t_DataType)
       (e: SosADL.SosADL.t_Expression)
       (tau__e: SosADL.SosADL.t_DataType)
-      (p1: expression e has type tau__e in Gamma)
+      (p1: type_expression' Gamma e tau__e)
       (p2: tau__e </ tau1)
       (p3: type tau is tau1 in Gamma)
     ,
-      valuing (valuing x is tau = e)%sosadl
-              well typed in Gamma
-                              yields to (Gamma [| x <- EVariable tau1 |])
+      type_valuing Gamma
+                   (valuing x is tau = e)%sosadl
+                   (Gamma [| x <- EVariable tau1 |])
 
 | type_Valuing_inferred:
     forall (Gamma: env)
       (x: string)
       (e: SosADL.SosADL.t_Expression)
       (tau__e: SosADL.SosADL.t_DataType)
-      (p1: expression e has type tau__e in Gamma)
+      (p1: type_expression' Gamma e tau__e)
     ,
-      valuing (valuing x = e)%sosadl
-              well typed in Gamma
-                              yields to (Gamma [| x <- EVariable tau__e |])
-
-where "'valuing' v 'well' 'typed' 'in' Gamma 'yields' 'to' Gamma1"
-        := (type_valuing Gamma v Gamma1)
+      type_valuing Gamma
+                   (valuing x = e)%sosadl
+                   (Gamma [| x <- EVariable tau__e |])
 .
 
-Definition type_valuings Gamma l Gamma1 := @incrementally _ type_valuing Gamma l Gamma1.
+Definition type_valuings
+           {type_expression': env -> SosADL.SosADL.t_Expression
+                              -> SosADL.SosADL.t_DataType -> Prop}
+           Gamma l Gamma1 :=
+  @incrementally _ (fun g e g1 => @type_valuing type_expression' g e g1)
+                 Gamma l Gamma1.
 
 (** ** Conditional statements *)
 
@@ -1856,7 +1828,7 @@ Inductive type_bodyprefix:
       (Gamma: env)
       (v: SosADL.SosADL.t_Valuing)
       (Gamma1: env)
-      (p1: valuing v well typed in Gamma yields to Gamma1)
+      (p1: @type_valuing type_expression Gamma v Gamma1)
     ,
       statement (SosADL.SosADL.ValuingBehavior (Some v))
                 well typed in Gamma yields to Gamma1
@@ -2263,7 +2235,7 @@ Inductive type_function: env -> SosADL.SosADL.t_FunctionDecl -> env -> Prop :=
                 (Some dataName)
                 (Some dataTypeReal) :: params')
              Gammap)
-      (p4: type_valuings Gammap vals Gammav)
+      (p4: @type_valuings type_expression Gammap vals Gammav)
       (p5: expression retexpr has type tau in Gammav)
       (p6: tau </ rettype')
       (p7: Gamma1 =

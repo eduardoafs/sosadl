@@ -67,7 +67,7 @@ public class Type_FunctionDecl_Method implements Type_function {
 	private final Mutually_translate<FormalParameter, Type_formalParameter> p3;
 
 	@Mandatory
-	private final Incrementally<Valuing, Type_valuing> p4;
+	private final Incrementally<Valuing, Type_valuing<Type_expression>> p4;
 
 	@Mandatory
 	private final Type_expression p5;
@@ -83,7 +83,7 @@ public class Type_FunctionDecl_Method implements Type_function {
 			EList<FormalParameter> params2, Environment gammap, DataType rettype, DataType rettype2,
 			EList<Valuing> vals, Environment gammav, Expression retexpr, DataType tau, Environment gamma1, Equality p1,
 			Type_datatype p2, Mutually_translate<FormalParameter, Type_formalParameter> p3,
-			Incrementally<Valuing, Type_valuing> p4, Type_expression p5, Subtype p6, Equality p7) {
+			Incrementally<Valuing, Type_valuing<Type_expression>> p4, Type_expression p5, Subtype p6, Equality p7) {
 		super();
 		this.gamma = gamma;
 		this.dataName = dataName;
@@ -191,7 +191,7 @@ public class Type_FunctionDecl_Method implements Type_function {
 		return p3;
 	}
 
-	public Incrementally<Valuing, Type_valuing> getP4() {
+	public Incrementally<Valuing, Type_valuing<Type_expression>> getP4() {
 		return p4;
 	}
 

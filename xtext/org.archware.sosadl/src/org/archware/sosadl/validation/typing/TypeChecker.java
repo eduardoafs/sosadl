@@ -289,8 +289,8 @@ public class TypeChecker extends TypeCheckerBehavior {
 					if (EcoreUtil.equals(self2.getType(), realType)) {
 						EList<FormalParameter> params2 = cdr(p3.getA().getA());
 						Environment gammap = p3.getA().getB();
-						Pair<Incrementally<Valuing, Type_valuing>, Environment> p4 = type_valuings(gammap,
-								f.getValuing());
+						Pair<Incrementally<Valuing, Type_valuing<Type_expression>>, Environment> p4 = type_valuings(
+								gammap, f.getValuing(), this::type_expression);
 						Environment gammav = p4.getB();
 						Pair<Type_expression, DataType> p5 = type_expression(gammav, f.getExpression());
 						FunctionDecl toAdd = createFunctionDecl(self2, f.getName(), params2, p2.getA(), f.getValuing(),

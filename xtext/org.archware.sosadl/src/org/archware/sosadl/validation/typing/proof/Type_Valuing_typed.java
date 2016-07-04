@@ -4,7 +4,7 @@ import org.archware.sosadl.sosADL.DataType;
 import org.archware.sosadl.sosADL.Expression;
 import org.archware.sosadl.validation.typing.Environment;
 
-public class Type_Valuing_typed implements Type_valuing {
+public class Type_Valuing_typed<T> implements Type_valuing<T> {
 	@Mandatory
 	private final Environment gamma;
 
@@ -24,7 +24,7 @@ public class Type_Valuing_typed implements Type_valuing {
 	private final DataType tau__e;
 
 	@Mandatory
-	private final Type_expression p1;
+	private final T p1;
 
 	@Mandatory
 	private final Subtype p2;
@@ -33,7 +33,7 @@ public class Type_Valuing_typed implements Type_valuing {
 	private final Type_datatype p3;
 
 	public Type_Valuing_typed(Environment gamma, String x, DataType tau, DataType tau1, Expression e, DataType tau__e,
-			Type_expression p1, Subtype p2, Type_datatype p3) {
+			T p1, Subtype p2, Type_datatype p3) {
 		super();
 		this.gamma = gamma;
 		this.x = x;
@@ -70,7 +70,7 @@ public class Type_Valuing_typed implements Type_valuing {
 		return tau__e;
 	}
 
-	public Type_expression getP1() {
+	public T getP1() {
 		return p1;
 	}
 

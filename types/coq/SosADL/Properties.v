@@ -143,13 +143,13 @@ Ltac apply_in_Z :=
       apply In_Z with (zl := za) (zr := zb); auto; try (solve [ auto_rewrite ])
   end.
 
-Lemma deinterp_in_Z: forall a b n, (a <=? b)%Z = true -> interp_in_Z n = Interpreted b -> (# a)%SosADL <= n.
+Lemma deinterp_in_Z: forall a b n, (a <=? b)%Z = true -> interp_in_Z n = Interpreted b -> (# a)%sosadl <= n.
 Proof.
   intros.
   apply_in_Z.
 Qed.
 
-Lemma deinterp_in_Z': forall a b n, (b <=? a)%Z = true -> interp_in_Z n = Interpreted b -> n <= (# a)%SosADL.
+Lemma deinterp_in_Z': forall a b n, (b <=? a)%Z = true -> interp_in_Z n = Interpreted b -> n <= (# a)%sosadl.
 Proof.
   intros.
   apply_in_Z.
@@ -161,7 +161,7 @@ Lemma range_modulo_min_ok: forall lmin l lmax rmin r rmax min
                                   (H3: l <= lmax)
                                   (H4: rmin <= r)
                                   (H5: r <= rmax),
-    min <= (l mod r)%SosADL.
+    min <= (l mod r)%sosadl.
 Proof.
   intros.
   interp_to_Zle.
@@ -200,7 +200,7 @@ Lemma range_modulo_max_ok: forall lmin l lmax rmin r rmax max
                                   (H3: l <= lmax)
                                   (H4: rmin <= r)
                                   (H5: r <= rmax),
-    (l mod r)%SosADL <= max.
+    (l mod r)%sosadl <= max.
 Proof.
   intros.
   interp_to_Zle.
@@ -231,13 +231,13 @@ Proof.
 Qed.
 
 Lemma range_modulo_min_best_pos_pos: forall lmin lmax rmin rmax
-                             (H1: (# 1%Z)%SosADL <= rmin)
+                             (H1: (# 1%Z)%sosadl <= rmin)
                              (H2: lmin <= lmax)
                              (H3: rmin <= rmax)
-                             (H4: (# 0%Z)%SosADL <= lmin)
+                             (H4: (# 0%Z)%sosadl <= lmin)
                              min
                              (H5: range_modulo_min lmin lmax rmin rmax min),
-    min <= (# 0%Z)%SosADL.
+    min <= (# 0%Z)%sosadl.
 Proof.
   intros.
   destruct H5.
@@ -255,14 +255,14 @@ Proof.
 Qed.
 
 Lemma range_modulo_min_best_neg_pos: forall lmin lmax rmin rmax zlmin
-                             (H1: (# 1%Z)%SosADL <= rmin)
+                             (H1: (# 1%Z)%sosadl <= rmin)
                              (H2: lmin <= lmax)
                              (H3: rmin <= rmax)
                              (H4: interp_in_Z lmin = Interpreted zlmin)
                              (H5: (0 <=? zlmin)%Z = false)
                              min
                              (H': range_modulo_min lmin lmax rmin rmax min),
-    min <= (# 1%Z - rmax)%SosADL.
+    min <= (# 1%Z - rmax)%sosadl.
 Proof.
   intros. destruct H'.
   - auto.
@@ -330,21 +330,21 @@ Proof.
 Qed.
 
 Lemma range_modulo_min_best_pos: forall lmin lmax rmin rmax
-                             (H1: (# 1%Z)%SosADL <= rmin)
+                             (H1: (# 1%Z)%sosadl <= rmin)
                              (H2: lmin <= lmax)
                              (H3: rmin <= rmax),
     exists min, range_modulo_min lmin lmax rmin rmax min
            /\ (forall min', range_modulo_min lmin lmax rmin rmax min' -> min' <= min)
-           /\ (exists l r, r <= (lmax - lmin)%SosADL ->
-                     (forall zlmin, interp_in_Z lmin = Interpreted zlmin -> (zlmin < 0)%Z -> lmin <= (- r)%SosADL) ->
+           /\ (exists l r, r <= (lmax - lmin)%sosadl ->
+                     (forall zlmin, interp_in_Z lmin = Interpreted zlmin -> (zlmin < 0)%Z -> lmin <= (- r)%sosadl) ->
                      lmin <= l /\ l <= lmax /\ rmin <= r /\ r <= rmax
-                     /\ min <= (l mod r)%SosADL
-                     /\ (l mod r)%SosADL <= min).
+                     /\ min <= (l mod r)%sosadl
+                     /\ (l mod r)%sosadl <= min).
 Proof.
   intros.
   inversion H2. subst.
   case_eq ((0 <=? zl)%Z); intro.
-  - exists (# 0%Z)%SosADL.
+  - exists (# 0%Z)%sosadl.
     split_intro H4.
     + apply range_modulo_min_zero.
       * apply_in_Z; reflexivity.
@@ -352,7 +352,7 @@ Proof.
     + split.
       * eapply deinterp_in_Z in H; eauto.
         apply range_modulo_min_best_pos_pos; auto.
-      * exists (lmax - (lmax mod rmin))%SosADL.
+      * exists (lmax - (lmax mod rmin))%sosadl.
         exists rmin.
         intros H5 _.
         interp_to_Zle. simpl_in_Z.
@@ -380,7 +380,7 @@ Proof.
                       omega. } }
   - assert (0 > zl)%Z
       by (generalize (Zle_cases 0 zl); intro X; rewrite H in X; auto).
-    exists (# 1%Z - rmax)%SosADL.
+    exists (# 1%Z - rmax)%sosadl.
     split_intro H4.
     + apply range_modulo_min_pos.
       * interp_to_Zle. simpl_in_Z.
@@ -390,7 +390,7 @@ Proof.
         apply Zle_bool_refl.
     + split.
       * eapply range_modulo_min_best_neg_pos; eauto.
-      * exists (lmin + (# 1%Z) - lmin mod rmax)%SosADL.
+      * exists (lmin + (# 1%Z) - lmin mod rmax)%sosadl.
         exists rmax.
         intros H5 H6.
         apply Z.gt_lt in H0.

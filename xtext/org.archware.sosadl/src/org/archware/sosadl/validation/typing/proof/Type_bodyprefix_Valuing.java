@@ -15,9 +15,9 @@ public class Type_bodyprefix_Valuing implements Type_bodyprefix {
 	private final Environment gamma1;
 
 	@Mandatory
-	private final Type_valuing p1;
+	private final Type_valuing<Type_expression> p1;
 
-	public Type_bodyprefix_Valuing(Environment gamma, Valuing v, Environment gamma1, Type_valuing p1) {
+	public Type_bodyprefix_Valuing(Environment gamma, Valuing v, Environment gamma1, Type_valuing<Type_expression> p1) {
 		super();
 		this.gamma = gamma;
 		this.v = v;
@@ -37,7 +37,7 @@ public class Type_bodyprefix_Valuing implements Type_bodyprefix {
 		return gamma1;
 	}
 
-	public Type_valuing getP1() {
+	public Type_valuing<Type_expression> getP1() {
 		return p1;
 	}
 
