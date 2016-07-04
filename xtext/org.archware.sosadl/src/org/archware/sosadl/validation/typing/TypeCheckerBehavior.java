@@ -49,7 +49,7 @@ import org.archware.utils.Pair;
 import org.archware.utils.StreamUtils;
 import org.eclipse.emf.common.util.EList;
 
-public abstract class TypeCheckerBehavior extends TypeCheckerValuing {
+public abstract class TypeCheckerBehavior extends TypeCheckerGenericBehavior {
 
 	protected Type_behavior type_behavior(Environment gamma, BehaviorDecl b) {
 		if (b.getName() != null && b.getBody() != null) {

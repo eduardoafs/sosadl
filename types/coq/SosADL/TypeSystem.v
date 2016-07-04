@@ -1647,7 +1647,110 @@ with condition_false: env -> SosADL.SosADL.t_Expression -> env -> Prop :=
       condition_false Gamma (SosADL.SosADL.BinaryExpression
                                (Some l) (Some op) (Some r)) Gamma1
 .
-       
+
+(** ** Generic rules for behaviors, protocols and assertions *)
+
+Inductive type_generic_finalbody
+          {t_Body: Set}
+          {t_Statement: Set}
+          (block: list t_Statement -> t_Body)
+          (s_Choose: list t_Body -> t_Statement)
+          (s_Done: t_Statement)
+          (s_IfThenElse: option SosADL.SosADL.t_Expression -> option t_Body -> option t_Body -> t_Statement)
+          (s_Repeat: option t_Body -> t_Statement)
+          (p_Other: env -> t_Statement -> Prop)
+          (type_generic_prefix: env -> t_Statement -> env -> Prop)
+          (type_generic_nonfinalbody: env -> list t_Statement -> Prop):
+  env -> list t_Statement -> Prop :=
+
+| type_generic_other:
+    forall
+      (Gamma: env)
+      (s: t_Statement)
+      (p1: p_Other Gamma s)
+    ,
+      type_generic_finalbody
+        block s_Choose s_Done s_IfThenElse s_Repeat p_Other
+        type_generic_prefix type_generic_nonfinalbody
+        Gamma [s]
+
+| type_generic_prefix:
+    forall
+      (Gamma: env)
+      (s: t_Statement)
+      (Gamma1: env)
+      (l: list t_Statement)
+      (p1: type_generic_prefix Gamma s Gamma1)
+      (p2: type_generic_finalbody
+             block s_Choose s_Done s_IfThenElse s_Repeat p_Other
+             type_generic_prefix type_generic_nonfinalbody
+             Gamma1 l)
+    ,
+      type_generic_finalbody
+        block s_Choose s_Done s_IfThenElse s_Repeat p_Other
+        type_generic_prefix type_generic_nonfinalbody
+        Gamma (s :: l)
+
+| type_generic_Repeat:
+    forall
+      (Gamma: env)
+      (b: list t_Statement)
+      (p1: type_generic_nonfinalbody Gamma b)
+    ,
+      type_generic_finalbody
+        block s_Choose s_Done s_IfThenElse s_Repeat p_Other
+        type_generic_prefix type_generic_nonfinalbody
+        Gamma [s_Repeat (Some (block b))]
+
+| type_generic_IfThenElse:
+    forall
+      (Gamma: env)
+      (c: SosADL.SosADL.t_Expression)
+      (Gammat: env)
+      (t: list t_Statement)
+      (Gammae: env)
+      (e: list t_Statement)
+      (p1: expression c has type SosADL.SosADL.BooleanType in Gamma)
+      (p2: condition_true Gamma c Gammat)
+      (p3: type_generic_finalbody
+             block s_Choose s_Done s_IfThenElse s_Repeat p_Other
+             type_generic_prefix type_generic_nonfinalbody
+             Gammat t)
+      (p4: condition_false Gamma c Gammae)
+      (p5: type_generic_finalbody
+             block s_Choose s_Done s_IfThenElse s_Repeat p_Other
+             type_generic_prefix type_generic_nonfinalbody
+             Gammae e)
+    ,
+      type_generic_finalbody
+        block s_Choose s_Done s_IfThenElse s_Repeat p_Other
+        type_generic_prefix type_generic_nonfinalbody
+        Gamma [s_IfThenElse (Some c) (Some (block t)) (Some (block e))]
+
+| type_generic_Choose:
+    forall (Gamma: env)
+      (branches: list (list t_Statement))
+      (p1: for each b of branches,
+           type_generic_finalbody
+             block s_Choose s_Done s_IfThenElse s_Repeat p_Other
+             type_generic_prefix type_generic_nonfinalbody
+             Gamma b)
+    ,
+      type_generic_finalbody
+        block s_Choose s_Done s_IfThenElse s_Repeat p_Other
+        type_generic_prefix type_generic_nonfinalbody
+        Gamma [s_Choose (map block branches)]
+
+| type_generic_Done:
+    forall
+      (Gamma: env)
+    ,
+      type_generic_finalbody
+        block s_Choose s_Done s_IfThenElse s_Repeat p_Other
+        type_generic_prefix type_generic_nonfinalbody
+        Gamma [s_Done]
+
+.
 
 (** ** Body *)
 
@@ -1975,63 +2078,26 @@ and "'nonfinal' 'protocol' b 'well' 'typed' 'in' Gamma"
                := (type_nonfinalprotocol Gamma b)
 .
 
+Inductive type_finalprotocol_other: env -> SosADL.SosADL.t_ProtocolStatement -> Prop :=
+.
+
 Inductive type_finalprotocol: env -> list SosADL.SosADL.t_ProtocolStatement -> Prop :=
 
-| type_finalprotocol_prefix:
-    forall
-      (Gamma: env)
-      (s: SosADL.SosADL.t_ProtocolStatement)
-      (Gamma1: env)
-      (l: list SosADL.SosADL.t_ProtocolStatement)
-      (p1: protocol statement s well typed in Gamma yields to Gamma1)
-      (p2: final protocol l well typed in Gamma1)
-    ,
-      final protocol (s :: l) well typed in Gamma
-
-| type_finalprotocol_Repeat:
-    forall
-      (Gamma: env)
-      (b: list SosADL.SosADL.t_ProtocolStatement)
-      (p1: nonfinal protocol b well typed in Gamma)
-    ,
-      final protocol [SosADL.SosADL.RepeatProtocol
-                        (Some (SosADL.SosADL.Protocol b))]
-            well typed in Gamma
-
-| type_finalprotocol_IfThenElse:
-    forall
-      (Gamma: env)
-      (c: SosADL.SosADL.t_Expression)
-      (Gammat: env)
-      (t: list SosADL.SosADL.t_ProtocolStatement)
-      (Gammae: env)
-      (e: list SosADL.SosADL.t_ProtocolStatement)
-      (p1: expression c has type SosADL.SosADL.BooleanType in Gamma)
-      (p2: condition_true Gamma c Gammat)
-      (p3: final protocol t well typed in Gammat)
-      (p4: condition_false Gamma c Gammae)
-      (p5: final protocol e well typed in Gammae)
-    ,
-      final protocol [SosADL.SosADL.IfThenElseProtocol
-                        (Some c)
-                        (Some (SosADL.SosADL.Protocol t))
-                        (Some (SosADL.SosADL.Protocol e))]
-            well typed in Gamma
-
-| type_finalprotocol_Choose:
+| type_finalprotocol_generic:
     forall (Gamma: env)
-      (branches: list SosADL.SosADL.t_Protocol)
-      (p1: for each b of branches,
-           final protocol (SosADL.SosADL.Protocol_statements b) well typed in Gamma)
+      (l: list SosADL.SosADL.t_ProtocolStatement)
+      (p1: type_generic_finalbody
+             SosADL.SosADL.Protocol
+             SosADL.SosADL.ChooseProtocol
+             SosADL.SosADL.DoneProtocol
+             SosADL.SosADL.IfThenElseProtocol
+             SosADL.SosADL.RepeatProtocol
+             type_finalprotocol_other
+             type_bodyprotocol type_nonfinalprotocol
+             Gamma l)
     ,
-      final protocol [SosADL.SosADL.ChooseProtocol branches] well typed in Gamma
+      final protocol l well typed in Gamma
 
-| type_finalprotocol_Done:
-    forall
-      (Gamma: env)
-    ,
-      final protocol [SosADL.SosADL.DoneProtocol] well typed in Gamma
-  
 where "'final' 'protocol' p 'well' 'typed' 'in' Gamma" := (type_finalprotocol Gamma p)
 .
 

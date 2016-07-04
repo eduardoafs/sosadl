@@ -54,6 +54,7 @@ import org.archware.sosadl.validation.typing.proof.fields.ListField
 import org.archware.sosadl.validation.typing.proof.fields.MandatoryField
 import org.archware.sosadl.validation.typing.proof.fields.OptionalField
 import org.archware.sosadl.sosADL.ModeType
+import org.eclipse.emf.common.util.EList
 
 /**
  * Generates code from your model files on save.
@@ -153,6 +154,7 @@ class TypingProofGenerator2 {
 			return _hook(content.toString)
 		}
 	}
+	def dispatch generatorFunction(EList<?> content) { return coqGenerator._generateL(content.map[x | x.generatorFunction_], [x | Optional.of(x).orAdmitted]) }
 	def dispatch generatorFunction(String content) { return coqGenerator.generatestring(content) }
 	def dispatch generatorFunction(Boolean content) { return coqGenerator.generatebool(content) }
 	def dispatch generatorFunction(Quantifier content) { return coqGenerator.generateQuantifier(content) }

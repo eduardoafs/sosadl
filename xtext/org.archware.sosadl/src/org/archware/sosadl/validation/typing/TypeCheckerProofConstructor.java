@@ -8,9 +8,11 @@ import org.archware.sosadl.sosADL.AssertionDecl;
 import org.archware.sosadl.sosADL.Behavior;
 import org.archware.sosadl.sosADL.BehaviorDecl;
 import org.archware.sosadl.sosADL.BehaviorStatement;
+import org.archware.sosadl.sosADL.ChooseProtocol;
 import org.archware.sosadl.sosADL.Connection;
 import org.archware.sosadl.sosADL.DataType;
 import org.archware.sosadl.sosADL.DataTypeDecl;
+import org.archware.sosadl.sosADL.DoneProtocol;
 import org.archware.sosadl.sosADL.DutyDecl;
 import org.archware.sosadl.sosADL.EntityBlock;
 import org.archware.sosadl.sosADL.Expression;
@@ -18,18 +20,21 @@ import org.archware.sosadl.sosADL.FieldDecl;
 import org.archware.sosadl.sosADL.FormalParameter;
 import org.archware.sosadl.sosADL.FunctionDecl;
 import org.archware.sosadl.sosADL.GateDecl;
+import org.archware.sosadl.sosADL.IfThenElseProtocol;
 import org.archware.sosadl.sosADL.Import;
 import org.archware.sosadl.sosADL.MediatorDecl;
 import org.archware.sosadl.sosADL.ModeType;
 import org.archware.sosadl.sosADL.Protocol;
 import org.archware.sosadl.sosADL.ProtocolDecl;
 import org.archware.sosadl.sosADL.ProtocolStatement;
+import org.archware.sosadl.sosADL.RepeatProtocol;
 import org.archware.sosadl.sosADL.SystemDecl;
 import org.archware.sosadl.sosADL.TupleElement;
 import org.archware.sosadl.sosADL.Unit;
 import org.archware.sosadl.sosADL.Valuing;
 import org.archware.sosadl.validation.typing.proof.*;
 import org.eclipse.emf.common.util.EList;
+import org.eclipse.emf.ecore.EObject;
 
 public abstract class TypeCheckerProofConstructor extends TypeCheckerInference {
 
@@ -699,29 +704,9 @@ public abstract class TypeCheckerProofConstructor extends TypeCheckerInference {
 		return new Type_AssertionDecl(gamma, name, body, p1);
 	}
 
-	protected Type_finalprotocol createType_finalprotocol_Repeat(Environment gamma, EList<ProtocolStatement> b,
-			Type_nonfinalprotocol p1) {
-		return new Type_finalprotocol_Repeat(gamma, b, p1);
-	}
-
-	protected Type_finalprotocol createType_finalprotocol_IfThenElse(Environment gamma, Expression c,
-			Environment gammat, EList<ProtocolStatement> t, Environment gammae, EList<ProtocolStatement> e,
-			Type_expression p1, Condition_true p2, Type_finalprotocol p3, Condition_false p4, Type_finalprotocol p5) {
-		return new Type_finalprotocol_IfThenElse(gamma, c, gammat, t, gammae, e, p1, p2, p3, p4, p5);
-	}
-
-	protected Type_finalprotocol createType_finalprotocol_Choose(Environment gamma, EList<Protocol> branches,
-			Forall<Protocol, Type_finalprotocol> p1) {
-		return new Type_finalprotocol_Choose(gamma, branches, p1);
-	}
-
-	protected Type_finalprotocol createType_finalprotocol_Done(Environment gamma) {
-		return new Type_finalprotocol_Done(gamma);
-	}
-
-	protected Type_finalprotocol createType_finalprotocol_prefix(Environment gamma, ProtocolStatement s,
-			Environment gamma1, EList<ProtocolStatement> l, Type_bodyprotocol p1, Type_finalprotocol p2) {
-		return new Type_finalprotocol_prefix(gamma, s, gamma1, l, p1, p2);
+	protected Type_finalprotocol createType_finalprotocol_generic(Environment gamma, EList<ProtocolStatement> l,
+			Type_generic_finalbody<Protocol, ProtocolStatement, ChooseProtocol, DoneProtocol, IfThenElseProtocol, RepeatProtocol, Type_finalprotocol_other, Type_bodyprotocol, Type_nonfinalprotocol> p1) {
+		return new Type_finalprotocol_generic(gamma, l, p1);
 	}
 
 	protected Type_nonfinalprotocol createType_nonfinalprotocol_prefix(Environment gamma, ProtocolStatement s,
@@ -732,4 +717,58 @@ public abstract class TypeCheckerProofConstructor extends TypeCheckerInference {
 	protected Type_nonfinalprotocol createType_nonfinalprotocol_empty(Environment gamma) {
 		return new Type_nonfinalprotocol_empty(gamma);
 	}
+
+	protected <Body extends EObject, Statement extends EObject, Choose extends EObject, Done extends EObject, IfThenElse extends EObject, Repeat extends EObject, Other extends ProofTerm, P extends ProofTerm, NF extends ProofTerm> Type_generic_finalbody<Body, Statement, Choose, Done, IfThenElse, Repeat, Other, P, NF> createType_generic_Done(
+			String block, Class<Choose> choose, Class<Done> done, Class<IfThenElse> ifThenElse, Class<Repeat> repeat,
+			Class<Other> other, Class<P> type_generic_prefix, Class<NF> type_generic_nonfinalbody, Environment gamma) {
+		return new Type_generic_Done<>(block, choose, done, ifThenElse, repeat, other, type_generic_prefix,
+				type_generic_nonfinalbody, gamma);
+	}
+
+	protected <Body extends EObject, Statement extends EObject, Choose extends EObject, Done extends EObject, IfThenElse extends EObject, Repeat extends EObject, Other extends ProofTerm, P extends ProofTerm, NF extends ProofTerm> Type_generic_finalbody<Body, Statement, Choose, Done, IfThenElse, Repeat, Other, P, NF> createType_generic_prefix(
+			String block, Class<Choose> choose, Class<Done> done, Class<IfThenElse> ifThenElse, Class<Repeat> repeat,
+			Class<Other> other, Class<P> type_generic_prefix, Class<NF> type_generic_nonfinalbody, Environment gamma,
+			Statement s, Environment gamma1, EList<Statement> l, P p1,
+			Type_generic_finalbody<Body, Statement, Choose, Done, IfThenElse, Repeat, Other, P, NF> p2) {
+		return new Type_generic_prefix<>(block, choose, done, ifThenElse, repeat, other, type_generic_prefix,
+				type_generic_nonfinalbody, gamma, s, gamma1, l, p1, p2);
+	}
+
+	protected <Body extends EObject, Statement extends EObject, Choose extends EObject, Done extends EObject, IfThenElse extends EObject, Repeat extends EObject, Other extends ProofTerm, P extends ProofTerm, NF extends ProofTerm> Type_generic_finalbody<Body, Statement, Choose, Done, IfThenElse, Repeat, Other, P, NF> createType_generic_other(
+			String block, Class<Choose> choose, Class<Done> done, Class<IfThenElse> ifThenElse, Class<Repeat> repeat,
+			Class<Other> other, Class<P> type_generic_prefix, Class<NF> type_generic_nonfinalbody, Environment gamma,
+			Statement s, Other p1) {
+		return new Type_generic_other<>(block, choose, done, ifThenElse, repeat, other, type_generic_prefix,
+				type_generic_nonfinalbody, gamma, s, p1);
+	}
+
+	protected <Body extends EObject, Statement extends EObject, Choose extends EObject, Done extends EObject, IfThenElse extends EObject, Repeat extends EObject, Other extends ProofTerm, P extends ProofTerm, NF extends ProofTerm> Type_generic_finalbody<Body, Statement, Choose, Done, IfThenElse, Repeat, Other, P, NF> createType_generic_Repeat(
+			String block, Class<Choose> choose, Class<Done> done, Class<IfThenElse> ifThenElse, Class<Repeat> repeat,
+			Class<Other> other, Class<P> type_generic_prefix, Class<NF> type_generic_nonfinalbody, Environment gamma,
+			EList<Statement> l, NF p1) {
+		return new Type_generic_Repeat<>(block, choose, done, ifThenElse, repeat, other, type_generic_prefix,
+				type_generic_nonfinalbody, gamma, l, p1);
+	}
+
+	protected <Body extends EObject, Statement extends EObject, Choose extends EObject, Done extends EObject, IfThenElse extends EObject, Repeat extends EObject, Other extends ProofTerm, P extends ProofTerm, NF extends ProofTerm> Type_generic_finalbody<Body, Statement, Choose, Done, IfThenElse, Repeat, Other, P, NF> createType_generic_IfThenElse(
+			String block, Class<Choose> choose, Class<Done> done, Class<IfThenElse> ifThenElse, Class<Repeat> repeat,
+			Class<Other> other, Class<P> type_generic_prefix, Class<NF> type_generic_nonfinalbody, Environment gamma,
+			Expression c, Environment gammat, EList<Statement> t, Environment gammae, EList<Statement> e,
+			Type_expression p1, Condition_true p2,
+			Type_generic_finalbody<Body, Statement, Choose, Done, IfThenElse, Repeat, Other, P, NF> p3,
+			Condition_false p4,
+			Type_generic_finalbody<Body, Statement, Choose, Done, IfThenElse, Repeat, Other, P, NF> p5) {
+		return new Type_generic_IfThenElse<>(block, choose, done, ifThenElse, repeat, other, type_generic_prefix,
+				type_generic_nonfinalbody, gamma, c, gammat, t, gammae, e, p1, p2, p3, p4, p5);
+	}
+
+	protected <Body extends EObject, Statement extends EObject, Choose extends EObject, Done extends EObject, IfThenElse extends EObject, Repeat extends EObject, Other extends ProofTerm, P extends ProofTerm, NF extends ProofTerm> Type_generic_finalbody<Body, Statement, Choose, Done, IfThenElse, Repeat, Other, P, NF> createType_generic_Choose(
+			String block, Class<Choose> choose, Class<Done> done, Class<IfThenElse> ifThenElse, Class<Repeat> repeat,
+			Class<Other> other, Class<P> type_generic_prefix, Class<NF> type_generic_nonfinalbody, Environment gamma,
+			EList<EList<Statement>> branches,
+			Forall<EList<Statement>, Type_generic_finalbody<Body, Statement, Choose, Done, IfThenElse, Repeat, Other, P, NF>> p1) {
+		return new Type_generic_Choose<>(block, choose, done, ifThenElse, repeat, other, type_generic_prefix,
+				type_generic_nonfinalbody, gamma, branches, p1);
+	}
+
 }

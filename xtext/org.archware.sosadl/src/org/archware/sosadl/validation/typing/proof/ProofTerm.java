@@ -13,6 +13,7 @@ import org.archware.sosadl.validation.typing.proof.fields.FieldDescriptor;
 import org.archware.sosadl.validation.typing.proof.fields.ListField;
 import org.archware.sosadl.validation.typing.proof.fields.MandatoryField;
 import org.archware.sosadl.validation.typing.proof.fields.OptionalField;
+import org.eclipse.emf.ecore.EObject;
 import org.eclipse.xtext.xbase.lib.ListExtensions;
 import org.eclipse.xtext.xbase.lib.StringExtensions;
 
@@ -52,11 +53,20 @@ public interface ProofTerm {
 	 */
 	default String getConstructorName() {
 		Class<?> c = this.getClass();
+		return constructorName(c);
+	}
+
+	public static String constructorName(Class<?> c) {
 		CoqConstructor cc = c.getAnnotation(CoqConstructor.class);
 		if (cc != null) {
 			return cc.value();
 		} else {
-			return StringExtensions.toFirstLower(c.getSimpleName());
+			String n = c.getSimpleName();
+			if(EObject.class.isAssignableFrom(c)) {
+				return n;
+			} else {
+				return StringExtensions.toFirstLower(n);
+			}
 		}
 	}
 
@@ -159,7 +169,13 @@ public interface ProofTerm {
 					}
 				} else {
 					if (f.isAnnotationPresent(CoqLiteral.class)) {
-						Optional<CharSequence> c = Optional.ofNullable((CharSequence) content);
+						Optional<CharSequence> c = Optional.ofNullable(content).map((x) -> {
+							if (x instanceof Class) {
+								return constructorName((Class<?>) x);
+							} else {
+								return (CharSequence) x;
+							}
+						});
 						if (f.isAnnotationPresent(Mandatory.class)) {
 							return new MandatoryField() {
 								@Override

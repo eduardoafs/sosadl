@@ -22,7 +22,7 @@ import org.eclipse.emf.ecore.EObject;
 
 public abstract class TypeCheckerGenericRules extends TypeCheckerProofConstructor {
 
-	protected <S, T extends EObject, P extends ProofTerm> Forall<T, P> proveForall(List<S> l, Function<S, T> f,
+	protected <S, T, P extends ProofTerm> Forall<T, P> proveForall(List<S> l, Function<S, T> f,
 			Function<S, P> prover) {
 		if (l.isEmpty()) {
 			return createForall_nil();

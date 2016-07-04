@@ -1,8 +1,10 @@
 package org.archware.sosadl.validation.typing;
 
+import java.util.function.BiFunction;
+import java.util.function.Function;
+
 import org.archware.sosadl.sosADL.AssertionDecl;
 import org.archware.sosadl.sosADL.ChooseProtocol;
-import org.archware.sosadl.sosADL.DataType;
 import org.archware.sosadl.sosADL.DoExprProtocol;
 import org.archware.sosadl.sosADL.DoneProtocol;
 import org.archware.sosadl.sosADL.Expression;
@@ -15,13 +17,11 @@ import org.archware.sosadl.sosADL.ProtocolStatement;
 import org.archware.sosadl.sosADL.RepeatProtocol;
 import org.archware.sosadl.sosADL.SosADLPackage;
 import org.archware.sosadl.sosADL.ValuingProtocol;
-import org.archware.sosadl.validation.typing.proof.Condition_false;
-import org.archware.sosadl.validation.typing.proof.Condition_true;
-import org.archware.sosadl.validation.typing.proof.Forall;
 import org.archware.sosadl.validation.typing.proof.Type_assertion;
 import org.archware.sosadl.validation.typing.proof.Type_bodyprotocol;
-import org.archware.sosadl.validation.typing.proof.Type_expression;
 import org.archware.sosadl.validation.typing.proof.Type_finalprotocol;
+import org.archware.sosadl.validation.typing.proof.Type_finalprotocol_other;
+import org.archware.sosadl.validation.typing.proof.Type_generic_finalbody;
 import org.archware.sosadl.validation.typing.proof.Type_nonfinalprotocol;
 import org.archware.sosadl.validation.typing.proof.Type_protocol;
 import org.archware.utils.Pair;
@@ -31,97 +31,36 @@ public abstract class TypeCheckerProtocol extends TypeCheckerBehavior {
 
 	private Type_finalprotocol type_finalprotocol(Environment gamma, EList<ProtocolStatement> b, Protocol behavior,
 			int index) {
-		if (b.isEmpty()) {
-			error("`done' (or any other final statement) is missing to terminate the protocol", behavior,
-					SosADLPackage.Literals.BEHAVIOR__STATEMENTS, index - 1);
-			return null;
-		} else {
-			ProtocolStatement first = b.get(0);
-			EList<ProtocolStatement> l = cdr(b);
-			if (l.isEmpty()) {
-				saveEnvironment(first, gamma);
-				if (first instanceof DoneProtocol) {
-					return saveProof(first,
-							p(Type_finalprotocol.class, gamma, (gamma_) -> createType_finalprotocol_Done(gamma_)));
-				} else if (first instanceof RepeatProtocol) {
-					RepeatProtocol r = (RepeatProtocol) first;
-					Protocol rb = r.getRepeated();
-					if (rb != null) {
-						EList<ProtocolStatement> rbl = rb.getStatements();
-						Type_nonfinalprotocol p1 = type_nonfinalprotocol(gamma, rbl, rb, 0);
-						return saveProof(first, p(Type_finalprotocol.class, gamma,
-								(gamma_) -> createType_finalprotocol_Repeat(gamma_, rbl, p1)));
-					} else {
-						error("There must be a repeated protocol", first,
-								SosADLPackage.Literals.REPEAT_PROTOCOL__REPEATED);
-						return null;
-					}
-				} else if (first instanceof IfThenElseProtocol) {
-					IfThenElseProtocol ite = (IfThenElseProtocol) first;
-					Expression c = ite.getCondition();
-					Protocol t = ite.getIfTrue();
-					Protocol e = ite.getIfFalse();
-					if (c != null && t != null && e != null) {
-						// TODO type_expression
-						Pair<Type_expression, DataType> pt = type_expression(gamma, c);
-						Type_expression p1 = pt.getA();
-						DataType dt = pt.getB();
-						if (p1 != null && dt != null) {
-							inference.addConstraint(dt, createBooleanType(), c);
-							EList<ProtocolStatement> ts = t.getStatements();
-							Pair<Environment, Condition_true> gammat = condition_true(gamma, c, t);
-							Type_finalprotocol p3 = type_finalprotocol(gammat.getA(), ts, t, 0);
-							EList<ProtocolStatement> es = e.getStatements();
-							Pair<Environment, Condition_false> gammae = condition_false(gamma, c, e);
-							Type_finalprotocol p5 = type_finalprotocol(gammae.getA(), es, e, 0);
-							return saveProof(first,
-									p(Type_finalprotocol.class, gamma,
-											(gamma_) -> p(Type_finalprotocol.class, gammat.getA(),
-													(gammat_) -> p(Type_finalprotocol.class, gammae.getA(),
-															(gammae_) -> createType_finalprotocol_IfThenElse(gamma_, c,
-																	gammat_, ts, gammae_, es, p1, gammat.getB(), p3,
-																	gammae.getB(), p5)))));
-						} else {
-							return null;
-						}
-					} else {
-						if (c == null) {
-							error("The `if' protocol must have a condition", first,
-									SosADLPackage.Literals.IF_THEN_ELSE_PROTOCOL__CONDITION);
-						}
-						if (t == null) {
-							error("The `if' protocol must have a `then' clause", first,
-									SosADLPackage.Literals.IF_THEN_ELSE_PROTOCOL__IF_TRUE);
-						}
-						if (e == null) {
-							error("At tail position, the `if' protocol must have an `else' clause", first,
-									SosADLPackage.Literals.IF_THEN_ELSE_PROTOCOL__IF_FALSE);
-						}
-						return null;
-					}
-				} else if (first instanceof ChooseProtocol) {
-					ChooseProtocol c = (ChooseProtocol) first;
-					EList<Protocol> branches = c.getBranches();
-					Forall<Protocol, Type_finalprotocol> p1 = proveForall(branches,
-							(x) -> type_finalprotocol(gamma, x.getStatements(), x, 0));
-					return saveProof(first, p(Type_finalprotocol.class, gamma,
-							(gamma_) -> createType_finalprotocol_Choose(gamma_, branches, p1)));
-				} else {
-					error("Protocol statement `" + labelOf(first) + "' is not allowed at tail position", first, null);
-					return null;
-				}
-			} else {
-				Pair<Environment, Type_bodyprotocol> p1 = type_bodyprotocol(gamma, first);
-				if (p1 != null && p1.getA() != null && p1.getB() != null) {
-					Type_finalprotocol p2 = type_finalprotocol(p1.getA(), l, behavior, index + 1);
-					return saveProof(first, p(Type_finalprotocol.class, gamma, (gamma_) -> p(Type_finalprotocol.class,
-							p1.getA(),
-							(gamma1_) -> createType_finalprotocol_prefix(gamma_, first, gamma1_, l, p1.getB(), p2))));
-				} else {
-					return null;
-				}
-			}
-		}
+		Function<Protocol, EList<ProtocolStatement>> getBlock = Protocol::getStatements;
+		BiFunction<Environment, ProtocolStatement, Type_finalprotocol_other> proveOther = this::final_other;
+		BiFunction<Environment, ProtocolStatement, Pair<Environment, Type_bodyprotocol>> gp = this::type_bodyprotocol;
+		BiFunction<Environment, Protocol, Type_nonfinalprotocol> gnf = this::type_nonfinalprotocol;
+		Function<ChooseProtocol, EList<Protocol>> getBranches = ChooseProtocol::getBranches;
+		Function<IfThenElseProtocol, Expression> getCondition = IfThenElseProtocol::getCondition;
+		Function<IfThenElseProtocol, Protocol> getThen = IfThenElseProtocol::getIfTrue;
+		Function<IfThenElseProtocol, Protocol> getElse = IfThenElseProtocol::getIfFalse;
+		Function<RepeatProtocol, Protocol> getRepeated = RepeatProtocol::getRepeated;
+		Type_generic_finalbody<Protocol, ProtocolStatement, ChooseProtocol, DoneProtocol, IfThenElseProtocol, RepeatProtocol, Type_finalprotocol_other, Type_bodyprotocol, Type_nonfinalprotocol> p1 = type_generic_finalbody(
+				Protocol.class, ProtocolStatement.class, getBlock, "Protocol", ChooseProtocol.class, getBranches,
+				DoneProtocol.class, IfThenElseProtocol.class, getCondition,
+				SosADLPackage.Literals.IF_THEN_ELSE_PROTOCOL__CONDITION, getThen,
+				SosADLPackage.Literals.IF_THEN_ELSE_PROTOCOL__IF_TRUE, getElse,
+				SosADLPackage.Literals.IF_THEN_ELSE_PROTOCOL__IF_FALSE, RepeatProtocol.class, getRepeated,
+				SosADLPackage.Literals.REPEAT_PROTOCOL__REPEATED, Type_finalprotocol_other.class, proveOther,
+				Type_bodyprotocol.class, gp, Type_nonfinalprotocol.class, gnf, gamma, b, behavior,
+				SosADLPackage.Literals.PROTOCOL__STATEMENTS, 0);
+		Type_finalprotocol proof = p(Type_finalprotocol.class, gamma,
+				(gamma_) -> createType_finalprotocol_generic(gamma_, b, p1));
+		return saveProof(behavior, proof);
+	}
+
+	private Type_finalprotocol_other final_other(Environment gamma, ProtocolStatement s) {
+		error("Protocol statement `" + labelOf(s) + "' not allowed at tail position", s, null);
+		return null;
+	}
+
+	private Type_nonfinalprotocol type_nonfinalprotocol(Environment gamma, Protocol p) {
+		return type_nonfinalprotocol(gamma, p.getStatements(), p, 0);
 	}
 
 	private Type_nonfinalprotocol type_nonfinalprotocol(Environment gamma, EList<ProtocolStatement> b,
