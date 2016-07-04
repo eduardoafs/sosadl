@@ -11,6 +11,7 @@ import org.archware.sosadl.sosADL.BehaviorStatement;
 import org.archware.sosadl.sosADL.Connection;
 import org.archware.sosadl.sosADL.DataType;
 import org.archware.sosadl.sosADL.DataTypeDecl;
+import org.archware.sosadl.sosADL.DutyDecl;
 import org.archware.sosadl.sosADL.EntityBlock;
 import org.archware.sosadl.sosADL.Expression;
 import org.archware.sosadl.sosADL.FieldDecl;
@@ -21,6 +22,7 @@ import org.archware.sosadl.sosADL.Import;
 import org.archware.sosadl.sosADL.MediatorDecl;
 import org.archware.sosadl.sosADL.ModeType;
 import org.archware.sosadl.sosADL.ProtocolDecl;
+import org.archware.sosadl.sosADL.ProtocolStatement;
 import org.archware.sosadl.sosADL.SystemDecl;
 import org.archware.sosadl.sosADL.TupleElement;
 import org.archware.sosadl.sosADL.Unit;
@@ -63,6 +65,17 @@ public abstract class TypeCheckerProofConstructor extends TypeCheckerInference {
 			Optionally<AssertionDecl, Type_assertion> p5) {
 		return new Type_SystemDecl(gamma, name, params, params2, gamma1, datatypes, gamma2, gates, gamma3, bhv, assrt,
 				p1, p2, p3, p4, p5);
+	}
+
+	protected Type_mediator createType_MediatorDecl(Environment gamma, String name, EList<FormalParameter> params,
+			EList<FormalParameter> params2, Environment gamma1, EList<DataTypeDecl> datatypes, Environment gamma2,
+			EList<DutyDecl> duties, Environment gamma3, BehaviorDecl bhv, AssertionDecl assump, AssertionDecl assrt,
+			Mutually_translate<FormalParameter, Type_formalParameter> p1,
+			Incrementally<DataTypeDecl, Type_datatypeDecl> p2,
+			Ex<List<DutyDecl>, Mutually_translate<DutyDecl, Type_duty>> p3, Type_behavior p4,
+			Optionally<AssertionDecl, Type_assertion> p5, Optionally<AssertionDecl, Type_assertion> p6) {
+		return new Type_MediatorDecl(gamma, name, params, params2, gamma1, datatypes, gamma2, duties, gamma3, bhv,
+				assump, assrt, p1, p2, p3, p4, p5, p6);
 	}
 
 	protected Type_datatypeDecl createType_DataTypeDecl_def(Environment gamma, String name, DataType t, DataType t2,
@@ -480,6 +493,12 @@ public abstract class TypeCheckerProofConstructor extends TypeCheckerInference {
 		return new Type_GateDecl(gamma, name, conns, conns1, gamma2, p, gamma1, p1, p2);
 	}
 
+	protected Type_duty createType_DutyDecl(Environment gamma, String name, EList<Connection> conns,
+			EList<Connection> conns1, Environment gamma2, AssertionDecl assump, ProtocolDecl p, Environment gamma1,
+			Mutually_translate<Connection, Type_connection> p1, Type_assertion p2, Type_protocol p3) {
+		return new Type_DutyDecl(gamma, name, conns, conns1, gamma2, assump, p, gamma1, p1, p2, p3);
+	}
+
 	protected Type_connection createType_Connection_simple(Environment gamma, String name, boolean k, ModeType m,
 			DataType t, DataType t1, Environment gamma1, Type_datatype p1) {
 		return new Type_Connection_simple(gamma, name, k, m, t, t1, gamma1, p1);
@@ -667,5 +686,15 @@ public abstract class TypeCheckerProofConstructor extends TypeCheckerInference {
 
 	protected Greatest createGreatest_r(Expression m, Expression l, Expression r, Expression_le p1, Expression_le p2) {
 		return new Greatest_r(m, l, r, p1, p2);
+	}
+
+	protected Type_protocol createType_ProtocolDecl(Environment gamma, String name, EList<ProtocolStatement> body,
+			Type_finalprotocol p1) {
+		return new Type_ProtocolDecl(gamma, name, body, p1);
+	}
+
+	protected Type_assertion createType_AssertionDecl(Environment gamma, String name, EList<ProtocolStatement> body,
+			Type_finalprotocol p1) {
+		return new Type_AssertionDecl(gamma, name, body, p1);
 	}
 }

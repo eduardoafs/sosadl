@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.archware.sosadl.sosADL.Connection;
 import org.archware.sosadl.sosADL.DataType;
+import org.archware.sosadl.sosADL.DutyDecl;
 import org.archware.sosadl.sosADL.GateDecl;
 import org.archware.sosadl.sosADL.SosADLPackage;
 import org.archware.sosadl.validation.typing.impl.ConnectionEnvContent;
@@ -12,6 +13,7 @@ import org.archware.sosadl.validation.typing.proof.Ex;
 import org.archware.sosadl.validation.typing.proof.Mutually_translate;
 import org.archware.sosadl.validation.typing.proof.Type_connection;
 import org.archware.sosadl.validation.typing.proof.Type_datatype;
+import org.archware.sosadl.validation.typing.proof.Type_duty;
 import org.archware.sosadl.validation.typing.proof.Type_gate;
 import org.archware.utils.Pair;
 import org.eclipse.emf.common.util.EList;
@@ -52,7 +54,7 @@ public abstract class TypeCheckerConnections extends TypeCheckerProtocol {
 	private Type_gate type_gate(Environment gamma, GateDecl g, GateDecl g1, Environment gamma1,
 			Pair<Environment, Mutually_translate<Connection, Type_connection>> p1) {
 		return saveProof(g, createType_GateDecl(gamma, g1.getName(), g.getConnections(), g1.getConnections(), p1.getA(),
-				g1.getProtocol(), gamma1, p1.getB(), type_protocol(gamma1, g1.getProtocol())));
+				g1.getProtocol(), gamma1, p1.getB(), type_protocol(p1.getA(), g1.getProtocol())));
 	}
 
 	private Pair<GateDecl, Pair<Environment, Mutually_translate<Connection, Type_connection>>> translate_gate(
@@ -77,6 +79,39 @@ public abstract class TypeCheckerConnections extends TypeCheckerProtocol {
 		}
 	}
 
+	private Type_duty type_duty(Environment gamma, DutyDecl g, DutyDecl g1, Environment gamma1,
+			Pair<Environment, Mutually_translate<Connection, Type_connection>> p1) {
+		return saveProof(g,
+				createType_DutyDecl(gamma, g1.getName(), g.getConnections(), g1.getConnections(), p1.getA(),
+						g1.getAssertion(), g1.getProtocol(), gamma1, p1.getB(),
+						type_assertion(p1.getA(), g1.getAssertion()), type_protocol(p1.getA(), g1.getProtocol())));
+	}
+
+	private Pair<DutyDecl, Pair<Environment, Mutually_translate<Connection, Type_connection>>> translate_duty(
+			Environment gamma, DutyDecl g) {
+		if (g.getName() != null && g.getAssertion() != null && g.getProtocol() != null) {
+			Pair<Pair<List<Connection>, Environment>, Mutually_translate<Connection, Type_connection>> pc = type_connections(
+					gamma, g.getConnections());
+			if (pc.getA() != null && pc.getA().getA() != null && pc.getA().getB() != null) {
+				return new Pair<>(createDutyDecl(g.getName(), pc.getA().getA(), g.getAssertion(), g.getProtocol()),
+						new Pair<>(pc.getA().getB(), pc.getB()));
+			} else {
+				return null;
+			}
+		} else {
+			if (g.getName() == null) {
+				error("The duty must have a name", g, SosADLPackage.Literals.DUTY_DECL__NAME);
+			}
+			if (g.getAssertion() == null) {
+				error("The duty must have an assumption", g, SosADLPackage.Literals.DUTY_DECL__ASSERTION);
+			}
+			if (g.getProtocol() == null) {
+				error("The duty must have a protocol", g, SosADLPackage.Literals.DUTY_DECL__PROTOCOL);
+			}
+			return null;
+		}
+	}
+
 	private Pair<Pair<List<GateDecl>, Environment>, Mutually_translate<GateDecl, Type_gate>> type_gates_(
 			Environment gamma, EList<GateDecl> l) {
 		return proveMutuallyTranslate(gamma, l, this::translate_gate, this::type_gate, "SosADL.SosADL.GateDecl_name",
@@ -93,4 +128,19 @@ public abstract class TypeCheckerConnections extends TypeCheckerProtocol {
 		return new GateOrDutyEnvContent(g, g1.getConnections());
 	}
 
+	protected Pair<Environment, Ex<List<DutyDecl>, Mutually_translate<DutyDecl, Type_duty>>> type_duties(
+			Environment gamma, EList<DutyDecl> l) {
+		Pair<Pair<List<DutyDecl>, Environment>, Mutually_translate<DutyDecl, Type_duty>> r = type_duties_(gamma, l);
+		return new Pair<>(r.getA().getB(), createEx_intro(r.getA().getA(), r.getB()));
+	}
+
+	private Pair<Pair<List<DutyDecl>, Environment>, Mutually_translate<DutyDecl, Type_duty>> type_duties_(
+			Environment gamma, EList<DutyDecl> l) {
+		return proveMutuallyTranslate(gamma, l, this::translate_duty, this::type_duty, "SosADL.SosADL.DutyDecl_name",
+				DutyDecl::getName, "SosADL.TypeSystem.dutyDecl_to_EGateOrDuty", this::dutyDecl_to_EGateOrDuty);
+	}
+
+	private EnvContent dutyDecl_to_EGateOrDuty(DutyDecl g, DutyDecl g1) {
+		return new GateOrDutyEnvContent(g, g1.getConnections());
+	}
 }

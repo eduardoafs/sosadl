@@ -4,10 +4,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Stream;
 
+import org.archware.sosadl.sosADL.AssertionDecl;
 import org.archware.sosadl.sosADL.BinaryExpression;
 import org.archware.sosadl.sosADL.BooleanType;
 import org.archware.sosadl.sosADL.Connection;
 import org.archware.sosadl.sosADL.DataType;
+import org.archware.sosadl.sosADL.DutyDecl;
 import org.archware.sosadl.sosADL.Expression;
 import org.archware.sosadl.sosADL.FieldDecl;
 import org.archware.sosadl.sosADL.FormalParameter;
@@ -121,7 +123,17 @@ public class TypeCheckerConstructors extends TypeCheckerAnnotate {
 	protected static GateDecl createGateDecl(String name, List<Connection> conns, ProtocolDecl protocol) {
 		GateDecl g = SosADLFactory.eINSTANCE.createGateDecl();
 		g.setName(name);
-		g.getConnections().addAll(conns);
+		g.getConnections().addAll(ListExtensions.map(conns, TypeCheckerConstructors::copy));
+		g.setProtocol(copy(protocol));
+		return g;
+	}
+
+	protected static DutyDecl createDutyDecl(String name, List<Connection> conns, AssertionDecl assumption,
+			ProtocolDecl protocol) {
+		DutyDecl g = SosADLFactory.eINSTANCE.createDutyDecl();
+		g.setName(name);
+		g.getConnections().addAll(ListExtensions.map(conns, TypeCheckerConstructors::copy));
+		g.setAssertion(copy(assumption));
 		g.setProtocol(copy(protocol));
 		return g;
 	}

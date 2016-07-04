@@ -4,9 +4,9 @@ import java.util.List;
 import java.util.Optional;
 
 import org.archware.sosadl.sosADL.ArchitectureDecl;
-import org.archware.sosadl.sosADL.AssertionDecl;
 import org.archware.sosadl.sosADL.DataType;
 import org.archware.sosadl.sosADL.DataTypeDecl;
+import org.archware.sosadl.sosADL.DutyDecl;
 import org.archware.sosadl.sosADL.EntityBlock;
 import org.archware.sosadl.sosADL.Expression;
 import org.archware.sosadl.sosADL.FormalParameter;
@@ -35,9 +35,9 @@ import org.archware.sosadl.validation.typing.proof.Incrementally;
 import org.archware.sosadl.validation.typing.proof.Mutually_translate;
 import org.archware.sosadl.validation.typing.proof.Simple_increment;
 import org.archware.sosadl.validation.typing.proof.Type_architecture;
-import org.archware.sosadl.validation.typing.proof.Type_assertion;
 import org.archware.sosadl.validation.typing.proof.Type_datatype;
 import org.archware.sosadl.validation.typing.proof.Type_datatypeDecl;
+import org.archware.sosadl.validation.typing.proof.Type_duty;
 import org.archware.sosadl.validation.typing.proof.Type_entityBlock;
 import org.archware.sosadl.validation.typing.proof.Type_expression;
 import org.archware.sosadl.validation.typing.proof.Type_formalParameter;
@@ -422,11 +422,6 @@ public class TypeChecker extends TypeCheckerBehavior {
 		}
 	}
 
-	private Type_assertion type_assertion(Environment gamma, AssertionDecl a) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
 	private Pair<FormalParameter, Type_datatype> translate_formalParameter(Environment gamma, FormalParameter p) {
 		if (p.getName() != null && p.getType() != null) {
 			Pair<DataType, Type_datatype> pt = type_datatype(gamma, p.getType());
@@ -471,8 +466,41 @@ public class TypeChecker extends TypeCheckerBehavior {
 
 	private Type_mediator type_mediator(Environment gamma, MediatorDecl mediator) {
 		saveEnvironment(mediator, gamma);
-		// TODO Auto-generated method stub
-		return null;
+		// type_SystemDecl:
+		if (mediator.getName() != null && mediator.getBehavior() != null) {
+			Optional<Pair<Pair<List<FormalParameter>, Environment>, Mutually_translate<FormalParameter, Type_formalParameter>>> op1 = type_formalParameters(
+					gamma, mediator.getParameters());
+			if (op1.isPresent()) {
+				Pair<Pair<List<FormalParameter>, Environment>, Mutually_translate<FormalParameter, Type_formalParameter>> p1 = op1
+						.get();
+				EList<FormalParameter> params2 = ECollections.asEList(p1.getA().getA());
+				Environment gamma1 = p1.getA().getB();
+				Pair<Incrementally<DataTypeDecl, Type_datatypeDecl>, Environment> p2 = type_datatypeDecls(gamma1,
+						mediator.getDatatypes());
+				Environment gamma2 = p2.getB();
+				Pair<Environment, Ex<List<DutyDecl>, Mutually_translate<DutyDecl, Type_duty>>> p3 = type_duties(gamma2,
+						mediator.getDuties());
+				Environment gamma3 = p3.getA();
+				return saveProof(mediator,
+						createType_MediatorDecl(gamma, mediator.getName(), mediator.getParameters(), params2, gamma1,
+								mediator.getDatatypes(), gamma2, mediator.getDuties(), gamma3, mediator.getBehavior(),
+								mediator.getAssumption(), mediator.getAssertion(), p1.getB(), p2.getA(), p3.getB(),
+								type_behavior(gamma3, mediator.getBehavior()),
+								proveOptionally(gamma3, mediator.getAssumption(), this::type_assertion),
+								proveOptionally(gamma3, mediator.getAssertion(), this::type_assertion)));
+			} else {
+				return null;
+			}
+		} else {
+			if (mediator.getBehavior() == null) {
+				error("The mediator must have a behavior", mediator, null);
+			} else if (mediator.getName() == null) {
+				error("The mediator must have a name", mediator, null);
+			} else {
+				error("Type error", mediator, null);
+			}
+			return null;
+		}
 	}
 
 	private Type_architecture type_architecture(Environment gamma, ArchitectureDecl architecture) {

@@ -60,19 +60,22 @@ library simple is {
 		}
 	}
 
-	// TODO must be a mediator	
-	system buffer() is {
+	mediator buffer() is {
 		
-		gate push is {
+		duty push is {
 			connection c is in { t }
+		} assume {
+			property p is { repeat { anyaction } }
 		} guarantee {
 			protocol p is {
 				repeat { via c receive any }
 			}
 		}
 		
-		gate pull is {
+		duty pull is {
 			connection c is out { t }
+		} assume {
+			property p is { repeat { anyaction } }
 		} guarantee {
 			protocol p is {
 				repeat { via c send any }
@@ -88,19 +91,23 @@ library simple is {
 	}
 	
 	// TODO must be a mediator
-	system shared_memory() is {
+	mediator shared_memory() is {
 		datatype t
 	
-		gate write is {
+		duty write is {
 			connection c is in { t }
+		} assume {
+			property p is { repeat { anyaction } }
 		} guarantee {
 			protocol p is {
 				repeat { via c receive any }
 			}	
 		}
 		
-		gate read is {
+		duty read is {
 			connection c is out { t }
+		} assume {
+			property p is { repeat { anyaction } }
 		} guarantee {
 			protocol p is {
 				repeat { via c send any }
@@ -119,7 +126,8 @@ library simple is {
 			}
 		}
 	}
-	
+
+/*
 	mediator reconf() is {
 		duty d is {
 			connection c is in { t }
@@ -192,5 +200,7 @@ library simple is {
 			done
 		}
 	}
+	* 
+	*/
 	
 }
