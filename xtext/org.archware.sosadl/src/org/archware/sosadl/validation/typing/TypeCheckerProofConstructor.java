@@ -8,10 +8,12 @@ import org.archware.sosadl.sosADL.AssertionDecl;
 import org.archware.sosadl.sosADL.Behavior;
 import org.archware.sosadl.sosADL.BehaviorDecl;
 import org.archware.sosadl.sosADL.BehaviorStatement;
+import org.archware.sosadl.sosADL.ChooseBehavior;
 import org.archware.sosadl.sosADL.ChooseProtocol;
 import org.archware.sosadl.sosADL.Connection;
 import org.archware.sosadl.sosADL.DataType;
 import org.archware.sosadl.sosADL.DataTypeDecl;
+import org.archware.sosadl.sosADL.DoneBehavior;
 import org.archware.sosadl.sosADL.DoneProtocol;
 import org.archware.sosadl.sosADL.DutyDecl;
 import org.archware.sosadl.sosADL.EntityBlock;
@@ -20,6 +22,7 @@ import org.archware.sosadl.sosADL.FieldDecl;
 import org.archware.sosadl.sosADL.FormalParameter;
 import org.archware.sosadl.sosADL.FunctionDecl;
 import org.archware.sosadl.sosADL.GateDecl;
+import org.archware.sosadl.sosADL.IfThenElseBehavior;
 import org.archware.sosadl.sosADL.IfThenElseProtocol;
 import org.archware.sosadl.sosADL.Import;
 import org.archware.sosadl.sosADL.MediatorDecl;
@@ -27,6 +30,7 @@ import org.archware.sosadl.sosADL.ModeType;
 import org.archware.sosadl.sosADL.Protocol;
 import org.archware.sosadl.sosADL.ProtocolDecl;
 import org.archware.sosadl.sosADL.ProtocolStatement;
+import org.archware.sosadl.sosADL.RepeatBehavior;
 import org.archware.sosadl.sosADL.RepeatProtocol;
 import org.archware.sosadl.sosADL.SystemDecl;
 import org.archware.sosadl.sosADL.TupleElement;
@@ -515,33 +519,13 @@ public abstract class TypeCheckerProofConstructor extends TypeCheckerInference {
 		return new Type_BehaviorDecl(gamma, name, b, p1);
 	}
 
-	protected Type_finalbody createType_finalbody_Repeat(Environment gamma, EList<BehaviorStatement> b,
-			Type_nonfinalbody p1) {
-		return new Type_finalbody_Repeat(gamma, b, p1);
-	}
-
-	protected Type_finalbody createType_finalbody_IfThenElse_general(Environment gamma, Expression c,
-			Environment gammat, EList<BehaviorStatement> t, Environment gammae, EList<BehaviorStatement> e,
-			Type_expression p1, Condition_true p2, Type_finalbody p3, Condition_false p4, Type_finalbody p5) {
-		return new Type_finalbody_IfThenElse_general(gamma, c, gammat, t, gammae, e, p1, p2, p3, p4, p5);
-	}
-
-	protected Type_finalbody createType_finalbody_Choose(Environment gamma, EList<Behavior> branches,
-			Forall<Behavior, Type_finalbody> p1) {
-		return new Type_finalbody_Choose(gamma, branches, p1);
-	}
-
-	protected Type_finalbody createType_finalbody_Done(Environment gamma) {
-		return new Type_finalbody_Done(gamma);
-	}
-
-	protected Type_finalbody createType_finalbody_RecursiveCall(Environment gamma) {
+	protected Type_finalbody_other createType_finalbody_RecursiveCall(Environment gamma) {
 		return new Type_finalbody_RecursiveCall(gamma);
 	}
 
-	protected Type_finalbody createType_finalbody_prefix(Environment gamma, BehaviorStatement s, Environment gamma1,
-			EList<BehaviorStatement> l, Type_bodyprefix p1, Type_finalbody p2) {
-		return new Type_finalbody_prefix(gamma, s, gamma1, l, p1, p2);
+	protected Type_finalbody createType_finalbody_generic(Environment gamma, EList<BehaviorStatement> l,
+			Type_generic_finalbody<Behavior, BehaviorStatement, ChooseBehavior, DoneBehavior, IfThenElseBehavior, RepeatBehavior, Type_finalbody_other, Type_bodyprefix, Type_nonfinalbody> p1) {
+		return new Type_finalbody_generic(gamma, l, p1);
 	}
 
 	protected Type_nonfinalbody createType_nonfinalbody_empty(Environment gamma) {

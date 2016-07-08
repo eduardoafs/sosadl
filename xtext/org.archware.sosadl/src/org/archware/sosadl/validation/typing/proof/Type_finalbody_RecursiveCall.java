@@ -2,7 +2,7 @@ package org.archware.sosadl.validation.typing.proof;
 
 import org.archware.sosadl.validation.typing.Environment;
 
-public class Type_finalbody_RecursiveCall implements Type_finalbody {
+public class Type_finalbody_RecursiveCall implements Type_finalbody_other {
 	@Mandatory
 	private final Environment gamma;
 

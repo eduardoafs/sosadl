@@ -2,6 +2,8 @@ package org.archware.sosadl.validation.typing;
 
 import java.math.BigInteger;
 import java.util.List;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.archware.sosadl.sosADL.Action;
@@ -42,6 +44,8 @@ import org.archware.sosadl.validation.typing.proof.Type_behavior;
 import org.archware.sosadl.validation.typing.proof.Type_bodyprefix;
 import org.archware.sosadl.validation.typing.proof.Type_expression;
 import org.archware.sosadl.validation.typing.proof.Type_finalbody;
+import org.archware.sosadl.validation.typing.proof.Type_finalbody_other;
+import org.archware.sosadl.validation.typing.proof.Type_generic_finalbody;
 import org.archware.sosadl.validation.typing.proof.Type_nonfinalbody;
 import org.archware.sosadl.validation.typing.proof.Type_valuing;
 import org.archware.utils.IntPair;
@@ -67,108 +71,47 @@ public abstract class TypeCheckerBehavior extends TypeCheckerGenericBehavior {
 	}
 
 	private Type_finalbody type_finalbody(Environment gamma, EList<BehaviorStatement> b, Behavior behavior, int index) {
-		if (b.isEmpty()) {
-			error("`done' (or any other final statement) is missing to terminate the body", behavior,
-					SosADLPackage.Literals.BEHAVIOR__STATEMENTS, index - 1);
-			return null;
-		} else {
-			BehaviorStatement first = b.get(0);
-			EList<BehaviorStatement> l = cdr(b);
-			if (l.isEmpty()) {
-				saveEnvironment(first, gamma);
-				if (first instanceof DoneBehavior) {
-					return saveProof(first,
-							p(Type_finalbody.class, gamma, (gamma_) -> createType_finalbody_Done(gamma_)));
-				} else if (first instanceof RecursiveCall) {
-					RecursiveCall rc = (RecursiveCall) first;
-					if (rc.getParameters().isEmpty()) {
-						return saveProof(first,
-								p(Type_finalbody.class, gamma, (gamma_) -> createType_finalbody_RecursiveCall(gamma_)));
-					} else {
-						if (!rc.getParameters().isEmpty()) {
-							error("The recursive call cannot have any effective parameter", first,
-									SosADLPackage.Literals.RECURSIVE_CALL__PARAMETERS);
-						}
-						return null;
-					}
-				} else if (first instanceof RepeatBehavior) {
-					RepeatBehavior r = (RepeatBehavior) first;
-					Behavior rb = r.getRepeated();
-					if (rb != null) {
-						EList<BehaviorStatement> rbl = rb.getStatements();
-						Type_nonfinalbody p1 = type_nonfinalbody(gamma, rbl, rb, 0);
-						return saveProof(first, p(Type_finalbody.class, gamma,
-								(gamma_) -> createType_finalbody_Repeat(gamma_, rbl, p1)));
-					} else {
-						error("There must be a repeated behavior", first,
-								SosADLPackage.Literals.REPEAT_BEHAVIOR__REPEATED);
-						return null;
-					}
-				} else if (first instanceof IfThenElseBehavior) {
-					IfThenElseBehavior ite = (IfThenElseBehavior) first;
-					Expression c = ite.getCondition();
-					Behavior t = ite.getIfTrue();
-					Behavior e = ite.getIfFalse();
-					if (c != null && t != null && e != null) {
-						Pair<Type_expression, DataType> pt = type_expression(gamma, c);
-						Type_expression p1 = pt.getA();
-						DataType dt = pt.getB();
-						if (p1 != null && dt != null) {
-							inference.addConstraint(dt, createBooleanType(), c);
-							EList<BehaviorStatement> ts = t.getStatements();
-							Pair<Environment, Condition_true> gammat = condition_true(gamma, c, t);
-							Type_finalbody p3 = type_finalbody(gammat.getA(), ts, t, 0);
-							EList<BehaviorStatement> es = e.getStatements();
-							Pair<Environment, Condition_false> gammae = condition_false(gamma, c, e);
-							Type_finalbody p5 = type_finalbody(gammae.getA(), es, e, 0);
-							return saveProof(first,
-									p(Type_finalbody.class, gamma,
-											(gamma_) -> p(Type_finalbody.class, gammat.getA(),
-													(gammat_) -> p(Type_finalbody.class, gammae.getA(),
-															(gammae_) -> createType_finalbody_IfThenElse_general(gamma_,
-																	c, gammat_, ts, gammae_, es, p1, gammat.getB(), p3,
-																	gammae.getB(), p5)))));
-						} else {
-							return null;
-						}
-					} else {
-						if (c == null) {
-							error("The `if' statement must have a condition", first,
-									SosADLPackage.Literals.IF_THEN_ELSE_BEHAVIOR__CONDITION);
-						}
-						if (t == null) {
-							error("The `if' statement must have a `then' clause", first,
-									SosADLPackage.Literals.IF_THEN_ELSE_BEHAVIOR__IF_TRUE);
-						}
-						if (e == null) {
-							error("At tail position, the `if' statement must have an `else' clause", first,
-									SosADLPackage.Literals.IF_THEN_ELSE_BEHAVIOR__IF_FALSE);
-						}
-						return null;
-					}
-				} else if (first instanceof ChooseBehavior) {
-					ChooseBehavior c = (ChooseBehavior) first;
-					EList<Behavior> branches = c.getBranches();
-					Forall<Behavior, Type_finalbody> p1 = proveForall(branches,
-							(x) -> type_finalbody(gamma, x.getStatements(), x, 0));
-					return saveProof(first, p(Type_finalbody.class, gamma,
-							(gamma_) -> createType_finalbody_Choose(gamma_, branches, p1)));
-				} else {
-					error("Statement `" + labelOf(first) + "' is not allowed at tail position", first, null);
-					return null;
-				}
+		Function<Behavior, EList<BehaviorStatement>> getBlock = Behavior::getStatements;
+		BiFunction<Environment, BehaviorStatement, Type_finalbody_other> proveOther = this::final_other;
+		BiFunction<Environment, BehaviorStatement, Pair<Environment, Type_bodyprefix>> gp = this::type_bodyprefix;
+		BiFunction<Environment, Behavior, Type_nonfinalbody> gnf = this::type_nonfinalbody;
+		Function<ChooseBehavior, EList<Behavior>> getBranches = ChooseBehavior::getBranches;
+		Function<IfThenElseBehavior, Expression> getCondition = IfThenElseBehavior::getCondition;
+		Function<IfThenElseBehavior, Behavior> getThen = IfThenElseBehavior::getIfTrue;
+		Function<IfThenElseBehavior, Behavior> getElse = IfThenElseBehavior::getIfFalse;
+		Function<RepeatBehavior, Behavior> getRepeated = RepeatBehavior::getRepeated;
+		Type_generic_finalbody<Behavior, BehaviorStatement, ChooseBehavior, DoneBehavior, IfThenElseBehavior, RepeatBehavior, Type_finalbody_other, Type_bodyprefix, Type_nonfinalbody> p1 = type_generic_finalbody(
+				Behavior.class, BehaviorStatement.class, getBlock, "Behavior", ChooseBehavior.class, getBranches,
+				DoneBehavior.class, IfThenElseBehavior.class, getCondition,
+				SosADLPackage.Literals.IF_THEN_ELSE_BEHAVIOR__CONDITION, getThen,
+				SosADLPackage.Literals.IF_THEN_ELSE_BEHAVIOR__IF_TRUE, getElse,
+				SosADLPackage.Literals.IF_THEN_ELSE_BEHAVIOR__IF_FALSE, RepeatBehavior.class, getRepeated,
+				SosADLPackage.Literals.REPEAT_BEHAVIOR__REPEATED, Type_finalbody_other.class, proveOther,
+				Type_bodyprefix.class, gp, Type_nonfinalbody.class, gnf, gamma, b, behavior,
+				SosADLPackage.Literals.PROTOCOL__STATEMENTS, 0);
+		Type_finalbody proof = p(Type_finalbody.class, gamma, (gamma_) -> createType_finalbody_generic(gamma_, b, p1));
+		return saveProof(behavior, proof);
+	}
+
+	private Type_finalbody_other final_other(Environment gamma, BehaviorStatement s) {
+		if (s instanceof RecursiveCall) {
+			RecursiveCall rc = (RecursiveCall) s;
+			if (rc.getParameters().isEmpty()) {
+				return saveProof(s,
+						p(Type_finalbody_other.class, gamma, (gamma_) -> createType_finalbody_RecursiveCall(gamma_)));
 			} else {
-				Pair<Environment, Type_bodyprefix> p1 = type_bodyprefix(gamma, first);
-				if (p1 != null && p1.getA() != null && p1.getB() != null) {
-					Type_finalbody p2 = type_finalbody(p1.getA(), l, behavior, index + 1);
-					return saveProof(first, p(Type_finalbody.class, gamma, (gamma_) -> p(Type_finalbody.class,
-							p1.getA(),
-							(gamma1_) -> createType_finalbody_prefix(gamma_, first, gamma1_, l, p1.getB(), p2))));
-				} else {
-					return null;
-				}
+				error("Statement `behavior' cannot have any parameter", s,
+						SosADLPackage.Literals.RECURSIVE_CALL__PARAMETERS);
+				return null;
 			}
+		} else {
+			error("Statement `" + labelOf(s) + "' not allowed at tail position", s, null);
+			return null;
 		}
+	}
+
+	private Type_nonfinalbody type_nonfinalbody(Environment gamma, Behavior behavior) {
+		return type_nonfinalbody(gamma, behavior.getStatements(), behavior, 0);
 	}
 
 	private Type_nonfinalbody type_nonfinalbody(Environment gamma, EList<BehaviorStatement> b, Behavior behavior,

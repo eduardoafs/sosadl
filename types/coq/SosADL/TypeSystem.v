@@ -1959,68 +1959,30 @@ where "'statement' b 'well' 'typed' 'in' Gamma 'yields' 'to' Gamma1"
 and "'nonfinal' 'body' b 'well' 'typed' 'in' Gamma" := (type_nonfinalbody Gamma b)
 .
 
-Inductive type_finalbody: env -> list SosADL.SosADL.t_BehaviorStatement -> Prop :=
-
-| type_finalbody_prefix:
-    forall
-      (Gamma: env)
-      (s: SosADL.SosADL.t_BehaviorStatement)
-      (Gamma1: env)
-      (l: list SosADL.SosADL.t_BehaviorStatement)
-      (p1: statement s well typed in Gamma yields to Gamma1)
-      (p2: final body l well typed in Gamma1)
-    ,
-      final body (s :: l) well typed in Gamma
-
-| type_finalbody_Repeat:
-    forall
-      (Gamma: env)
-      (b: list SosADL.SosADL.t_BehaviorStatement)
-      (p1: nonfinal body b well typed in Gamma)
-    ,
-      final body [SosADL.SosADL.RepeatBehavior
-                    (Some (SosADL.SosADL.Behavior b))]
-            well typed in Gamma
-
-| type_finalbody_IfThenElse_general:
-    forall
-      (Gamma: env)
-      (c: SosADL.SosADL.t_Expression)
-      (Gammat: env)
-      (t: list SosADL.SosADL.t_BehaviorStatement)
-      (Gammae: env)
-      (e: list SosADL.SosADL.t_BehaviorStatement)
-      (p1: expression c has type SosADL.SosADL.BooleanType in Gamma)
-      (p2: condition_true Gamma c Gammat)
-      (p3: final body t well typed in Gammat)
-      (p4: condition_false Gamma c Gammae)
-      (p5: final body e well typed in Gammae)
-    ,
-      final body [SosADL.SosADL.IfThenElseBehavior
-                    (Some c)
-                    (Some (SosADL.SosADL.Behavior t))
-                    (Some (SosADL.SosADL.Behavior e))]
-           well typed in Gamma
-
-| type_finalbody_Choose:
-    forall (Gamma: env)
-      (branches: list SosADL.SosADL.t_Behavior)
-      (p1: for each b of branches,
-           final body (SosADL.SosADL.Behavior_statements b) well typed in Gamma)
-    ,
-      final body [SosADL.SosADL.ChooseBehavior branches] well typed in Gamma
-
-| type_finalbody_Done:
-    forall
-      (Gamma: env)
-    ,
-      final body [SosADL.SosADL.DoneBehavior] well typed in Gamma
-
+Inductive type_finalbody_other: env -> SosADL.SosADL.t_BehaviorStatement -> Prop :=
 | type_finalbody_RecursiveCall:
     forall
       (Gamma: env)
     ,
-      final body [SosADL.SosADL.RecursiveCall nil] well typed in Gamma
+      type_finalbody_other Gamma (SosADL.SosADL.RecursiveCall nil)
+.
+
+Inductive type_finalbody: env -> list SosADL.SosADL.t_BehaviorStatement -> Prop :=
+
+| type_finalbody_generic:
+    forall (Gamma: env)
+      (l: list SosADL.SosADL.t_BehaviorStatement)
+      (p1: type_generic_finalbody
+             SosADL.SosADL.Behavior
+             SosADL.SosADL.ChooseBehavior
+             SosADL.SosADL.DoneBehavior
+             SosADL.SosADL.IfThenElseBehavior
+             SosADL.SosADL.RepeatBehavior
+             type_finalbody_other
+             type_bodyprefix type_nonfinalbody
+             Gamma l)
+    ,
+      final body l well typed in Gamma
 
 where "'final' 'body' b 'well' 'typed' 'in' Gamma" := (type_finalbody Gamma b)
 .
