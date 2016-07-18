@@ -1,0 +1,38 @@
+/*
+ * Example of a coalition where each client is connected to exactly one server.
+ * This is a particular case of A2, when there are exactly 2 servers.
+ * 
+ * Authors: Jean
+ */
+
+// Load definitions of "client" and "server"
+with ClientServerDefinitions
+
+sos ServersXor is {
+	
+	architecture Coalition() is  {
+		gate unusedGate is {
+			connection unusedConnection is in{ t } 
+		} guarantee { protocol allowAll is { repeat{anyaction}}}
+		behavior main is compose {
+			server1 is server
+			server2 is server
+			clients is sequence { client }
+		} binding {
+			// every client is connected to either s1 or s2 but not both
+			// (Equivalent to ClientToSingleServer with exactly 2 server.)
+			forall { c in clients suchthat 
+				(
+						unify one { c::rr::req } to one { server1::rr::req } 
+			     	and unify one { server1::rr::ack } to one { c::rr::ack }
+			    ) xor	
+			    (
+						unify one { c::rr::req } to one { server2::rr::req } 
+			     	and unify one { server2::rr::ack } to one { c::rr::ack }
+			    )
+			}
+			
+		}
+	}
+	
+}

@@ -1,0 +1,56 @@
+/*
+ * Simple Client/Server definitions to work on binding constraints.
+ * 
+ * Authors: Jérémy, Jean
+ */
+ 
+library ClientServerDefinitions is {
+	datatype t is integer {0..0} {
+		function (self: t) :: f(): t is {
+			return self
+		}
+	}
+	
+	system client() is {
+		gate rr is {
+			connection req is out { t }
+			connection ack is in { t }
+		} guarantee {
+			protocol p is {
+				repeat { via req send any via ack receive any }
+			}
+		}
+		
+		behavior main is {
+			repeat {
+				value msg is t = 0
+				via rr::req send msg
+				via rr::ack receive v
+			}
+		}
+	}
+	
+	mediator server() is {
+		duty rr is {
+			connection req is in { t }
+			connection ack is out { t }
+		} 
+		assume { 
+			property true is {
+				repeat { anyaction }
+			} 
+		}
+		guarantee { 
+			protocol p is {
+				repeat { via req receive any via ack send any }
+			}
+		}
+		
+		behavior main is {
+			repeat {
+				via rr::req receive v
+				via rr::ack send v::f()
+			}
+		}
+	}
+}

@@ -1,0 +1,21 @@
+# Architectures examples with clients and servers
+
+This directory contains a file
+- 00_ClientServerDefinitions.sosadl
+and several files
+- A1_*.sosadl
+- A2_*.sosadl
+- A3_*.sosadl
+
+The first file contains the description of a very simple client and server.
+The files starting with A contain several architecture variants using client
+and server. Each of the architecture files define a different SoS.
+
+## A1 
+2 servers, each client is connected to one or the other.
+
+##A2 
+Any number of servers, each client is connected to exactly one server:
+
+##A3 
+A client can connect to any number of servers.

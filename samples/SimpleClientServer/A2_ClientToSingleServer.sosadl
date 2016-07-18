@@ -1,0 +1,50 @@
+/*
+ * Example of a coalition where each client is connected to exactly one server.
+ * 
+ * Authors: Jean
+ */
+
+// Load definitions of "client" and "server"
+with ClientServerDefinitions
+
+sos ClientToSingleServer is {
+	
+	architecture Coalition() is  {
+		gate unusedGate is {
+			connection unusedConnection is in{ t } 
+		} guarantee { protocol allowAll is { repeat{anyaction}}}
+		behavior main is compose {
+			servers is sequence { server }
+			clients is sequence { client }
+		} binding {
+			// every client is connected to at least one server for req and ack
+			forall { c in clients suchthat 
+				exists { s in servers  suchthat
+					 unify one { c::rr::req } to one { s::rr::req } 
+			     and unify one { s::rr::ack } to one { c::rr::ack }	
+				}
+			}
+			and
+			// every client talks to at most one server encoded as
+			// ((c talks to s1) and (c talks to s2)) implies ( s1 = s2)
+			forall { c in clients suchthat 
+				forall { s1 in servers suchthat
+					forall { s2 in servers suchthat
+						( 
+							( // c talks to s1
+								unify one { c::rr::req } to one { s1::rr::req } 
+						 	or unify one { s1::rr::ack } to one { c::rr::ack }	
+							) 
+							and
+							( // c talks to s2
+								unify one { c::rr::req } to one { s2::rr::req } 
+							 or unify one { s2::rr::ack } to one { c::rr::ack }	
+							)
+						) implies s1 = s2 
+					}
+				}
+			}
+		}
+	}
+	
+}

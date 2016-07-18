@@ -1,0 +1,31 @@
+/*
+ * Example of a coalition where a client can connect to any number of servers,
+ * as long as it is connected for both request and acknowledgment.
+ * 
+ * Authors: Jean
+ */
+
+// Load definitions of "client" and "server"
+with ClientServerDefinitions
+
+sos ClientToSingleServer is {
+	
+	architecture Coalition() is  {
+		gate unusedGate is {
+			connection unusedConnection is in{ t } 
+		} guarantee { protocol allowAll is { repeat{anyaction}}}
+		behavior main is compose {
+			servers is sequence { server }
+			clients is sequence { client }
+		} binding {
+			// for every couple client/server
+			forall { c in clients suchthat 
+				forall { s in servers  suchthat
+					// c-s connected via req  <=> c-s connected via ack
+					unify one { c::rr::req } to one { s::rr::req } 
+			    	= unify one { s::rr::ack } to one { c::rr::ack } 
+			    }
+			}
+		}
+	}	
+}
