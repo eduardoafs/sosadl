@@ -68,6 +68,7 @@ import org.archware.sosadl.sosADL.ReceiveAction
 import org.archware.sosadl.sosADL.SendAction
 import org.archware.sosadl.sosADL.AnyAction
 import org.archware.sosadl.sosADL.AskAssertion
+import org.archware.sosadl.sosADL.UntellAssertion
 import org.archware.sosadl.sosADL.TellAssertion
 import org.archware.sosadl.sosADL.ChooseProtocol
 import org.archware.sosadl.sosADL.ForEachBehavior
@@ -291,6 +292,7 @@ class SosADLComparator {
 	
 	def static dispatch boolean compareAssert(AskAssertion l, AskAssertion r)				{ l.name.equals(r.name) && compareExpression(l.expression, r.expression) }
 	def static dispatch boolean compareAssert(TellAssertion l, TellAssertion r)				{ l.name.equals(r.name) && compareExpression(l.expression, r.expression) }
+	def static dispatch boolean compareAssert(UntellAssertion l, UntellAssertion r)			{ l.name.equals(r.name) }
 	
 	
 	def static dispatch boolean compareProtocolStatement(AnyAction l, AnyAction r)						{ true }
