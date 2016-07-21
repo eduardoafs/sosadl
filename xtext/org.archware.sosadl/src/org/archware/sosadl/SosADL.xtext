@@ -124,6 +124,7 @@ BehaviorStatement:
 
 Assert:
 	{TellAssertion} 'tell' name=Name 'is' '{' expression=Expression '}'
+	| {UntellAssertion} 'untell' name=Name
 	| {AskAssertion} 'ask' name=Name 'is' '{' expression=Expression '}'
 ;
 
