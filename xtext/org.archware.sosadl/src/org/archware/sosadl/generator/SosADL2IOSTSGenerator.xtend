@@ -2130,21 +2130,21 @@ class IOstsProcess{
     	«IF !parametersMap.empty»
     	messages {
     		«FOR p:parametersMap.keySet»
-    		«p» is «parametersMap.get(p)» 
+    		«p» : «parametersMap.get(p)» 
     		«ENDFOR»
     	}
     	«ENDIF»
     	«IF !globalsMap.empty»
     	globals {
     		«FOR g:globalsMap.entrySet»
-    		«g.key» is «g.value»
+    		«g.key» : «g.value»
     		«ENDFOR»
     	}
     	«ENDIF»
     	«IF !variablesMap.empty»
     	variables {
     		«FOR v:variablesMap.entrySet»
-    		«v.key» is «v.value»
+    		«v.key» : «v.value»
     		«ENDFOR»
     	}
     	«ENDIF»
