@@ -46,14 +46,6 @@ MediatorDecl: 'mediator' name=Name '(' (parameters+=FormalParameter (',' paramet
 	('assume' '{' assumption=AssertionDecl '}')?
 	('guarantee' '{' assertion=AssertionDecl '}')?
 ;
-/* WAS:
-MediatorDecl: 'mediator' name=Name '(' (parameters+=FormalParameter (',' parameters+=FormalParameter)*)? ')' 'is' '{'
-    (datatypes+=DataTypeDecl)*
-    (duties+=DutyDecl)+
-    behavior=BehaviorDecl
-    '}'
-    ;
-*/
 
 GateDecl:
 	'gate' name=Name 'is' '{'
@@ -76,13 +68,6 @@ Connection:
 AssertionDecl:
 	'property' name=Name 'is' body=Protocol
 ;
-/* WAS:
-AssertionDecl:
-    'property' name=Name 'is' '{'
-    (valuing+=Valuing+ 'within')?
-    assertion=Assertion '}'
-;
-*/
 
 ProtocolDecl:
     'protocol' name=Name 'is' body=Protocol
