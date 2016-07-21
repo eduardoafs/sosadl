@@ -1145,6 +1145,20 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
         newArrayList(final)
     }
     
+    /*
+     * - computeSTS for an UntellAssertion statement
+     * 
+     *   TODO!
+     */
+    def dispatch ArrayList<Integer> computeSTS(int startState, UntellAssertion r){
+    	val final=currentProcess.newState()
+        var IOstsTransition untell = new IOstsTransition(startState,final)
+        untell.setComment("FIXME: UntellAssertion in not implemented!")
+        System.err.println("FIXME: untell not implemented!")
+	    currentProcess.addTransition(untell)
+        newArrayList(final)
+    }
+    
     
     /*
      * - computeSTS for a ForEachBehavior statement.
