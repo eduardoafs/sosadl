@@ -215,7 +215,7 @@ ComplexName:
 ;
 
 Valuing:
-	'value' name=Name ('is' type=DataType)? '=' expression=Expression;
+	'value' name=Name (':' type=DataType)? '=' expression=Expression;
 
 Value returns Expression:
 	BaseValue
