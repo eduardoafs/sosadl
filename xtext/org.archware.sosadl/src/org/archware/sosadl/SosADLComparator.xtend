@@ -52,7 +52,7 @@ import org.archware.sosadl.sosADL.Map
 import org.archware.sosadl.sosADL.MethodCall
 import org.archware.sosadl.sosADL.Select
 import org.archware.sosadl.sosADL.UnaryExpression
-import org.archware.sosadl.sosADL.UnobservableValue
+//import org.archware.sosadl.sosADL.UnobservableValue
 import org.archware.sosadl.sosADL.ElementInConstituent
 import org.archware.sosadl.sosADL.ComplexName
 import org.archware.sosadl.sosADL.Sequence
@@ -265,7 +265,7 @@ class SosADLComparator {
 	def static dispatch boolean compareExpression(MethodCall l, MethodCall r)				{ compareExpression(l.object, r.object) && l.method.equals(r.method) && sameElements(l.parameters, r.parameters, [p, q | compareExpression(p, q)]) }
 	def static dispatch boolean compareExpression(Select l, Select r)						{ compareExpression(l.object, r.object) && l.variable.equals(r.variable) && compareExpression(l.condition, r.condition) }
 	def static dispatch boolean compareExpression(UnaryExpression l, UnaryExpression r)		{ l.op.equals(r.op) && compareExpression(l.right, r.right) }
-	def static dispatch boolean compareExpression(UnobservableValue l, UnobservableValue r)	{ true }
+	//def static dispatch boolean compareExpression(UnobservableValue l, UnobservableValue r)	{ true }
 	def static dispatch boolean compareExpression(Expression l, Expression r)				{ false }
 	
 	def static compare(ElementInConstituent l, ElementInConstituent r) {
