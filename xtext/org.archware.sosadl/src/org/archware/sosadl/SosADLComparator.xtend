@@ -52,7 +52,6 @@ import org.archware.sosadl.sosADL.Map
 import org.archware.sosadl.sosADL.MethodCall
 import org.archware.sosadl.sosADL.Select
 import org.archware.sosadl.sosADL.UnaryExpression
-//import org.archware.sosadl.sosADL.UnobservableValue
 import org.archware.sosadl.sosADL.ElementInConstituent
 import org.archware.sosadl.sosADL.ComplexName
 import org.archware.sosadl.sosADL.Sequence
@@ -92,6 +91,8 @@ import org.archware.sosadl.sosADL.DoExprBehavior
 import org.archware.sosadl.sosADL.DoneBehavior
 import org.archware.sosadl.sosADL.AssertBehavior
 import org.archware.sosadl.sosADL.ValuingBehavior
+import org.archware.sosadl.sosADL.UnobservableBehavior
+
 
 class SosADLComparator {
 	def static compare(SosADL l, SosADL r) {
@@ -322,6 +323,6 @@ class SosADLComparator {
 	def static dispatch boolean compareBehaviorStatement(RecursiveCall l, RecursiveCall r)				{ sameElements(l.parameters, r.parameters, [p, q | compareExpression(p, q)]) }
 	def static dispatch boolean compareBehaviorStatement(RepeatBehavior l, RepeatBehavior r)			{ compare(l.repeated, r.repeated) }
 	def static dispatch boolean compareBehaviorStatement(ValuingBehavior l, ValuingBehavior r)							{ compare(l.valuing, r.valuing) }
-	def static dispatch boolean compareBehaviorStatement(BehaviorStatement l, BehaviorStatement r)		{ false }
-	
+	def static dispatch boolean compareBehaviorStatement(UnobservableBehavior l, UnobservableBehavior r)			{ true }
+	def static dispatch boolean compareBehaviorStatement(BehaviorStatement l, BehaviorStatement r)		{ false }	
 }
