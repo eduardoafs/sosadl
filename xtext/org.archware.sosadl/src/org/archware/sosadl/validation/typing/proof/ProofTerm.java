@@ -6,6 +6,7 @@ import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import org.archware.sosadl.validation.typing.proof.fields.EludedField;
@@ -87,7 +88,10 @@ public interface ProofTerm {
 	 */
 	default FieldDescriptor[] getDeclaredFields() {
 		Class<?> c = this.getClass();
-		FieldDescriptor[] f = Stream.of(c.getDeclaredFields()).filter((x) -> !x.isAnnotationPresent(CoqTransient.class))
+		Pattern p = Pattern.compile("\\A[a-zA-Z_]\\w*\\z");
+		FieldDescriptor[] f = Stream.of(c.getDeclaredFields())
+				.filter((x) -> p.matcher(x.getName()).matches())
+				.filter((x) -> !x.isAnnotationPresent(CoqTransient.class))
 				.map(this::describeField).toArray((s) -> new FieldDescriptor[s]);
 		return f;
 	}
