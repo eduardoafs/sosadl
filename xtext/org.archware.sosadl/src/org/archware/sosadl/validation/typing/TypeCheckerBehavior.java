@@ -46,6 +46,7 @@ import org.archware.sosadl.validation.typing.proof.Type_expression;
 import org.archware.sosadl.validation.typing.proof.Type_finalbody;
 import org.archware.sosadl.validation.typing.proof.Type_finalbody_other;
 import org.archware.sosadl.validation.typing.proof.Type_generic_finalbody;
+import org.archware.sosadl.validation.typing.proof.Type_generic_nonfinalbody;
 import org.archware.sosadl.validation.typing.proof.Type_nonfinalbody;
 import org.archware.sosadl.validation.typing.proof.Type_valuing;
 import org.archware.utils.IntPair;
@@ -111,26 +112,10 @@ public abstract class TypeCheckerBehavior extends TypeCheckerGenericBehavior {
 	}
 
 	private Type_nonfinalbody type_nonfinalbody(Environment gamma, Behavior behavior) {
-		return type_nonfinalbody(gamma, behavior.getStatements(), behavior, 0);
-	}
-
-	private Type_nonfinalbody type_nonfinalbody(Environment gamma, EList<BehaviorStatement> b, Behavior behavior,
-			int index) {
-		if (b.isEmpty()) {
-			return p(Type_nonfinalbody.class, gamma, (gamma_) -> createType_nonfinalbody_empty(gamma_));
-		} else {
-			BehaviorStatement first = b.get(0);
-			EList<BehaviorStatement> l = cdr(b);
-			Pair<Environment, Type_bodyprefix> p1 = type_bodyprefix(gamma, first);
-			if (p1 != null && p1.getA() != null && p1.getB() != null) {
-				Type_nonfinalbody p2 = type_nonfinalbody(p1.getA(), l, behavior, index + 1);
-				return saveProof(first, p(Type_nonfinalbody.class, gamma, (gamma_) -> p(Type_nonfinalbody.class,
-						p1.getA(),
-						(gamma1_) -> createType_nonfinalbody_prefix(gamma_, first, gamma1_, l, p1.getB(), p2))));
-			} else {
-				return null;
-			}
-		}
+		Type_generic_nonfinalbody<BehaviorStatement, Type_bodyprefix> p1 = type_generic_nonfinalbody(gamma,
+				behavior.getStatements(), Type_bodyprefix.class, this::type_bodyprefix);
+		return saveProof(behavior, p(Type_nonfinalbody.class, gamma,
+				(gamma_) -> createType_nonfinalbody_generic(gamma_, behavior.getStatements(), p1)));
 	}
 
 	private Pair<Environment, Type_bodyprefix> type_bodyprefix(Environment gamma, BehaviorStatement s) {
@@ -176,14 +161,14 @@ public abstract class TypeCheckerBehavior extends TypeCheckerGenericBehavior {
 					inference.addConstraint(dt, createBooleanType(), c);
 					EList<BehaviorStatement> ts = t.getStatements();
 					Pair<Environment, Condition_true> gammat = condition_true(gamma, c, t);
-					Type_nonfinalbody p3 = type_nonfinalbody(gammat.getA(), ts, t, 0);
+					Type_nonfinalbody p3 = type_nonfinalbody(gammat.getA(), t);
 					Optionally<Behavior, Ex<Environment, And<Condition_false, Type_nonfinalbody>>> p4 = proveOptionally(
 							gamma, oe, (g, e) -> {
 								Pair<Environment, Condition_false> gammae = condition_false(g, c, e);
 								@SuppressWarnings("unchecked")
 								Ex<Environment, And<Condition_false, Type_nonfinalbody>> proof = p(Ex.class,
-										gammae.getA(), (gammae_) -> createEx_intro(gammae_, createConj(gammae.getB(),
-												type_nonfinalbody(gammae_, e.getStatements(), e, 0))));
+										gammae.getA(), (gammae_) -> createEx_intro(gammae_,
+												createConj(gammae.getB(), type_nonfinalbody(gammae_, e))));
 								return proof;
 							});
 					return new Pair<>(gamma,
@@ -209,8 +194,7 @@ public abstract class TypeCheckerBehavior extends TypeCheckerGenericBehavior {
 		} else if (s instanceof ChooseBehavior) {
 			ChooseBehavior c = (ChooseBehavior) s;
 			EList<Behavior> branches = c.getBranches();
-			Forall<Behavior, Type_nonfinalbody> p1 = proveForall(branches,
-					(x) -> type_nonfinalbody(gamma, x.getStatements(), x, 0));
+			Forall<Behavior, Type_nonfinalbody> p1 = proveForall(branches, (x) -> type_nonfinalbody(gamma, x));
 			return new Pair<>(gamma, saveProof(s,
 					p(Type_bodyprefix.class, gamma, (gamma_) -> createType_bodyprefix_Choose(gamma_, branches, p1))));
 		} else if (s instanceof ForEachBehavior) {
@@ -230,7 +214,7 @@ public abstract class TypeCheckerBehavior extends TypeCheckerGenericBehavior {
 							SosADLPackage.Literals.FOR_EACH_BEHAVIOR__SET_OF_VALUES);
 					Environment gamma1 = gamma.put(x, new VariableEnvContent(s, tau__x));
 					EList<BehaviorStatement> b = r.getStatements();
-					Type_nonfinalbody p2 = type_nonfinalbody(gamma1, b, r, 0);
+					Type_nonfinalbody p2 = type_nonfinalbody(gamma1, r);
 					return new Pair<>(gamma,
 							saveProof(s,
 									p(Type_bodyprefix.class, gamma, (gamma_) -> p(Type_bodyprefix.class, tauVals,

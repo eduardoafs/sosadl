@@ -528,13 +528,9 @@ public abstract class TypeCheckerProofConstructor extends TypeCheckerInference {
 		return new Type_finalbody_generic(gamma, l, p1);
 	}
 
-	protected Type_nonfinalbody createType_nonfinalbody_empty(Environment gamma) {
-		return new Type_nonfinalbody_empty(gamma);
-	}
-
-	protected Type_nonfinalbody createType_nonfinalbody_prefix(Environment gamma, BehaviorStatement s,
-			Environment gamma1, EList<BehaviorStatement> l, Type_bodyprefix p1, Type_nonfinalbody p2) {
-		return new Type_nonfinalbody_prefix(gamma, s, gamma1, l, p1, p2);
+	protected Type_nonfinalbody createType_nonfinalbody_generic(Environment gamma, EList<BehaviorStatement> l,
+			Type_generic_nonfinalbody<BehaviorStatement, Type_bodyprefix> p1) {
+		return new Type_nonfinalbody_generic(gamma, l, p1);
 	}
 
 	protected Type_bodyprefix createType_bodyprefix_DoExpr(Environment gamma, Expression e, DataType tau,
@@ -693,13 +689,9 @@ public abstract class TypeCheckerProofConstructor extends TypeCheckerInference {
 		return new Type_finalprotocol_generic(gamma, l, p1);
 	}
 
-	protected Type_nonfinalprotocol createType_nonfinalprotocol_prefix(Environment gamma, ProtocolStatement s,
-			Environment gamma1, EList<ProtocolStatement> l, Type_bodyprotocol p1, Type_nonfinalprotocol p2) {
-		return new Type_nonfinalprotocol_prefix(gamma, s, gamma1, l, p1, p2);
-	}
-
-	protected Type_nonfinalprotocol createType_nonfinalprotocol_empty(Environment gamma) {
-		return new Type_nonfinalprotocol_empty(gamma);
+	protected Type_nonfinalprotocol createType_nonfinalprotocol_generic(Environment gamma, EList<ProtocolStatement> l,
+			Type_generic_nonfinalbody<ProtocolStatement, Type_bodyprotocol> p1) {
+		return new Type_nonfinalprotocol_generic(gamma, l, p1);
 	}
 
 	protected <Body extends EObject, Statement extends EObject, Choose extends EObject, Done extends EObject, IfThenElse extends EObject, Repeat extends EObject, Other extends ProofTerm, E extends ProofTerm, P extends ProofTerm, NF extends ProofTerm> Type_generic_finalbody<Body, Statement, Choose, Done, IfThenElse, Repeat, Other, E, P, NF> createType_generic_Done(
@@ -756,4 +748,14 @@ public abstract class TypeCheckerProofConstructor extends TypeCheckerInference {
 				type_generic_prefix, type_generic_nonfinalbody, gamma, branches, p1);
 	}
 
+	protected <S extends EObject, P extends ProofTerm> Type_generic_nonfinalbody<S, P> createType_generic_empty(
+			Class<P> type_generic_prefix, Environment gamma) {
+		return new Type_generic_empty<>(type_generic_prefix, gamma);
+	}
+
+	protected <S extends EObject, P extends ProofTerm> Type_generic_nonfinalbody<S, P> createType_generic_nonfinalprefix(
+			Class<P> type_generic_prefix, Environment gamma, S s, Environment gamma1, EList<S> l, P p1,
+			Type_generic_nonfinalbody<S, P> p2) {
+		return new Type_generic_nonfinalprefix<>(type_generic_prefix, gamma, s, gamma1, l, p1, p2);
+	}
 }

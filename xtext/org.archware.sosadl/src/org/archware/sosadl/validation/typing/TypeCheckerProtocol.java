@@ -23,6 +23,7 @@ import org.archware.sosadl.validation.typing.proof.Type_expression;
 import org.archware.sosadl.validation.typing.proof.Type_finalprotocol;
 import org.archware.sosadl.validation.typing.proof.Type_finalprotocol_other;
 import org.archware.sosadl.validation.typing.proof.Type_generic_finalbody;
+import org.archware.sosadl.validation.typing.proof.Type_generic_nonfinalbody;
 import org.archware.sosadl.validation.typing.proof.Type_nonfinalprotocol;
 import org.archware.sosadl.validation.typing.proof.Type_protocol;
 import org.archware.utils.Pair;
@@ -61,26 +62,9 @@ public abstract class TypeCheckerProtocol extends TypeCheckerBehavior {
 	}
 
 	private Type_nonfinalprotocol type_nonfinalprotocol(Environment gamma, Protocol p) {
-		return type_nonfinalprotocol(gamma, p.getStatements(), p, 0);
-	}
-
-	private Type_nonfinalprotocol type_nonfinalprotocol(Environment gamma, EList<ProtocolStatement> b,
-			Protocol behavior, int index) {
-		if (b.isEmpty()) {
-			return p(Type_nonfinalprotocol.class, gamma, (gamma_) -> createType_nonfinalprotocol_empty(gamma_));
-		} else {
-			ProtocolStatement first = b.get(0);
-			EList<ProtocolStatement> l = cdr(b);
-			Pair<Environment, Type_bodyprotocol> p1 = type_bodyprotocol(gamma, first);
-			if (p1 != null && p1.getA() != null && p1.getB() != null) {
-				Type_nonfinalprotocol p2 = type_nonfinalprotocol(p1.getA(), l, behavior, index + 1);
-				return saveProof(first, p(Type_nonfinalprotocol.class, gamma, (gamma_) -> p(Type_nonfinalprotocol.class,
-						p1.getA(),
-						(gamma1_) -> createType_nonfinalprotocol_prefix(gamma_, first, gamma1_, l, p1.getB(), p2))));
-			} else {
-				return null;
-			}
-		}
+		Type_generic_nonfinalbody<ProtocolStatement, Type_bodyprotocol> p1 = type_generic_nonfinalbody(gamma,
+				p.getStatements(), Type_bodyprotocol.class, this::type_bodyprotocol);
+		return saveProof(p, createType_nonfinalprotocol_generic(gamma, p.getStatements(), p1));
 	}
 
 	private Pair<Environment, Type_bodyprotocol> type_bodyprotocol(Environment gamma, ProtocolStatement first) {
