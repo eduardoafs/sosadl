@@ -19,6 +19,7 @@ import org.archware.sosadl.sosADL.SosADLPackage;
 import org.archware.sosadl.sosADL.ValuingProtocol;
 import org.archware.sosadl.validation.typing.proof.Type_assertion;
 import org.archware.sosadl.validation.typing.proof.Type_bodyprotocol;
+import org.archware.sosadl.validation.typing.proof.Type_expression;
 import org.archware.sosadl.validation.typing.proof.Type_finalprotocol;
 import org.archware.sosadl.validation.typing.proof.Type_finalprotocol_other;
 import org.archware.sosadl.validation.typing.proof.Type_generic_finalbody;
@@ -40,15 +41,15 @@ public abstract class TypeCheckerProtocol extends TypeCheckerBehavior {
 		Function<IfThenElseProtocol, Protocol> getThen = IfThenElseProtocol::getIfTrue;
 		Function<IfThenElseProtocol, Protocol> getElse = IfThenElseProtocol::getIfFalse;
 		Function<RepeatProtocol, Protocol> getRepeated = RepeatProtocol::getRepeated;
-		Type_generic_finalbody<Protocol, ProtocolStatement, ChooseProtocol, DoneProtocol, IfThenElseProtocol, RepeatProtocol, Type_finalprotocol_other, Type_bodyprotocol, Type_nonfinalprotocol> p1 = type_generic_finalbody(
+		Type_generic_finalbody<Protocol, ProtocolStatement, ChooseProtocol, DoneProtocol, IfThenElseProtocol, RepeatProtocol, Type_finalprotocol_other, Type_expression, Type_bodyprotocol, Type_nonfinalprotocol> p1 = type_generic_finalbody(
 				Protocol.class, ProtocolStatement.class, getBlock, "Protocol", ChooseProtocol.class, getBranches,
 				DoneProtocol.class, IfThenElseProtocol.class, getCondition,
 				SosADLPackage.Literals.IF_THEN_ELSE_PROTOCOL__CONDITION, getThen,
 				SosADLPackage.Literals.IF_THEN_ELSE_PROTOCOL__IF_TRUE, getElse,
 				SosADLPackage.Literals.IF_THEN_ELSE_PROTOCOL__IF_FALSE, RepeatProtocol.class, getRepeated,
 				SosADLPackage.Literals.REPEAT_PROTOCOL__REPEATED, Type_finalprotocol_other.class, proveOther,
-				Type_bodyprotocol.class, gp, Type_nonfinalprotocol.class, gnf, gamma, b, behavior,
-				SosADLPackage.Literals.PROTOCOL__STATEMENTS, 0);
+				Type_expression.class, this::type_expression, Type_bodyprotocol.class, gp, Type_nonfinalprotocol.class,
+				gnf, gamma, b, behavior, SosADLPackage.Literals.PROTOCOL__STATEMENTS, 0);
 		Type_finalprotocol proof = p(Type_finalprotocol.class, gamma,
 				(gamma_) -> createType_finalprotocol_generic(gamma_, b, p1));
 		return saveProof(behavior, proof);

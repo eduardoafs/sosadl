@@ -11,7 +11,6 @@ import org.archware.sosadl.validation.typing.proof.Condition_false;
 import org.archware.sosadl.validation.typing.proof.Condition_true;
 import org.archware.sosadl.validation.typing.proof.Forall;
 import org.archware.sosadl.validation.typing.proof.ProofTerm;
-import org.archware.sosadl.validation.typing.proof.Type_expression;
 import org.archware.sosadl.validation.typing.proof.Type_generic_finalbody;
 import org.archware.utils.Pair;
 import org.eclipse.emf.common.util.ECollections;
@@ -21,14 +20,15 @@ import org.eclipse.emf.ecore.EStructuralFeature;
 
 public abstract class TypeCheckerGenericBehavior extends TypeCheckerValuing {
 
-	protected <Body extends EObject, Statement extends EObject, Choose extends EObject, Done extends EObject, IfThenElse extends EObject, Repeat extends EObject, Other extends ProofTerm, P extends ProofTerm, NF extends ProofTerm> Type_generic_finalbody<Body, Statement, Choose, Done, IfThenElse, Repeat, Other, P, NF> type_generic_finalbody(
+	protected <Body extends EObject, Statement extends EObject, Choose extends EObject, Done extends EObject, IfThenElse extends EObject, Repeat extends EObject, Other extends ProofTerm, E extends ProofTerm, P extends ProofTerm, NF extends ProofTerm> Type_generic_finalbody<Body, Statement, Choose, Done, IfThenElse, Repeat, Other, E, P, NF> type_generic_finalbody(
 			Class<Body> body, Class<Statement> statement, Function<Body, EList<Statement>> getBlock, String block,
 			Class<Choose> choose, Function<Choose, EList<Body>> getBranches, Class<Done> done,
 			Class<IfThenElse> ifThenElse, Function<IfThenElse, Expression> getCondition,
 			EStructuralFeature conditionFeature, Function<IfThenElse, Body> getThen, EStructuralFeature thenFeature,
 			Function<IfThenElse, Body> getElse, EStructuralFeature elseFeature, Class<Repeat> repeat,
 			Function<Repeat, Body> getRepeated, EStructuralFeature repeatedFeature, Class<Other> other,
-			BiFunction<Environment, Statement, Other> proveOther, Class<P> type_generic_prefix,
+			BiFunction<Environment, Statement, Other> proveOther, Class<E> type_expression,
+			BiFunction<Environment, Expression, Pair<E, DataType>> te, Class<P> type_generic_prefix,
 			BiFunction<Environment, Statement, Pair<Environment, P>> gp, Class<NF> type_generic_nonfinalbody,
 			BiFunction<Environment, Body, NF> gnf, Environment gamma, EList<Statement> b, Body behavior,
 			EStructuralFeature blockFeature, int index) {
@@ -43,10 +43,10 @@ public abstract class TypeCheckerGenericBehavior extends TypeCheckerValuing {
 				saveEnvironment(first, gamma);
 				if (done.isInstance(first)) {
 					@SuppressWarnings("unchecked")
-					Type_generic_finalbody<Body, Statement, Choose, Done, IfThenElse, Repeat, Other, P, NF> proof = p(
+					Type_generic_finalbody<Body, Statement, Choose, Done, IfThenElse, Repeat, Other, E, P, NF> proof = p(
 							Type_generic_finalbody.class, gamma,
 							(gamma_) -> createType_generic_Done(block, choose, done, ifThenElse, repeat, other,
-									type_generic_prefix, type_generic_nonfinalbody, gamma_));
+									type_expression, type_generic_prefix, type_generic_nonfinalbody, gamma_));
 					return saveProof(first, proof);
 				} else if (repeat.isInstance(first)) {
 					Body rb = getRepeated.apply(repeat.cast(first));
@@ -54,10 +54,11 @@ public abstract class TypeCheckerGenericBehavior extends TypeCheckerValuing {
 						EList<Statement> rbl = getBlock.apply(rb);
 						NF p1 = gnf.apply(gamma, rb);
 						@SuppressWarnings("unchecked")
-						Type_generic_finalbody<Body, Statement, Choose, Done, IfThenElse, Repeat, Other, P, NF> proof = p(
+						Type_generic_finalbody<Body, Statement, Choose, Done, IfThenElse, Repeat, Other, E, P, NF> proof = p(
 								Type_generic_finalbody.class, gamma,
 								(gamma_) -> createType_generic_Repeat(block, choose, done, ifThenElse, repeat, other,
-										type_generic_prefix, type_generic_nonfinalbody, gamma_, rbl, p1));
+										type_expression, type_generic_prefix, type_generic_nonfinalbody, gamma_, rbl,
+										p1));
 						return saveProof(first, proof);
 					} else {
 						error("There must be a repeated behavior", first, repeatedFeature);
@@ -69,34 +70,36 @@ public abstract class TypeCheckerGenericBehavior extends TypeCheckerValuing {
 					Body t = getThen.apply(ite);
 					Body e = getElse.apply(ite);
 					if (c != null && t != null && e != null) {
-						Pair<Type_expression, DataType> pt = type_expression(gamma, c);
-						Type_expression p1 = pt.getA();
+						Pair<E, DataType> pt = te.apply(gamma, c);
+						E p1 = pt.getA();
 						DataType dt = pt.getB();
 						if (p1 != null && dt != null) {
 							inference.addConstraint(dt, createBooleanType(), c);
 							EList<Statement> ts = getBlock.apply(t);
 							Pair<Environment, Condition_true> gammat = condition_true(gamma, c, t);
-							Type_generic_finalbody<Body, Statement, Choose, Done, IfThenElse, Repeat, Other, P, NF> p3 = type_generic_finalbody(
+							Type_generic_finalbody<Body, Statement, Choose, Done, IfThenElse, Repeat, Other, E, P, NF> p3 = type_generic_finalbody(
 									body, statement, getBlock, block, choose, getBranches, done, ifThenElse,
 									getCondition, conditionFeature, getThen, thenFeature, getElse, elseFeature, repeat,
-									getRepeated, repeatedFeature, other, proveOther, type_generic_prefix, gp,
-									type_generic_nonfinalbody, gnf, gammat.getA(), ts, t, blockFeature, 0);
+									getRepeated, repeatedFeature, other, proveOther, type_expression, te,
+									type_generic_prefix, gp, type_generic_nonfinalbody, gnf, gammat.getA(), ts, t,
+									blockFeature, 0);
 							EList<Statement> es = getBlock.apply(e);
 							Pair<Environment, Condition_false> gammae = condition_false(gamma, c, e);
-							Type_generic_finalbody<Body, Statement, Choose, Done, IfThenElse, Repeat, Other, P, NF> p5 = type_generic_finalbody(
+							Type_generic_finalbody<Body, Statement, Choose, Done, IfThenElse, Repeat, Other, E, P, NF> p5 = type_generic_finalbody(
 									body, statement, getBlock, block, choose, getBranches, done, ifThenElse,
 									getCondition, conditionFeature, getThen, thenFeature, getElse, elseFeature, repeat,
-									getRepeated, repeatedFeature, other, proveOther, type_generic_prefix, gp,
-									type_generic_nonfinalbody, gnf, gammae.getA(), es, e, blockFeature, 0);
+									getRepeated, repeatedFeature, other, proveOther, type_expression, te,
+									type_generic_prefix, gp, type_generic_nonfinalbody, gnf, gammae.getA(), es, e,
+									blockFeature, 0);
 							@SuppressWarnings("unchecked")
-							Type_generic_finalbody<Body, Statement, Choose, Done, IfThenElse, Repeat, Other, P, NF> proof = p(
+							Type_generic_finalbody<Body, Statement, Choose, Done, IfThenElse, Repeat, Other, E, P, NF> proof = p(
 									Type_generic_finalbody.class, gamma,
-									(gamma_) -> p(Type_generic_finalbody.class, gammat.getA(),
-											(gammat_) -> p(Type_generic_finalbody.class, gammae.getA(),
-													(gammae_) -> createType_generic_IfThenElse(block, choose, done,
-															ifThenElse, repeat, other, type_generic_prefix,
-															type_generic_nonfinalbody, gamma_, c, gammat_, ts, gammae_,
-															es, p1, gammat.getB(), p3, gammae.getB(), p5))));
+									(gamma_) -> p(Type_generic_finalbody.class, gammat.getA(), (gammat_) -> p(
+											Type_generic_finalbody.class, gammae.getA(),
+											(gammae_) -> createType_generic_IfThenElse(block, choose, done, ifThenElse,
+													repeat, other, type_expression, type_generic_prefix,
+													type_generic_nonfinalbody, gamma_, c, gammat_, ts, gammae_, es, p1,
+													gammat.getB(), p3, gammae.getB(), p5))));
 							return saveProof(first, proof);
 						} else {
 							return null;
@@ -117,46 +120,47 @@ public abstract class TypeCheckerGenericBehavior extends TypeCheckerValuing {
 				} else if (choose.isInstance(first)) {
 					Choose c = choose.cast(first);
 					List<Body> branches = getBranches.apply(c);
-					Function<Body, Type_generic_finalbody<Body, Statement, Choose, Done, IfThenElse, Repeat, Other, P, NF>> f = (
+					Function<Body, Type_generic_finalbody<Body, Statement, Choose, Done, IfThenElse, Repeat, Other, E, P, NF>> f = (
 							x) -> type_generic_finalbody(body, statement, getBlock, block, choose, getBranches, done,
 									ifThenElse, getCondition, conditionFeature, getThen, thenFeature, getElse,
 									elseFeature, repeat, getRepeated, repeatedFeature, other, proveOther,
-									type_generic_prefix, gp, type_generic_nonfinalbody, gnf, gamma, getBlock.apply(x),
-									x, blockFeature, 0);
-					Forall<EList<Statement>, Type_generic_finalbody<Body, Statement, Choose, Done, IfThenElse, Repeat, Other, P, NF>> p1 = proveForall(
+									type_expression, te, type_generic_prefix, gp, type_generic_nonfinalbody, gnf, gamma,
+									getBlock.apply(x), x, blockFeature, 0);
+					Forall<EList<Statement>, Type_generic_finalbody<Body, Statement, Choose, Done, IfThenElse, Repeat, Other, E, P, NF>> p1 = proveForall(
 							branches, getBlock, f);
 					EList<EList<Statement>> brl = ECollections
 							.asEList(branches.stream().map(getBlock).collect(Collectors.toList()));
 					@SuppressWarnings("unchecked")
-					Type_generic_finalbody<Body, Statement, Choose, Done, IfThenElse, Repeat, Other, P, NF> proof = p(
+					Type_generic_finalbody<Body, Statement, Choose, Done, IfThenElse, Repeat, Other, E, P, NF> proof = p(
 							Type_generic_finalbody.class, gamma,
 							(gamma_) -> createType_generic_Choose(block, choose, done, ifThenElse, repeat, other,
-									type_generic_prefix, type_generic_nonfinalbody, gamma_, brl, p1));
+									type_expression, type_generic_prefix, type_generic_nonfinalbody, gamma_, brl, p1));
 					return saveProof(first, proof);
 				} else {
 					Other p1 = proveOther.apply(gamma, first);
 					@SuppressWarnings("unchecked")
-					Type_generic_finalbody<Body, Statement, Choose, Done, IfThenElse, Repeat, Other, P, NF> proof = p(
+					Type_generic_finalbody<Body, Statement, Choose, Done, IfThenElse, Repeat, Other, E, P, NF> proof = p(
 							Type_generic_finalbody.class, gamma,
 							(gamma_) -> createType_generic_other(block, choose, done, ifThenElse, repeat, other,
-									type_generic_prefix, type_generic_nonfinalbody, gamma_, first, p1));
+									type_expression, type_generic_prefix, type_generic_nonfinalbody, gamma_, first,
+									p1));
 					return saveProof(first, proof);
 				}
 			} else {
 				Pair<Environment, P> p1 = gp.apply(gamma, first);
 				if (p1 != null && p1.getA() != null && p1.getB() != null) {
-					Type_generic_finalbody<Body, Statement, Choose, Done, IfThenElse, Repeat, Other, P, NF> p2 = type_generic_finalbody(
+					Type_generic_finalbody<Body, Statement, Choose, Done, IfThenElse, Repeat, Other, E, P, NF> p2 = type_generic_finalbody(
 							body, statement, getBlock, block, choose, getBranches, done, ifThenElse, getCondition,
 							conditionFeature, getThen, thenFeature, getElse, elseFeature, repeat, getRepeated,
-							repeatedFeature, other, proveOther, type_generic_prefix, gp, type_generic_nonfinalbody, gnf,
-							p1.getA(), l, behavior, blockFeature, index + 1);
+							repeatedFeature, other, proveOther, type_expression, te, type_generic_prefix, gp,
+							type_generic_nonfinalbody, gnf, p1.getA(), l, behavior, blockFeature, index + 1);
 					@SuppressWarnings("unchecked")
-					Type_generic_finalbody<Body, Statement, Choose, Done, IfThenElse, Repeat, Other, P, NF> proof = p(
+					Type_generic_finalbody<Body, Statement, Choose, Done, IfThenElse, Repeat, Other, E, P, NF> proof = p(
 							Type_generic_finalbody.class, gamma,
 							(gamma_) -> p(Type_generic_finalbody.class, p1.getA(),
 									(gamma1_) -> createType_generic_prefix(block, choose, done, ifThenElse, repeat,
-											other, type_generic_prefix, type_generic_nonfinalbody, gamma_, first,
-											gamma1_, l, p1.getB(), p2)));
+											other, type_expression, type_generic_prefix, type_generic_nonfinalbody,
+											gamma_, first, gamma1_, l, p1.getB(), p2)));
 					return saveProof(first, proof);
 				} else {
 					return null;

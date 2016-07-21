@@ -5,8 +5,8 @@ import org.archware.sosadl.validation.typing.Environment;
 import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.ecore.EObject;
 
-public class Type_generic_IfThenElse<Body extends EObject, Statement extends EObject, Choose extends EObject, Done extends EObject, IfThenElse extends EObject, Repeat extends EObject, Other extends ProofTerm, P extends ProofTerm, NF extends ProofTerm>
-		implements Type_generic_finalbody<Body, Statement, Choose, Done, IfThenElse, Repeat, Other, P, NF> {
+public class Type_generic_IfThenElse<Body extends EObject, Statement extends EObject, Choose extends EObject, Done extends EObject, IfThenElse extends EObject, Repeat extends EObject, Other extends ProofTerm, E extends ProofTerm, P extends ProofTerm, NF extends ProofTerm>
+		implements Type_generic_finalbody<Body, Statement, Choose, Done, IfThenElse, Repeat, Other, E, P, NF> {
 
 	@Mandatory
 	@CoqLiteral
@@ -34,6 +34,10 @@ public class Type_generic_IfThenElse<Body extends EObject, Statement extends EOb
 
 	@Mandatory
 	@CoqLiteral
+	private final Class<E> type_expression;
+
+	@Mandatory
+	@CoqLiteral
 	private final Class<P> type_generic_prefix;
 
 	@Mandatory
@@ -57,27 +61,27 @@ public class Type_generic_IfThenElse<Body extends EObject, Statement extends EOb
 	private final EList<Statement> e;
 
 	@Mandatory
-	private final Type_expression p1;
+	private final E p1;
 
 	@Mandatory
 	private final Condition_true p2;
 
 	@Mandatory
-	private final Type_generic_finalbody<Body, Statement, Choose, Done, IfThenElse, Repeat, Other, P, NF> p3;
+	private final Type_generic_finalbody<Body, Statement, Choose, Done, IfThenElse, Repeat, Other, E, P, NF> p3;
 
 	@Mandatory
 	private final Condition_false p4;
 
 	@Mandatory
-	private final Type_generic_finalbody<Body, Statement, Choose, Done, IfThenElse, Repeat, Other, P, NF> p5;
+	private final Type_generic_finalbody<Body, Statement, Choose, Done, IfThenElse, Repeat, Other, E, P, NF> p5;
 
 	public Type_generic_IfThenElse(String block, Class<Choose> choose, Class<Done> done, Class<IfThenElse> ifThenElse,
-			Class<Repeat> repeat, Class<Other> other, Class<P> type_generic_prefix, Class<NF> type_generic_nonfinalbody,
-			Environment gamma, Expression c, Environment gammat, EList<Statement> t, Environment gammae,
-			EList<Statement> e, Type_expression p1, Condition_true p2,
-			Type_generic_finalbody<Body, Statement, Choose, Done, IfThenElse, Repeat, Other, P, NF> p3,
+			Class<Repeat> repeat, Class<Other> other, Class<E> type_expression, Class<P> type_generic_prefix,
+			Class<NF> type_generic_nonfinalbody, Environment gamma, Expression c, Environment gammat,
+			EList<Statement> t, Environment gammae, EList<Statement> e, E p1, Condition_true p2,
+			Type_generic_finalbody<Body, Statement, Choose, Done, IfThenElse, Repeat, Other, E, P, NF> p3,
 			Condition_false p4,
-			Type_generic_finalbody<Body, Statement, Choose, Done, IfThenElse, Repeat, Other, P, NF> p5) {
+			Type_generic_finalbody<Body, Statement, Choose, Done, IfThenElse, Repeat, Other, E, P, NF> p5) {
 		super();
 		this.block = block;
 		this.choose = choose;
@@ -85,6 +89,7 @@ public class Type_generic_IfThenElse<Body extends EObject, Statement extends EOb
 		this.ifThenElse = ifThenElse;
 		this.repeat = repeat;
 		this.other = other;
+		this.type_expression = type_expression;
 		this.type_generic_prefix = type_generic_prefix;
 		this.type_generic_nonfinalbody = type_generic_nonfinalbody;
 		this.gamma = gamma;
@@ -124,6 +129,10 @@ public class Type_generic_IfThenElse<Body extends EObject, Statement extends EOb
 		return other;
 	}
 
+	public Class<E> getType_expression() {
+		return type_expression;
+	}
+
 	public Class<P> getType_generic_prefix() {
 		return type_generic_prefix;
 	}
@@ -156,7 +165,7 @@ public class Type_generic_IfThenElse<Body extends EObject, Statement extends EOb
 		return e;
 	}
 
-	public Type_expression getP1() {
+	public E getP1() {
 		return p1;
 	}
 
@@ -164,7 +173,7 @@ public class Type_generic_IfThenElse<Body extends EObject, Statement extends EOb
 		return p2;
 	}
 
-	public Type_generic_finalbody<Body, Statement, Choose, Done, IfThenElse, Repeat, Other, P, NF> getP3() {
+	public Type_generic_finalbody<Body, Statement, Choose, Done, IfThenElse, Repeat, Other, E, P, NF> getP3() {
 		return p3;
 	}
 
@@ -172,7 +181,7 @@ public class Type_generic_IfThenElse<Body extends EObject, Statement extends EOb
 		return p4;
 	}
 
-	public Type_generic_finalbody<Body, Statement, Choose, Done, IfThenElse, Repeat, Other, P, NF> getP5() {
+	public Type_generic_finalbody<Body, Statement, Choose, Done, IfThenElse, Repeat, Other, E, P, NF> getP5() {
 		return p5;
 	}
 

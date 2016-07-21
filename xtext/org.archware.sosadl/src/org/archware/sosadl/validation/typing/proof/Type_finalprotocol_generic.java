@@ -16,10 +16,10 @@ public class Type_finalprotocol_generic implements Type_finalprotocol {
 	private final EList<ProtocolStatement> l;
 
 	@Mandatory
-	private final Type_generic_finalbody<Protocol, ProtocolStatement, ChooseProtocol, DoneProtocol, IfThenElseProtocol, RepeatProtocol, Type_finalprotocol_other, Type_bodyprotocol, Type_nonfinalprotocol> p1;
+	private final Type_generic_finalbody<Protocol, ProtocolStatement, ChooseProtocol, DoneProtocol, IfThenElseProtocol, RepeatProtocol, Type_finalprotocol_other, Type_expression, Type_bodyprotocol, Type_nonfinalprotocol> p1;
 
 	public Type_finalprotocol_generic(Environment gamma, EList<ProtocolStatement> l,
-			Type_generic_finalbody<Protocol, ProtocolStatement, ChooseProtocol, DoneProtocol, IfThenElseProtocol, RepeatProtocol, Type_finalprotocol_other, Type_bodyprotocol, Type_nonfinalprotocol> p1) {
+			Type_generic_finalbody<Protocol, ProtocolStatement, ChooseProtocol, DoneProtocol, IfThenElseProtocol, RepeatProtocol, Type_finalprotocol_other, Type_expression, Type_bodyprotocol, Type_nonfinalprotocol> p1) {
 		super();
 		this.gamma = gamma;
 		this.l = l;
@@ -34,7 +34,7 @@ public class Type_finalprotocol_generic implements Type_finalprotocol {
 		return l;
 	}
 
-	public Type_generic_finalbody<Protocol, ProtocolStatement, ChooseProtocol, DoneProtocol, IfThenElseProtocol, RepeatProtocol, Type_finalprotocol_other, Type_bodyprotocol, Type_nonfinalprotocol> getP1() {
+	public Type_generic_finalbody<Protocol, ProtocolStatement, ChooseProtocol, DoneProtocol, IfThenElseProtocol, RepeatProtocol, Type_finalprotocol_other, Type_expression, Type_bodyprotocol, Type_nonfinalprotocol> getP1() {
 		return p1;
 	}
 

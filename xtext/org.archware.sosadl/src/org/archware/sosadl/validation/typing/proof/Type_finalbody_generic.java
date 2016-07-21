@@ -16,10 +16,10 @@ public class Type_finalbody_generic implements Type_finalbody {
 	private final EList<BehaviorStatement> l;
 
 	@Mandatory
-	private final Type_generic_finalbody<Behavior, BehaviorStatement, ChooseBehavior, DoneBehavior, IfThenElseBehavior, RepeatBehavior, Type_finalbody_other, Type_bodyprefix, Type_nonfinalbody> p1;
+	private final Type_generic_finalbody<Behavior, BehaviorStatement, ChooseBehavior, DoneBehavior, IfThenElseBehavior, RepeatBehavior, Type_finalbody_other, Type_expression, Type_bodyprefix, Type_nonfinalbody> p1;
 
 	public Type_finalbody_generic(Environment gamma, EList<BehaviorStatement> l,
-			Type_generic_finalbody<Behavior, BehaviorStatement, ChooseBehavior, DoneBehavior, IfThenElseBehavior, RepeatBehavior, Type_finalbody_other, Type_bodyprefix, Type_nonfinalbody> p1) {
+			Type_generic_finalbody<Behavior, BehaviorStatement, ChooseBehavior, DoneBehavior, IfThenElseBehavior, RepeatBehavior, Type_finalbody_other, Type_expression, Type_bodyprefix, Type_nonfinalbody> p1) {
 		super();
 		this.gamma = gamma;
 		this.l = l;
@@ -34,7 +34,7 @@ public class Type_finalbody_generic implements Type_finalbody {
 		return l;
 	}
 
-	public Type_generic_finalbody<Behavior, BehaviorStatement, ChooseBehavior, DoneBehavior, IfThenElseBehavior, RepeatBehavior, Type_finalbody_other, Type_bodyprefix, Type_nonfinalbody> getP1() {
+	public Type_generic_finalbody<Behavior, BehaviorStatement, ChooseBehavior, DoneBehavior, IfThenElseBehavior, RepeatBehavior, Type_finalbody_other, Type_expression, Type_bodyprefix, Type_nonfinalbody> getP1() {
 		return p1;
 	}
 

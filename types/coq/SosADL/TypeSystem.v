@@ -1659,6 +1659,7 @@ Inductive type_generic_finalbody
           (s_IfThenElse: option SosADL.SosADL.t_Expression -> option t_Body -> option t_Body -> t_Statement)
           (s_Repeat: option t_Body -> t_Statement)
           (p_Other: env -> t_Statement -> Prop)
+          (type_expression: env -> SosADL.SosADL.t_Expression -> SosADL.SosADL.t_DataType -> Prop)
           (type_generic_prefix: env -> t_Statement -> env -> Prop)
           (type_generic_nonfinalbody: env -> list t_Statement -> Prop):
   env -> list t_Statement -> Prop :=
@@ -1671,6 +1672,7 @@ Inductive type_generic_finalbody
     ,
       type_generic_finalbody
         block s_Choose s_Done s_IfThenElse s_Repeat p_Other
+        type_expression
         type_generic_prefix type_generic_nonfinalbody
         Gamma [s]
 
@@ -1683,11 +1685,13 @@ Inductive type_generic_finalbody
       (p1: type_generic_prefix Gamma s Gamma1)
       (p2: type_generic_finalbody
              block s_Choose s_Done s_IfThenElse s_Repeat p_Other
+             type_expression
              type_generic_prefix type_generic_nonfinalbody
              Gamma1 l)
     ,
       type_generic_finalbody
         block s_Choose s_Done s_IfThenElse s_Repeat p_Other
+        type_expression
         type_generic_prefix type_generic_nonfinalbody
         Gamma (s :: l)
 
@@ -1699,6 +1703,7 @@ Inductive type_generic_finalbody
     ,
       type_generic_finalbody
         block s_Choose s_Done s_IfThenElse s_Repeat p_Other
+        type_expression
         type_generic_prefix type_generic_nonfinalbody
         Gamma [s_Repeat (Some (block b))]
 
@@ -1710,20 +1715,23 @@ Inductive type_generic_finalbody
       (t: list t_Statement)
       (Gammae: env)
       (e: list t_Statement)
-      (p1: expression c has type SosADL.SosADL.BooleanType in Gamma)
+      (p1: type_expression Gamma c SosADL.SosADL.BooleanType)
       (p2: condition_true Gamma c Gammat)
       (p3: type_generic_finalbody
              block s_Choose s_Done s_IfThenElse s_Repeat p_Other
+             type_expression
              type_generic_prefix type_generic_nonfinalbody
              Gammat t)
       (p4: condition_false Gamma c Gammae)
       (p5: type_generic_finalbody
              block s_Choose s_Done s_IfThenElse s_Repeat p_Other
+             type_expression
              type_generic_prefix type_generic_nonfinalbody
              Gammae e)
     ,
       type_generic_finalbody
         block s_Choose s_Done s_IfThenElse s_Repeat p_Other
+        type_expression
         type_generic_prefix type_generic_nonfinalbody
         Gamma [s_IfThenElse (Some c) (Some (block t)) (Some (block e))]
 
@@ -1733,11 +1741,13 @@ Inductive type_generic_finalbody
       (p1: for each b of branches,
            type_generic_finalbody
              block s_Choose s_Done s_IfThenElse s_Repeat p_Other
+             type_expression
              type_generic_prefix type_generic_nonfinalbody
              Gamma b)
     ,
       type_generic_finalbody
         block s_Choose s_Done s_IfThenElse s_Repeat p_Other
+        type_expression
         type_generic_prefix type_generic_nonfinalbody
         Gamma [s_Choose (map block branches)]
 
@@ -1747,9 +1757,162 @@ Inductive type_generic_finalbody
     ,
       type_generic_finalbody
         block s_Choose s_Done s_IfThenElse s_Repeat p_Other
+        type_expression
         type_generic_prefix type_generic_nonfinalbody
         Gamma [s_Done]
 
+.
+
+Inductive type_generic_prefixstatement
+          {t_Body: Set}
+          {t_Statement: Set}
+          {t_Command: Set}
+          (block: list t_Statement -> t_Body)
+          (s_Action: option SosADL.SosADL.t_ComplexName -> t_Command -> t_Statement)
+          (s_Choose: list t_Body -> t_Statement)
+          (s_DoExpr: option SosADL.SosADL.t_Expression -> t_Statement)
+          (s_ForEach: option string -> option SosADL.SosADL.t_Expression -> option t_Body -> t_Statement)
+          (s_IfThenElse: option SosADL.SosADL.t_Expression -> option t_Body -> option t_Body -> t_Statement)
+          (s_Valuing: option SosADL.SosADL.t_Valuing -> t_Statement)
+          (c_Send: option SosADL.SosADL.t_Expression -> t_Command)
+          (c_Receive: option string -> t_Command)
+          (p_Other: env -> t_Statement -> Prop)
+          (type_expression: env -> SosADL.SosADL.t_Expression -> SosADL.SosADL.t_DataType -> Prop)
+          (type_generic_nonfinalbody: env -> list t_Statement -> Prop):
+  env -> SosADL.SosADL.t_BehaviorStatement -> env -> Prop :=
+(*
+| type_bodyprefix_DoExpr:
+    forall
+      (Gamma: env)
+      (e: SosADL.SosADL.t_Expression)
+      (tau: SosADL.SosADL.t_DataType)
+      (p1: expression e has type tau in Gamma)
+    ,
+      statement (SosADL.SosADL.DoExprBehavior (Some e)) well typed in Gamma yields to Gamma
+
+| type_bodyprefix_Valuing:
+    forall
+      (Gamma: env)
+      (v: SosADL.SosADL.t_Valuing)
+      (Gamma1: env)
+      (p1: @type_valuing type_expression Gamma v Gamma1)
+    ,
+      statement (SosADL.SosADL.ValuingBehavior (Some v))
+                well typed in Gamma yields to Gamma1
+
+| type_bodyprefix_IfThenElse:
+    forall
+      (Gamma: env)
+      (c: SosADL.SosADL.t_Expression)
+      (Gammat: env)
+      (t: list SosADL.SosADL.t_BehaviorStatement)
+      (oe: option SosADL.SosADL.t_Behavior)
+      (p1: expression c has type SosADL.SosADL.BooleanType in Gamma)
+      (p2: condition_true Gamma c Gammat)
+      (p3: nonfinal body t well typed in Gammat)
+      (p4: @optionally _
+                       (fun g e =>
+                          exists (Gammae: env),
+                            condition_false g c Gammae
+                            /\ (nonfinal body (SosADL.SosADL.Behavior_statements e)
+                                        well typed in Gammae))
+                       Gamma oe)
+    ,
+      statement (SosADL.SosADL.IfThenElseBehavior
+                   (Some c) (Some (SosADL.SosADL.Behavior t)) oe)
+                well typed in Gamma yields to Gamma
+
+| type_bodyprefix_Choose:
+    forall (Gamma: env)
+      (branches: list SosADL.SosADL.t_Behavior)
+      (p1: for each b of branches,
+           nonfinal body (SosADL.SosADL.Behavior_statements b) well typed in Gamma)
+    ,
+      statement (SosADL.SosADL.ChooseBehavior branches) well typed in Gamma yields to Gamma
+
+| type_bodyprefix_ForEach:
+    forall (Gamma: env)
+      (x: string)
+      (vals: SosADL.SosADL.t_Expression)
+      (tau: SosADL.SosADL.t_DataType)
+      (tau__x: SosADL.SosADL.t_DataType)
+      (b: list SosADL.SosADL.t_BehaviorStatement)
+      (p1: expression vals has type (SosADL.SosADL.SequenceType (Some tau)) in Gamma)
+      (p2: nonfinal body b well typed in Gamma [| x <- EVariable tau__x |])
+      (p3: tau </ tau__x)
+    ,
+      statement (SosADL.SosADL.ForEachBehavior
+                   (Some x) (Some vals) (Some (SosADL.SosADL.Behavior b)))
+                well typed in Gamma yields to Gamma
+*)
+(** %\note{%[type_bodyprefix_Send] and [type_bodyprefix_Receive]
+assume that the complex name is a pair containing the name of a
+gate-or-duty, followed by the name of a connection within that
+gate-or-duty.%}% *)
+(*
+| type_bodyprefix_Send:
+    forall (Gamma: env)
+      (gd: string)
+      (endpoints: list SosADL.SosADL.t_Connection)
+      (is_env: bool)
+      (conn: string)
+      (mode: SosADL.SosADL.ModeType)
+      (conn__tau: SosADL.SosADL.t_DataType)
+      (e: SosADL.SosADL.t_Expression)
+      (tau__e: SosADL.SosADL.t_DataType)
+      (p1: contains Gamma gd (EGateOrDuty endpoints))
+      (p2: connection_defined endpoints is_env conn mode conn__tau)
+      (p3: mode_send mode)
+      (p4: expression e has type tau__e in Gamma)
+      (p5: tau__e </ conn__tau)
+    ,
+      statement (SosADL.SosADL.Action
+                   (Some (SosADL.SosADL.ComplexName [gd; conn]))
+                   (Some (SosADL.SosADL.SendAction (Some e))))
+           well typed in Gamma yields to Gamma
+
+| type_bodyprefix_Receive:
+    forall (Gamma: env)
+      (gd: string)
+      (endpoints: list SosADL.SosADL.t_Connection)
+      (is_env: bool)
+      (conn: string)
+      (mode: SosADL.SosADL.ModeType)
+      (conn__tau: SosADL.SosADL.t_DataType)
+      (x: string)
+      (Gamma1: env)
+      (p1: contains Gamma gd (EGateOrDuty endpoints))
+      (p2: connection_defined endpoints is_env conn mode conn__tau)
+      (p3: mode_receive mode)
+      (p4: Gamma1 = Gamma[| x <- EVariable conn__tau |])
+    ,
+      statement (SosADL.SosADL.Action
+                   (Some (SosADL.SosADL.ComplexName [gd; conn]))
+                   (Some (SosADL.SosADL.ReceiveAction (Some x))))
+                well typed in Gamma
+                                yields to Gamma1
+*)
+       (*
+
+
+
+| type_TellStatement:
+    forall Gamma name e l,
+      (expression e has type SosADL.SosADL.BooleanType in Gamma)
+      /\ (body l well typed in Gamma)
+      ->
+      body (SosADL.SosADL.BehaviorStatement_TellAssertion (Some name) (Some e) :: l) well typed in Gamma
+*)
+
+(*
+| type_AskStatement:
+    forall Gamma name e ee l,
+      (forall x, List.In x (names_of_expression e) <-> exists tau, contains ee x (EType tau))
+      /\ (expression e has type SosADL.SosADL.BooleanType in (Gamma <++ ee))
+      /\ (body l well typed in (Gamma <++ ee))
+      ->
+      body (SosADL.SosADL.BehaviorStatement_AskAssertion (Some name) (Some e) :: l) well typed in Gamma
+*)
 .
 
 (** ** Body *)
@@ -1979,6 +2142,7 @@ Inductive type_finalbody: env -> list SosADL.SosADL.t_BehaviorStatement -> Prop 
              SosADL.SosADL.IfThenElseBehavior
              SosADL.SosADL.RepeatBehavior
              type_finalbody_other
+             type_expression
              type_bodyprefix type_nonfinalbody
              Gamma l)
     ,
@@ -2055,6 +2219,7 @@ Inductive type_finalprotocol: env -> list SosADL.SosADL.t_ProtocolStatement -> P
              SosADL.SosADL.IfThenElseProtocol
              SosADL.SosADL.RepeatProtocol
              type_finalprotocol_other
+             type_expression
              type_bodyprotocol type_nonfinalprotocol
              Gamma l)
     ,

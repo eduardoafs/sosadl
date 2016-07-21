@@ -4,8 +4,8 @@ import org.archware.sosadl.validation.typing.Environment;
 import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.ecore.EObject;
 
-public class Type_generic_Repeat<Body extends EObject, Statement extends EObject, Choose extends EObject, Done extends EObject, IfThenElse extends EObject, Repeat extends EObject, Other extends ProofTerm, P extends ProofTerm, NF extends ProofTerm>
-		implements Type_generic_finalbody<Body, Statement, Choose, Done, IfThenElse, Repeat, Other, P, NF> {
+public class Type_generic_Repeat<Body extends EObject, Statement extends EObject, Choose extends EObject, Done extends EObject, IfThenElse extends EObject, Repeat extends EObject, Other extends ProofTerm, E extends ProofTerm, P extends ProofTerm, NF extends ProofTerm>
+		implements Type_generic_finalbody<Body, Statement, Choose, Done, IfThenElse, Repeat, Other, E, P, NF> {
 
 	@Mandatory
 	@CoqLiteral
@@ -33,6 +33,10 @@ public class Type_generic_Repeat<Body extends EObject, Statement extends EObject
 
 	@Mandatory
 	@CoqLiteral
+	private final Class<E> type_expression;
+
+	@Mandatory
+	@CoqLiteral
 	private final Class<P> type_generic_prefix;
 
 	@Mandatory
@@ -48,8 +52,8 @@ public class Type_generic_Repeat<Body extends EObject, Statement extends EObject
 	private final NF p1;
 
 	public Type_generic_Repeat(String block, Class<Choose> choose, Class<Done> done, Class<IfThenElse> ifThenElse,
-			Class<Repeat> repeat, Class<Other> other, Class<P> type_generic_prefix, Class<NF> type_generic_nonfinalbody,
-			Environment gamma, EList<Statement> l, NF p1) {
+			Class<Repeat> repeat, Class<Other> other, Class<E> type_expression, Class<P> type_generic_prefix,
+			Class<NF> type_generic_nonfinalbody, Environment gamma, EList<Statement> l, NF p1) {
 		super();
 		this.block = block;
 		this.choose = choose;
@@ -57,6 +61,7 @@ public class Type_generic_Repeat<Body extends EObject, Statement extends EObject
 		this.ifThenElse = ifThenElse;
 		this.repeat = repeat;
 		this.other = other;
+		this.type_expression = type_expression;
 		this.type_generic_prefix = type_generic_prefix;
 		this.type_generic_nonfinalbody = type_generic_nonfinalbody;
 		this.gamma = gamma;
@@ -86,6 +91,10 @@ public class Type_generic_Repeat<Body extends EObject, Statement extends EObject
 
 	public Class<Other> getOther() {
 		return other;
+	}
+
+	public Class<E> getType_expression() {
+		return type_expression;
 	}
 
 	public Class<P> getType_generic_prefix() {

@@ -80,15 +80,15 @@ public abstract class TypeCheckerBehavior extends TypeCheckerGenericBehavior {
 		Function<IfThenElseBehavior, Behavior> getThen = IfThenElseBehavior::getIfTrue;
 		Function<IfThenElseBehavior, Behavior> getElse = IfThenElseBehavior::getIfFalse;
 		Function<RepeatBehavior, Behavior> getRepeated = RepeatBehavior::getRepeated;
-		Type_generic_finalbody<Behavior, BehaviorStatement, ChooseBehavior, DoneBehavior, IfThenElseBehavior, RepeatBehavior, Type_finalbody_other, Type_bodyprefix, Type_nonfinalbody> p1 = type_generic_finalbody(
+		Type_generic_finalbody<Behavior, BehaviorStatement, ChooseBehavior, DoneBehavior, IfThenElseBehavior, RepeatBehavior, Type_finalbody_other, Type_expression, Type_bodyprefix, Type_nonfinalbody> p1 = type_generic_finalbody(
 				Behavior.class, BehaviorStatement.class, getBlock, "Behavior", ChooseBehavior.class, getBranches,
 				DoneBehavior.class, IfThenElseBehavior.class, getCondition,
 				SosADLPackage.Literals.IF_THEN_ELSE_BEHAVIOR__CONDITION, getThen,
 				SosADLPackage.Literals.IF_THEN_ELSE_BEHAVIOR__IF_TRUE, getElse,
 				SosADLPackage.Literals.IF_THEN_ELSE_BEHAVIOR__IF_FALSE, RepeatBehavior.class, getRepeated,
 				SosADLPackage.Literals.REPEAT_BEHAVIOR__REPEATED, Type_finalbody_other.class, proveOther,
-				Type_bodyprefix.class, gp, Type_nonfinalbody.class, gnf, gamma, b, behavior,
-				SosADLPackage.Literals.PROTOCOL__STATEMENTS, 0);
+				Type_expression.class, this::type_expression, Type_bodyprefix.class, gp, Type_nonfinalbody.class, gnf,
+				gamma, b, behavior, SosADLPackage.Literals.PROTOCOL__STATEMENTS, 0);
 		Type_finalbody proof = p(Type_finalbody.class, gamma, (gamma_) -> createType_finalbody_generic(gamma_, b, p1));
 		return saveProof(behavior, proof);
 	}
