@@ -1001,30 +1001,32 @@ public abstract class TypeCheckerExpressionNode extends TypeCheckerDataType {
 			return p(Type_expression_node.class, gamma, this::buildProof);
 		}
 
-		@SuppressWarnings("unchecked")
 		private Type_expression_node<T> buildProof(Environment gamma) {
-			return p(Type_expression_node.class, selfType,
-					(selfType_) -> p(Type_expression_node.class, decl.getData().getType(),
-							(ddt_) -> p(Type_expression_node.class, params,
-									(params_) -> createType_expression_MethodCall(gamma, mc.getObject(), selfType_,
-											tec.getDataTypeDecl(), ddt_, tec.getMethods(), methodName,
-											decl.getParameters(), decl.getType(), mc.getParameters(), selfP,
-											createEx_intro(BigInteger.valueOf(tecRank), createReflexivity()),
-											subtype(selfType, decl.getData().getType(), mc, null).orElse(null),
-											createEx_intro(BigInteger.valueOf(mRank),
-													createConj(createReflexivity(),
-															createConj(createReflexivity(),
-																	createConj(createReflexivity(),
-																			createReflexivity())))),
-											proveForall2(decl.getParameters(), mc.getParameters(), (fp, p) -> {
-												Pair<T, DataType> tp = ListUtils.assoc(params_, p);
-												T pp = tp.getA();
-												DataType pt = tp.getB();
-												return createEx_intro(fp.getType(),
-														createConj(createReflexivity(), createEx_intro(pt, createConj(
-																pp, subtype(pt, fp.getType(), mc, null)
-																		.orElse(null)))));
-											})))));
+			@SuppressWarnings("unchecked")
+			Type_expression_node<T> proof = p(Type_expression_node.class, selfType,
+					(DataType selfType_) -> p(Type_expression_node.class, decl.getData().getType(),
+							(DataType ddt_) -> p(Type_expression_node.class, params,
+									(params_) -> doBuildProof(gamma, selfType_, ddt_, params_))));
+			return proof;
+		}
+
+		private Type_expression_node<T> doBuildProof(Environment gamma, DataType selfType_, DataType ddt_,
+				List<Pair<Expression, Pair<T, DataType>>> params_) {
+			return createType_expression_MethodCall(gamma, mc.getObject(), selfType_, tec.getDataTypeDecl(), ddt_,
+					tec.getMethods(), methodName, decl.getParameters(), decl.getType(), mc.getParameters(), selfP,
+					createEx_intro(BigInteger.valueOf(tecRank), createReflexivity()),
+					subtype(selfType, decl.getData().getType(), mc, null).orElse(null),
+					createEx_intro(BigInteger.valueOf(mRank),
+							createConj(createReflexivity(),
+									createConj(createReflexivity(),
+											createConj(createReflexivity(), createReflexivity())))),
+					proveForall2(decl.getParameters(), mc.getParameters(), (fp, p) -> {
+						Pair<T, DataType> tp = ListUtils.assoc(params_, p);
+						T pp = tp.getA();
+						DataType pt = tp.getB();
+						return createEx_intro(fp.getType(), createConj(createReflexivity(),
+								createEx_intro(pt, createConj(pp, subtype(pt, fp.getType(), mc, null).orElse(null)))));
+					}));
 		}
 	}
 

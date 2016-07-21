@@ -16,3 +16,5 @@ model/generated/
 .settings
 src/org/archware/sosadl/SosADLRuntimeModule.xtend
 src/org/archware/sosadl/SosADLStandaloneSetup.xtend
+.antlr-generator-3.2.0-patch.jar
+

@@ -758,4 +758,13 @@ public abstract class TypeCheckerProofConstructor extends TypeCheckerInference {
 			Type_generic_nonfinalbody<S, P> p2) {
 		return new Type_generic_nonfinalprefix<>(type_generic_prefix, gamma, s, gamma1, l, p1, p2);
 	}
+
+	protected <Body extends EObject, Statement extends EObject, Command extends EObject, Action extends EObject, Choose extends EObject, DoExpr extends EObject, ForEach extends EObject, IfThenElse extends EObject, Valuin extends EObject, Send extends EObject, Receive extends EObject, O extends ProofTerm, E extends ProofTerm, NP extends ProofTerm> Type_generic_prefixstatement<Body, Statement, Command, Action, Choose, DoExpr, ForEach, IfThenElse, Valuin, Send, Receive, O, E, NP> createType_generic_otherprefix(
+			String block, Class<Action> action, Class<Choose> choose, Class<DoExpr> doExpr, Class<ForEach> forEach,
+			Class<IfThenElse> ifThenElse, Class<Valuin> valuing, Class<Send> send, Class<Receive> receive,
+			Class<O> other, Class<E> type_expression, Class<NP> type_nonfinalbody, Environment gamma, Statement s,
+			Environment gamma1, O p1) {
+		return new Type_generic_otherprefix<>(block, action, choose, doExpr, forEach, ifThenElse, valuing, send,
+				receive, other, type_expression, type_nonfinalbody, gamma, s, gamma1, p1);
+	}
 }
