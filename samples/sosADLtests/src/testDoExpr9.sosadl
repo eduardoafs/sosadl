@@ -10,13 +10,13 @@ library testDoExpr8 is {
       connection connection1 is in{type1}
     } guarantee {
       protocol gate1protocol is {
-      	value v is type1 = tuple{x=0, y=1}
+      	value v : type1 = tuple{x=0, y=1}
         do v::x
       }
     }
     
     behavior test is {
-      value v is type1 = tuple{x=1, y=2}
+      value v : type1 = tuple{x=1, y=2}
       do v::x
     }
   }

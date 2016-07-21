@@ -15,13 +15,13 @@ library testDoExprValuing2 is {
     } guarantee {
       protocol gate1protocol is {
         do y(5)::z
-        value data1 is integer = 1
+        value data1 : integer = 1
       }
     }
     
     behavior test is {
       do y(5)::z
-      value data1 is integer = 1
+      value data1 : integer = 1
     }
   }
 }
