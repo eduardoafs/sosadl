@@ -452,7 +452,7 @@ class SosADLPrettyPrinterGenerator implements IGenerator {
     def compile(ComplexName c)'''«IF c.name != null»«c.name.join("::")»«ENDIF»'''
     
 	def compile(Valuing v)'''
-      value «v.name»«IF v.type != null» is «v.type.compile»«ENDIF» = «v.expression.compile»
+      value «v.name»«IF v.type != null» : «v.type.compile»«ENDIF» = «v.expression.compile»
 	'''
 	
 	def compile(IntegerValue i)'''«i.absInt»'''
