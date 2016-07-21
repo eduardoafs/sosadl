@@ -1321,6 +1321,19 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
         }
     }    
 
+	/*
+     * - computeSTS for a Unobservable statement.
+     * 
+     * FIXME! At this time, we generate a transition without guard and action.
+     */
+    def dispatch ArrayList<Integer> computeSTS(int startState, UnobservableBehavior u){
+    	val final=currentProcess.newState()
+        var IOstsTransition unobservable = new IOstsTransition(startState,final)
+        unobservable.setComment("FIXME: UnobservableBehavior in not implemented!")
+        System.err.println("FIXME: unobservable not implemented!")
+	    currentProcess.addTransition(unobservable)
+        newArrayList(final)
+    }
     
     //=========================== Utility functions for handling IoSTS types
     
