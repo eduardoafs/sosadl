@@ -221,7 +221,6 @@ Valuing:
 Value returns Expression:
 	BaseValue
 	| ConstructedValue
-	| {UnobservableValue} 'unobservable'
 ;
 
 BaseValue returns Expression:
