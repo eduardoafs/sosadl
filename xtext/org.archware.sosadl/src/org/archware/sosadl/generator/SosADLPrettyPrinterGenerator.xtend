@@ -336,6 +336,8 @@ class SosADLPrettyPrinterGenerator implements IGenerator {
     def compile(Assert a)'''
     «IF a instanceof TellAssertion»
        «(a as TellAssertion).compile»
+    «ELSEIF a instanceof UntellAssertion»
+       «(a as UntellAssertion).compile»
     «ELSEIF a instanceof AskAssertion»
        «(a as AskAssertion).compile»
     «ENDIF»
@@ -343,6 +345,10 @@ class SosADLPrettyPrinterGenerator implements IGenerator {
     
     def compile(TellAssertion a)'''
     tell «a.name» is {«a.expression.compile»}
+    '''
+    
+    def compile(UntellAssertion a)'''
+    untell «a.name»
     '''
     
     def compile(AskAssertion a)'''
