@@ -120,6 +120,7 @@ BehaviorStatement:
 	| {DoExprBehavior} 'do' expression=Expression
 	| {DoneBehavior} 'done'
 	| {RecursiveCall} 'behavior' '(' (parameters+=Expression (',' parameters+=Expression)*)? ')'
+	| {UnobservableBehavior} 'unobservable'
 ;
 
 Assert:
