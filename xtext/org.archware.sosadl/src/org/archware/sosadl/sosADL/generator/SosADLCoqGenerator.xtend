@@ -27,6 +27,7 @@ import org.archware.sosadl.sosADL.ForEachBehavior
 import org.archware.sosadl.sosADL.IfThenElseBehavior
 import org.archware.sosadl.sosADL.RecursiveCall
 import org.archware.sosadl.sosADL.RepeatBehavior
+import org.archware.sosadl.sosADL.UnobservableBehavior
 import org.archware.sosadl.sosADL.ValuingBehavior
 import org.archware.sosadl.sosADL.ComplexName
 import org.archware.sosadl.sosADL.Connection
@@ -57,7 +58,6 @@ import org.archware.sosadl.sosADL.Sequence
 import org.archware.sosadl.sosADL.Tuple
 import org.archware.sosadl.sosADL.UnaryExpression
 import org.archware.sosadl.sosADL.Unify
-//import org.archware.sosadl.sosADL.UnobservableValue
 import org.archware.sosadl.sosADL.FieldDecl
 import org.archware.sosadl.sosADL.FormalParameter
 import org.archware.sosadl.sosADL.FunctionDecl
@@ -216,6 +216,8 @@ class SosADLCoqGenerator {
 	def dispatch CharSequence generatet_BehaviorStatement(RecursiveCall n) { return _hook('''(RecursiveCall «_generateL(n.getParameters(), [generatet_Expression])»)'''); }
 	
 	def dispatch CharSequence generatet_BehaviorStatement(RepeatBehavior n) { return _hook('''(RepeatBehavior «_generateO(n.getRepeated(), [generatet_Behavior])»)'''); }
+	
+	def dispatch CharSequence generatet_BehaviorStatement(UnobservableBehavior n) { return _hook('''UnobservableBehavior'''); }
 	
 	def dispatch CharSequence generatet_BehaviorStatement(ValuingBehavior n) { return _hook('''(ValuingBehavior «_generateO(n.getValuing(), [generatet_Valuing])»)'''); }
 	
