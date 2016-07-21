@@ -84,7 +84,7 @@ library WsnSensor is {
 
 		behavior sensing is {
 		// 'behavior' executes when the 'system' is created
-			value sensorcoordinate is Coordinate = lps
+			value sensorcoordinate : Coordinate = lps
 			//tell sensorlocation is { sensorcoordinate = lps }
 			// assert the specified constraint with name 
 			// and type extrusions
