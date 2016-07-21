@@ -71,6 +71,8 @@ public interface ProofTerm {
 		}
 	}
 
+	static Pattern fieldNamePattern = Pattern.compile("\\A[a-zA-Z_]\\w*\\z");
+
 	/**
 	 * Returns an array containing the fields for this object.
 	 * 
@@ -88,9 +90,8 @@ public interface ProofTerm {
 	 */
 	default FieldDescriptor[] getDeclaredFields() {
 		Class<?> c = this.getClass();
-		Pattern p = Pattern.compile("\\A[a-zA-Z_]\\w*\\z");
 		FieldDescriptor[] f = Stream.of(c.getDeclaredFields())
-				.filter((x) -> p.matcher(x.getName()).matches())
+				.filter((x) -> fieldNamePattern.matcher(x.getName()).matches())
 				.filter((x) -> !x.isAnnotationPresent(CoqTransient.class))
 				.map(this::describeField).toArray((s) -> new FieldDescriptor[s]);
 		return f;
