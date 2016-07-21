@@ -478,7 +478,7 @@ class SosADLPrettyPrinterGenerator implements IGenerator {
     ELSEIF e instanceof UnaryExpression»«(e as UnaryExpression).compile»«
 	ELSEIF e instanceof CallExpression»«(e as CallExpression).compile»«
 	ELSEIF e instanceof IdentExpression»«(e as IdentExpression).compile»«
-	ELSEIF e instanceof UnobservableValue»«(e as UnobservableValue).compile»«
+	//ELSEIF e instanceof UnobservableValue»«(e as UnobservableValue).compile»«
 	ELSEIF e instanceof Any»«(e as Any).compile»«
     ELSEIF e instanceof Tuple»«(e as Tuple).compile»«
     ELSEIF e instanceof Sequence»«(e as Sequence).compile»«
@@ -519,7 +519,7 @@ class SosADLPrettyPrinterGenerator implements IGenerator {
 	def compile(MethodCall e)'''«
 	e.object.compile»::«e.method»(«e.parameters.map[compile].join(", ")»)'''
 	
-	def compile(UnobservableValue u)'''unobservable'''
+	//def compile(UnobservableValue u)'''unobservable'''
 	
     /* Assertion rules are not used anymore
     def compile(Assertion a)'''«
