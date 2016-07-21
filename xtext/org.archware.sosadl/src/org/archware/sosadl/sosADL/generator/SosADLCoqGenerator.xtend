@@ -57,7 +57,7 @@ import org.archware.sosadl.sosADL.Sequence
 import org.archware.sosadl.sosADL.Tuple
 import org.archware.sosadl.sosADL.UnaryExpression
 import org.archware.sosadl.sosADL.Unify
-import org.archware.sosadl.sosADL.UnobservableValue
+//import org.archware.sosadl.sosADL.UnobservableValue
 import org.archware.sosadl.sosADL.FieldDecl
 import org.archware.sosadl.sosADL.FormalParameter
 import org.archware.sosadl.sosADL.FunctionDecl
@@ -277,7 +277,7 @@ class SosADLCoqGenerator {
 	
 	def dispatch CharSequence generatet_Expression(Unify n) { return _hook('''(Unify «_generateO(n.getMultLeft(), [generateMultiplicity])» «_generateO(n.getConnLeft(), [generatet_ComplexName])» «_generateO(n.getMultRight(), [generateMultiplicity])» «_generateO(n.getConnRight(), [generatet_ComplexName])»)'''); }
 	
-	def dispatch CharSequence generatet_Expression(UnobservableValue n) { return _hook('''UnobservableValue'''); }
+	//def dispatch CharSequence generatet_Expression(UnobservableValue n) { return _hook('''UnobservableValue'''); }
 	
 	def CharSequence generatet_FieldDecl(FieldDecl n) { return _hook('''(FieldDecl «_generateO(n.getName(), [generatestring])» «_generateO(n.getType(), [generatet_DataType])»)'''); }
 	
