@@ -307,8 +307,13 @@ class SosADLPrettyPrinterGenerator implements IGenerator {
       «(b as DoneBehavior).compile»
     «ELSEIF b instanceof RecursiveCall»
       «(b as RecursiveCall).compile»
+    «ELSEIF b instanceof UnobservableBehavior»
+      «(b as UnobservableBehavior).compile»
     «ENDIF»
     '''
+
+	
+
 
 	def compile(RepeatBehavior f)'''
     repeat «f.repeated.compile»
@@ -332,6 +337,8 @@ class SosADLPrettyPrinterGenerator implements IGenerator {
 	def compile(RecursiveCall r)'''
     behavior («r.parameters.map[compile].join(", ")»)
 	'''
+	
+	def compile(UnobservableBehavior u)'''unobservable'''
 	
     def compile(Assert a)'''
     «IF a instanceof TellAssertion»
@@ -478,7 +485,6 @@ class SosADLPrettyPrinterGenerator implements IGenerator {
     ELSEIF e instanceof UnaryExpression»«(e as UnaryExpression).compile»«
 	ELSEIF e instanceof CallExpression»«(e as CallExpression).compile»«
 	ELSEIF e instanceof IdentExpression»«(e as IdentExpression).compile»«
-	//ELSEIF e instanceof UnobservableValue»«(e as UnobservableValue).compile»«
 	ELSEIF e instanceof Any»«(e as Any).compile»«
     ELSEIF e instanceof Tuple»«(e as Tuple).compile»«
     ELSEIF e instanceof Sequence»«(e as Sequence).compile»«
@@ -519,9 +525,7 @@ class SosADLPrettyPrinterGenerator implements IGenerator {
 	def compile(MethodCall e)'''«
 	e.object.compile»::«e.method»(«e.parameters.map[compile].join(", ")»)'''
 	
-	//def compile(UnobservableValue u)'''unobservable'''
-	
-    /* Assertion rules are not used anymore
+	/* Assertion rules are not used anymore
     def compile(Assertion a)'''«
 	IF a instanceof BinaryAssertion»(«(a as BinaryAssertion).left.compile») «(a as BinaryAssertion).op» («(a as BinaryAssertion).right.compile»)«
 	ELSEIF a instanceof UnaryAssertion» «(a as UnaryAssertion).op» («(a as UnaryAssertion).right.compile»)«
