@@ -66,11 +66,11 @@ Connection:
 ;
 
 AssertionDecl:
-	'property' name=Name 'is' body=Protocol
+	('property'|'protocol') name=Name 'is' body=Protocol
 ;
 
 ProtocolDecl:
-    'protocol' name=Name 'is' body=Protocol
+    ('property'|'protocol') name=Name 'is' body=Protocol
 ;
 
 Protocol:
