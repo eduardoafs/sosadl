@@ -187,7 +187,8 @@ class SosADLCoqGenerator {
 	
 	def CharSequence generatet_ArchBehaviorDecl(ArchBehaviorDecl n) { return _hook('''(ArchBehaviorDecl «_generateO(n.getName(), [generatestring])» «_generateL(n.getConstituents(), [generatet_Constituent])» «_generateO(n.getBindings(), [generatet_Expression])»)'''); }
 	
-	def CharSequence generatet_ArchitectureDecl(ArchitectureDecl n) { return _hook('''(ArchitectureDecl «_generateO(n.getName(), [generatestring])» «_generateL(n.getParameters(), [generatet_FormalParameter])» «_generateL(n.getDatatypes(), [generatet_DataTypeDecl])» «_generateL(n.getGates(), [generatet_GateDecl])» «_generateO(n.getBehavior(), [generatet_ArchBehaviorDecl])» «_generateO(n.getAssertion(), [generatet_AssertionDecl])»)'''); }
+	//def CharSequence generatet_ArchitectureDecl(ArchitectureDecl n) { return _hook('''(ArchitectureDecl «_generateO(n.getName(), [generatestring])» «_generateL(n.getParameters(), [generatet_FormalParameter])» «_generateL(n.getDatatypes(), [generatet_DataTypeDecl])» «_generateL(n.getGates(), [generatet_GateDecl])» «_generateO(n.getBehavior(), [generatet_ArchBehaviorDecl])» «_generateO(n.getAssertion(), [generatet_AssertionDecl])»)'''); }
+	def CharSequence generatet_ArchitectureDecl(ArchitectureDecl n) { return _hook('''(ArchitectureDecl «_generateO(n.getName(), [generatestring])» «_generateL(n.getParameters(), [generatet_FormalParameter])» «_generateL(n.getDatatypes(), [generatet_DataTypeDecl])» «_generateL(n.getGates(), [generatet_GateDecl])» «_generateO(n.getBehavior(), [generatet_ArchBehaviorDecl])» «_generateL(n.getAssertions(), [generatet_AssertionDecl])»)'''); }
 	
 	def dispatch CharSequence generatet_Assert(AskAssertion n) { return _hook('''(AskAssertion «_generateO(n.getName(), [generatestring])» «_generateO(n.getExpression(), [generatet_Expression])»)'''); }
 	
@@ -243,7 +244,8 @@ class SosADLCoqGenerator {
 	
 	def CharSequence generatet_DataTypeDecl(DataTypeDecl n) { return _hook('''(DataTypeDecl «_generateO(n.getName(), [generatestring])» «_generateO(n.getDatatype(), [generatet_DataType])» «_generateL(n.getFunctions(), [generatet_FunctionDecl])»)'''); }
 	
-	def CharSequence generatet_DutyDecl(DutyDecl n) { return _hook('''(DutyDecl «_generateO(n.getName(), [generatestring])» «_generateL(n.getConnections(), [generatet_Connection])» «_generateO(n.getAssertion(), [generatet_AssertionDecl])» «_generateO(n.getProtocol(), [generatet_ProtocolDecl])»)'''); }
+	//def CharSequence generatet_DutyDecl(DutyDecl n) { return _hook('''(DutyDecl «_generateO(n.getName(), [generatestring])» «_generateL(n.getConnections(), [generatet_Connection])» «_generateO(n.getAssertion(), [generatet_AssertionDecl])» «_generateO(n.getProtocol(), [generatet_ProtocolDecl])»)'''); }
+	def CharSequence generatet_DutyDecl(DutyDecl n) { return _hook('''(DutyDecl «_generateO(n.getName(), [generatestring])» «_generateL(n.getConnections(), [generatet_Connection])» «_generateL(n.getAssertions(), [generatet_AssertionDecl])» «_generateL(n.getProtocols(), [generatet_ProtocolDecl])»)'''); }
 	
 	def CharSequence generatet_ElementInConstituent(ElementInConstituent n) { return _hook('''(ElementInConstituent «_generateO(n.getVariable(), [generatestring])» «_generateO(n.getConstituent(), [generatestring])»)'''); }
 	
@@ -287,11 +289,13 @@ class SosADLCoqGenerator {
 	
 	def CharSequence generatet_FunctionDecl(FunctionDecl n) { return _hook('''(FunctionDecl «_generateO(n.getData(), [generatet_FormalParameter])» «_generateO(n.getName(), [generatestring])» «_generateL(n.getParameters(), [generatet_FormalParameter])» «_generateO(n.getType(), [generatet_DataType])» «_generateL(n.getValuing(), [generatet_Valuing])» «_generateO(n.getExpression(), [generatet_Expression])»)'''); }
 	
-	def CharSequence generatet_GateDecl(GateDecl n) { return _hook('''(GateDecl «_generateO(n.getName(), [generatestring])» «_generateL(n.getConnections(), [generatet_Connection])» «_generateO(n.getProtocol(), [generatet_ProtocolDecl])»)'''); }
+	//def CharSequence generatet_GateDecl(GateDecl n) { return _hook('''(GateDecl «_generateO(n.getName(), [generatestring])» «_generateL(n.getConnections(), [generatet_Connection])» «_generateO(n.getProtocol(), [generatet_ProtocolDecl])»)'''); }
+	def CharSequence generatet_GateDecl(GateDecl n) { return _hook('''(GateDecl «_generateO(n.getName(), [generatestring])» «_generateL(n.getConnections(), [generatet_Connection])» «_generateL(n.getProtocols(), [generatet_ProtocolDecl])»)'''); }
 	
 	def CharSequence generatet_Import(Import n) { return _hook('''(Import «_generateO(n.getImportedLibrary(), [generatestring])»)'''); }
 	
-	def CharSequence generatet_MediatorDecl(MediatorDecl n) { return _hook('''(MediatorDecl «_generateO(n.getName(), [generatestring])» «_generateL(n.getParameters(), [generatet_FormalParameter])» «_generateL(n.getDatatypes(), [generatet_DataTypeDecl])» «_generateL(n.getDuties(), [generatet_DutyDecl])» «_generateO(n.getBehavior(), [generatet_BehaviorDecl])» «_generateO(n.getAssumption(), [generatet_AssertionDecl])» «_generateO(n.getAssertion(), [generatet_AssertionDecl])»)'''); }
+	//def CharSequence generatet_MediatorDecl(MediatorDecl n) { return _hook('''(MediatorDecl «_generateO(n.getName(), [generatestring])» «_generateL(n.getParameters(), [generatet_FormalParameter])» «_generateL(n.getDatatypes(), [generatet_DataTypeDecl])» «_generateL(n.getDuties(), [generatet_DutyDecl])» «_generateO(n.getBehavior(), [generatet_BehaviorDecl])» «_generateO(n.getAssumption(), [generatet_AssertionDecl])» «_generateO(n.getAssertion(), [generatet_AssertionDecl])»)'''); }
+	def CharSequence generatet_MediatorDecl(MediatorDecl n) { return _hook('''(MediatorDecl «_generateO(n.getName(), [generatestring])» «_generateL(n.getParameters(), [generatet_FormalParameter])» «_generateL(n.getDatatypes(), [generatet_DataTypeDecl])» «_generateL(n.getDuties(), [generatet_DutyDecl])» «_generateO(n.getBehavior(), [generatet_BehaviorDecl])» «_generateL(n.getAssumptions(), [generatet_AssertionDecl])» «_generateL(n.getAssertions(), [generatet_AssertionDecl])»)'''); }
 	
 	def CharSequence generatet_Protocol(Protocol n) { return _hook('''(Protocol «_generateL(n.getStatements(), [generatet_ProtocolStatement])»)'''); }
 	
@@ -325,7 +329,8 @@ class SosADLCoqGenerator {
 	
 	def CharSequence generatet_SosADL(SosADL n) { return _hook('''(SosADL «_generateL(n.getImports(), [generatet_Import])» «_generateO(n.getContent(), [generatet_Unit])»)'''); }
 	
-	def CharSequence generatet_SystemDecl(SystemDecl n) { return _hook('''(SystemDecl «_generateO(n.getName(), [generatestring])» «_generateL(n.getParameters(), [generatet_FormalParameter])» «_generateL(n.getDatatypes(), [generatet_DataTypeDecl])» «_generateL(n.getGates(), [generatet_GateDecl])» «_generateO(n.getBehavior(), [generatet_BehaviorDecl])» «_generateO(n.getAssertion(), [generatet_AssertionDecl])»)'''); }
+	//def CharSequence generatet_SystemDecl(SystemDecl n) { return _hook('''(SystemDecl «_generateO(n.getName(), [generatestring])» «_generateL(n.getParameters(), [generatet_FormalParameter])» «_generateL(n.getDatatypes(), [generatet_DataTypeDecl])» «_generateL(n.getGates(), [generatet_GateDecl])» «_generateO(n.getBehavior(), [generatet_BehaviorDecl])» «_generateO(n.getAssertion(), [generatet_AssertionDecl])»)'''); }
+	def CharSequence generatet_SystemDecl(SystemDecl n) { return _hook('''(SystemDecl «_generateO(n.getName(), [generatestring])» «_generateL(n.getParameters(), [generatet_FormalParameter])» «_generateL(n.getDatatypes(), [generatet_DataTypeDecl])» «_generateL(n.getGates(), [generatet_GateDecl])» «_generateO(n.getBehavior(), [generatet_BehaviorDecl])» «_generateL(n.getAssertions(), [generatet_AssertionDecl])»)'''); }
 	
 	def CharSequence generatet_TupleElement(TupleElement n) { return _hook('''(TupleElement «_generateO(n.getLabel(), [generatestring])» «_generateO(n.getValue(), [generatet_Expression])»)'''); }
 	
