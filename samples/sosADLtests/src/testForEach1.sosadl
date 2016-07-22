@@ -10,7 +10,7 @@ library testForEach1 is {
       connection connection1 is in{type1}
     } guarantee {
       protocol gate1protocol is {
-      	value s is sequence{integer} = sequence{1, 2, 3, 4}
+      	value s : sequence{integer} = sequence{1, 2, 3, 4}
         foreach e in s {
         	via gate1::connection1 send e
         }
@@ -18,7 +18,7 @@ library testForEach1 is {
     }
     
     behavior test is {
-      value s is sequence{integer} = sequence{1, 2, 3, 4}
+      value s : sequence{integer} = sequence{1, 2, 3, 4}
       foreach e in s {
       	via gate1::connection1 send e
       }

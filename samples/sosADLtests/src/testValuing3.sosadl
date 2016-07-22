@@ -11,17 +11,17 @@ library testValuing3 is {
     } guarantee {
       protocol gate1protocol is {
         // 2 valuings
-        value data1 is integer = 1
-        value data2 is integer = 2
-        value data3 is integer = 3
+        value data1 : integer = 1
+        value data2 : integer = 2
+        value data3 : integer = 3
       }
     }
   
     behavior test is {
       // 2 valuings
-      value data1 is integer = 1
-      value data2 is integer = 2
-      value data3 is integer = 3
+      value data1 : integer = 1
+      value data2 : integer = 2
+      value data3 : integer = 3
     }
   }
 }

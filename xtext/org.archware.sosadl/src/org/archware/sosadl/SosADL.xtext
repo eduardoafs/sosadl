@@ -28,14 +28,14 @@ SystemDecl: 'system' name=Name '(' (parameters+=FormalParameter (',' parameters+
 	(datatypes+=DataTypeDecl)*
 	(gates+=GateDecl)+
 	behavior=BehaviorDecl
-	'}' ('guarantee' '{' assertion=AssertionDecl '}')?
+	'}' ('guarantee' '{' assertions+=AssertionDecl+ '}')?
 ;
 
 ArchitectureDecl: 'architecture' name=Name '(' (parameters+=FormalParameter (',' parameters+=FormalParameter)*)? ')' 'is' '{'
 	(datatypes+=DataTypeDecl)*
 	(gates+=GateDecl)+
     behavior=ArchBehaviorDecl
-	'}' ('guarantee' '{' assertion=AssertionDecl '}')?
+	'}' ('guarantee' '{' assertions+=AssertionDecl+ '}')?
 ;
 
 MediatorDecl: 'mediator' name=Name '(' (parameters+=FormalParameter (',' parameters+=FormalParameter)*)? ')' 'is' '{'
@@ -43,30 +43,22 @@ MediatorDecl: 'mediator' name=Name '(' (parameters+=FormalParameter (',' paramet
 	(duties+=DutyDecl)+
 	behavior=BehaviorDecl
 	'}'
-	('assume' '{' assumption=AssertionDecl '}')?
-	('guarantee' '{' assertion=AssertionDecl '}')?
+	('assume' '{' assumptions+=AssertionDecl+ '}')?
+	('guarantee' '{' assertions+=AssertionDecl+ '}')?
 ;
-/* WAS:
-MediatorDecl: 'mediator' name=Name '(' (parameters+=FormalParameter (',' parameters+=FormalParameter)*)? ')' 'is' '{'
-    (datatypes+=DataTypeDecl)*
-    (duties+=DutyDecl)+
-    behavior=BehaviorDecl
-    '}'
-    ;
-*/
 
 GateDecl:
 	'gate' name=Name 'is' '{'
 	  (connections+=Connection)+
-	'}' 'guarantee' '{' protocol=ProtocolDecl '}'
+	'}' 'guarantee' '{' protocols+=ProtocolDecl+ '}'
 ;
 
 DutyDecl:
 	'duty' name=Name 'is' '{'
 	  (connections+=Connection)+
 	'}'
-	'assume' '{' assertion=AssertionDecl '}'    // WAS: 'require' '{' assertion=AssertionDecl '}'
-	'guarantee' '{' protocol=ProtocolDecl '}'   // WAS: 'assume' '{' protocol=ProtocolDecl '}'
+	'assume' '{' assertions+=AssertionDecl+ '}'    // WAS: 'require' '{' assertion=AssertionDecl '}'
+	'guarantee' '{' protocols+=ProtocolDecl+ '}'   // WAS: 'assume' '{' protocol=ProtocolDecl '}'
 ;
 
 Connection:
@@ -74,18 +66,11 @@ Connection:
 ;
 
 AssertionDecl:
-	'property' name=Name 'is' body=Protocol
+	('property'|'protocol') name=Name 'is' body=Protocol
 ;
-/* WAS:
-AssertionDecl:
-    'property' name=Name 'is' '{'
-    (valuing+=Valuing+ 'within')?
-    assertion=Assertion '}'
-;
-*/
 
 ProtocolDecl:
-    'protocol' name=Name 'is' body=Protocol
+    ('property'|'protocol') name=Name 'is' body=Protocol
 ;
 
 Protocol:
@@ -135,10 +120,12 @@ BehaviorStatement:
 	| {DoExprBehavior} 'do' expression=Expression
 	| {DoneBehavior} 'done'
 	| {RecursiveCall} 'behavior' '(' (parameters+=Expression (',' parameters+=Expression)*)? ')'
+	| {UnobservableBehavior} 'unobservable'
 ;
 
 Assert:
 	{TellAssertion} 'tell' name=Name 'is' '{' expression=Expression '}'
+	| {UntellAssertion} 'untell' name=Name
 	| {AskAssertion} 'ask' name=Name 'is' '{' expression=Expression '}'
 ;
 
@@ -230,12 +217,11 @@ ComplexName:
 ;
 
 Valuing:
-	'value' name=Name ('is' type=DataType)? '=' expression=Expression;
+	'value' name=Name (':' type=DataType)? '=' expression=Expression;
 
 Value returns Expression:
 	BaseValue
 	| ConstructedValue
-	| {UnobservableValue} 'unobservable'
 ;
 
 BaseValue returns Expression:
