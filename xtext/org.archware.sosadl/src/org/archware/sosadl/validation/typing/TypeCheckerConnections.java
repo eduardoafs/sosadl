@@ -54,16 +54,16 @@ public abstract class TypeCheckerConnections extends TypeCheckerProtocol {
 	private Type_gate type_gate(Environment gamma, GateDecl g, GateDecl g1, Environment gamma1,
 			Pair<Environment, Mutually_translate<Connection, Type_connection>> p1) {
 		return saveProof(g, createType_GateDecl(gamma, g1.getName(), g.getConnections(), g1.getConnections(), p1.getA(),
-				g1.getProtocol(), gamma1, p1.getB(), type_protocol(p1.getA(), g.getProtocol())));
+				g1.getProtocols(), gamma1, p1.getB(), proveForall(g.getProtocols(), (p) -> type_protocol(p1.getA(), p))));
 	}
 
 	private Pair<GateDecl, Pair<Environment, Mutually_translate<Connection, Type_connection>>> translate_gate(
 			Environment gamma, GateDecl g) {
-		if (g.getName() != null && g.getProtocol() != null) {
+		if (g.getName() != null) {
 			Pair<Pair<List<Connection>, Environment>, Mutually_translate<Connection, Type_connection>> pc = type_connections(
 					gamma, g.getConnections());
 			if (pc.getA() != null && pc.getA().getA() != null && pc.getA().getB() != null) {
-				return new Pair<>(createGateDecl(g.getName(), pc.getA().getA(), g.getProtocol()),
+				return new Pair<>(createGateDecl(g.getName(), pc.getA().getA(), g.getProtocols()),
 						new Pair<>(pc.getA().getB(), pc.getB()));
 			} else {
 				return null;
@@ -71,9 +71,6 @@ public abstract class TypeCheckerConnections extends TypeCheckerProtocol {
 		} else {
 			if (g.getName() == null) {
 				error("The gate must have a name", g, SosADLPackage.Literals.GATE_DECL__NAME);
-			}
-			if (g.getProtocol() == null) {
-				error("The gate must have a protocol", g, SosADLPackage.Literals.GATE_DECL__PROTOCOL);
 			}
 			return null;
 		}

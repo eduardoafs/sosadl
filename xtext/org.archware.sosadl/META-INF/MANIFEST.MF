@@ -34,4 +34,5 @@ Export-Package: org.archware.sosadl,
  org.archware.sosadl.tv.typeCheckerHelper,
  org.archware.sosadl.tv.typeCheckerHelper.impl,
  org.archware.sosadl.tv.typeCheckerHelper.util
-Import-Package: org.apache.log4j
+Import-Package: org.apache.log4j,
+ org.eclipse.emf.common
