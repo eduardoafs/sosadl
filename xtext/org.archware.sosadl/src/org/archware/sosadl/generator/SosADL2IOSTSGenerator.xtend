@@ -3,21 +3,75 @@
  */
 package org.archware.sosadl.generator
 
-import org.eclipse.emf.ecore.resource.Resource
-import org.eclipse.xtext.generator.IGenerator
-import org.eclipse.xtext.generator.IFileSystemAccess
-import org.archware.sosadl.sosADL.*
-import org.archware.sosadl.SosADLStandaloneSetupGenerated
-import java.util.LinkedHashMap
-import java.util.Map.Entry
-import java.util.ArrayList
-import java.util.List
-import java.lang.System
-import org.archware.sosadl.sosADL.SosADLFactory
-import org.eclipse.emf.common.util.URI
 import com.google.inject.Injector
-import org.eclipse.xtext.resource.XtextResourceSet
+import java.util.ArrayList
+import java.util.LinkedHashMap
+import java.util.List
+import java.util.Map.Entry
+import org.archware.sosadl.SosADLStandaloneSetupGenerated
+import org.archware.sosadl.sosADL.Action
+import org.archware.sosadl.sosADL.AnyAction
+import org.archware.sosadl.sosADL.ArchitectureDecl
+import org.archware.sosadl.sosADL.AskAssertion
+import org.archware.sosadl.sosADL.AssertBehavior
+import org.archware.sosadl.sosADL.AssertProtocol
+import org.archware.sosadl.sosADL.Behavior
+import org.archware.sosadl.sosADL.BehaviorDecl
+import org.archware.sosadl.sosADL.BinaryExpression
+import org.archware.sosadl.sosADL.ChooseBehavior
+import org.archware.sosadl.sosADL.ChooseProtocol
+import org.archware.sosadl.sosADL.ComplexName
+import org.archware.sosadl.sosADL.DataType
+import org.archware.sosadl.sosADL.DataTypeDecl
+import org.archware.sosadl.sosADL.DoExprBehavior
+import org.archware.sosadl.sosADL.DoExprProtocol
+import org.archware.sosadl.sosADL.DoneBehavior
+import org.archware.sosadl.sosADL.DoneProtocol
+import org.archware.sosadl.sosADL.DutyDecl
+import org.archware.sosadl.sosADL.EntityBlock
+import org.archware.sosadl.sosADL.Expression
+import org.archware.sosadl.sosADL.ForEachBehavior
+import org.archware.sosadl.sosADL.ForEachProtocol
+import org.archware.sosadl.sosADL.FunctionDecl
+import org.archware.sosadl.sosADL.GateDecl
+import org.archware.sosadl.sosADL.IdentExpression
+import org.archware.sosadl.sosADL.IfThenElseBehavior
+import org.archware.sosadl.sosADL.IfThenElseProtocol
+import org.archware.sosadl.sosADL.Import
+import org.archware.sosadl.sosADL.IntegerType
+import org.archware.sosadl.sosADL.Library
+import org.archware.sosadl.sosADL.MediatorDecl
+import org.archware.sosadl.sosADL.NamedType
+import org.archware.sosadl.sosADL.Protocol
+import org.archware.sosadl.sosADL.ProtocolAction
+import org.archware.sosadl.sosADL.ProtocolDecl
+import org.archware.sosadl.sosADL.RangeType
+import org.archware.sosadl.sosADL.ReceiveAction
+import org.archware.sosadl.sosADL.ReceiveAnyProtocolAction
+import org.archware.sosadl.sosADL.ReceiveProtocolAction
+import org.archware.sosadl.sosADL.RecursiveCall
+import org.archware.sosadl.sosADL.RepeatBehavior
+import org.archware.sosadl.sosADL.RepeatProtocol
+import org.archware.sosadl.sosADL.SendAction
+import org.archware.sosadl.sosADL.SendProtocolAction
+import org.archware.sosadl.sosADL.SequenceType
+import org.archware.sosadl.sosADL.SoS
+import org.archware.sosadl.sosADL.SosADL
+import org.archware.sosadl.sosADL.SosADLFactory
+import org.archware.sosadl.sosADL.SystemDecl
+import org.archware.sosadl.sosADL.TellAssertion
+import org.archware.sosadl.sosADL.TupleType
+import org.archware.sosadl.sosADL.UnobservableBehavior
+import org.archware.sosadl.sosADL.UntellAssertion
+import org.archware.sosadl.sosADL.Valuing
+import org.archware.sosadl.sosADL.ValuingBehavior
+import org.archware.sosadl.sosADL.ValuingProtocol
+import org.eclipse.emf.common.util.URI
+import org.eclipse.emf.ecore.resource.Resource
+import org.eclipse.xtext.generator.IFileSystemAccess
+import org.eclipse.xtext.generator.IGenerator
 import org.eclipse.xtext.resource.XtextResource
+import org.eclipse.xtext.resource.XtextResourceSet
 
 /**
  * Generates IOSTS code from the given SosADL model files on save.
@@ -28,9 +82,9 @@ import org.eclipse.xtext.resource.XtextResource
  */
 class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGenerator {
     
-    val DEBUG=false
-    val DEBUG2=false
-    val DEBUG3=false
+    var DEBUG=false
+    var DEBUG2=false
+    var DEBUG3=false
     
     // global variables making the generation much easier
     // librariesMap contains all known libraries
@@ -392,7 +446,6 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 		«FOR d : e.datatypes»
       		«d.compile»
     	«ENDFOR»
-    	
     	«ENDIF»
     	'''
     	currentLibrary.typesMap.putAll(currentTypesMap)
@@ -404,7 +457,6 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
       	«FOR f : e.functions»
       		«f.compile»
     	«ENDFOR»
-    	
     	«ENDIF»
     	'''
 	    currentLibrary.functions.addAll(currentListOfFunctions)
@@ -2022,7 +2074,6 @@ class IOstsTransition {
 class IOstsProcess{
     val String name
     var String comment=""
-    var boolean first = true 
     public var LinkedHashMap<String,IOstsConnection> connectionsMap = new LinkedHashMap()  // map of (connection name -> Connection)
     public var inputMap = new LinkedHashMap()    // map of (in connection -> type name)
     public var outputMap = new LinkedHashMap()   // map of (out connection -> type name)
