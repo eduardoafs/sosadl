@@ -156,7 +156,7 @@ class SosADLComparator {
 		&& sameElements(l.datatypes, r.datatypes, [p, q | compare(p, q)])
 		&& sameElements(l.gates, r.gates, [p, q | compare(p, q)])
 		&& compare(l.behavior, r.behavior)
-		&& compareOpt(l.assertion, r.assertion, [p, q | compare(p, q)])
+		&& sameElements(l.assertions, r.assertions, [p, q | compare(p, q)])
 	}
 	
 	def static compare(MediatorDecl l, MediatorDecl r) {
@@ -164,8 +164,8 @@ class SosADLComparator {
         && sameElements(l.datatypes, r.datatypes, [p, q | compare(p, q)])
         && sameElements(l.duties, r.duties, [p, q | compare(p, q)])
         && compare(l.behavior, r.behavior)
-        && compareOpt(l.assumption, r.assumption, [p, q | compare(p, q)])
-        && compareOpt(l.assertion, r.assertion, [p, q | compare(p, q)])
+        && sameElements(l.assumptions, r.assumptions, [p, q | compare(p, q)])
+        && sameElements(l.assertions, r.assertions, [p, q | compare(p, q)])
     }
 	/* WAS:
 	def static compare(MediatorDecl l, MediatorDecl r) {
@@ -181,20 +181,20 @@ class SosADLComparator {
 		&& sameElements(l.datatypes, r.datatypes, [p, q | compare(p, q)])
 		&& sameElements(l.gates, r.gates, [p, q | compare(p, q)])
 		&& compare(l.behavior, r.behavior)
-		&& compareOpt(l.assertion, r.assertion, [p, q | compare(p, q)])
+		&& sameElements(l.assertions, r.assertions, [p, q | compare(p, q)])
 	}
 	
 	def static compare(GateDecl l, GateDecl r) {
 		l.name.equals(r.name)
 		&& sameElements(l.connections, r.connections, [p, q | compare(p, q)])
-		&& compare(l.protocol, r.protocol)
+		&& sameElements(l.protocols, r.protocols, [p, q | compare(p, q)])
 	}
 
 	def static compare(DutyDecl l, DutyDecl r) {
 		l.name.equals(r.name)
 		&& sameElements(l.connections, r.connections, [p, q | compare(p, q)])
-		&& compare(l.assertion, r.assertion)
-		&& compare(l.protocol, r.protocol)
+		&& sameElements(l.assertions, r.assertions, [p, q | compare(p, q)])
+		&& sameElements(l.protocols, r.protocols, [p, q | compare(p, q)])
 	}
 	
 	def static compare(Connection l, Connection r) {
