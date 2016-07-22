@@ -28,14 +28,14 @@ SystemDecl: 'system' name=Name '(' (parameters+=FormalParameter (',' parameters+
 	(datatypes+=DataTypeDecl)*
 	(gates+=GateDecl)+
 	behavior=BehaviorDecl
-	'}' ('guarantee' '{' assertion=AssertionDecl '}')?
+	'}' ('guarantee' '{' assertions+=AssertionDecl+ '}')?
 ;
 
 ArchitectureDecl: 'architecture' name=Name '(' (parameters+=FormalParameter (',' parameters+=FormalParameter)*)? ')' 'is' '{'
 	(datatypes+=DataTypeDecl)*
 	(gates+=GateDecl)+
     behavior=ArchBehaviorDecl
-	'}' ('guarantee' '{' assertion=AssertionDecl '}')?
+	'}' ('guarantee' '{' assertions+=AssertionDecl+ '}')?
 ;
 
 MediatorDecl: 'mediator' name=Name '(' (parameters+=FormalParameter (',' parameters+=FormalParameter)*)? ')' 'is' '{'
@@ -43,22 +43,22 @@ MediatorDecl: 'mediator' name=Name '(' (parameters+=FormalParameter (',' paramet
 	(duties+=DutyDecl)+
 	behavior=BehaviorDecl
 	'}'
-	('assume' '{' assumption=AssertionDecl '}')?
-	('guarantee' '{' assertion=AssertionDecl '}')?
+	('assume' '{' assumptions+=AssertionDecl+ '}')?
+	('guarantee' '{' assertions+=AssertionDecl+ '}')?
 ;
 
 GateDecl:
 	'gate' name=Name 'is' '{'
 	  (connections+=Connection)+
-	'}' 'guarantee' '{' protocol=ProtocolDecl '}'
+	'}' 'guarantee' '{' protocols+=ProtocolDecl+ '}'
 ;
 
 DutyDecl:
 	'duty' name=Name 'is' '{'
 	  (connections+=Connection)+
 	'}'
-	'assume' '{' assertion=AssertionDecl '}'    // WAS: 'require' '{' assertion=AssertionDecl '}'
-	'guarantee' '{' protocol=ProtocolDecl '}'   // WAS: 'assume' '{' protocol=ProtocolDecl '}'
+	'assume' '{' assertions+=AssertionDecl+ '}'    // WAS: 'require' '{' assertion=AssertionDecl '}'
+	'guarantee' '{' protocols+=ProtocolDecl+ '}'   // WAS: 'assume' '{' protocol=ProtocolDecl '}'
 ;
 
 Connection:
