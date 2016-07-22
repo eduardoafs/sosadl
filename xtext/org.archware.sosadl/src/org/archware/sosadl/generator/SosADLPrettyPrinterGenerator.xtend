@@ -119,8 +119,10 @@ class SosADLPrettyPrinterGenerator implements IGenerator {
         «ENDFOR»
       
         «s.behavior.compile»
-      }«IF s.assertion != null» guarantee {
-        «s.assertion.compile»
+      }«IF ! s.assertions.empty» guarantee {
+      	«FOR a : s.assertions»
+      	«a.compile»
+      	«ENDFOR»
       }
       «ENDIF»
 	'''
@@ -135,8 +137,10 @@ class SosADLPrettyPrinterGenerator implements IGenerator {
         «ENDFOR»
         
         «a.behavior.compile»
-      }«IF a.assertion != null» guarantee {
-        «a.assertion.compile»
+      }«IF ! a.assertions.empty» guarantee {
+        «FOR aa : a.assertions»
+        «aa.compile»
+        «ENDFOR»
       }
       «ENDIF»
 	'''
@@ -151,10 +155,14 @@ class SosADLPrettyPrinterGenerator implements IGenerator {
         «ENDFOR»
         
         «m.behavior.compile»
-      }«IF m.assumption != null» assume {
-        «m.assumption.compile»
-      }«ENDIF»«IF m.assertion != null» guarantee {
-        «m.assertion.compile»
+      }«IF ! m.assumptions.empty» assume {
+        «FOR a : m.assumptions»
+        «a.compile»
+        «ENDFOR»
+      }«ENDIF»«IF ! m.assertions.empty» guarantee {
+        «FOR a : m.assertions»
+        «a.compile»
+        «ENDFOR»
       }«ENDIF»
 	'''
 	
@@ -165,7 +173,9 @@ class SosADLPrettyPrinterGenerator implements IGenerator {
         «c.compile»
         «ENDFOR»
       } guarantee {
-        «g.protocol.compile»
+      	«FOR p : g.protocols»
+      	«p.compile»
+      	«ENDFOR»
       }
 	'''
 	
@@ -176,9 +186,13 @@ class SosADLPrettyPrinterGenerator implements IGenerator {
         «c.compile»
         «ENDFOR»
       } assume {
-        «d.assertion.compile»
+      	«FOR a : d.assertions»
+        «a.compile»
+        «ENDFOR»
       } guarantee {
-        «d.protocol.compile»
+        «FOR p : d.protocols»
+        «p.compile»
+        «ENDFOR»
       }
       '''
 	
