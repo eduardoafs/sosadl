@@ -33,11 +33,12 @@ with t_ArchBehaviorDecl: Set :=
 | ArchBehaviorDecl: option string -> list t_Constituent -> option t_Expression ->  t_ArchBehaviorDecl
 
 with t_ArchitectureDecl: Set :=
-| ArchitectureDecl: option string -> list t_FormalParameter -> list t_DataTypeDecl -> list t_GateDecl -> option t_ArchBehaviorDecl -> option t_AssertionDecl ->  t_ArchitectureDecl
+| ArchitectureDecl: option string -> list t_FormalParameter -> list t_DataTypeDecl -> list t_GateDecl -> option t_ArchBehaviorDecl -> list t_AssertionDecl ->  t_ArchitectureDecl
 
 with t_Assert: Set :=
 | AskAssertion: option string -> option t_Expression ->  t_Assert
 | TellAssertion: option string -> option t_Expression ->  t_Assert
+| UntellAssertion: option string ->  t_Assert
 
 with t_AssertionDecl: Set :=
 | AssertionDecl: option string -> option t_Protocol ->  t_AssertionDecl
@@ -58,6 +59,7 @@ with t_BehaviorStatement: Set :=
 | IfThenElseBehavior: option t_Expression -> option t_Behavior -> option t_Behavior ->  t_BehaviorStatement
 | RecursiveCall: list t_Expression ->  t_BehaviorStatement
 | RepeatBehavior: option t_Behavior ->  t_BehaviorStatement
+| UnobservableBehavior: t_BehaviorStatement
 | ValuingBehavior: option t_Valuing ->  t_BehaviorStatement
 
 with t_ComplexName: Set :=
@@ -82,7 +84,7 @@ with t_DataTypeDecl: Set :=
 | DataTypeDecl: option string -> option t_DataType -> list t_FunctionDecl ->  t_DataTypeDecl
 
 with t_DutyDecl: Set :=
-| DutyDecl: option string -> list t_Connection -> option t_AssertionDecl -> option t_ProtocolDecl ->  t_DutyDecl
+| DutyDecl: option string -> list t_Connection -> list t_AssertionDecl -> list t_ProtocolDecl ->  t_DutyDecl
 
 with t_ElementInConstituent: Set :=
 | ElementInConstituent: option string -> option string ->  t_ElementInConstituent
@@ -106,7 +108,6 @@ with t_Expression: Set :=
 | Tuple: list t_TupleElement ->  t_Expression
 | UnaryExpression: option string -> option t_Expression ->  t_Expression
 | Unify: option Multiplicity -> option t_ComplexName -> option Multiplicity -> option t_ComplexName ->  t_Expression
-| UnobservableValue: t_Expression
 
 with t_FieldDecl: Set :=
 | FieldDecl: option string -> option t_DataType ->  t_FieldDecl
@@ -118,13 +119,13 @@ with t_FunctionDecl: Set :=
 | FunctionDecl: option t_FormalParameter -> option string -> list t_FormalParameter -> option t_DataType -> list t_Valuing -> option t_Expression ->  t_FunctionDecl
 
 with t_GateDecl: Set :=
-| GateDecl: option string -> list t_Connection -> option t_ProtocolDecl ->  t_GateDecl
+| GateDecl: option string -> list t_Connection -> list t_ProtocolDecl ->  t_GateDecl
 
 with t_Import: Set :=
 | Import: option string ->  t_Import
 
 with t_MediatorDecl: Set :=
-| MediatorDecl: option string -> list t_FormalParameter -> list t_DataTypeDecl -> list t_DutyDecl -> option t_BehaviorDecl -> option t_AssertionDecl -> option t_AssertionDecl ->  t_MediatorDecl
+| MediatorDecl: option string -> list t_FormalParameter -> list t_DataTypeDecl -> list t_DutyDecl -> option t_BehaviorDecl -> list t_AssertionDecl -> list t_AssertionDecl ->  t_MediatorDecl
 
 with t_Protocol: Set :=
 | Protocol: list t_ProtocolStatement ->  t_Protocol
@@ -153,7 +154,7 @@ with t_SosADL: Set :=
 | SosADL: list t_Import -> option t_Unit ->  t_SosADL
 
 with t_SystemDecl: Set :=
-| SystemDecl: option string -> list t_FormalParameter -> list t_DataTypeDecl -> list t_GateDecl -> option t_BehaviorDecl -> option t_AssertionDecl ->  t_SystemDecl
+| SystemDecl: option string -> list t_FormalParameter -> list t_DataTypeDecl -> list t_GateDecl -> option t_BehaviorDecl -> list t_AssertionDecl ->  t_SystemDecl
 
 with t_TupleElement: Set :=
 | TupleElement: option string -> option t_Expression ->  t_TupleElement
@@ -206,7 +207,7 @@ Definition ArchitectureDecl_behavior x :=
 	| ArchitectureDecl _ _ _ _ y _ => y
 	end.
 
-Definition ArchitectureDecl_assertion x :=
+Definition ArchitectureDecl_assertions x :=
 	match x with
 	| ArchitectureDecl _ _ _ _ _ y => y
 	end.
@@ -296,12 +297,12 @@ Definition DutyDecl_connections x :=
 	| DutyDecl _ y _ _ => y
 	end.
 
-Definition DutyDecl_assertion x :=
+Definition DutyDecl_assertions x :=
 	match x with
 	| DutyDecl _ _ y _ => y
 	end.
 
-Definition DutyDecl_protocol x :=
+Definition DutyDecl_protocols x :=
 	match x with
 	| DutyDecl _ _ _ y => y
 	end.
@@ -401,7 +402,7 @@ Definition GateDecl_connections x :=
 	| GateDecl _ y _ => y
 	end.
 
-Definition GateDecl_protocol x :=
+Definition GateDecl_protocols x :=
 	match x with
 	| GateDecl _ _ y => y
 	end.
@@ -436,12 +437,12 @@ Definition MediatorDecl_behavior x :=
 	| MediatorDecl _ _ _ _ y _ _ => y
 	end.
 
-Definition MediatorDecl_assumption x :=
+Definition MediatorDecl_assumptions x :=
 	match x with
 	| MediatorDecl _ _ _ _ _ y _ => y
 	end.
 
-Definition MediatorDecl_assertion x :=
+Definition MediatorDecl_assertions x :=
 	match x with
 	| MediatorDecl _ _ _ _ _ _ y => y
 	end.
@@ -496,7 +497,7 @@ Definition SystemDecl_behavior x :=
 	| SystemDecl _ _ _ _ y _ => y
 	end.
 
-Definition SystemDecl_assertion x :=
+Definition SystemDecl_assertions x :=
 	match x with
 	| SystemDecl _ _ _ _ _ y => y
 	end.

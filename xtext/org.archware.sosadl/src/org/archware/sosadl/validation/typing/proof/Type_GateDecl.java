@@ -21,7 +21,7 @@ public class Type_GateDecl implements Type_gate {
 	private final Environment gamma2;
 
 	@Mandatory
-	private final ProtocolDecl p;
+	private final EList<ProtocolDecl> p;
 
 	@Mandatory
 	private final Environment gamma1;
@@ -30,11 +30,11 @@ public class Type_GateDecl implements Type_gate {
 	private final Mutually_translate<Connection, Type_connection> p1;
 
 	@Mandatory
-	private final Type_protocol p2;
+	private final Forall<ProtocolDecl, Type_protocol> p2;
 
 	public Type_GateDecl(Environment gamma, String name, EList<Connection> conns, EList<Connection> conns1,
-			Environment gamma2, ProtocolDecl p, Environment gamma1, Mutually_translate<Connection, Type_connection> p1,
-			Type_protocol p2) {
+			Environment gamma2, EList<ProtocolDecl> p, Environment gamma1, Mutually_translate<Connection, Type_connection> p1,
+			Forall<ProtocolDecl, Type_protocol> p2) {
 		super();
 		this.gamma = gamma;
 		this.name = name;
@@ -67,7 +67,7 @@ public class Type_GateDecl implements Type_gate {
 		return gamma2;
 	}
 
-	public ProtocolDecl getP() {
+	public EList<ProtocolDecl> getP() {
 		return p;
 	}
 
@@ -79,7 +79,7 @@ public class Type_GateDecl implements Type_gate {
 		return p1;
 	}
 
-	public Type_protocol getP2() {
+	public Forall<ProtocolDecl,Type_protocol> getP2() {
 		return p2;
 	}
 

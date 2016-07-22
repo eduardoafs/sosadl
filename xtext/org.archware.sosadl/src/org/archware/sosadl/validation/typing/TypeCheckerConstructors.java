@@ -120,21 +120,21 @@ public class TypeCheckerConstructors extends TypeCheckerAnnotate {
 		return f;
 	}
 
-	protected static GateDecl createGateDecl(String name, List<Connection> conns, ProtocolDecl protocol) {
+	protected static GateDecl createGateDecl(String name, List<Connection> conns, List<ProtocolDecl> protocol) {
 		GateDecl g = SosADLFactory.eINSTANCE.createGateDecl();
 		g.setName(name);
 		g.getConnections().addAll(ListExtensions.map(conns, TypeCheckerConstructors::copy));
-		g.setProtocol(copy(protocol));
+		g.getProtocols().addAll(ListExtensions.map(protocol, TypeCheckerConstructors::copy));
 		return g;
 	}
 
-	protected static DutyDecl createDutyDecl(String name, List<Connection> conns, AssertionDecl assumption,
-			ProtocolDecl protocol) {
+	protected static DutyDecl createDutyDecl(String name, List<Connection> conns, List<AssertionDecl> assumption,
+			List<ProtocolDecl> protocol) {
 		DutyDecl g = SosADLFactory.eINSTANCE.createDutyDecl();
 		g.setName(name);
 		g.getConnections().addAll(ListExtensions.map(conns, TypeCheckerConstructors::copy));
-		g.setAssertion(copy(assumption));
-		g.setProtocol(copy(protocol));
+		g.getAssertions().addAll(ListExtensions.map(assumption, TypeCheckerConstructors::copy));
+		g.getProtocols().addAll(ListExtensions.map(protocol, TypeCheckerConstructors::copy));
 		return g;
 	}
 

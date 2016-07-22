@@ -2447,14 +2447,15 @@ Inductive type_gate:
       (conns: list SosADL.SosADL.t_Connection)
       (conns1: list SosADL.SosADL.t_Connection)
       (Gamma2: env)
-      (p: SosADL.SosADL.t_ProtocolDecl)
+      (ps: list SosADL.SosADL.t_ProtocolDecl)
       (Gamma1: env)
       (p1: type_connections Gamma conns conns1 Gamma2)
-      (p2: protocol p well typed in Gamma2)
+      (p2: for each p of ps,
+           protocol p well typed in Gamma2)
     ,
       type_gate
-        Gamma (SosADL.SosADL.GateDecl (Some name) conns (Some p))
-        (SosADL.SosADL.GateDecl (Some name) conns1 (Some p)) Gamma1
+        Gamma (SosADL.SosADL.GateDecl (Some name) conns ps)
+        (SosADL.SosADL.GateDecl (Some name) conns1 ps) Gamma1
 .
 
 Definition gateDecl_to_EGateOrDuty g :=

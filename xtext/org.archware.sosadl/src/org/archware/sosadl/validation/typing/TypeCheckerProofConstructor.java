@@ -498,8 +498,8 @@ public abstract class TypeCheckerProofConstructor extends TypeCheckerInference {
 	}
 
 	protected Type_gate createType_GateDecl(Environment gamma, String name, EList<Connection> conns,
-			EList<Connection> conns1, Environment gamma2, ProtocolDecl p, Environment gamma1,
-			Mutually_translate<Connection, Type_connection> p1, Type_protocol p2) {
+			EList<Connection> conns1, Environment gamma2, EList<ProtocolDecl> p, Environment gamma1,
+			Mutually_translate<Connection, Type_connection> p1, Forall<ProtocolDecl, Type_protocol> p2) {
 		return new Type_GateDecl(gamma, name, conns, conns1, gamma2, p, gamma1, p1, p2);
 	}
 
