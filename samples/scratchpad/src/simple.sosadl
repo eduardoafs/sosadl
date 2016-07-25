@@ -17,7 +17,7 @@ library simple is {
 		
 		behavior main is {
 			repeat {
-				value msg is t = 0
+				value msg : t = 0
 				via rr::s send msg
 				via rr::r receive v
 			}

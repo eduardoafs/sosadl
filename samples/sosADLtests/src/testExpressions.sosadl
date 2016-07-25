@@ -37,13 +37,13 @@ library testDone is {
 		
 		function (x: type1)::longer1(): sequence{integer{0..10}} is {
 			value toto = sequence{1,2,3,4,9}
-			value titi is sequence{integer{0..6}} = sequence{1,2,3,4}
+			value titi : sequence{integer{0..6}} = sequence{1,2,3,4}
 			return toto
 		}
 		
 		function (x: type1)::longer2(): sequence{integer{0..6}} is {
 			value toto = sequence{1,2,3,4}
-			value titi is sequence{integer{0..6}} = sequence{1,2,3,4}
+			value titi : sequence{integer{0..6}} = sequence{1,2,3,4}
 			return titi
 		}
     }
@@ -71,30 +71,30 @@ library testDone is {
       do 2*3
       do 4+7
       value a = 3
-      value b is sequence {integer{0..0}} = sequence{0}
+      value b : sequence {integer{0..0}} = sequence{0}
       value c = sequence{}
       via gate1::connection1 send 1
       via gate2::connection1 receive message
       via gate1::connection1 send a
       via gate1::connection1 send message
       do a+4
-      foreach x in sequence{1,2,3,4} { value y is integer{2..5} = x+1 }
+      foreach x in sequence{1,2,3,4} { value y : integer{2..5} = x+1 }
       value v1 = tuple { a=1, b=3 }
       value v2 = tuple { a=2, b=2 }
       value v3 = tuple { a=3, b=1 }
       value seq = sequence { v1, v2, v3 }
       foreach x in seq { do 1 }
       foreach x in seq { value field1 = x::a }
-      foreach x in seq { value field2 is integer{1..3} = x::a }
-      value toto is integer{0..5} = 4
-      if toto=0 then { value titi is integer{0..0} = toto }
-      if toto>1 then { value titi is integer{2..5} = toto } else { value tutu is integer{0..1} = toto }
+      foreach x in seq { value field2 : integer{1..3} = x::a }
+      value toto : integer{0..5} = 4
+      if toto=0 then { value titi : integer{0..0} = toto }
+      if toto>1 then { value titi : integer{2..5} = toto } else { value tutu : integer{0..1} = toto }
       choose { do 1 } or { do 2 }
       if toto < 3 and toto >= 1 then {
-      	value titi is integer{1..2} = toto
+      	value titi : integer{1..2} = toto
       	if titi > 0 and titi <= 1 then {
       		if titi=1 then {
-      			value tata is integer{1..1} = titi
+      			value tata : integer{1..1} = titi
       			done
       		} else {
       			choose { done }	or { done }

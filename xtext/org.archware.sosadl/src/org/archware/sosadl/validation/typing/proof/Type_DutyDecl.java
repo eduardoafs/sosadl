@@ -22,10 +22,10 @@ public class Type_DutyDecl implements Type_duty {
 	private final Environment gamma2;
 
 	@Mandatory
-	private final AssertionDecl assump;
+	private final EList<AssertionDecl> assump;
 
 	@Mandatory
-	private final ProtocolDecl p;
+	private final EList<ProtocolDecl> p;
 
 	@Mandatory
 	private final Environment gamma1;
@@ -34,14 +34,14 @@ public class Type_DutyDecl implements Type_duty {
 	private final Mutually_translate<Connection, Type_connection> p1;
 
 	@Mandatory
-	private final Type_assertion p2;
+	private final Forall<AssertionDecl, Type_assertion> p2;
 
 	@Mandatory
-	private final Type_protocol p3;
+	private final Forall<ProtocolDecl, Type_protocol> p3;
 
 	public Type_DutyDecl(Environment gamma, String name, EList<Connection> conns, EList<Connection> conns1,
-			Environment gamma2, AssertionDecl assump, ProtocolDecl p, Environment gamma1,
-			Mutually_translate<Connection, Type_connection> p1, Type_assertion p2, Type_protocol p3) {
+			Environment gamma2, EList<AssertionDecl> assump, EList<ProtocolDecl> p, Environment gamma1,
+			Mutually_translate<Connection, Type_connection> p1, Forall<AssertionDecl,Type_assertion> p2, Forall<ProtocolDecl,Type_protocol> p3) {
 		super();
 		this.gamma = gamma;
 		this.name = name;
@@ -76,11 +76,11 @@ public class Type_DutyDecl implements Type_duty {
 		return gamma2;
 	}
 
-	public AssertionDecl getAssump() {
+	public EList<AssertionDecl> getAssump() {
 		return assump;
 	}
 
-	public ProtocolDecl getP() {
+	public EList<ProtocolDecl> getP() {
 		return p;
 	}
 
@@ -92,11 +92,11 @@ public class Type_DutyDecl implements Type_duty {
 		return p1;
 	}
 
-	public Type_assertion getP2() {
+	public Forall<AssertionDecl, Type_assertion> getP2() {
 		return p2;
 	}
 
-	public Type_protocol getP3() {
+	public Forall<ProtocolDecl, Type_protocol> getP3() {
 		return p3;
 	}
 

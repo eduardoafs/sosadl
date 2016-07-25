@@ -68,22 +68,22 @@ public abstract class TypeCheckerProofConstructor extends TypeCheckerInference {
 
 	protected Type_system createType_SystemDecl(Environment gamma, String name, EList<FormalParameter> params,
 			EList<FormalParameter> params2, Environment gamma1, EList<DataTypeDecl> datatypes, Environment gamma2,
-			EList<GateDecl> gates, Environment gamma3, BehaviorDecl bhv, AssertionDecl assrt,
+			EList<GateDecl> gates, Environment gamma3, BehaviorDecl bhv, EList<AssertionDecl> assrt,
 			Mutually_translate<FormalParameter, Type_formalParameter> p1,
 			Incrementally<DataTypeDecl, Type_datatypeDecl> p2,
 			Ex<List<GateDecl>, Mutually_translate<GateDecl, Type_gate>> p3, Type_behavior p4,
-			Optionally<AssertionDecl, Type_assertion> p5) {
+			Forall<AssertionDecl, Type_assertion> p5) {
 		return new Type_SystemDecl(gamma, name, params, params2, gamma1, datatypes, gamma2, gates, gamma3, bhv, assrt,
 				p1, p2, p3, p4, p5);
 	}
 
 	protected Type_mediator createType_MediatorDecl(Environment gamma, String name, EList<FormalParameter> params,
 			EList<FormalParameter> params2, Environment gamma1, EList<DataTypeDecl> datatypes, Environment gamma2,
-			EList<DutyDecl> duties, Environment gamma3, BehaviorDecl bhv, AssertionDecl assump, AssertionDecl assrt,
+			EList<DutyDecl> duties, Environment gamma3, BehaviorDecl bhv, EList<AssertionDecl> assump, EList<AssertionDecl> assrt,
 			Mutually_translate<FormalParameter, Type_formalParameter> p1,
 			Incrementally<DataTypeDecl, Type_datatypeDecl> p2,
 			Ex<List<DutyDecl>, Mutually_translate<DutyDecl, Type_duty>> p3, Type_behavior p4,
-			Optionally<AssertionDecl, Type_assertion> p5, Optionally<AssertionDecl, Type_assertion> p6) {
+			Forall<AssertionDecl, Type_assertion> p5, Forall<AssertionDecl, Type_assertion> p6) {
 		return new Type_MediatorDecl(gamma, name, params, params2, gamma1, datatypes, gamma2, duties, gamma3, bhv,
 				assump, assrt, p1, p2, p3, p4, p5, p6);
 	}
@@ -504,8 +504,8 @@ public abstract class TypeCheckerProofConstructor extends TypeCheckerInference {
 	}
 
 	protected Type_duty createType_DutyDecl(Environment gamma, String name, EList<Connection> conns,
-			EList<Connection> conns1, Environment gamma2, AssertionDecl assump, ProtocolDecl p, Environment gamma1,
-			Mutually_translate<Connection, Type_connection> p1, Type_assertion p2, Type_protocol p3) {
+			EList<Connection> conns1, Environment gamma2, EList<AssertionDecl> assump, EList<ProtocolDecl> p, Environment gamma1,
+			Mutually_translate<Connection, Type_connection> p1, Forall<AssertionDecl,Type_assertion> p2, Forall<ProtocolDecl,Type_protocol> p3) {
 		return new Type_DutyDecl(gamma, name, conns, conns1, gamma2, assump, p, gamma1, p1, p2, p3);
 	}
 

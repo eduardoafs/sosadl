@@ -80,17 +80,18 @@ public abstract class TypeCheckerConnections extends TypeCheckerProtocol {
 			Pair<Environment, Mutually_translate<Connection, Type_connection>> p1) {
 		return saveProof(g,
 				createType_DutyDecl(gamma, g1.getName(), g.getConnections(), g1.getConnections(), p1.getA(),
-						g1.getAssertion(), g1.getProtocol(), gamma1, p1.getB(),
-						type_assertion(p1.getA(), g.getAssertion()), type_protocol(p1.getA(), g.getProtocol())));
+						g1.getAssertions(), g1.getProtocols(), gamma1, p1.getB(),
+						proveForall(g.getAssertions(), (a) -> type_assertion(p1.getA(), a)),
+						proveForall(g.getProtocols(), (p) -> type_protocol(p1.getA(), p))));
 	}
 
 	private Pair<DutyDecl, Pair<Environment, Mutually_translate<Connection, Type_connection>>> translate_duty(
 			Environment gamma, DutyDecl g) {
-		if (g.getName() != null && g.getAssertion() != null && g.getProtocol() != null) {
+		if (g.getName() != null) {
 			Pair<Pair<List<Connection>, Environment>, Mutually_translate<Connection, Type_connection>> pc = type_connections(
 					gamma, g.getConnections());
 			if (pc.getA() != null && pc.getA().getA() != null && pc.getA().getB() != null) {
-				return new Pair<>(createDutyDecl(g.getName(), pc.getA().getA(), g.getAssertion(), g.getProtocol()),
+				return new Pair<>(createDutyDecl(g.getName(), pc.getA().getA(), g.getAssertions(), g.getProtocols()),
 						new Pair<>(pc.getA().getB(), pc.getB()));
 			} else {
 				return null;
@@ -98,12 +99,6 @@ public abstract class TypeCheckerConnections extends TypeCheckerProtocol {
 		} else {
 			if (g.getName() == null) {
 				error("The duty must have a name", g, SosADLPackage.Literals.DUTY_DECL__NAME);
-			}
-			if (g.getAssertion() == null) {
-				error("The duty must have an assumption", g, SosADLPackage.Literals.DUTY_DECL__ASSERTION);
-			}
-			if (g.getProtocol() == null) {
-				error("The duty must have a protocol", g, SosADLPackage.Literals.DUTY_DECL__PROTOCOL);
 			}
 			return null;
 		}

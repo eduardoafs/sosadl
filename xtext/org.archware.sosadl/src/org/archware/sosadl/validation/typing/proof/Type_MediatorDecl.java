@@ -37,9 +37,9 @@ public class Type_MediatorDecl implements Type_mediator {
 	@Mandatory
 	private final BehaviorDecl bhv;
 
-	private final AssertionDecl assump;
+	private final EList<AssertionDecl> assump;
 
-	private final AssertionDecl assrt;
+	private final EList<AssertionDecl> assrt;
 
 	@Mandatory
 	private final Mutually_translate<FormalParameter, Type_formalParameter> p1;
@@ -54,18 +54,18 @@ public class Type_MediatorDecl implements Type_mediator {
 	private final Type_behavior p4;
 
 	@Mandatory
-	private final Optionally<AssertionDecl, Type_assertion> p5;
+	private final Forall<AssertionDecl, Type_assertion> p5;
 
 	@Mandatory
-	private final Optionally<AssertionDecl, Type_assertion> p6;
+	private final Forall<AssertionDecl, Type_assertion> p6;
 
 	public Type_MediatorDecl(Environment gamma, String name, EList<FormalParameter> params,
 			EList<FormalParameter> params2, Environment gamma1, EList<DataTypeDecl> datatypes, Environment gamma2,
-			EList<DutyDecl> duties, Environment gamma3, BehaviorDecl bhv, AssertionDecl assump, AssertionDecl assrt,
+			EList<DutyDecl> duties, Environment gamma3, BehaviorDecl bhv, EList<AssertionDecl> assump, EList<AssertionDecl> assrt,
 			Mutually_translate<FormalParameter, Type_formalParameter> p1,
 			Incrementally<DataTypeDecl, Type_datatypeDecl> p2,
 			Ex<List<DutyDecl>, Mutually_translate<DutyDecl, Type_duty>> p3, Type_behavior p4,
-			Optionally<AssertionDecl, Type_assertion> p5, Optionally<AssertionDecl, Type_assertion> p6) {
+			Forall<AssertionDecl, Type_assertion> p5, Forall<AssertionDecl, Type_assertion> p6) {
 		super();
 		this.gamma = gamma;
 		this.name = name;
@@ -127,11 +127,11 @@ public class Type_MediatorDecl implements Type_mediator {
 		return bhv;
 	}
 
-	public AssertionDecl getAssump() {
+	public EList<AssertionDecl> getAssump() {
 		return assump;
 	}
 
-	public AssertionDecl getAssrt() {
+	public EList<AssertionDecl> getAssrt() {
 		return assrt;
 	}
 
@@ -151,11 +151,11 @@ public class Type_MediatorDecl implements Type_mediator {
 		return p4;
 	}
 
-	public Optionally<AssertionDecl, Type_assertion> getP5() {
+	public Forall<AssertionDecl, Type_assertion> getP5() {
 		return p5;
 	}
 
-	public Optionally<AssertionDecl, Type_assertion> getP6() {
+	public Forall<AssertionDecl, Type_assertion> getP6() {
 		return p6;
 	}
 

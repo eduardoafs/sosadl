@@ -37,7 +37,7 @@ public class Type_SystemDecl implements Type_system {
 	@Mandatory
 	private final BehaviorDecl bhv;
 
-	private final AssertionDecl assrt;
+	private final EList<AssertionDecl> assrt;
 
 	@Mandatory
 	private final Mutually_translate<FormalParameter, Type_formalParameter> p1;
@@ -52,15 +52,15 @@ public class Type_SystemDecl implements Type_system {
 	private final Type_behavior p4;
 
 	@Mandatory
-	private final Optionally<AssertionDecl, Type_assertion> p5;
+	private final Forall<AssertionDecl, Type_assertion> p5;
 
 	public Type_SystemDecl(Environment gamma, String name, EList<FormalParameter> params,
 			EList<FormalParameter> params2, Environment gamma1, EList<DataTypeDecl> datatypes, Environment gamma2,
-			EList<GateDecl> gates, Environment gamma3, BehaviorDecl bhv, AssertionDecl assrt,
+			EList<GateDecl> gates, Environment gamma3, BehaviorDecl bhv, EList<AssertionDecl> assrt,
 			Mutually_translate<FormalParameter, Type_formalParameter> p1,
 			Incrementally<DataTypeDecl, Type_datatypeDecl> p2,
 			Ex<List<GateDecl>, Mutually_translate<GateDecl, Type_gate>> p3, Type_behavior p4,
-			Optionally<AssertionDecl, Type_assertion> p5) {
+			Forall<AssertionDecl, Type_assertion> p5) {
 		super();
 		this.gamma = gamma;
 		this.name = name;
@@ -120,7 +120,7 @@ public class Type_SystemDecl implements Type_system {
 		return bhv;
 	}
 
-	public AssertionDecl getAssrt() {
+	public EList<AssertionDecl> getAssrt() {
 		return assrt;
 	}
 
@@ -140,7 +140,7 @@ public class Type_SystemDecl implements Type_system {
 		return p4;
 	}
 
-	public Optionally<AssertionDecl, Type_assertion> getP5() {
+	public Forall<AssertionDecl, Type_assertion> getP5() {
 		return p5;
 	}
 

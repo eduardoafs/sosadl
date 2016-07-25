@@ -2478,16 +2478,18 @@ Inductive type_duty:
       (conns: list SosADL.SosADL.t_Connection)
       (conns1: list SosADL.SosADL.t_Connection)
       (Gamma2: env)
-      (assump: SosADL.SosADL.t_AssertionDecl)
-      (p: SosADL.SosADL.t_ProtocolDecl)
+      (assump: list SosADL.SosADL.t_AssertionDecl)
+      (ps: list SosADL.SosADL.t_ProtocolDecl)
       (Gamma1: env)
       (p1: type_connections Gamma conns conns1 Gamma2)
-      (p2: assertion assump well typed in Gamma2)
-      (p3: protocol p well typed in Gamma2)
+      (p2: for each a of assump,
+           assertion a well typed in Gamma2)
+      (p3: for each p of ps,
+           protocol p well typed in Gamma2)
     ,
       type_duty
-        Gamma (SosADL.SosADL.DutyDecl (Some name) conns (Some assump) (Some p))
-        (SosADL.SosADL.DutyDecl (Some name) conns1 (Some assump) (Some p)) Gamma1
+        Gamma (SosADL.SosADL.DutyDecl (Some name) conns assump ps)
+        (SosADL.SosADL.DutyDecl (Some name) conns1 assump ps) Gamma1
 .
 
 Definition dutyDecl_to_EGateOrDuty g :=
@@ -2663,12 +2665,13 @@ Inductive type_system: env -> SosADL.SosADL.t_SystemDecl -> Prop :=
       (gates: list SosADL.SosADL.t_GateDecl)
       (Gamma3: env)
       (bhv: SosADL.SosADL.t_BehaviorDecl)
-      (assrt: option SosADL.SosADL.t_AssertionDecl)
+      (assrt: list SosADL.SosADL.t_AssertionDecl)
       (p1: type_formalParameters Gamma params params' Gamma1)
       (p2: type_datatypeDecls Gamma1 datatypes Gamma2)
       (p3: type_gates Gamma2 gates Gamma3)
       (p4: behavior bhv well typed in Gamma3)
-      (p5: @optionally _ (fun g a => assertion a well typed in g) Gamma3 assrt)
+      (p5: for each a of assrt,
+           assertion a well typed in Gamma3)
     ,
       system (SosADL.SosADL.SystemDecl
                 (Some name) params datatypes gates (Some bhv) assrt)
@@ -2703,14 +2706,16 @@ Inductive type_mediator: env -> SosADL.SosADL.t_MediatorDecl -> Prop :=
       (duties: list SosADL.SosADL.t_DutyDecl)
       (Gamma3: env)
       (b: SosADL.SosADL.t_BehaviorDecl)
-      (assump: option SosADL.SosADL.t_AssertionDecl)
-      (assrt: option SosADL.SosADL.t_AssertionDecl)
+      (assump: list SosADL.SosADL.t_AssertionDecl)
+      (assrt: list SosADL.SosADL.t_AssertionDecl)
       (p1: type_formalParameters Gamma params params' Gamma1)
       (p2: type_datatypeDecls Gamma1 datatypes Gamma2)
       (p3: type_duties Gamma2 duties Gamma3)
       (p4: behavior b well typed in Gamma3)
-      (p5: @optionally _ (fun g a => assertion a well typed in g) Gamma3 assump)
-      (p6: @optionally _ (fun g a => assertion a well typed in g) Gamma3 assrt)
+      (p5: for each a of assump,
+           assertion a well typed in Gamma3)
+      (p6: for each a of assrt,
+           assertion a well typed in Gamma3)
     ,
       mediator (SosADL.SosADL.MediatorDecl
                   (Some name) params datatypes duties

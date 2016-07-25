@@ -404,9 +404,9 @@ public class TypeChecker extends TypeCheckerConnections {
 				return saveProof(systemDecl,
 						createType_SystemDecl(gamma, systemDecl.getName(), systemDecl.getParameters(), params2, gamma1,
 								systemDecl.getDatatypes(), gamma2, systemDecl.getGates(), gamma3,
-								systemDecl.getBehavior(), systemDecl.getAssertion(), p1.getB(), p2.getA(), p3.getB(),
+								systemDecl.getBehavior(), systemDecl.getAssertions(), p1.getB(), p2.getA(), p3.getB(),
 								type_behavior(gamma3, systemDecl.getBehavior()),
-								proveOptionally(gamma3, systemDecl.getAssertion(), this::type_assertion)));
+								proveForall(systemDecl.getAssertions(), (a) -> type_assertion(gamma3, a))));
 			} else {
 				return null;
 			}
@@ -484,10 +484,10 @@ public class TypeChecker extends TypeCheckerConnections {
 				return saveProof(mediator,
 						createType_MediatorDecl(gamma, mediator.getName(), mediator.getParameters(), params2, gamma1,
 								mediator.getDatatypes(), gamma2, mediator.getDuties(), gamma3, mediator.getBehavior(),
-								mediator.getAssumption(), mediator.getAssertion(), p1.getB(), p2.getA(), p3.getB(),
+								mediator.getAssumptions(), mediator.getAssertions(), p1.getB(), p2.getA(), p3.getB(),
 								type_behavior(gamma3, mediator.getBehavior()),
-								proveOptionally(gamma3, mediator.getAssumption(), this::type_assertion),
-								proveOptionally(gamma3, mediator.getAssertion(), this::type_assertion)));
+								proveForall(mediator.getAssumptions(), (a) -> type_assertion(gamma3, a)),
+								proveForall(mediator.getAssertions(), (a) -> type_assertion(gamma3, a))));
 			} else {
 				return null;
 			}
