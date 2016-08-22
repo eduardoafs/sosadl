@@ -1,137 +1,187 @@
 package org.archware.sosadl.validation.typing;
 
-import java.util.function.BiFunction;
-import java.util.function.Function;
-
-import org.archware.sosadl.sosADL.AssertionDecl;
-import org.archware.sosadl.sosADL.ChooseProtocol;
-import org.archware.sosadl.sosADL.DoExprProtocol;
-import org.archware.sosadl.sosADL.DoneProtocol;
-import org.archware.sosadl.sosADL.Expression;
-import org.archware.sosadl.sosADL.ForEachProtocol;
-import org.archware.sosadl.sosADL.IfThenElseProtocol;
-import org.archware.sosadl.sosADL.Protocol;
-import org.archware.sosadl.sosADL.ProtocolAction;
-import org.archware.sosadl.sosADL.ProtocolDecl;
-import org.archware.sosadl.sosADL.ProtocolStatement;
-import org.archware.sosadl.sosADL.RepeatProtocol;
-import org.archware.sosadl.sosADL.SosADLPackage;
-import org.archware.sosadl.sosADL.ValuingProtocol;
-import org.archware.sosadl.validation.typing.proof.Type_assertion;
-import org.archware.sosadl.validation.typing.proof.Type_bodyprotocol;
-import org.archware.sosadl.validation.typing.proof.Type_expression;
-import org.archware.sosadl.validation.typing.proof.Type_finalprotocol;
-import org.archware.sosadl.validation.typing.proof.Type_finalprotocol_other;
-import org.archware.sosadl.validation.typing.proof.Type_generic_finalbody;
-import org.archware.sosadl.validation.typing.proof.Type_generic_nonfinalbody;
-import org.archware.sosadl.validation.typing.proof.Type_nonfinalprotocol;
-import org.archware.sosadl.validation.typing.proof.Type_protocol;
+import org.archware.sosadl.sosADL.*;
+import org.archware.sosadl.validation.typing.proof.*;
+import org.archware.utils.EndecaFunction;
 import org.archware.utils.Pair;
 import org.eclipse.emf.common.util.EList;
 
+import java.math.BigInteger;
+import java.util.function.BiFunction;
+import java.util.function.Function;
+
 public abstract class TypeCheckerProtocol extends TypeCheckerBehavior {
 
-	private Type_finalprotocol type_finalprotocol(Environment gamma, EList<ProtocolStatement> b, Protocol behavior,
-			int index) {
-		Function<Protocol, EList<ProtocolStatement>> getBlock = Protocol::getStatements;
-		BiFunction<Environment, ProtocolStatement, Type_finalprotocol_other> proveOther = this::final_other;
-		BiFunction<Environment, ProtocolStatement, Pair<Environment, Type_bodyprotocol>> gp = this::type_bodyprotocol;
-		BiFunction<Environment, Protocol, Type_nonfinalprotocol> gnf = this::type_nonfinalprotocol;
-		Function<ChooseProtocol, EList<Protocol>> getBranches = ChooseProtocol::getBranches;
-		Function<IfThenElseProtocol, Expression> getCondition = IfThenElseProtocol::getCondition;
-		Function<IfThenElseProtocol, Protocol> getThen = IfThenElseProtocol::getIfTrue;
-		Function<IfThenElseProtocol, Protocol> getElse = IfThenElseProtocol::getIfFalse;
-		Function<RepeatProtocol, Protocol> getRepeated = RepeatProtocol::getRepeated;
-		Type_generic_finalbody<Protocol, ProtocolStatement, ChooseProtocol, DoneProtocol, IfThenElseProtocol, RepeatProtocol, Type_finalprotocol_other, Type_expression, Type_bodyprotocol, Type_nonfinalprotocol> p1 = type_generic_finalbody(
-				Protocol.class, ProtocolStatement.class, getBlock, "Protocol", ChooseProtocol.class, getBranches,
-				DoneProtocol.class, IfThenElseProtocol.class, getCondition,
-				SosADLPackage.Literals.IF_THEN_ELSE_PROTOCOL__CONDITION, getThen,
-				SosADLPackage.Literals.IF_THEN_ELSE_PROTOCOL__IF_TRUE, getElse,
-				SosADLPackage.Literals.IF_THEN_ELSE_PROTOCOL__IF_FALSE, RepeatProtocol.class, getRepeated,
-				SosADLPackage.Literals.REPEAT_PROTOCOL__REPEATED, Type_finalprotocol_other.class, proveOther,
-				Type_expression.class, this::type_expression, Type_bodyprotocol.class, gp, Type_nonfinalprotocol.class,
-				gnf, gamma, b, behavior, SosADLPackage.Literals.PROTOCOL__STATEMENTS, 0);
-		Type_finalprotocol proof = p(Type_finalprotocol.class, gamma,
-				(gamma_) -> createType_finalprotocol_generic(gamma_, b, p1));
-		return saveProof(behavior, proof);
-	}
+    private Type_finalprotocol type_finalprotocol(Environment gamma, EList<ProtocolStatement> b, Protocol behavior,
+                                                  @SuppressWarnings("unused") int index) {
+        Function<Protocol, EList<ProtocolStatement>> getBlock = Protocol::getStatements;
+        BiFunction<Environment, ProtocolStatement, Type_finalprotocol_other> proveOther = this::final_other;
+        BiFunction<Environment, ProtocolStatement, Pair<Environment, Type_bodyprotocol>> gp = this::type_bodyprotocol;
+        BiFunction<Environment, Protocol, Type_nonfinalprotocol> gnf = this::type_nonfinalprotocol;
+        Function<ChooseProtocol, EList<Protocol>> getBranches = ChooseProtocol::getBranches;
+        Function<IfThenElseProtocol, Expression> getCondition = IfThenElseProtocol::getCondition;
+        Function<IfThenElseProtocol, Protocol> getThen = IfThenElseProtocol::getIfTrue;
+        Function<IfThenElseProtocol, Protocol> getElse = IfThenElseProtocol::getIfFalse;
+        Function<RepeatProtocol, Protocol> getRepeated = RepeatProtocol::getRepeated;
+        Type_generic_finalbody<Protocol, ProtocolStatement, ChooseProtocol, DoneProtocol, IfThenElseProtocol, RepeatProtocol, Type_finalprotocol_other, Type_expression, Type_bodyprotocol, Type_nonfinalprotocol> p1 = type_generic_finalbody(
+                Protocol.class, ProtocolStatement.class, getBlock, "Protocol", ChooseProtocol.class, getBranches,
+                DoneProtocol.class, IfThenElseProtocol.class, getCondition,
+                SosADLPackage.Literals.IF_THEN_ELSE_PROTOCOL__CONDITION, getThen,
+                SosADLPackage.Literals.IF_THEN_ELSE_PROTOCOL__IF_TRUE, getElse,
+                SosADLPackage.Literals.IF_THEN_ELSE_PROTOCOL__IF_FALSE, RepeatProtocol.class, getRepeated,
+                SosADLPackage.Literals.REPEAT_PROTOCOL__REPEATED, Type_finalprotocol_other.class, proveOther,
+                Type_expression.class, this::type_expression, Type_bodyprotocol.class, gp, Type_nonfinalprotocol.class,
+                gnf, gamma, b, behavior, SosADLPackage.Literals.PROTOCOL__STATEMENTS, 0);
+        Type_finalprotocol proof = p(Type_finalprotocol.class, gamma,
+                (gamma_) -> createType_finalprotocol_generic(gamma_, b, p1));
+        return saveProof(behavior, proof);
+    }
 
-	private Type_finalprotocol_other final_other(Environment gamma, ProtocolStatement s) {
-		error("Protocol statement `" + labelOf(s) + "' not allowed at tail position", s, null);
-		return null;
-	}
+    private Type_finalprotocol_other final_other(Environment gamma, ProtocolStatement s) {
+        error("Protocol statement `" + labelOf(s) + "' not allowed at tail position", s, null);
+        return null;
+    }
 
-	private Type_nonfinalprotocol type_nonfinalprotocol(Environment gamma, Protocol p) {
-		Type_generic_nonfinalbody<ProtocolStatement, Type_bodyprotocol> p1 = type_generic_nonfinalbody(gamma,
-				p.getStatements(), Type_bodyprotocol.class, this::type_bodyprotocol);
-		return saveProof(p, createType_nonfinalprotocol_generic(gamma, p.getStatements(), p1));
-	}
+    private Type_nonfinalprotocol type_nonfinalprotocol(Environment gamma, Protocol p) {
+        Type_generic_nonfinalbody<ProtocolStatement, Type_bodyprotocol> p1 = type_generic_nonfinalbody(gamma,
+                p.getStatements(), Type_bodyprotocol.class, this::type_bodyprotocol);
+        return saveProof(p, createType_nonfinalprotocol_generic(gamma, p.getStatements(), p1));
+    }
 
-	private Pair<Environment, Type_bodyprotocol> type_bodyprotocol(Environment gamma, ProtocolStatement first) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    private Pair<Environment, Type_protocolprefix_other> prefix_other(Environment gamma, ProtocolStatement s) {
+        if (s instanceof ProtocolAction) {
+            ProtocolAction a = (ProtocolAction) s;
+            EndecaFunction<Environment, ProtocolAction, ComplexName, ProtocolActionSuite, String, String, EList<Connection>, BigInteger, Boolean, ModeType, DataType,
+                    Pair<Environment, Type_protocolprefix_other>> doIt =
+                    (gamma_, a_, cn, as, gd, conn, endpoints, rank, is_env, mode, conn__tau) -> doReceiveAny(gamma_, a_, cn, as, gd, conn, endpoints, rank, is_env, mode, conn__tau);
+            Function<ProtocolAction, ComplexName> getComplexName = ProtocolAction::getComplexName;
+            Function<ProtocolAction, ProtocolActionSuite> getSuite = ProtocolAction::getSuite;
+            return genericAction(getComplexName, SosADLPackage.Literals.PROTOCOL_ACTION__COMPLEX_NAME,
+                    getSuite, SosADLPackage.Literals.PROTOCOL_ACTION__SUITE,
+                    gamma, a, doIt);
+        } else {
+            error("Protocol statement `" + labelOf(s) + "' not allowed at non-tail position", s, null);
+            return null;
+        }
+    }
 
-	protected Type_protocol type_protocol(Environment gamma, ProtocolDecl protocol) {
-		saveEnvironment(protocol, gamma);
-		String name = protocol.getName();
-		Protocol p = protocol.getBody();
-		if (name != null && p != null) {
-			EList<ProtocolStatement> l = p.getStatements();
-			Type_finalprotocol p1 = type_finalprotocol(gamma, l, p, 0);
-			return saveProof(protocol,
-					p(Type_protocol.class, gamma, (gamma_) -> createType_ProtocolDecl(gamma_, name, l, p1)));
-		} else {
-			if (name == null) {
-				error("The protocol must have a name", protocol, SosADLPackage.Literals.PROTOCOL_DECL__NAME);
-			}
-			if (p == null) {
-				error("The protocol must have a body", protocol, SosADLPackage.Literals.PROTOCOL_DECL__BODY);
-			}
-			return null;
-		}
-	}
+    private Pair<Environment, Type_protocolprefix_other> doReceiveAny(Environment gamma, ProtocolAction a_, ComplexName cn, ProtocolActionSuite as, String gd, String conn, EList<Connection> endpoints, BigInteger rank, Boolean is_env, ModeType mode, DataType conn__tau) {
+        if (as instanceof ReceiveAnyProtocolAction) {
+            Type_protocolprefix_other proof = p(Type_protocolprefix_other.class, gamma, (gamma_) ->
+                    p(Type_protocolprefix_other.class, conn__tau, (conn__tau_) ->
+                            createType_protocolprefix_ReceiveAny(gamma_, gd, endpoints, is_env, conn, mode, conn__tau_,
+                                    createReflexivity(), createEx_intro(rank, createReflexivity()), proveReceiveMode(mode, conn, cn))));
+            return new Pair<>(gamma, proof);
+        } else {
+            error("Unknown action command", as, null);
+            return null;
+        }
+    }
 
-	protected Type_assertion type_assertion(Environment gamma, AssertionDecl assertion) {
-		saveEnvironment(assertion, gamma);
-		String name = assertion.getName();
-		Protocol p = assertion.getBody();
-		if (name != null && p != null) {
-			EList<ProtocolStatement> l = p.getStatements();
-			Type_finalprotocol p1 = type_finalprotocol(gamma, l, p, 0);
-			return saveProof(assertion,
-					p(Type_assertion.class, gamma, (gamma_) -> createType_AssertionDecl(gamma_, name, l, p1)));
-		} else {
-			if (name == null) {
-				error("The assertion must have a name", assertion, SosADLPackage.Literals.ASSERTION_DECL__NAME);
-			}
-			if (p == null) {
-				error("The assertion must have a body", assertion, SosADLPackage.Literals.ASSERTION_DECL__BODY);
-			}
-			return null;
-		}
-	}
+    private Pair<Environment, Type_bodyprotocol> type_bodyprotocol(Environment gamma, ProtocolStatement first) {
+        Function<Protocol, EList<ProtocolStatement>> getStatements = Protocol::getStatements;
+        Function<ProtocolAction, ComplexName> getComplexName = ProtocolAction::getComplexName;
+        Function<ProtocolAction, ProtocolActionSuite> getSuite = ProtocolAction::getSuite;
+        Function<ChooseProtocol, EList<Protocol>> getBranches = ChooseProtocol::getBranches;
+        Function<DoExprProtocol, Expression> getExpression = DoExprProtocol::getExpression;
+        Function<ForEachProtocol, String> getVariable = ForEachProtocol::getVariable;
+        Function<ForEachProtocol, Expression> getSetOfValues = ForEachProtocol::getSetOfValues;
+        Function<ForEachProtocol, Protocol> getRepeated = ForEachProtocol::getRepeated;
+        Function<IfThenElseProtocol, Expression> getCondition = IfThenElseProtocol::getCondition;
+        Function<IfThenElseProtocol, Protocol> getIfTrue = IfThenElseProtocol::getIfTrue;
+        Function<IfThenElseProtocol, Protocol> getIfFalse = IfThenElseProtocol::getIfFalse;
+        Function<ValuingProtocol, Valuing> getValuing = ValuingProtocol::getValuing;
+        Function<SendProtocolAction, Expression> getExpression1 = SendProtocolAction::getExpression;
+        Function<ReceiveProtocolAction, String> getVariable1 = ReceiveProtocolAction::getVariable;
+        BiFunction<Environment, ProtocolStatement, Pair<Environment, Type_protocolprefix_other>> prefix_other = this::prefix_other;
+        BiFunction<Environment, Protocol, Type_nonfinalprotocol> type_nonfinalprotocol = this::type_nonfinalprotocol;
+        Pair<Environment, Type_generic_prefixstatement<Protocol, ProtocolStatement, ProtocolActionSuite,
+                ProtocolAction, ChooseProtocol, DoExprProtocol, ForEachProtocol, IfThenElseProtocol,
+                ValuingProtocol, SendProtocolAction, ReceiveProtocolAction,
+                Type_protocolprefix_other, Type_expression, Type_nonfinalprotocol>> p1 = type_generic_prefix(
+                Protocol.class,
+                ProtocolStatement.class, getStatements,
+                "SosADL.SosADL.Protocol", ProtocolActionSuite.class, ProtocolAction.class, getComplexName,
+                SosADLPackage.Literals.PROTOCOL_ACTION__COMPLEX_NAME, getSuite, SosADLPackage.Literals.PROTOCOL_ACTION__SUITE,
+                ChooseProtocol.class, getBranches, DoExprProtocol.class, getExpression,
+                SosADLPackage.Literals.DO_EXPR_PROTOCOL__EXPRESSION, ForEachProtocol.class, getVariable,
+                SosADLPackage.Literals.FOR_EACH_PROTOCOL__VARIABLE, getSetOfValues,
+                SosADLPackage.Literals.FOR_EACH_PROTOCOL__SET_OF_VALUES, getRepeated,
+                SosADLPackage.Literals.FOR_EACH_PROTOCOL__REPEATED,
+                IfThenElseProtocol.class, getCondition, SosADLPackage.Literals.IF_THEN_ELSE_PROTOCOL__CONDITION,
+                getIfTrue, SosADLPackage.Literals.IF_THEN_ELSE_PROTOCOL__IF_TRUE,
+                getIfFalse, SosADLPackage.Literals.IF_THEN_ELSE_PROTOCOL__IF_FALSE,
+                ValuingProtocol.class, getValuing, SosADLPackage.Literals.VALUING_PROTOCOL__VALUING,
+                SendProtocolAction.class, getExpression1, SosADLPackage.Literals.SEND_PROTOCOL_ACTION__EXPRESSION,
+                ReceiveProtocolAction.class, getVariable1, SosADLPackage.Literals.RECEIVE_PROTOCOL_ACTION__VARIABLE,
+                Type_protocolprefix_other.class, prefix_other, Type_expression.class, this::type_expression,
+                Type_nonfinalprotocol.class, type_nonfinalprotocol, gamma, first);
+        Environment gamma1 = p1.getA();
+        Type_bodyprotocol proof = p(Type_bodyprotocol.class, gamma, (gamma_) ->
+                p(Type_bodyprotocol.class, gamma1, (gamma1_) -> createType_bodyprotocol_generic(gamma_, first, gamma1_, p1.getB())));
+        return new Pair<>(gamma1, proof);
+    }
 
-	private String labelOf(ProtocolStatement s) {
-		if (s instanceof ValuingProtocol) {
-			return "value";
-		} else if (s instanceof RepeatProtocol) {
-			return "repeat";
-		} else if (s instanceof IfThenElseProtocol) {
-			return "if";
-		} else if (s instanceof ChooseProtocol) {
-			return "choose";
-		} else if (s instanceof ForEachProtocol) {
-			return "foreach";
-		} else if (s instanceof DoExprProtocol) {
-			return "do";
-		} else if (s instanceof DoneProtocol) {
-			return "done";
-		} else if (s instanceof ProtocolAction) {
-			return "via";
-		} else {
-			return "(unknown statement)";
-		}
-	}
+    protected Type_protocol type_protocol(Environment gamma, ProtocolDecl protocol) {
+        saveEnvironment(protocol, gamma);
+        String name = protocol.getName();
+        Protocol p = protocol.getBody();
+        if (name != null && p != null) {
+            EList<ProtocolStatement> l = p.getStatements();
+            Type_finalprotocol p1 = type_finalprotocol(gamma, l, p, 0);
+            return saveProof(protocol,
+                    p(Type_protocol.class, gamma, (gamma_) -> createType_ProtocolDecl(gamma_, name, l, p1)));
+        } else {
+            if (name == null) {
+                error("The protocol must have a name", protocol, SosADLPackage.Literals.PROTOCOL_DECL__NAME);
+            }
+            if (p == null) {
+                error("The protocol must have a body", protocol, SosADLPackage.Literals.PROTOCOL_DECL__BODY);
+            }
+            return null;
+        }
+    }
+
+    protected Type_assertion type_assertion(Environment gamma, AssertionDecl assertion) {
+        saveEnvironment(assertion, gamma);
+        String name = assertion.getName();
+        Protocol p = assertion.getBody();
+        if (name != null && p != null) {
+            EList<ProtocolStatement> l = p.getStatements();
+            Type_finalprotocol p1 = type_finalprotocol(gamma, l, p, 0);
+            return saveProof(assertion,
+                    p(Type_assertion.class, gamma, (gamma_) -> createType_AssertionDecl(gamma_, name, l, p1)));
+        } else {
+            if (name == null) {
+                error("The assertion must have a name", assertion, SosADLPackage.Literals.ASSERTION_DECL__NAME);
+            }
+            if (p == null) {
+                error("The assertion must have a body", assertion, SosADLPackage.Literals.ASSERTION_DECL__BODY);
+            }
+            return null;
+        }
+    }
+
+    private String labelOf(ProtocolStatement s) {
+        if (s instanceof ValuingProtocol) {
+            return "value";
+        } else if (s instanceof RepeatProtocol) {
+            return "repeat";
+        } else if (s instanceof IfThenElseProtocol) {
+            return "if";
+        } else if (s instanceof ChooseProtocol) {
+            return "choose";
+        } else if (s instanceof ForEachProtocol) {
+            return "foreach";
+        } else if (s instanceof DoExprProtocol) {
+            return "do";
+        } else if (s instanceof DoneProtocol) {
+            return "done";
+        } else if (s instanceof ProtocolAction) {
+            return "via";
+        } else {
+            return "(unknown statement " + s.getClass().getSimpleName() + ")";
+        }
+    }
 
 }
