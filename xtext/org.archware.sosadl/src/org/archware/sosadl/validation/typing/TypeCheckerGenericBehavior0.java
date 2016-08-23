@@ -247,7 +247,7 @@ public abstract class TypeCheckerGenericBehavior0 extends TypeCheckerConnectionN
                                                 tau__x, (tau__x_) ->
                                                         createType_generic_ForEach(block, action, choose, doExpr, forEach,
                                                                 ifThenElse, valuing, send, receive, other, type_expression, type_nonfinalbody,
-                                                                gamma_, x, c, tau_, tau__x_, b, p1, p2, subtype(((SequenceType) tau_).getType(), tau__x_, f,
+                                                                gamma_, x, c, ((SequenceType) tau_).getType(), tau__x_, b, p1, p2, subtype(((SequenceType) tau_).getType(), tau__x_, f,
                                                                         collectionFeature)
                                                                         .orElse(null)))));
                 return new Pair<>(gamma, saveProof(f, proof));

@@ -1975,7 +1975,6 @@ Inductive type_generic_prefixstatement
     forall (Gamma: env)
       (cn: SosADL.SosADL.t_ComplexName)
       (is_env: bool)
-      (conn: string)
       (mode: SosADL.SosADL.ModeType)
       (conn__tau: SosADL.SosADL.t_DataType)
       (x: string)

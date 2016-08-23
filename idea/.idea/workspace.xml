@@ -2,37 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="756d2e16-3b1c-4564-b6e2-6188ec42fe42" name="Default" comment="">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/proof/Type_bodyprefix_generic.java" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/proof/Type_bodyprefix_other.java" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/proof/Type_bodyprefix_Choose.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/proof/Type_bodyprefix_DoExpr.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/proof/Type_bodyprefix_ForEach.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/proof/Type_bodyprefix_IfThenElse.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/proof/Type_bodyprefix_Receive.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/proof/Type_bodyprefix_Send.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/proof/Type_bodyprefix_Valuing.java" afterPath="" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../types/coq/SosADL/TypeSystem.v" afterPath="$PROJECT_DIR$/../types/coq/SosADL/TypeSystem.v" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/TypeCheckerBehavior.java" afterPath="$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/TypeCheckerBehavior.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/TypeCheckerGenericBehavior.java" afterPath="$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/TypeCheckerGenericBehavior.java" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/TypeCheckerGenericBehavior0.java" afterPath="$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/TypeCheckerGenericBehavior0.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/TypeCheckerProofConstructor.java" afterPath="$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/TypeCheckerProofConstructor.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/proof/Type_generic_Choose.java" afterPath="$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/proof/Type_generic_Choose.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/proof/Type_generic_Choose_prefix.java" afterPath="$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/proof/Type_generic_Choose_prefix.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/proof/Type_generic_DoExpr.java" afterPath="$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/proof/Type_generic_DoExpr.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/proof/Type_generic_Done.java" afterPath="$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/proof/Type_generic_Done.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/proof/Type_generic_ForEach.java" afterPath="$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/proof/Type_generic_ForEach.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/proof/Type_generic_IfThenElse.java" afterPath="$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/proof/Type_generic_IfThenElse.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/proof/Type_generic_IfThenElse_prefix.java" afterPath="$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/proof/Type_generic_IfThenElse_prefix.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/proof/Type_generic_Receive.java" afterPath="$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/proof/Type_generic_Receive.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/proof/Type_generic_Repeat.java" afterPath="$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/proof/Type_generic_Repeat.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/proof/Type_generic_Send.java" afterPath="$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/proof/Type_generic_Send.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/proof/Type_generic_Valuing.java" afterPath="$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/proof/Type_generic_Valuing.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/proof/Type_generic_finalbody.java" afterPath="$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/proof/Type_generic_finalbody.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/proof/Type_generic_other.java" afterPath="$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/proof/Type_generic_other.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/proof/Type_generic_otherprefix.java" afterPath="$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/proof/Type_generic_otherprefix.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/proof/Type_generic_prefix.java" afterPath="$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/proof/Type_generic_prefix.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/proof/Type_generic_prefixstatement.java" afterPath="$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/proof/Type_generic_prefixstatement.java" />
     </list>
     <ignored path="xtext.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -58,23 +29,11 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="525">
-      <file leaf-file-name="TypeCheckerProtocol.java" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/TypeCheckerProtocol.java">
+      <file leaf-file-name="TypeCheckerGenericBehavior0.java" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/TypeCheckerGenericBehavior0.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="796">
-              <caret line="125" column="0" selection-start-line="80" selection-start-column="0" selection-end-line="125" selection-end-column="0" />
-              <folding>
-                <element signature="imports" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="TypeCheckerBehavior.java" pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/TypeCheckerBehavior.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="796">
-              <caret line="124" column="0" selection-start-line="124" selection-start-column="0" selection-end-line="124" selection-end-column="0" />
+            <state relative-caret-position="1200">
+              <caret line="249" column="109" selection-start-line="249" selection-start-column="109" selection-end-line="249" selection-end-column="109" />
               <folding />
             </state>
           </provider>
@@ -137,9 +96,9 @@
         <option value="$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/proof/Type_generic_Send.java" />
         <option value="$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/proof/Type_generic_Valuing.java" />
         <option value="$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/TypeCheckerProofConstructor.java" />
-        <option value="$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/TypeCheckerGenericBehavior0.java" />
         <option value="$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/TypeCheckerGenericBehavior.java" />
         <option value="$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/TypeCheckerBehavior.java" />
+        <option value="$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/TypeCheckerGenericBehavior0.java" />
       </list>
     </option>
   </component>
@@ -188,8 +147,6 @@
     </navigator>
     <panes>
       <pane id="Scope" />
-      <pane id="PackagesPane" />
-      <pane id="Scratches" />
       <pane id="ProjectPane">
         <subPane>
           <PATH>
@@ -208,8 +165,106 @@
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
           </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="xtext" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="org.archware.sosadl" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="src" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="archware" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="xtext" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="org.archware.sosadl" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="src" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="archware" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="sosadl" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="xtext" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="org.archware.sosadl" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="src" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="archware" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="sosadl" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="validation" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="xtext" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="org.archware.sosadl" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="src" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="archware" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="sosadl" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="validation" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="typing" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
         </subPane>
       </pane>
+      <pane id="Scratches" />
+      <pane id="PackagesPane" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -670,11 +725,12 @@
       <workItem from="1471957145080" duration="5022000" />
       <workItem from="1471966610027" duration="1013000" />
       <workItem from="1471975241314" duration="3306000" />
+      <workItem from="1471979335349" duration="463000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="41309000" />
+    <option name="totallyTimeSpent" value="41772000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="-1" y="27" width="3202" height="1574" extended-state="6" />
@@ -687,12 +743,12 @@
       <window_info id="Capture Analysis" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32761088" sideWeight="0.503868" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Maven Projects" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
-      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Capture Tool" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Designer" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
-      <window_info id="Project" active="true" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.249375" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.249375" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="Problems" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Database" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
@@ -739,10 +795,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="3450">
           <caret line="158" column="12" selection-start-line="158" selection-start-column="12" selection-end-line="158" selection-end-column="12" />
-          <folding>
-            <element signature="e#3624#3625#0" expanded="false" />
-            <element signature="e#3640#3641#0" expanded="false" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -750,7 +802,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -758,7 +809,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -788,7 +838,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="1258">
           <caret line="103" column="0" selection-start-line="103" selection-start-column="0" selection-end-line="103" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -796,7 +845,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -811,10 +859,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="795">
           <caret line="158" column="12" selection-start-line="158" selection-start-column="12" selection-end-line="158" selection-end-column="12" />
-          <folding>
-            <element signature="e#3624#3625#0" expanded="false" />
-            <element signature="e#3640#3641#0" expanded="false" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -822,7 +866,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -830,7 +873,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="120">
           <caret line="8" column="22" selection-start-line="8" selection-start-column="22" selection-end-line="8" selection-end-column="22" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -838,34 +880,14 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="817">
           <caret line="154" column="72" selection-start-line="154" selection-start-column="72" selection-end-line="154" selection-end-column="72" />
-          <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/proof/Type_bodyprefix_Send.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="120">
-          <caret line="11" column="13" selection-start-line="11" selection-start-column="13" selection-end-line="11" selection-end-column="13" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/TypeCheckerGenericBehavior1.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="444">
-          <caret line="15" column="30" selection-start-line="15" selection-start-column="30" selection-end-line="15" selection-end-column="30" />
-          <folding>
-            <element signature="imports" expanded="false" />
-            <element signature="e#1360#1390#1" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
+    <entry file="file://$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/proof/Type_bodyprefix_Send.java" />
     <entry file="file://$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/TypeChecker.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="540">
           <caret line="403" column="44" selection-start-line="403" selection-start-column="44" selection-end-line="403" selection-end-column="44" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -901,22 +923,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="780">
           <caret line="33" column="170" selection-start-line="33" selection-start-column="11" selection-end-line="33" selection-end-column="170" />
-          <folding>
-            <element signature="e#1213#1214#0" expanded="false" />
-            <element signature="e#1241#1242#0" expanded="false" />
-            <element signature="e#1275#1276#0" expanded="false" />
-            <element signature="e#1300#1301#0" expanded="false" />
-            <element signature="e#1331#1332#0" expanded="false" />
-            <element signature="e#1360#1361#0" expanded="false" />
-            <element signature="e#1393#1394#0" expanded="false" />
-            <element signature="e#1420#1421#0" expanded="false" />
-            <element signature="e#1458#1459#0" expanded="false" />
-            <element signature="e#1490#1491#0" expanded="false" />
-            <element signature="e#1532#1533#0" expanded="false" />
-            <element signature="e#1557#1558#0" expanded="false" />
-            <element signature="e#1592#1593#0" expanded="false" />
-            <element signature="e#1617#1618#0" expanded="false" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -945,9 +951,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="720">
           <caret line="24" column="30" selection-start-line="24" selection-start-column="30" selection-end-line="24" selection-end-column="30" />
-          <folding>
-            <element signature="imports" expanded="false" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -955,7 +958,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -963,7 +965,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="180">
           <caret line="6" column="80" selection-start-line="6" selection-start-column="80" selection-end-line="6" selection-end-column="80" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -971,14 +972,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="510">
           <caret line="18" column="351" selection-start-line="18" selection-start-column="11" selection-end-line="18" selection-end-column="351" />
-          <folding>
-            <element signature="e#1160#1161#0" expanded="true" />
-            <element signature="e#1188#1189#0" expanded="true" />
-            <element signature="e#1227#1228#0" expanded="true" />
-            <element signature="e#1251#1252#0" expanded="true" />
-            <element signature="e#1289#1290#0" expanded="true" />
-            <element signature="e#1318#1319#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -986,7 +979,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="120">
           <caret line="6" column="194" selection-start-line="6" selection-start-column="194" selection-end-line="6" selection-end-column="194" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -994,7 +986,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="120">
           <caret line="6" column="320" selection-start-line="6" selection-start-column="320" selection-end-line="6" selection-end-column="320" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -1002,7 +993,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="120">
           <caret line="7" column="0" selection-start-line="7" selection-start-column="0" selection-end-line="7" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -1010,7 +1000,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="120">
           <caret line="5" column="200" selection-start-line="5" selection-start-column="200" selection-end-line="5" selection-end-column="200" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -1018,7 +1007,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="150">
           <caret line="6" column="0" selection-start-line="6" selection-start-column="0" selection-end-line="6" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -1026,7 +1014,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="150">
           <caret line="5" column="0" selection-start-line="5" selection-start-column="0" selection-end-line="5" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -1034,7 +1021,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="270">
           <caret line="13" column="31" selection-start-line="13" selection-start-column="31" selection-end-line="13" selection-end-column="31" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -1042,7 +1028,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="180">
           <caret line="9" column="0" selection-start-line="9" selection-start-column="0" selection-end-line="9" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -1050,7 +1035,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="180">
           <caret line="9" column="0" selection-start-line="9" selection-start-column="0" selection-end-line="9" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -1058,7 +1042,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="150">
           <caret line="5" column="0" selection-start-line="5" selection-start-column="0" selection-end-line="5" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -1066,7 +1049,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="120">
           <caret line="6" column="13" selection-start-line="6" selection-start-column="13" selection-end-line="6" selection-end-column="13" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -1074,7 +1056,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="180">
           <caret line="7" column="0" selection-start-line="7" selection-start-column="0" selection-end-line="7" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -1082,7 +1063,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="180">
           <caret line="7" column="0" selection-start-line="7" selection-start-column="0" selection-end-line="7" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -1090,7 +1070,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="180">
           <caret line="8" column="0" selection-start-line="8" selection-start-column="0" selection-end-line="8" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -1098,7 +1077,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="180">
           <caret line="14" column="0" selection-start-line="14" selection-start-column="0" selection-end-line="14" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -1106,7 +1084,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="120">
           <caret line="6" column="194" selection-start-line="6" selection-start-column="194" selection-end-line="6" selection-end-column="194" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -1114,7 +1091,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="180">
           <caret line="11" column="0" selection-start-line="11" selection-start-column="0" selection-end-line="11" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -1122,7 +1098,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="180">
           <caret line="10" column="0" selection-start-line="10" selection-start-column="0" selection-end-line="10" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -1130,15 +1105,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="1254">
           <caret line="684" column="0" selection-start-line="684" selection-start-column="0" selection-end-line="684" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/TypeCheckerGenericBehavior0.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="796">
-          <caret line="381" column="0" selection-start-line="381" selection-start-column="0" selection-end-line="381" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -1146,13 +1112,20 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="120">
           <caret line="169" column="166" selection-start-line="169" selection-start-column="166" selection-end-line="169" selection-end-column="166" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/TypeCheckerBehavior.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="299">
+          <caret line="124" column="0" selection-start-line="124" selection-start-column="0" selection-end-line="124" selection-end-column="0" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/TypeCheckerProtocol.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="796">
+        <state relative-caret-position="30">
           <caret line="125" column="0" selection-start-line="80" selection-start-column="0" selection-end-line="125" selection-end-column="0" />
           <folding>
             <element signature="imports" expanded="true" />
@@ -1160,10 +1133,18 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/TypeCheckerBehavior.java">
+    <entry file="file://$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/TypeCheckerGenericBehavior1.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="796">
-          <caret line="124" column="0" selection-start-line="124" selection-start-column="0" selection-end-line="124" selection-end-column="0" />
+        <state relative-caret-position="270">
+          <caret line="15" column="30" selection-start-line="15" selection-start-column="30" selection-end-line="15" selection-end-column="30" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../xtext/org.archware.sosadl/src/org/archware/sosadl/validation/typing/TypeCheckerGenericBehavior0.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1200">
+          <caret line="249" column="109" selection-start-line="249" selection-start-column="109" selection-end-line="249" selection-end-column="109" />
           <folding />
         </state>
       </provider>
