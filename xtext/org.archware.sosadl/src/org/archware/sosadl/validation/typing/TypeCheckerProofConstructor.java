@@ -771,23 +771,31 @@ public abstract class TypeCheckerProofConstructor extends TypeCheckerInference {
 
     protected <Body extends EObject, Statement extends EObject, Command extends EObject, Action extends EObject, Choose extends EObject, DoExpr extends EObject, ForEach extends EObject, IfThenElse extends EObject, Valuin extends EObject, Send extends EObject, Receive extends EObject, O extends ProofTerm, E extends ProofTerm, NP extends ProofTerm>
     Type_generic_prefixstatement<Body, Statement, Command, Action, Choose, DoExpr, ForEach, IfThenElse, Valuin, Send, Receive, O, E, NP>
-    createType_generic_Send(String block, Class<Action> action, Class<Choose> choose, Class<DoExpr> doExpr, Class<ForEach> forEach, Class<IfThenElse> ifThenElse, Class<Valuin> valuing, Class<Send> send, Class<Receive> receive, Class<O> other, Class<E> type_expression, Class<NP> type_nonfinalbody, Environment gamma, String gd, EList<Connection> endpoints, boolean is_env, String conn, ModeType mode, DataType conn__tau, Expression e, DataType tau__e, Equality p1, Ex<BigInteger, Equality> p2, Mode_send p3, E p4, Subtype p5) {
+    createType_generic_Send(String block, Class<Action> action, Class<Choose> choose, Class<DoExpr> doExpr, Class<ForEach> forEach, Class<IfThenElse> ifThenElse, Class<Valuin> valuing, Class<Send> send, Class<Receive> receive, Class<O> other, Class<E> type_expression, Class<NP> type_nonfinalbody, Environment gamma, ComplexName cn, boolean is_env, ModeType mode, DataType conn__tau, Expression e, DataType tau__e, Type_connectionname p1, Mode_send p2, E p3, Subtype p4) {
         return new Type_generic_Send<>(block, action, choose, doExpr, forEach, ifThenElse, valuing, send,
-                receive, other, type_expression, type_nonfinalbody, gamma, gd, endpoints, is_env, conn, mode, conn__tau, e, tau__e, p1, p2, p3, p4, p5);
+                receive, other, type_expression, type_nonfinalbody, gamma, cn, is_env, mode, conn__tau, e, tau__e, p1, p2, p3, p4);
     }
 
     protected <Body extends EObject, Statement extends EObject, Command extends EObject, Action extends EObject, Choose extends EObject, DoExpr extends EObject, ForEach extends EObject, IfThenElse extends EObject, Valuin extends EObject, Send extends EObject, Receive extends EObject, O extends ProofTerm, E extends ProofTerm, NP extends ProofTerm>
     Type_generic_prefixstatement<Body, Statement, Command, Action, Choose, DoExpr, ForEach, IfThenElse, Valuin, Send, Receive, O, E, NP>
-    createType_generic_Receive(String block, Class<Action> action, Class<Choose> choose, Class<DoExpr> doExpr, Class<ForEach> forEach, Class<IfThenElse> ifThenElse, Class<Valuin> valuing, Class<Send> send, Class<Receive> receive, Class<O> other, Class<E> type_expression, Class<NP> type_nonfinalbody, Environment gamma, String gd, EList<Connection> endpoints, boolean is_env, String conn, ModeType mode, DataType conn__tau, String x, Environment gamma1, Equality p1, Ex<BigInteger, Equality> p2, Mode_receive p3, Equality p4) {
+    createType_generic_Receive(String block, Class<Action> action, Class<Choose> choose, Class<DoExpr> doExpr, Class<ForEach> forEach, Class<IfThenElse> ifThenElse, Class<Valuin> valuing, Class<Send> send, Class<Receive> receive, Class<O> other, Class<E> type_expression, Class<NP> type_nonfinalbody, Environment gamma, ComplexName cn, boolean is_env, ModeType mode, DataType conn__tau, String x, Environment gamma1, Type_connectionname p1, Mode_receive p2, Equality p3) {
         return new Type_generic_Receive<>(block, action, choose, doExpr, forEach, ifThenElse, valuing, send,
-                receive, other, type_expression, type_nonfinalbody, gamma, gd, endpoints, is_env, conn, mode, conn__tau, x, gamma1, p1, p2, p3, p4);
+                receive, other, type_expression, type_nonfinalbody, gamma, cn, is_env, mode, conn__tau, x, gamma1, p1, p2, p3);
     }
 
     protected Type_bodyprotocol createType_bodyprotocol_generic(Environment gamma, ProtocolStatement s, Environment gamma1, Type_generic_prefixstatement<Protocol, ProtocolStatement, ProtocolActionSuite, ProtocolAction, ChooseProtocol, DoExprProtocol, ForEachProtocol, IfThenElseProtocol, ValuingProtocol, SendProtocolAction, ReceiveProtocolAction, Type_protocolprefix_other, Type_expression, Type_nonfinalprotocol> p1) {
         return new Type_bodyprotocol_generic(gamma, s, gamma1, p1);
     }
 
-    protected Type_protocolprefix_other createType_protocolprefix_ReceiveAny(Environment gamma, String gd, EList<Connection> endpoints, boolean is_env, String conn, ModeType mode, DataType conn__tau, Equality p1, Ex<BigInteger, Equality> p2, Mode_receive p3) {
-        return new Type_protocolprefix_ReceiveAny(gamma, gd, endpoints, is_env, conn, mode, conn__tau, p1, p2, p3);
+    protected Type_protocolprefix_other createType_protocolprefix_ReceiveAny(Environment gamma, ComplexName cn, boolean is_env, ModeType mode, DataType conn__tau, Type_connectionname p1, Mode_receive p2) {
+        return new Type_protocolprefix_ReceiveAny(gamma, cn, is_env, mode, conn__tau, p1, p2);
+    }
+
+    protected Type_connectionname createType_connectionname_qualified(Environment gamma, String gd, EList<Connection> endpoints, boolean is_env, String conn, ModeType mode, DataType conn__tau, Equality p1, Ex<BigInteger, Equality> p2) {
+        return new Type_connectionname_qualified(gamma, gd, endpoints, is_env, conn, mode, conn__tau, p1, p2);
+    }
+
+    protected Type_connectionname createType_connectionname_simple(Environment gamma, boolean is_env, String conn, ModeType mode, DataType conn__tau, Equality p1) {
+        return new Type_connectionname_simple(gamma, is_env, conn, mode, conn__tau, p1);
     }
 }

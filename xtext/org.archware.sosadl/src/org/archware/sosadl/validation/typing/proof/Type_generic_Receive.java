@@ -1,5 +1,6 @@
 package org.archware.sosadl.validation.typing.proof;
 
+import org.archware.sosadl.sosADL.ComplexName;
 import org.archware.sosadl.sosADL.Connection;
 import org.archware.sosadl.sosADL.DataType;
 import org.archware.sosadl.sosADL.ModeType;
@@ -64,15 +65,10 @@ public class Type_generic_Receive<Body extends EObject, Statement extends EObjec
     private final Environment gamma;
 
     @Mandatory
-    private final String gd;
-
-    private final EList<Connection> endpoints;
+    private final ComplexName cn;
 
     @Mandatory
     private final boolean is_env;
-
-    @Mandatory
-    private final String conn;
 
     @Mandatory
     private final ModeType mode;
@@ -87,18 +83,15 @@ public class Type_generic_Receive<Body extends EObject, Statement extends EObjec
     private final Environment gamma1;
 
     @Mandatory
-    private final Equality p1;
+    private final Type_connectionname p1;
 
     @Mandatory
-    private final Ex<BigInteger, Equality> p2;
+    private final Mode_receive p2;
 
     @Mandatory
-    private final Mode_receive p3;
+    private final Equality p3;
 
-    @Mandatory
-    private final Equality p4;
-
-    public Type_generic_Receive(String block, Class<Action> action, Class<Choose> choose, Class<DoExpr> doExpr, Class<ForEach> forEach, Class<IfThenElse> ifThenElse, Class<Valuin> valuing, Class<Send> send, Class<Receive> receive, Class<O> other, Class<E> type_expression, Class<NP> type_nonfinalbody, Environment gamma, String gd, EList<Connection> endpoints, boolean is_env, String conn, ModeType mode, DataType conn__tau, String x, Environment gamma1, Equality p1, Ex<BigInteger, Equality> p2, Mode_receive p3, Equality p4) {
+    public Type_generic_Receive(String block, Class<Action> action, Class<Choose> choose, Class<DoExpr> doExpr, Class<ForEach> forEach, Class<IfThenElse> ifThenElse, Class<Valuin> valuing, Class<Send> send, Class<Receive> receive, Class<O> other, Class<E> type_expression, Class<NP> type_nonfinalbody, Environment gamma, ComplexName cn, boolean is_env, ModeType mode, DataType conn__tau, String x, Environment gamma1, Type_connectionname p1, Mode_receive p2, Equality p3) {
         this.block = block;
         this.action = action;
         this.choose = choose;
@@ -112,10 +105,8 @@ public class Type_generic_Receive<Body extends EObject, Statement extends EObjec
         this.type_expression = type_expression;
         this.type_nonfinalbody = type_nonfinalbody;
         this.gamma = gamma;
-        this.gd = gd;
-        this.endpoints = endpoints;
+        this.cn = cn;
         this.is_env = is_env;
-        this.conn = conn;
         this.mode = mode;
         this.conn__tau = conn__tau;
         this.x = x;
@@ -123,7 +114,6 @@ public class Type_generic_Receive<Body extends EObject, Statement extends EObjec
         this.p1 = p1;
         this.p2 = p2;
         this.p3 = p3;
-        this.p4 = p4;
     }
 
     public String getBlock() {
@@ -178,20 +168,12 @@ public class Type_generic_Receive<Body extends EObject, Statement extends EObjec
         return gamma;
     }
 
-    public String getGd() {
-        return gd;
-    }
-
-    public EList<Connection> getEndpoints() {
-        return endpoints;
+    public ComplexName getCn() {
+        return cn;
     }
 
     public boolean is_env() {
         return is_env;
-    }
-
-    public String getConn() {
-        return conn;
     }
 
     public ModeType getMode() {
@@ -210,19 +192,15 @@ public class Type_generic_Receive<Body extends EObject, Statement extends EObjec
         return gamma1;
     }
 
-    public Equality getP1() {
+    public Type_connectionname getP1() {
         return p1;
     }
 
-    public Ex<BigInteger, Equality> getP2() {
+    public Mode_receive getP2() {
         return p2;
     }
 
-    public Mode_receive getP3() {
+    public Equality getP3() {
         return p3;
-    }
-
-    public Equality getP4() {
-        return p4;
     }
 }

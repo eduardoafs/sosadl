@@ -1,9 +1,6 @@
 package org.archware.sosadl.validation.typing.proof;
 
-import org.archware.sosadl.sosADL.Connection;
-import org.archware.sosadl.sosADL.DataType;
-import org.archware.sosadl.sosADL.Expression;
-import org.archware.sosadl.sosADL.ModeType;
+import org.archware.sosadl.sosADL.*;
 import org.archware.sosadl.validation.typing.Environment;
 import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.ecore.EObject;
@@ -65,15 +62,10 @@ public class Type_generic_Send<Body extends EObject, Statement extends EObject, 
 	private final Environment gamma;
 
 	@Mandatory
-	private final String gd;
-
-    private final EList<Connection> endpoints;
+	private final ComplexName cn;
 
     @Mandatory
     private final boolean is_env;
-
-    @Mandatory
-    private final String conn;
 
     @Mandatory
     private final ModeType mode;
@@ -88,21 +80,18 @@ public class Type_generic_Send<Body extends EObject, Statement extends EObject, 
     private final DataType tau__e;
 
     @Mandatory
-    private final Equality p1;
+    private final Type_connectionname p1;
 
     @Mandatory
-    private final Ex<BigInteger, Equality> p2;
+    private final Mode_send p2;
 
     @Mandatory
-    private final Mode_send p3;
+    private final E p3;
 
     @Mandatory
-    private final E p4;
+    private final Subtype p4;
 
-    @Mandatory
-    private final Subtype p5;
-
-    public Type_generic_Send(String block, Class<Action> action, Class<Choose> choose, Class<DoExpr> doExpr, Class<ForEach> forEach, Class<IfThenElse> ifThenElse, Class<Valuin> valuing, Class<Send> send, Class<Receive> receive, Class<O> other, Class<E> type_expression, Class<NP> type_nonfinalbody, Environment gamma, String gd, EList<Connection> endpoints, boolean is_env, String conn, ModeType mode, DataType conn__tau, Expression e, DataType tau__e, Equality p1, Ex<BigInteger, Equality> p2, Mode_send p3, E p4, Subtype p5) {
+    public Type_generic_Send(String block, Class<Action> action, Class<Choose> choose, Class<DoExpr> doExpr, Class<ForEach> forEach, Class<IfThenElse> ifThenElse, Class<Valuin> valuing, Class<Send> send, Class<Receive> receive, Class<O> other, Class<E> type_expression, Class<NP> type_nonfinalbody, Environment gamma, ComplexName cn, boolean is_env, ModeType mode, DataType conn__tau, Expression e, DataType tau__e, Type_connectionname p1, Mode_send p2, E p3, Subtype p4) {
         this.block = block;
         this.action = action;
         this.choose = choose;
@@ -116,10 +105,8 @@ public class Type_generic_Send<Body extends EObject, Statement extends EObject, 
         this.type_expression = type_expression;
         this.type_nonfinalbody = type_nonfinalbody;
         this.gamma = gamma;
-        this.gd = gd;
-        this.endpoints = endpoints;
+        this.cn = cn;
         this.is_env = is_env;
-        this.conn = conn;
         this.mode = mode;
         this.conn__tau = conn__tau;
         this.e = e;
@@ -128,7 +115,6 @@ public class Type_generic_Send<Body extends EObject, Statement extends EObject, 
         this.p2 = p2;
         this.p3 = p3;
         this.p4 = p4;
-        this.p5 = p5;
     }
 
     public String getBlock() {
@@ -183,20 +169,12 @@ public class Type_generic_Send<Body extends EObject, Statement extends EObject, 
         return gamma;
     }
 
-    public String getGd() {
-        return gd;
-    }
-
-    public EList<Connection> getEndpoints() {
-        return endpoints;
+    public ComplexName getCn() {
+        return cn;
     }
 
     public boolean is_env() {
         return is_env;
-    }
-
-    public String getConn() {
-        return conn;
     }
 
     public ModeType getMode() {
@@ -215,23 +193,19 @@ public class Type_generic_Send<Body extends EObject, Statement extends EObject, 
         return tau__e;
     }
 
-    public Equality getP1() {
+    public Type_connectionname getP1() {
         return p1;
     }
 
-    public Ex<BigInteger, Equality> getP2() {
+    public Mode_send getP2() {
         return p2;
     }
 
-    public Mode_send getP3() {
+    public E getP3() {
         return p3;
     }
 
-    public E getP4() {
+    public Subtype getP4() {
         return p4;
-    }
-
-    public Subtype getP5() {
-        return p5;
     }
 }

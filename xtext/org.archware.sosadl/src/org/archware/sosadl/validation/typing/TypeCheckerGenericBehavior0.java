@@ -7,25 +7,22 @@ As of the last tests, Eclipse is specifically bad at handling files containing g
 
 import org.archware.sosadl.sosADL.*;
 import org.archware.sosadl.tv.typeCheckerHelper.TypeVariable;
-import org.archware.sosadl.validation.typing.impl.GateOrDutyEnvContent;
 import org.archware.sosadl.validation.typing.impl.VariableEnvContent;
 import org.archware.sosadl.validation.typing.proof.*;
-import org.archware.utils.EndecaFunction;
-import org.archware.utils.IntPair;
+import org.archware.utils.OctaFunction;
 import org.archware.utils.Pair;
-import org.archware.utils.StreamUtils;
+import org.archware.utils.Quadruplet;
 import org.eclipse.emf.common.util.ECollections;
 import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EStructuralFeature;
 
-import java.math.BigInteger;
 import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public abstract class TypeCheckerGenericBehavior0 extends TypeCheckerValuing {
+public abstract class TypeCheckerGenericBehavior0 extends TypeCheckerConnectionName {
 
     protected <Body extends EObject, Statement extends EObject, Command extends EObject, Action extends EObject, Choose extends EObject, DoExpr extends EObject, ForEach extends EObject, IfThenElse extends EObject, Valuin extends EObject, Send extends EObject, Receive extends EObject, O extends ProofTerm, E extends ProofTerm, NP extends ProofTerm> Pair<Environment, Type_generic_prefixstatement<Body, Statement, Command, Action, Choose, DoExpr, ForEach, IfThenElse, Valuin, Send, Receive, O, E, NP>> type_generic_prefix(
             @SuppressWarnings("unused") Class<Body> body, @SuppressWarnings("unused") Class<Statement> statement,
@@ -71,44 +68,14 @@ public abstract class TypeCheckerGenericBehavior0 extends TypeCheckerValuing {
     R genericAction(Function<Action, ComplexName> getComplexName, EStructuralFeature complexNameFeature,
                     Function<Action, Command> getCommand, EStructuralFeature commandFeature,
                     Environment gamma, Action a,
-                    EndecaFunction<Environment, Action, ComplexName, Command, String, String, EList<Connection>, BigInteger, Boolean, ModeType, DataType, R> doIt) {
+                    OctaFunction<Environment, Action, ComplexName, Command, Type_connectionname, Boolean, ModeType, DataType, R> doIt) {
         ComplexName cn = getComplexName.apply(a);
         Command as = getCommand.apply(a);
         if (cn != null && as != null) {
-            if (cn.getName().size() == 2) {
-                String gd = cn.getName().get(0);
-                String conn = cn.getName().get(1);
-                EnvContent gdEc = gamma.get(gd);
-                if (gdEc != null) {
-                    if (gdEc instanceof GateOrDutyEnvContent) {
-                        GateOrDutyEnvContent ec = (GateOrDutyEnvContent) gdEc;
-                        EList<Connection> endpoints = ec.getConnections();
-                        Pair<BigInteger, Connection> rankedConnection = lookupForConnection(endpoints, conn);
-                        if (rankedConnection != null) {
-                            BigInteger rank = rankedConnection.getA();
-                            Connection connection = rankedConnection.getB();
-                            boolean is_env = connection.isEnvironment();
-                            ModeType mode = connection.getMode();
-                            DataType conn__tau = connection.getValueType();
-                            if (mode != null && conn__tau != null) {
-                                return doIt.apply(gamma, a, cn, as, gd, conn, endpoints, rank, is_env, mode, conn__tau);
-                            } else {
-                                throw new IllegalArgumentException();
-                            }
-                        } else {
-                            error("No connection named `" + conn + "' in gate or duty `" + gd + "'", cn, SosADLPackage.Literals.COMPLEX_NAME__NAME, 1);
-                            return null;
-                        }
-                    } else {
-                        error("`" + gd + "' is neither a gate nor a duty", cn, SosADLPackage.Literals.COMPLEX_NAME__NAME, 0);
-                        return null;
-                    }
-                } else {
-                    error("Gate or duty named `" + gd + "' is undefined", cn, SosADLPackage.Literals.COMPLEX_NAME__NAME, 0);
-                    return null;
-                }
+            Quadruplet<Type_connectionname, Boolean, ModeType, DataType> q = type_connectionname(gamma, cn);
+            if (q != null) {
+                return doIt.apply(gamma, a, cn, as, q.getA(), q.getB(), q.getC(), q.getD());
             } else {
-                error("`via' must be followed by a name of form `<gate-or-duty> :: <connection>'", a, complexNameFeature);
                 return null;
             }
         } else {
@@ -127,26 +94,26 @@ public abstract class TypeCheckerGenericBehavior0 extends TypeCheckerValuing {
             O extends ProofTerm, E extends ProofTerm, NP extends ProofTerm>
     Pair<Environment, Type_generic_prefixstatement<Body, Statement, Command, Action, Choose, DoExpr, ForEach, IfThenElse, Valuin, Send, Receive, O, E, NP>>
     genericAction(String block, Class<Action> action, Function<Action, ComplexName> getComplexName, EStructuralFeature complexNameFeature, Function<Action, Command> getCommand, EStructuralFeature commandFeature, Class<Choose> choose, Class<DoExpr> doExpr, Class<ForEach> forEach, Class<IfThenElse> ifThenElse, Class<Valuin> valuing, Class<Send> send, Function<Send, Expression> getValue, EStructuralFeature valueFeature, Class<Receive> receive, Function<Receive, String> getName, EStructuralFeature nameFeature, Class<O> other, BiFunction<Environment, Statement, Pair<Environment, O>> proveOther, Class<E> type_expression, BiFunction<Environment, Expression, Pair<E, DataType>> proveType_expression, Class<NP> type_nonfinalbody, Environment gamma, Statement s, Action a) {
-        EndecaFunction<Environment, Action, ComplexName, Command, String, String, EList<Connection>, BigInteger, Boolean, ModeType, DataType,
+        OctaFunction<Environment, Action, ComplexName, Command, Type_connectionname, Boolean, ModeType, DataType,
                 Pair<Environment, Type_generic_prefixstatement<Body, Statement, Command, Action, Choose, DoExpr, ForEach, IfThenElse, Valuin, Send, Receive, O, E, NP>>> doIt =
-                (gamma_, a_, cn, as, gd, conn, endpoints, rank, is_env, mode, conn__tau) -> doSendReceive(block, action, choose, doExpr, forEach, ifThenElse, valuing, send, getValue, valueFeature, receive, getName, nameFeature, other, proveOther, type_expression, proveType_expression, type_nonfinalbody, gamma_, s, a_, cn, as, gd, conn, endpoints, rank, is_env, mode, conn__tau);
+                (gamma_, a_, cn, as, p1, is_env, mode, conn__tau) -> doSendReceive(block, action, choose, doExpr, forEach, ifThenElse, valuing, send, getValue, valueFeature, receive, getName, nameFeature, other, proveOther, type_expression, proveType_expression, type_nonfinalbody, gamma_, s, a_, cn, as, p1, is_env, mode, conn__tau);
         return genericAction(getComplexName, complexNameFeature, getCommand, commandFeature, gamma, a, doIt);
     }
 
-    private <Body extends EObject, Statement extends EObject, Command extends EObject, Action extends EObject, Choose extends EObject, DoExpr extends EObject, ForEach extends EObject, IfThenElse extends EObject, Valuin extends EObject, Send extends EObject, Receive extends EObject, O extends ProofTerm, E extends ProofTerm, NP extends ProofTerm> Pair<Environment, Type_generic_prefixstatement<Body, Statement, Command, Action, Choose, DoExpr, ForEach, IfThenElse, Valuin, Send, Receive, O, E, NP>> doSendReceive(String block, Class<Action> action, Class<Choose> choose, Class<DoExpr> doExpr, Class<ForEach> forEach, Class<IfThenElse> ifThenElse, Class<Valuin> valuing, Class<Send> send, Function<Send, Expression> getValue, EStructuralFeature valueFeature, Class<Receive> receive, Function<Receive, String> getName, EStructuralFeature nameFeature, Class<O> other, BiFunction<Environment, Statement, Pair<Environment, O>> proveOther, Class<E> type_expression, BiFunction<Environment, Expression, Pair<E, DataType>> proveType_expression, Class<NP> type_nonfinalbody, Environment gamma, Statement s, Action a, ComplexName cn, Command as, String gd, String conn, EList<Connection> endpoints, BigInteger rank, boolean is_env, ModeType mode, DataType conn__tau) {
+    private <Body extends EObject, Statement extends EObject, Command extends EObject, Action extends EObject, Choose extends EObject, DoExpr extends EObject, ForEach extends EObject, IfThenElse extends EObject, Valuin extends EObject, Send extends EObject, Receive extends EObject, O extends ProofTerm, E extends ProofTerm, NP extends ProofTerm> Pair<Environment, Type_generic_prefixstatement<Body, Statement, Command, Action, Choose, DoExpr, ForEach, IfThenElse, Valuin, Send, Receive, O, E, NP>> doSendReceive(String block, Class<Action> action, Class<Choose> choose, Class<DoExpr> doExpr, Class<ForEach> forEach, Class<IfThenElse> ifThenElse, Class<Valuin> valuing, Class<Send> send, Function<Send, Expression> getValue, EStructuralFeature valueFeature, Class<Receive> receive, Function<Receive, String> getName, EStructuralFeature nameFeature, Class<O> other, BiFunction<Environment, Statement, Pair<Environment, O>> proveOther, Class<E> type_expression, BiFunction<Environment, Expression, Pair<E, DataType>> proveType_expression, Class<NP> type_nonfinalbody, Environment gamma, Statement s, Action a, ComplexName cn, Command as, Type_connectionname p1, boolean is_env, ModeType mode, DataType conn__tau) {
         if (send.isInstance(as)) {
-            return genericSend(block, action, choose, doExpr, forEach, ifThenElse, valuing, send, getValue, valueFeature, receive, other, type_expression, proveType_expression, type_nonfinalbody, gamma, a, cn, gd, conn, endpoints, rank, is_env, mode, conn__tau, send.cast(as));
+            return genericSend(block, action, choose, doExpr, forEach, ifThenElse, valuing, send, getValue, valueFeature, receive, other, type_expression, proveType_expression, type_nonfinalbody, gamma, a, cn, p1, is_env, mode, conn__tau, send.cast(as));
         } else if (receive.isInstance(as)) {
-            return genericReceive(block, action, choose, doExpr, forEach, ifThenElse, valuing, send, receive, getName, nameFeature, other, type_expression, type_nonfinalbody, gamma, a, cn, gd, conn, endpoints, rank, is_env, mode, conn__tau, receive.cast(as));
+            return genericReceive(block, action, choose, doExpr, forEach, ifThenElse, valuing, send, receive, getName, nameFeature, other, type_expression, type_nonfinalbody, gamma, a, cn, p1, is_env, mode, conn__tau, receive.cast(as));
         } else {
             return genericOther(block, action, choose, doExpr, forEach, ifThenElse, valuing, send, receive, other, proveOther, type_expression, type_nonfinalbody, gamma, s);
         }
     }
 
-    private <Body extends EObject, Statement extends EObject, Command extends EObject, Action extends EObject, Choose extends EObject, DoExpr extends EObject, ForEach extends EObject, IfThenElse extends EObject, Valuin extends EObject, Send extends EObject, Receive extends EObject, O extends ProofTerm, E extends ProofTerm, NP extends ProofTerm> Pair<Environment, Type_generic_prefixstatement<Body, Statement, Command, Action, Choose, DoExpr, ForEach, IfThenElse, Valuin, Send, Receive, O, E, NP>> genericReceive(String block, Class<Action> action, Class<Choose> choose, Class<DoExpr> doExpr, Class<ForEach> forEach, Class<IfThenElse> ifThenElse, Class<Valuin> valuing, Class<Send> send, Class<Receive> receive, Function<Receive, String> getName, EStructuralFeature nameFeature, Class<O> other, Class<E> type_expression, Class<NP> type_nonfinalbody, Environment gamma, Action a, ComplexName cn, String gd, String conn, EList<Connection> endpoints, BigInteger rank, boolean is_env, ModeType mode, DataType conn__tau, Receive ra) {
+    private <Body extends EObject, Statement extends EObject, Command extends EObject, Action extends EObject, Choose extends EObject, DoExpr extends EObject, ForEach extends EObject, IfThenElse extends EObject, Valuin extends EObject, Send extends EObject, Receive extends EObject, O extends ProofTerm, E extends ProofTerm, NP extends ProofTerm> Pair<Environment, Type_generic_prefixstatement<Body, Statement, Command, Action, Choose, DoExpr, ForEach, IfThenElse, Valuin, Send, Receive, O, E, NP>> genericReceive(String block, Class<Action> action, Class<Choose> choose, Class<DoExpr> doExpr, Class<ForEach> forEach, Class<IfThenElse> ifThenElse, Class<Valuin> valuing, Class<Send> send, Class<Receive> receive, Function<Receive, String> getName, EStructuralFeature nameFeature, Class<O> other, Class<E> type_expression, Class<NP> type_nonfinalbody, Environment gamma, Action a, ComplexName cn, Type_connectionname p1, boolean is_env, ModeType mode, DataType conn__tau, Receive ra) {
         String x = getName.apply(ra);
         if (x != null) {
-            Mode_receive p3 = proveReceiveMode(mode, conn, cn);
+            Mode_receive p3 = proveReceiveMode(mode, cn);
             if (p3 != null) {
                 Environment gamma1 = gamma.put(x, new VariableEnvContent(ra, conn__tau));
                 @SuppressWarnings("unchecked")
@@ -158,9 +125,8 @@ public abstract class TypeCheckerGenericBehavior0 extends TypeCheckerValuing {
                                                 gamma1, (gamma1_) ->
                                                         createType_generic_Receive(block, action, choose, doExpr, forEach,
                                                                 ifThenElse, valuing, send, receive, other, type_expression, type_nonfinalbody,
-                                                                gamma_, gd, endpoints, is_env, conn,
-                                                                mode, conn__tau_, x, gamma1_, createReflexivity(),
-                                                                createEx_intro(rank, createReflexivity()), p3, createReflexivity()))));
+                                                                gamma_, cn, is_env,
+                                                                mode, conn__tau_, x, gamma1_, p1, p3, createReflexivity()))));
                 return new Pair<>(gamma1, saveProof(a, proof));
             } else {
                 return null;
@@ -171,10 +137,10 @@ public abstract class TypeCheckerGenericBehavior0 extends TypeCheckerValuing {
         }
     }
 
-    private <Body extends EObject, Statement extends EObject, Command extends EObject, Action extends EObject, Choose extends EObject, DoExpr extends EObject, ForEach extends EObject, IfThenElse extends EObject, Valuin extends EObject, Send extends EObject, Receive extends EObject, O extends ProofTerm, E extends ProofTerm, NP extends ProofTerm> Pair<Environment, Type_generic_prefixstatement<Body, Statement, Command, Action, Choose, DoExpr, ForEach, IfThenElse, Valuin, Send, Receive, O, E, NP>> genericSend(String block, Class<Action> action, Class<Choose> choose, Class<DoExpr> doExpr, Class<ForEach> forEach, Class<IfThenElse> ifThenElse, Class<Valuin> valuing, Class<Send> send, Function<Send, Expression> getValue, EStructuralFeature valueFeature, Class<Receive> receive, Class<O> other, Class<E> type_expression, BiFunction<Environment, Expression, Pair<E, DataType>> proveType_expression, Class<NP> type_nonfinalbody, Environment gamma, Action a, ComplexName cn, String gd, String conn, EList<Connection> endpoints, BigInteger rank, boolean is_env, ModeType mode, DataType conn__tau, Send sa) {
+    private <Body extends EObject, Statement extends EObject, Command extends EObject, Action extends EObject, Choose extends EObject, DoExpr extends EObject, ForEach extends EObject, IfThenElse extends EObject, Valuin extends EObject, Send extends EObject, Receive extends EObject, O extends ProofTerm, E extends ProofTerm, NP extends ProofTerm> Pair<Environment, Type_generic_prefixstatement<Body, Statement, Command, Action, Choose, DoExpr, ForEach, IfThenElse, Valuin, Send, Receive, O, E, NP>> genericSend(String block, Class<Action> action, Class<Choose> choose, Class<DoExpr> doExpr, Class<ForEach> forEach, Class<IfThenElse> ifThenElse, Class<Valuin> valuing, Class<Send> send, Function<Send, Expression> getValue, EStructuralFeature valueFeature, Class<Receive> receive, Class<O> other, Class<E> type_expression, BiFunction<Environment, Expression, Pair<E, DataType>> proveType_expression, Class<NP> type_nonfinalbody, Environment gamma, Action a, ComplexName cn, Type_connectionname p1, boolean is_env, ModeType mode, DataType conn__tau, Send sa) {
         Expression e = getValue.apply(sa);
         if (e != null) {
-            Mode_send p3 = proveSendMode(mode, conn, cn);
+            Mode_send p3 = proveSendMode(mode, cn);
             Pair<E, DataType> pt = proveType_expression.apply(gamma, e);
             E p4 = pt.getA();
             DataType tau__e = pt.getB();
@@ -189,9 +155,8 @@ public abstract class TypeCheckerGenericBehavior0 extends TypeCheckerValuing {
                                                 tau__e, (tau__e_) ->
                                                         createType_generic_Send(block, action, choose, doExpr, forEach,
                                                                 ifThenElse, valuing, send, receive, other, type_expression, type_nonfinalbody,
-                                                                gamma_, gd, endpoints, is_env, conn,
-                                                                mode, conn__tau_, e, tau__e_, createReflexivity(),
-                                                                createEx_intro(rank, createReflexivity()), p3, p4,
+                                                                gamma_, cn, is_env,
+                                                                mode, conn__tau_, e, tau__e_, p1, p3, p4,
                                                                 subtype(tau__e_, conn__tau_, sa, valueFeature).orElse(null)))));
                 return new Pair<>(gamma, saveProof(a, proof));
             } else {
@@ -204,24 +169,32 @@ public abstract class TypeCheckerGenericBehavior0 extends TypeCheckerValuing {
     }
 
     protected Mode_send proveSendMode(ModeType mode, String conn, ComplexName cn) {
+        return proveSendMode(mode, cn);
+    }
+
+    protected Mode_send proveSendMode(ModeType mode, ComplexName cn) {
         switch (mode) {
             case MODE_TYPE_OUT:
                 return createMode_send_out();
             case MODE_TYPE_INOUT:
                 return createMode_send_inout();
             case MODE_TYPE_IN:
-                error("Connection `" + conn + "' is a `in' connection that cannot be used by a `send' action", cn,
-                        SosADLPackage.Literals.COMPLEX_NAME__NAME, 1);
+                error("Connection `" + cn.getName().stream().collect(Collectors.joining("::")) + "' is a `in' connection that cannot be used by a `send' action", cn,
+                        null);
                 return null;
         }
         throw new IllegalArgumentException();
     }
 
     protected Mode_receive proveReceiveMode(ModeType mode, String conn, ComplexName cn) {
+        return proveReceiveMode(mode, cn);
+    }
+
+    protected Mode_receive proveReceiveMode(ModeType mode, ComplexName cn) {
         switch (mode) {
             case MODE_TYPE_OUT:
-                error("Connection `" + conn + "' is a `out' connection that cannot be used by a `receive' action", cn,
-                        SosADLPackage.Literals.COMPLEX_NAME__NAME, 1);
+                error("Connection `" + cn.getName().stream().collect(Collectors.joining("::")) + "' is a `out' connection that cannot be used by a `receive' action", cn,
+                        null);
                 return null;
             case MODE_TYPE_INOUT:
                 return createMode_receive_inout();
@@ -230,16 +203,6 @@ public abstract class TypeCheckerGenericBehavior0 extends TypeCheckerValuing {
         }
         throw new IllegalArgumentException();
     }
-
-    protected Pair<BigInteger, Connection> lookupForConnection(EList<Connection> endpoints, String conn) {
-        List<IntPair<Connection>> l = StreamUtils.indexed(endpoints.stream())
-                .filter((p) -> conn.equals(p.getB().getName())).collect(Collectors.toList());
-        if (l.size() >= 2) {
-            throw new IllegalArgumentException("several connections named `" + conn + "' in the environment");
-        }
-        return l.stream().findAny().map((p) -> new Pair<>(BigInteger.valueOf(p.getA()), p.getB())).orElse(null);
-    }
-
 
     private <Body extends EObject, Statement extends EObject, Command extends EObject, Action extends EObject, Choose extends EObject, DoExpr extends EObject, ForEach extends EObject, IfThenElse extends EObject, Valuin extends EObject, Send extends EObject, Receive extends EObject, O extends ProofTerm, E extends ProofTerm, NP extends ProofTerm> Pair<Environment, Type_generic_prefixstatement<Body, Statement, Command, Action, Choose, DoExpr, ForEach, IfThenElse, Valuin, Send, Receive, O, E, NP>> genericOther(String block, Class<Action> action, Class<Choose> choose, Class<DoExpr> doExpr, Class<ForEach> forEach, Class<IfThenElse> ifThenElse, Class<Valuin> valuing, Class<Send> send, Class<Receive> receive, Class<O> other, BiFunction<Environment, Statement, Pair<Environment, O>> proveOther, Class<E> type_expression, Class<NP> type_nonfinalbody, Environment gamma, Statement s) {
         Pair<Environment, O> p1 = proveOther.apply(gamma, s);

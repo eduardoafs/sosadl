@@ -1,6 +1,5 @@
 package org.archware.sosadl.validation.typing.proof;
 
-import org.archware.sosadl.sosADL.ComplexName;
 import org.archware.sosadl.sosADL.Connection;
 import org.archware.sosadl.sosADL.DataType;
 import org.archware.sosadl.sosADL.ModeType;
@@ -9,32 +8,42 @@ import org.eclipse.emf.common.util.EList;
 
 import java.math.BigInteger;
 
-public class Type_protocolprefix_ReceiveAny implements Type_protocolprefix_other {
+/**
+ * Created by jeremy on 23/08/16.
+ */
+public class Type_connectionname_qualified implements Type_connectionname {
     @Mandatory
     private final Environment gamma;
 
     @Mandatory
-    private final ComplexName cn;
+    private final String gd;
+
+    private final EList<Connection> endpoints;
 
     @Mandatory
     private final boolean is_env;
 
     @Mandatory
-    private final ModeType mode;;
+    private final String conn;
+
+    @Mandatory
+    private final ModeType mode;
 
     @Mandatory
     private final DataType conn__tau;
 
     @Mandatory
-    private final Type_connectionname p1;
+    private final Equality p1;
 
     @Mandatory
-    private final Mode_receive p2;
+    private final Ex<BigInteger, Equality> p2;
 
-    public Type_protocolprefix_ReceiveAny(Environment gamma, ComplexName cn, boolean is_env, ModeType mode, DataType conn__tau, Type_connectionname p1, Mode_receive p2) {
+    public Type_connectionname_qualified(Environment gamma, String gd, EList<Connection> endpoints, boolean is_env, String conn, ModeType mode, DataType conn__tau, Equality p1, Ex<BigInteger, Equality> p2) {
         this.gamma = gamma;
-        this.cn = cn;
+        this.gd = gd;
+        this.endpoints = endpoints;
         this.is_env = is_env;
+        this.conn = conn;
         this.mode = mode;
         this.conn__tau = conn__tau;
         this.p1 = p1;
@@ -45,12 +54,20 @@ public class Type_protocolprefix_ReceiveAny implements Type_protocolprefix_other
         return gamma;
     }
 
-    public ComplexName getCn() {
-        return cn;
+    public String getGd() {
+        return gd;
+    }
+
+    public EList<Connection> getEndpoints() {
+        return endpoints;
     }
 
     public boolean is_env() {
         return is_env;
+    }
+
+    public String getConn() {
+        return conn;
     }
 
     public ModeType getMode() {
@@ -61,12 +78,11 @@ public class Type_protocolprefix_ReceiveAny implements Type_protocolprefix_other
         return conn__tau;
     }
 
-    public Type_connectionname getP1() {
+    public Equality getP1() {
         return p1;
     }
 
-    public Mode_receive getP2() {
+    public Ex<BigInteger, Equality> getP2() {
         return p2;
     }
 }
-

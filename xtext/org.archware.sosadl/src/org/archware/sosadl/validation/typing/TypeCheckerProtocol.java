@@ -2,11 +2,10 @@ package org.archware.sosadl.validation.typing;
 
 import org.archware.sosadl.sosADL.*;
 import org.archware.sosadl.validation.typing.proof.*;
-import org.archware.utils.EndecaFunction;
+import org.archware.utils.OctaFunction;
 import org.archware.utils.Pair;
 import org.eclipse.emf.common.util.EList;
 
-import java.math.BigInteger;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
@@ -51,9 +50,9 @@ public abstract class TypeCheckerProtocol extends TypeCheckerBehavior {
     private Pair<Environment, Type_protocolprefix_other> prefix_other(Environment gamma, ProtocolStatement s) {
         if (s instanceof ProtocolAction) {
             ProtocolAction a = (ProtocolAction) s;
-            EndecaFunction<Environment, ProtocolAction, ComplexName, ProtocolActionSuite, String, String, EList<Connection>, BigInteger, Boolean, ModeType, DataType,
+            OctaFunction<Environment, ProtocolAction, ComplexName, ProtocolActionSuite, Type_connectionname, Boolean, ModeType, DataType,
                     Pair<Environment, Type_protocolprefix_other>> doIt =
-                    (gamma_, a_, cn, as, gd, conn, endpoints, rank, is_env, mode, conn__tau) -> doReceiveAny(gamma_, a_, cn, as, gd, conn, endpoints, rank, is_env, mode, conn__tau);
+                    (gamma_, a_, cn, as, p1, is_env, mode, conn__tau) -> doReceiveAny(gamma_, a_, cn, as, p1, is_env, mode, conn__tau);
             Function<ProtocolAction, ComplexName> getComplexName = ProtocolAction::getComplexName;
             Function<ProtocolAction, ProtocolActionSuite> getSuite = ProtocolAction::getSuite;
             return genericAction(getComplexName, SosADLPackage.Literals.PROTOCOL_ACTION__COMPLEX_NAME,
@@ -65,12 +64,12 @@ public abstract class TypeCheckerProtocol extends TypeCheckerBehavior {
         }
     }
 
-    private Pair<Environment, Type_protocolprefix_other> doReceiveAny(Environment gamma, ProtocolAction a_, ComplexName cn, ProtocolActionSuite as, String gd, String conn, EList<Connection> endpoints, BigInteger rank, Boolean is_env, ModeType mode, DataType conn__tau) {
+    private Pair<Environment, Type_protocolprefix_other> doReceiveAny(Environment gamma, ProtocolAction a_, ComplexName cn, ProtocolActionSuite as, Type_connectionname p1, Boolean is_env, ModeType mode, DataType conn__tau) {
         if (as instanceof ReceiveAnyProtocolAction) {
             Type_protocolprefix_other proof = p(Type_protocolprefix_other.class, gamma, (gamma_) ->
                     p(Type_protocolprefix_other.class, conn__tau, (conn__tau_) ->
-                            createType_protocolprefix_ReceiveAny(gamma_, gd, endpoints, is_env, conn, mode, conn__tau_,
-                                    createReflexivity(), createEx_intro(rank, createReflexivity()), proveReceiveMode(mode, conn, cn))));
+                            createType_protocolprefix_ReceiveAny(gamma_, cn, is_env, mode, conn__tau_,
+                                    p1, proveReceiveMode(mode, cn))));
             return new Pair<>(gamma, proof);
         } else {
             error("Unknown action command", as, null);
@@ -116,13 +115,13 @@ public abstract class TypeCheckerProtocol extends TypeCheckerBehavior {
                 ReceiveProtocolAction.class, getVariable1, SosADLPackage.Literals.RECEIVE_PROTOCOL_ACTION__VARIABLE,
                 Type_protocolprefix_other.class, prefix_other, Type_expression.class, this::type_expression,
                 Type_nonfinalprotocol.class, type_nonfinalprotocol, gamma, first);
-        if(p1 != null) {
-	        Environment gamma1 = p1.getA();
-	        Type_bodyprotocol proof = p(Type_bodyprotocol.class, gamma, (gamma_) ->
-	                p(Type_bodyprotocol.class, gamma1, (gamma1_) -> createType_bodyprotocol_generic(gamma_, first, gamma1_, p1.getB())));
-	        return new Pair<>(gamma1, proof);
+        if (p1 != null) {
+            Environment gamma1 = p1.getA();
+            Type_bodyprotocol proof = p(Type_bodyprotocol.class, gamma, (gamma_) ->
+                    p(Type_bodyprotocol.class, gamma1, (gamma1_) -> createType_bodyprotocol_generic(gamma_, first, gamma1_, p1.getB())));
+            return new Pair<>(gamma1, proof);
         } else {
-        	return new Pair<>(gamma, null);
+            return new Pair<>(gamma, null);
         }
     }
 

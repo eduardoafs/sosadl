@@ -125,6 +125,43 @@ Definition connection_defined
                | None => False
                end.
 
+(**The [type_connectionname] predicate states that a connection with
+given properties (complex name, mode, type and environment) exists in
+a given environment. The complex name can either be the fully qualified name
+(gate-or-duty, name pair) or a singleton name.
+*)
+
+Inductive type_connectionname:
+  env -> SosADL.SosADL.t_ComplexName -> bool
+  -> SosADL.SosADL.ModeType -> SosADL.SosADL.t_DataType -> Prop :=
+  
+| type_connectionname_qualified:
+    forall (Gamma: env)
+      (gd: string)
+      (endpoints: list SosADL.SosADL.t_Connection)
+      (is_env: bool)
+      (conn: string)
+      (mode: SosADL.SosADL.ModeType)
+      (conn__tau: SosADL.SosADL.t_DataType)
+      (p1: contains Gamma gd (EGateOrDuty endpoints))
+      (p2: connection_defined endpoints is_env conn mode conn__tau)
+    ,
+      type_connectionname Gamma (SosADL.SosADL.ComplexName (cons gd (cons conn nil))) is_env mode conn__tau
+
+| type_connectionname_simple:
+    forall (Gamma: env)
+      (is_env: bool)
+      (conn: string)
+      (mode: SosADL.SosADL.ModeType)
+      (conn__tau: SosADL.SosADL.t_DataType)
+      (p1: contains Gamma conn (EConnection
+                                  (SosADL.SosADL.Connection
+                                     (Some is_env) (Some conn) (Some mode) (Some conn__tau))))
+    ,
+      type_connectionname Gamma (SosADL.SosADL.ComplexName (cons conn nil)) is_env mode conn__tau
+.
+
+
 (** [mode_send] and [mode_receive] state the valid connection modes
 for sending and receiving data, respectively.  *)
 
@@ -1879,51 +1916,42 @@ gate-or-duty.%}% *)
 
 | type_generic_Send:
     forall (Gamma: env)
-      (gd: string)
-      (endpoints: list SosADL.SosADL.t_Connection)
+      (cn: SosADL.SosADL.t_ComplexName)
       (is_env: bool)
-      (conn: string)
       (mode: SosADL.SosADL.ModeType)
       (conn__tau: SosADL.SosADL.t_DataType)
       (e: SosADL.SosADL.t_Expression)
       (tau__e: SosADL.SosADL.t_DataType)
-      (p1: contains Gamma gd (EGateOrDuty endpoints))
-      (p2: connection_defined endpoints is_env conn mode conn__tau)
-      (p3: mode_send mode)
-      (p4: type_expression Gamma e tau__e)
-      (p5: tau__e </ conn__tau)
+      (p1: type_connectionname Gamma cn is_env mode conn__tau)
+      (p2: mode_send mode)
+      (p3: type_expression Gamma e tau__e)
+      (p4: tau__e </ conn__tau)
     ,
       type_generic_prefixstatement
         block s_Action s_Choose s_DoExpr s_ForEach s_IfThenElse s_Valuing
         c_Send c_Receive p_Other type_expression type_generic_nonfinalbody
         Gamma
-        (s_Action
-           (Some (SosADL.SosADL.ComplexName [gd; conn]))
-           (Some (c_Send (Some e))))
+        (s_Action (Some cn) (Some (c_Send (Some e))))
         Gamma
 
 | type_generic_Receive:
     forall (Gamma: env)
-      (gd: string)
-      (endpoints: list SosADL.SosADL.t_Connection)
+      (cn: SosADL.SosADL.t_ComplexName)
       (is_env: bool)
       (conn: string)
       (mode: SosADL.SosADL.ModeType)
       (conn__tau: SosADL.SosADL.t_DataType)
       (x: string)
       (Gamma1: env)
-      (p1: contains Gamma gd (EGateOrDuty endpoints))
-      (p2: connection_defined endpoints is_env conn mode conn__tau)
-      (p3: mode_receive mode)
-      (p4: Gamma1 = Gamma[| x <- EVariable conn__tau |])
+      (p1: type_connectionname Gamma cn is_env mode conn__tau)
+      (p2: mode_receive mode)
+      (p3: Gamma1 = Gamma[| x <- EVariable conn__tau |])
     ,
       type_generic_prefixstatement
         block s_Action s_Choose s_DoExpr s_ForEach s_IfThenElse s_Valuing
         c_Send c_Receive p_Other type_expression type_generic_nonfinalbody
         Gamma
-        (s_Action
-           (Some (SosADL.SosADL.ComplexName [gd; conn]))
-           (Some (c_Receive (Some x))))
+        (s_Action (Some cn) (Some (c_Receive (Some x))))
         Gamma1
 
        (*
@@ -2229,20 +2257,17 @@ Inductive type_protocolprefix_other:
 
 | type_protocolprefix_ReceiveAny:
     forall (Gamma: env)
-      (gd: string)
-      (endpoints: list SosADL.SosADL.t_Connection)
+      (cn: SosADL.SosADL.t_ComplexName)
       (is_env: bool)
-      (conn: string)
       (mode: SosADL.SosADL.ModeType)
       (conn__tau: SosADL.SosADL.t_DataType)
-      (p1: contains Gamma gd (EGateOrDuty endpoints))
-      (p2: connection_defined endpoints is_env conn mode conn__tau)
-      (p3: mode_receive mode)
+      (p1: type_connectionname Gamma cn is_env mode conn__tau)
+      (p2: mode_receive mode)
     ,
       type_protocolprefix_other
         Gamma
         (SosADL.SosADL.ProtocolAction
-           (Some (SosADL.SosADL.ComplexName [gd; conn]))
+           (Some cn)
            (Some SosADL.SosADL.ReceiveAnyProtocolAction))
         Gamma
 .
