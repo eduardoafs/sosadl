@@ -63,7 +63,7 @@ public interface ProofTerm {
 			return cc.value();
 		} else {
 			String n = c.getSimpleName();
-			if(EObject.class.isAssignableFrom(c)) {
+			if (EObject.class.isAssignableFrom(c)) {
 				return n;
 			} else {
 				return StringExtensions.toFirstLower(n);
@@ -92,8 +92,8 @@ public interface ProofTerm {
 		Class<?> c = this.getClass();
 		FieldDescriptor[] f = Stream.of(c.getDeclaredFields())
 				.filter((x) -> fieldNamePattern.matcher(x.getName()).matches())
-				.filter((x) -> !x.isAnnotationPresent(CoqTransient.class))
-				.map(this::describeField).toArray((s) -> new FieldDescriptor[s]);
+				.filter((x) -> !x.isAnnotationPresent(CoqTransient.class)).map(this::describeField)
+				.toArray((s) -> new FieldDescriptor[s]);
 		return f;
 	}
 
@@ -136,13 +136,7 @@ public interface ProofTerm {
 			};
 		} else {
 			try {
-				String prefix;
-				if (boolean.class.equals(f.getType())) {
-					prefix = "is";
-				} else {
-					prefix = "get";
-				}
-				Method getter = f.getDeclaringClass().getMethod(prefix + StringExtensions.toFirstUpper(f.getName()));
+				Method getter = getGetterMethod(f);
 				Object content = getter.invoke(this);
 				if ((content != null && content instanceof List) || List.class.isAssignableFrom(f.getType())) {
 					if (f.isAnnotationPresent(CoqLiteral.class)) {
@@ -240,6 +234,18 @@ public interface ProofTerm {
 				String msg = "field: " + f.toGenericString();
 				throw new IllegalArgumentException(msg, e);
 			}
+		}
+	}
+
+	default Method getGetterMethod(Field f) throws NoSuchMethodException {
+		if (boolean.class.equals(f.getType())) {
+			try {
+				return f.getDeclaringClass().getMethod("is" + StringExtensions.toFirstUpper(f.getName()));
+			} catch (NoSuchMethodException e) {
+				return f.getDeclaringClass().getMethod(f.getName());
+			}
+		} else {
+			return f.getDeclaringClass().getMethod("get" + StringExtensions.toFirstUpper(f.getName()));
 		}
 	}
 }
