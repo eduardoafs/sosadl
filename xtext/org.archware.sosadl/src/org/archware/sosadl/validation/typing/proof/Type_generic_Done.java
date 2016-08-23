@@ -3,7 +3,7 @@ package org.archware.sosadl.validation.typing.proof;
 import org.archware.sosadl.validation.typing.Environment;
 import org.eclipse.emf.ecore.EObject;
 
-public class Type_generic_Done<Body extends EObject, Statement extends EObject, Choose extends EObject, Done extends EObject, IfThenElse extends EObject, Repeat extends EObject, Other extends ProofTerm, E extends ProofTerm, P extends ProofTerm, NF extends ProofTerm>
+public class Type_generic_Done<Body extends EObject, Statement extends EObject, Choose extends Statement, Done extends Statement, IfThenElse extends Statement, Repeat extends Statement, Other extends ProofTerm, E extends ProofTerm, P extends ProofTerm, NF extends ProofTerm>
 		implements Type_generic_finalbody<Body, Statement, Choose, Done, IfThenElse, Repeat, Other, E, P, NF> {
 
 	@Mandatory

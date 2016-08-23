@@ -1687,6 +1687,48 @@ with condition_false: env -> SosADL.SosADL.t_Expression -> env -> Prop :=
 
 (** ** Generic rules for behaviors, protocols and assertions *)
 
+  
+(** The typing rules enforce tail statement requirements.
+
+- [RepeatBehavior], [RecursiveCall] and [DoneBehavior] are tail
+  statements, i.e., they cannot be followed by any subsequent
+  statement.
+
+- [ValuingBehavior], [AssertBehavior], [Action], [ForEachBehavior] and
+  [DoExprBehavior] are non-tail statements. They must mandatorily be
+  followed by subsequent statement.
+
+- [IfThenElseBehavior] statements may or may not be the last statement
+  of a sequence. When an [IfThenElseBehavior] statement is at a tail
+  position, it must contain both [then] and [else] clauses, and the
+  branches must be terminated by a tail statement.
+
+  At non-tail position, the [else] clause is optional and the branches
+  must not contain any tail statement. Futhermore, the typing rule
+  adjusts the typing environment in each branch according to the
+  condition. See [condition_true] and [condition_false] for further
+  details.
+
+- [ChooseBehavior] statements behave like [IfThenElseBehavior]
+  statements. Note that the rules for [ChooseBehavior] do not enforce
+  any restriction on the branches, such as the usual requirement that
+  each branch starts with a blocking communication statement.
+
+The typing rules for behavior bodies are structured as follow:
+
+- [type_generic_prefixstatement] types a single non-tail statement and synthetizes
+  the new environment for subsequent statements.
+
+- [type_generic_nonfinalbody] types a non-final body of statements, i.e., with
+  no tail statement.
+
+- [type_generic_finalbody] types a final body of statements, i.e., terminated
+  by a tail statement.
+
+*)
+
+(** %\todo{%[TellAssertion] and [AskAssertion] have still to be dealt with.%}% *)
+
 Inductive type_generic_finalbody
           {t_Body: Set}
           {t_Statement: Set}
@@ -1909,11 +1951,6 @@ Inductive type_generic_prefixstatement
         c_Send c_Receive p_Other type_expression type_generic_nonfinalbody
         Gamma (s_ForEach (Some x) (Some vals) (Some (block b))) Gamma
 
-(** %\note{%[type_bodyprefix_Send] and [type_bodyprefix_Receive]
-assume that the complex name is a pair containing the name of a
-gate-or-duty, followed by the name of a connection within that
-gate-or-duty.%}% *)
-
 | type_generic_Send:
     forall (Gamma: env)
       (cn: SosADL.SosADL.t_ComplexName)
@@ -2003,186 +2040,34 @@ Inductive type_generic_nonfinalbody
 
 (** ** Body *)
 
-  
-(** The typing rules enforce tail statement requirements.
-
-- [RepeatBehavior], [RecursiveCall] and [DoneBehavior] are tail
-  statements, i.e., they cannot be followed by any subsequent
-  statement.
-
-- [ValuingBehavior], [AssertBehavior], [Action], [ForEachBehavior] and
-  [DoExprBehavior] are non-tail statements. They must mandatorily be
-  followed by subsequent statement.
-
-- [IfThenElseBehavior] statements may or may not be the last statement
-  of a sequence. When an [IfThenElseBehavior] statement is at a tail
-  position, it must contain both [then] and [else] clauses, and the
-  branches must be terminated by a tail statement.
-
-  At non-tail position, the [else] clause is optional and the branches
-  must not contain any tail statement. Futhermore, the typing rule
-  adjusts the typing environment in each branch according to the
-  condition. See [condition_true] and [condition_false] for further
-  details.
-
-- [ChooseBehavior] statements behave like [IfThenElseBehavior]
-  statements. Note that the rules for [ChooseBehavior] do not enforce
-  any restriction on the branches, such as the usual requirement that
-  each branch starts with a blocking communication statement.
-
-The typing rules for behavior bodies are structured as follow:
-
-- [type_bodyprefix] types a single non-tail statement and synthetizes
-  the new environment for subsequent statements.
-
-- [type_nonfinalbody] types a non-final body of statements, i.e., with
-  no tail statement.
-
-- [type_finalbody] types a final body of statements, i.e., terminated
-  by a tail statement.
-
-[type_bodyprefix] and [type_nonfinalbody] are mutually recursive.
-
-(** %\todo{%[TellAssertion] and [AskAssertion] have still to be dealt with.%}% *)
-
- *)
+Inductive type_bodyprefix_other:
+  env -> SosADL.SosADL.t_BehaviorStatement -> env -> Prop :=
+.
 
 Inductive type_bodyprefix:
   env -> SosADL.SosADL.t_BehaviorStatement -> env -> Prop :=
 
-| type_bodyprefix_DoExpr:
+| type_bodyprefix_generic:
     forall
       (Gamma: env)
-      (e: SosADL.SosADL.t_Expression)
-      (tau: SosADL.SosADL.t_DataType)
-      (p1: expression e has type tau in Gamma)
-    ,
-      statement (SosADL.SosADL.DoExprBehavior (Some e)) well typed in Gamma yields to Gamma
-
-| type_bodyprefix_Valuing:
-    forall
-      (Gamma: env)
-      (v: SosADL.SosADL.t_Valuing)
+      (s: SosADL.SosADL.t_BehaviorStatement)
       (Gamma1: env)
-      (p1: @type_valuing type_expression Gamma v Gamma1)
+      (p1: type_generic_prefixstatement
+             SosADL.SosADL.Behavior
+             SosADL.SosADL.Action
+             SosADL.SosADL.ChooseBehavior
+             SosADL.SosADL.DoExprBehavior
+             SosADL.SosADL.ForEachBehavior
+             SosADL.SosADL.IfThenElseBehavior
+             SosADL.SosADL.ValuingBehavior
+             SosADL.SosADL.SendAction
+             SosADL.SosADL.ReceiveAction
+             type_bodyprefix_other
+             type_expression
+             type_nonfinalbody
+             Gamma s Gamma1)
     ,
-      statement (SosADL.SosADL.ValuingBehavior (Some v))
-                well typed in Gamma yields to Gamma1
-
-| type_bodyprefix_IfThenElse:
-    forall
-      (Gamma: env)
-      (c: SosADL.SosADL.t_Expression)
-      (Gammat: env)
-      (t: list SosADL.SosADL.t_BehaviorStatement)
-      (oe: option SosADL.SosADL.t_Behavior)
-      (p1: expression c has type SosADL.SosADL.BooleanType in Gamma)
-      (p2: condition_true Gamma c Gammat)
-      (p3: nonfinal body t well typed in Gammat)
-      (p4: @optionally _
-                       (fun g e =>
-                          exists (Gammae: env),
-                            condition_false g c Gammae
-                            /\ (nonfinal body (SosADL.SosADL.Behavior_statements e)
-                                        well typed in Gammae))
-                       Gamma oe)
-    ,
-      statement (SosADL.SosADL.IfThenElseBehavior
-                   (Some c) (Some (SosADL.SosADL.Behavior t)) oe)
-                well typed in Gamma yields to Gamma
-
-| type_bodyprefix_Choose:
-    forall (Gamma: env)
-      (branches: list SosADL.SosADL.t_Behavior)
-      (p1: for each b of branches,
-           nonfinal body (SosADL.SosADL.Behavior_statements b) well typed in Gamma)
-    ,
-      statement (SosADL.SosADL.ChooseBehavior branches) well typed in Gamma yields to Gamma
-
-| type_bodyprefix_ForEach:
-    forall (Gamma: env)
-      (x: string)
-      (vals: SosADL.SosADL.t_Expression)
-      (tau: SosADL.SosADL.t_DataType)
-      (tau__x: SosADL.SosADL.t_DataType)
-      (b: list SosADL.SosADL.t_BehaviorStatement)
-      (p1: expression vals has type (SosADL.SosADL.SequenceType (Some tau)) in Gamma)
-      (p2: nonfinal body b well typed in Gamma [| x <- EVariable tau__x |])
-      (p3: tau </ tau__x)
-    ,
-      statement (SosADL.SosADL.ForEachBehavior
-                   (Some x) (Some vals) (Some (SosADL.SosADL.Behavior b)))
-                well typed in Gamma yields to Gamma
-
-(** %\note{%[type_bodyprefix_Send] and [type_bodyprefix_Receive]
-assume that the complex name is a pair containing the name of a
-gate-or-duty, followed by the name of a connection within that
-gate-or-duty.%}% *)
-
-| type_bodyprefix_Send:
-    forall (Gamma: env)
-      (gd: string)
-      (endpoints: list SosADL.SosADL.t_Connection)
-      (is_env: bool)
-      (conn: string)
-      (mode: SosADL.SosADL.ModeType)
-      (conn__tau: SosADL.SosADL.t_DataType)
-      (e: SosADL.SosADL.t_Expression)
-      (tau__e: SosADL.SosADL.t_DataType)
-      (p1: contains Gamma gd (EGateOrDuty endpoints))
-      (p2: connection_defined endpoints is_env conn mode conn__tau)
-      (p3: mode_send mode)
-      (p4: expression e has type tau__e in Gamma)
-      (p5: tau__e </ conn__tau)
-    ,
-      statement (SosADL.SosADL.Action
-                   (Some (SosADL.SosADL.ComplexName [gd; conn]))
-                   (Some (SosADL.SosADL.SendAction (Some e))))
-           well typed in Gamma yields to Gamma
-
-| type_bodyprefix_Receive:
-    forall (Gamma: env)
-      (gd: string)
-      (endpoints: list SosADL.SosADL.t_Connection)
-      (is_env: bool)
-      (conn: string)
-      (mode: SosADL.SosADL.ModeType)
-      (conn__tau: SosADL.SosADL.t_DataType)
-      (x: string)
-      (Gamma1: env)
-      (p1: contains Gamma gd (EGateOrDuty endpoints))
-      (p2: connection_defined endpoints is_env conn mode conn__tau)
-      (p3: mode_receive mode)
-      (p4: Gamma1 = Gamma[| x <- EVariable conn__tau |])
-    ,
-      statement (SosADL.SosADL.Action
-                   (Some (SosADL.SosADL.ComplexName [gd; conn]))
-                   (Some (SosADL.SosADL.ReceiveAction (Some x))))
-                well typed in Gamma
-                                yields to Gamma1
-
-       (*
-
-
-
-| type_TellStatement:
-    forall Gamma name e l,
-      (expression e has type SosADL.SosADL.BooleanType in Gamma)
-      /\ (body l well typed in Gamma)
-      ->
-      body (SosADL.SosADL.BehaviorStatement_TellAssertion (Some name) (Some e) :: l) well typed in Gamma
-*)
-
-(*
-| type_AskStatement:
-    forall Gamma name e ee l,
-      (forall x, List.In x (names_of_expression e) <-> exists tau, contains ee x (EType tau))
-      /\ (expression e has type SosADL.SosADL.BooleanType in (Gamma <++ ee))
-      /\ (body l well typed in (Gamma <++ ee))
-      ->
-      body (SosADL.SosADL.BehaviorStatement_AskAssertion (Some name) (Some e) :: l) well typed in Gamma
-*)
-
+      statement s well typed in Gamma yields to Gamma1
 
 with type_nonfinalbody: env -> list SosADL.SosADL.t_BehaviorStatement -> Prop :=
 
@@ -2272,7 +2157,6 @@ Inductive type_protocolprefix_other:
         Gamma
 .
 
-(** %\todo{% %}% *)
 Inductive type_bodyprotocol:
   env -> SosADL.SosADL.t_ProtocolStatement -> env -> Prop :=
 

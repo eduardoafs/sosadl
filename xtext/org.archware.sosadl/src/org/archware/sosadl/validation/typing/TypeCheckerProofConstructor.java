@@ -501,44 +501,8 @@ public abstract class TypeCheckerProofConstructor extends TypeCheckerInference {
         return new Type_nonfinalbody_generic(gamma, l, p1);
     }
 
-    protected Type_bodyprefix createType_bodyprefix_DoExpr(Environment gamma, Expression e, DataType tau,
-                                                           Type_expression p1) {
-        return new Type_bodyprefix_DoExpr(gamma, e, tau, p1);
-    }
-
-    protected Type_bodyprefix createType_bodyprefix_Valuing(Environment gamma, Valuing v, Environment gamma1,
-                                                            Type_valuing<Type_expression> p1) {
-        return new Type_bodyprefix_Valuing(gamma, v, gamma1, p1);
-    }
-
-    protected Type_bodyprefix createType_bodyprefix_IfThenElse(Environment gamma, Expression c, Environment gammat,
-                                                               EList<BehaviorStatement> t, Behavior oe, Type_expression p1, Condition_true p2, Type_nonfinalbody p3,
-                                                               Optionally<Behavior, Ex<Environment, And<Condition_false, Type_nonfinalbody>>> p4) {
-        return new Type_bodyprefix_IfThenElse(gamma, c, gammat, t, oe, p1, p2, p3, p4);
-    }
-
-    protected Type_bodyprefix createType_bodyprefix_Choose(Environment gamma, EList<Behavior> branches,
-                                                           Forall<Behavior, Type_nonfinalbody> p1) {
-        return new Type_bodyprefix_Choose(gamma, branches, p1);
-    }
-
-    protected Type_bodyprefix createType_bodyprefix_ForEach(Environment gamma, String x, Expression vals, DataType tau,
-                                                            DataType tau__x, EList<BehaviorStatement> b, Type_expression p1, Type_nonfinalbody p2, Subtype p3) {
-        return new Type_bodyprefix_ForEach(gamma, x, vals, tau, tau__x, b, p1, p2, p3);
-    }
-
-    protected Type_bodyprefix createType_bodyprefix_Send(Environment gamma, String gd, EList<Connection> endpoints,
-                                                         boolean is_env, String conn, ModeType mode, DataType conn__tau, Expression e, DataType tau__e, Equality p1,
-                                                         Ex<BigInteger, Equality> p2, Mode_send p3, Type_expression p4, Subtype p5) {
-        return new Type_bodyprefix_Send(gamma, gd, endpoints, is_env, conn, mode, conn__tau, e, tau__e, p1, p2, p3, p4,
-                p5);
-    }
-
-    protected Type_bodyprefix createType_bodyprefix_Receive(Environment gamma, String gd, EList<Connection> endpoints,
-                                                            boolean is_env, String conn, ModeType mode, DataType conn__tau, String x, Environment gamma1, Equality p1,
-                                                            Ex<BigInteger, Equality> p2, Mode_receive p3, Equality p4) {
-        return new Type_bodyprefix_Receive(gamma, gd, endpoints, is_env, conn, mode, conn__tau, x, gamma1, p1, p2, p3,
-                p4);
+    protected Type_bodyprefix createType_bodyprefix_generic(Environment gamma, BehaviorStatement s, Environment gamma1, Type_generic_prefixstatement<Behavior, BehaviorStatement, ActionSuite, Action, ChooseBehavior, DoExprBehavior, ForEachBehavior, IfThenElseBehavior, ValuingBehavior, SendAction, ReceiveAction, Type_bodyprefix_other, Type_expression, Type_nonfinalbody> p1) {
+        return new Type_bodyprefix_generic(gamma, s, gamma1, p1);
     }
 
     protected Mode_send createMode_send_out() {
@@ -662,7 +626,7 @@ public abstract class TypeCheckerProofConstructor extends TypeCheckerInference {
         return new Type_nonfinalprotocol_generic(gamma, l, p1);
     }
 
-    protected <Body extends EObject, Statement extends EObject, Choose extends EObject, Done extends EObject, IfThenElse extends EObject, Repeat extends EObject, Other extends ProofTerm, E extends ProofTerm, P extends ProofTerm, NF extends ProofTerm> Type_generic_finalbody<Body, Statement, Choose, Done, IfThenElse, Repeat, Other, E, P, NF> createType_generic_Done(
+    protected <Body extends EObject, Statement extends EObject, Choose extends Statement, Done extends Statement, IfThenElse extends Statement, Repeat extends Statement, Other extends ProofTerm, E extends ProofTerm, P extends ProofTerm, NF extends ProofTerm> Type_generic_finalbody<Body, Statement, Choose, Done, IfThenElse, Repeat, Other, E, P, NF> createType_generic_Done(
             String block, Class<Choose> choose, Class<Done> done, Class<IfThenElse> ifThenElse, Class<Repeat> repeat,
             Class<Other> other, Class<E> type_expression, Class<P> type_generic_prefix,
             Class<NF> type_generic_nonfinalbody, Environment gamma) {
@@ -670,7 +634,7 @@ public abstract class TypeCheckerProofConstructor extends TypeCheckerInference {
                 type_generic_prefix, type_generic_nonfinalbody, gamma);
     }
 
-    protected <Body extends EObject, Statement extends EObject, Choose extends EObject, Done extends EObject, IfThenElse extends EObject, Repeat extends EObject, Other extends ProofTerm, E extends ProofTerm, P extends ProofTerm, NF extends ProofTerm> Type_generic_finalbody<Body, Statement, Choose, Done, IfThenElse, Repeat, Other, E, P, NF> createType_generic_prefix(
+    protected <Body extends EObject, Statement extends EObject, Choose extends Statement, Done extends Statement, IfThenElse extends Statement, Repeat extends Statement, Other extends ProofTerm, E extends ProofTerm, P extends ProofTerm, NF extends ProofTerm> Type_generic_finalbody<Body, Statement, Choose, Done, IfThenElse, Repeat, Other, E, P, NF> createType_generic_prefix(
             String block, Class<Choose> choose, Class<Done> done, Class<IfThenElse> ifThenElse, Class<Repeat> repeat,
             Class<Other> other, Class<E> type_expression, Class<P> type_generic_prefix,
             Class<NF> type_generic_nonfinalbody, Environment gamma, Statement s, Environment gamma1, EList<Statement> l,
@@ -679,7 +643,7 @@ public abstract class TypeCheckerProofConstructor extends TypeCheckerInference {
                 type_generic_prefix, type_generic_nonfinalbody, gamma, s, gamma1, l, p1, p2);
     }
 
-    protected <Body extends EObject, Statement extends EObject, Choose extends EObject, Done extends EObject, IfThenElse extends EObject, Repeat extends EObject, Other extends ProofTerm, E extends ProofTerm, P extends ProofTerm, NF extends ProofTerm> Type_generic_finalbody<Body, Statement, Choose, Done, IfThenElse, Repeat, Other, E, P, NF> createType_generic_other(
+    protected <Body extends EObject, Statement extends EObject, Choose extends Statement, Done extends Statement, IfThenElse extends Statement, Repeat extends Statement, Other extends ProofTerm, E extends ProofTerm, P extends ProofTerm, NF extends ProofTerm> Type_generic_finalbody<Body, Statement, Choose, Done, IfThenElse, Repeat, Other, E, P, NF> createType_generic_other(
             String block, Class<Choose> choose, Class<Done> done, Class<IfThenElse> ifThenElse, Class<Repeat> repeat,
             Class<Other> other, Class<E> type_expression, Class<P> type_generic_prefix,
             Class<NF> type_generic_nonfinalbody, Environment gamma, Statement s, Other p1) {
@@ -687,7 +651,7 @@ public abstract class TypeCheckerProofConstructor extends TypeCheckerInference {
                 type_generic_prefix, type_generic_nonfinalbody, gamma, s, p1);
     }
 
-    protected <Body extends EObject, Statement extends EObject, Choose extends EObject, Done extends EObject, IfThenElse extends EObject, Repeat extends EObject, Other extends ProofTerm, E extends ProofTerm, P extends ProofTerm, NF extends ProofTerm> Type_generic_finalbody<Body, Statement, Choose, Done, IfThenElse, Repeat, Other, E, P, NF> createType_generic_Repeat(
+    protected <Body extends EObject, Statement extends EObject, Choose extends Statement, Done extends Statement, IfThenElse extends Statement, Repeat extends Statement, Other extends ProofTerm, E extends ProofTerm, P extends ProofTerm, NF extends ProofTerm> Type_generic_finalbody<Body, Statement, Choose, Done, IfThenElse, Repeat, Other, E, P, NF> createType_generic_Repeat(
             String block, Class<Choose> choose, Class<Done> done, Class<IfThenElse> ifThenElse, Class<Repeat> repeat,
             Class<Other> other, Class<E> type_expression, Class<P> type_generic_prefix,
             Class<NF> type_generic_nonfinalbody, Environment gamma, EList<Statement> l, NF p1) {
@@ -695,7 +659,7 @@ public abstract class TypeCheckerProofConstructor extends TypeCheckerInference {
                 type_generic_prefix, type_generic_nonfinalbody, gamma, l, p1);
     }
 
-    protected <Body extends EObject, Statement extends EObject, Choose extends EObject, Done extends EObject, IfThenElse extends EObject, Repeat extends EObject, Other extends ProofTerm, E extends ProofTerm, P extends ProofTerm, NF extends ProofTerm> Type_generic_finalbody<Body, Statement, Choose, Done, IfThenElse, Repeat, Other, E, P, NF> createType_generic_IfThenElse(
+    protected <Body extends EObject, Statement extends EObject, Choose extends Statement, Done extends Statement, IfThenElse extends Statement, Repeat extends Statement, Other extends ProofTerm, E extends ProofTerm, P extends ProofTerm, NF extends ProofTerm> Type_generic_finalbody<Body, Statement, Choose, Done, IfThenElse, Repeat, Other, E, P, NF> createType_generic_IfThenElse(
             String block, Class<Choose> choose, Class<Done> done, Class<IfThenElse> ifThenElse, Class<Repeat> repeat,
             Class<Other> other, Class<E> type_expression, Class<P> type_generic_prefix,
             Class<NF> type_generic_nonfinalbody, Environment gamma, Expression c, Environment gammat,
@@ -707,7 +671,7 @@ public abstract class TypeCheckerProofConstructor extends TypeCheckerInference {
                 type_generic_prefix, type_generic_nonfinalbody, gamma, c, gammat, t, gammae, e, p1, p2, p3, p4, p5);
     }
 
-    protected <Body extends EObject, Statement extends EObject, Choose extends EObject, Done extends EObject, IfThenElse extends EObject, Repeat extends EObject, Other extends ProofTerm, E extends ProofTerm, P extends ProofTerm, NF extends ProofTerm> Type_generic_finalbody<Body, Statement, Choose, Done, IfThenElse, Repeat, Other, E, P, NF> createType_generic_Choose(
+    protected <Body extends EObject, Statement extends EObject, Choose extends Statement, Done extends Statement, IfThenElse extends Statement, Repeat extends Statement, Other extends ProofTerm, E extends ProofTerm, P extends ProofTerm, NF extends ProofTerm> Type_generic_finalbody<Body, Statement, Choose, Done, IfThenElse, Repeat, Other, E, P, NF> createType_generic_Choose(
             String block, Class<Choose> choose, Class<Done> done, Class<IfThenElse> ifThenElse, Class<Repeat> repeat,
             Class<Other> other, Class<E> type_expression, Class<P> type_generic_prefix,
             Class<NF> type_generic_nonfinalbody, Environment gamma, EList<EList<Statement>> branches,
@@ -727,7 +691,7 @@ public abstract class TypeCheckerProofConstructor extends TypeCheckerInference {
         return new Type_generic_nonfinalprefix<>(type_generic_prefix, gamma, s, gamma1, l, p1, p2);
     }
 
-    protected <Body extends EObject, Statement extends EObject, Command extends EObject, Action extends EObject, Choose extends EObject, DoExpr extends EObject, ForEach extends EObject, IfThenElse extends EObject, Valuin extends EObject, Send extends EObject, Receive extends EObject, O extends ProofTerm, E extends ProofTerm, NP extends ProofTerm> Type_generic_prefixstatement<Body, Statement, Command, Action, Choose, DoExpr, ForEach, IfThenElse, Valuin, Send, Receive, O, E, NP> createType_generic_otherprefix(
+    protected <Body extends EObject, Statement extends EObject, Command extends EObject, Action extends Statement, Choose extends Statement, DoExpr extends Statement, ForEach extends Statement, IfThenElse extends Statement, Valuin extends Statement, Send extends Command, Receive extends Command, O extends ProofTerm, E extends ProofTerm, NP extends ProofTerm> Type_generic_prefixstatement<Body, Statement, Command, Action, Choose, DoExpr, ForEach, IfThenElse, Valuin, Send, Receive, O, E, NP> createType_generic_otherprefix(
             String block, Class<Action> action, Class<Choose> choose, Class<DoExpr> doExpr, Class<ForEach> forEach,
             Class<IfThenElse> ifThenElse, Class<Valuin> valuing, Class<Send> send, Class<Receive> receive,
             Class<O> other, Class<E> type_expression, Class<NP> type_nonfinalbody, Environment gamma, Statement s,
@@ -736,47 +700,47 @@ public abstract class TypeCheckerProofConstructor extends TypeCheckerInference {
                 receive, other, type_expression, type_nonfinalbody, gamma, s, gamma1, p1);
     }
 
-    protected <Body extends EObject, Statement extends EObject, Command extends EObject, Action extends EObject, Choose extends EObject, DoExpr extends EObject, ForEach extends EObject, IfThenElse extends EObject, Valuin extends EObject, Send extends EObject, Receive extends EObject, O extends ProofTerm, E extends ProofTerm, NP extends ProofTerm> Type_generic_prefixstatement<Body, Statement, Command, Action, Choose, DoExpr, ForEach, IfThenElse, Valuin, Send, Receive, O, E, NP> createType_generic_DoExpr(String block, Class<Action> action, Class<Choose> choose, Class<DoExpr> doExpr, Class<ForEach> forEach, Class<IfThenElse> ifThenElse, Class<Valuin> valuing, Class<Send> send, Class<Receive> receive, Class<O> other, Class<E> type_expression, Class<NP> type_nonfinalbody, Environment gamma, Expression e, DataType tau, E p1) {
+    protected <Body extends EObject, Statement extends EObject, Command extends EObject, Action extends Statement, Choose extends Statement, DoExpr extends Statement, ForEach extends Statement, IfThenElse extends Statement, Valuin extends Statement, Send extends Command, Receive extends Command, O extends ProofTerm, E extends ProofTerm, NP extends ProofTerm> Type_generic_prefixstatement<Body, Statement, Command, Action, Choose, DoExpr, ForEach, IfThenElse, Valuin, Send, Receive, O, E, NP> createType_generic_DoExpr(String block, Class<Action> action, Class<Choose> choose, Class<DoExpr> doExpr, Class<ForEach> forEach, Class<IfThenElse> ifThenElse, Class<Valuin> valuing, Class<Send> send, Class<Receive> receive, Class<O> other, Class<E> type_expression, Class<NP> type_nonfinalbody, Environment gamma, Expression e, DataType tau, E p1) {
         return new Type_generic_DoExpr<>(block, action, choose, doExpr, forEach, ifThenElse, valuing, send,
                 receive, other, type_expression, type_nonfinalbody, gamma, e, tau, p1);
     }
 
-    protected <Body extends EObject, Statement extends EObject, Command extends EObject, Action extends EObject, Choose extends EObject, DoExpr extends EObject, ForEach extends EObject, IfThenElse extends EObject, Valuin extends EObject, Send extends EObject, Receive extends EObject, O extends ProofTerm, E extends ProofTerm, NP extends ProofTerm>
+    protected <Body extends EObject, Statement extends EObject, Command extends EObject, Action extends Statement, Choose extends Statement, DoExpr extends Statement, ForEach extends Statement, IfThenElse extends Statement, Valuin extends Statement, Send extends Command, Receive extends Command, O extends ProofTerm, E extends ProofTerm, NP extends ProofTerm>
     Type_generic_prefixstatement<Body, Statement, Command, Action, Choose, DoExpr, ForEach, IfThenElse, Valuin, Send, Receive, O, E, NP>
     createType_generic_Valuing(String block, Class<Action> action, Class<Choose> choose, Class<DoExpr> doExpr, Class<ForEach> forEach, Class<IfThenElse> ifThenElse, Class<Valuin> valuing, Class<Send> send, Class<Receive> receive, Class<O> other, Class<E> type_expression, Class<NP> type_nonfinalbody, Environment gamma, Valuing v, Environment gamma1, Type_valuing<E> p1) {
         return new Type_generic_Valuing<>(block, action, choose, doExpr, forEach, ifThenElse, valuing, send,
                 receive, other, type_expression, type_nonfinalbody, gamma, v, gamma1, p1);
     }
 
-    protected <Body extends EObject, Statement extends EObject, Command extends EObject, Action extends EObject, Choose extends EObject, DoExpr extends EObject, ForEach extends EObject, IfThenElse extends EObject, Valuin extends EObject, Send extends EObject, Receive extends EObject, O extends ProofTerm, E extends ProofTerm, NP extends ProofTerm>
+    protected <Body extends EObject, Statement extends EObject, Command extends EObject, Action extends Statement, Choose extends Statement, DoExpr extends Statement, ForEach extends Statement, IfThenElse extends Statement, Valuin extends Statement, Send extends Command, Receive extends Command, O extends ProofTerm, E extends ProofTerm, NP extends ProofTerm>
     Type_generic_prefixstatement<Body, Statement, Command, Action, Choose, DoExpr, ForEach, IfThenElse, Valuin, Send, Receive, O, E, NP>
     createType_generic_IfThenElse_prefix(String block, Class<Action> action, Class<Choose> choose, Class<DoExpr> doExpr, Class<ForEach> forEach, Class<IfThenElse> ifThenElse, Class<Valuin> valuing, Class<Send> send, Class<Receive> receive, Class<O> other, Class<E> type_expression, Class<NP> type_nonfinalbody, Environment gamma, Expression c, Environment gammat, EList<Statement> t, Body oe, E p1, Condition_true p2, NP p3, Optionally<Body, Ex<Environment, And<Condition_false, Ex<EList<Statement>, And<Equality, NP>>>>> p4) {
         return new Type_generic_IfThenElse_prefix<>(block, action, choose, doExpr, forEach, ifThenElse, valuing, send,
                 receive, other, type_expression, type_nonfinalbody, gamma, c, gammat, t, oe, p1, p2, p3, p4);
     }
 
-    protected <Body extends EObject, Statement extends EObject, Command extends EObject, Action extends EObject, Choose extends EObject, DoExpr extends EObject, ForEach extends EObject, IfThenElse extends EObject, Valuin extends EObject, Send extends EObject, Receive extends EObject, O extends ProofTerm, E extends ProofTerm, NP extends ProofTerm>
+    protected <Body extends EObject, Statement extends EObject, Command extends EObject, Action extends Statement, Choose extends Statement, DoExpr extends Statement, ForEach extends Statement, IfThenElse extends Statement, Valuin extends Statement, Send extends Command, Receive extends Command, O extends ProofTerm, E extends ProofTerm, NP extends ProofTerm>
     Type_generic_prefixstatement<Body, Statement, Command, Action, Choose, DoExpr, ForEach, IfThenElse, Valuin, Send, Receive, O, E, NP>
     createType_generic_Choose_prefix(String block, Class<Action> action, Class<Choose> choose, Class<DoExpr> doExpr, Class<ForEach> forEach, Class<IfThenElse> ifThenElse, Class<Valuin> valuing, Class<Send> send, Class<Receive> receive, Class<O> other, Class<E> type_expression, Class<NP> type_nonfinalbody, Environment gamma, EList<EList<Statement>> branches, Forall<EList<Statement>, NP> p1) {
         return new Type_generic_Choose_prefix<>(block, action, choose, doExpr, forEach, ifThenElse, valuing, send,
                 receive, other, type_expression, type_nonfinalbody, gamma, branches, p1);
     }
 
-    protected <Body extends EObject, Statement extends EObject, Command extends EObject, Action extends EObject, Choose extends EObject, DoExpr extends EObject, ForEach extends EObject, IfThenElse extends EObject, Valuin extends EObject, Send extends EObject, Receive extends EObject, O extends ProofTerm, E extends ProofTerm, NP extends ProofTerm>
+    protected <Body extends EObject, Statement extends EObject, Command extends EObject, Action extends Statement, Choose extends Statement, DoExpr extends Statement, ForEach extends Statement, IfThenElse extends Statement, Valuin extends Statement, Send extends Command, Receive extends Command, O extends ProofTerm, E extends ProofTerm, NP extends ProofTerm>
     Type_generic_prefixstatement<Body, Statement, Command, Action, Choose, DoExpr, ForEach, IfThenElse, Valuin, Send, Receive, O, E, NP>
     createType_generic_ForEach(String block, Class<Action> action, Class<Choose> choose, Class<DoExpr> doExpr, Class<ForEach> forEach, Class<IfThenElse> ifThenElse, Class<Valuin> valuing, Class<Send> send, Class<Receive> receive, Class<O> other, Class<E> type_expression, Class<NP> type_nonfinalbody, Environment gamma, String x, Expression vals, DataType tau, DataType tau__x, EList<Statement> b, E p1, NP p2, Subtype p3) {
         return new Type_generic_ForEach<>(block, action, choose, doExpr, forEach, ifThenElse, valuing, send,
                 receive, other, type_expression, type_nonfinalbody, gamma, x, vals, tau, tau__x, b, p1, p2, p3);
     }
 
-    protected <Body extends EObject, Statement extends EObject, Command extends EObject, Action extends EObject, Choose extends EObject, DoExpr extends EObject, ForEach extends EObject, IfThenElse extends EObject, Valuin extends EObject, Send extends EObject, Receive extends EObject, O extends ProofTerm, E extends ProofTerm, NP extends ProofTerm>
+    protected <Body extends EObject, Statement extends EObject, Command extends EObject, Action extends Statement, Choose extends Statement, DoExpr extends Statement, ForEach extends Statement, IfThenElse extends Statement, Valuin extends Statement, Send extends Command, Receive extends Command, O extends ProofTerm, E extends ProofTerm, NP extends ProofTerm>
     Type_generic_prefixstatement<Body, Statement, Command, Action, Choose, DoExpr, ForEach, IfThenElse, Valuin, Send, Receive, O, E, NP>
     createType_generic_Send(String block, Class<Action> action, Class<Choose> choose, Class<DoExpr> doExpr, Class<ForEach> forEach, Class<IfThenElse> ifThenElse, Class<Valuin> valuing, Class<Send> send, Class<Receive> receive, Class<O> other, Class<E> type_expression, Class<NP> type_nonfinalbody, Environment gamma, ComplexName cn, boolean is_env, ModeType mode, DataType conn__tau, Expression e, DataType tau__e, Type_connectionname p1, Mode_send p2, E p3, Subtype p4) {
         return new Type_generic_Send<>(block, action, choose, doExpr, forEach, ifThenElse, valuing, send,
                 receive, other, type_expression, type_nonfinalbody, gamma, cn, is_env, mode, conn__tau, e, tau__e, p1, p2, p3, p4);
     }
 
-    protected <Body extends EObject, Statement extends EObject, Command extends EObject, Action extends EObject, Choose extends EObject, DoExpr extends EObject, ForEach extends EObject, IfThenElse extends EObject, Valuin extends EObject, Send extends EObject, Receive extends EObject, O extends ProofTerm, E extends ProofTerm, NP extends ProofTerm>
+    protected <Body extends EObject, Statement extends EObject, Command extends EObject, Action extends Statement, Choose extends Statement, DoExpr extends Statement, ForEach extends Statement, IfThenElse extends Statement, Valuin extends Statement, Send extends Command, Receive extends Command, O extends ProofTerm, E extends ProofTerm, NP extends ProofTerm>
     Type_generic_prefixstatement<Body, Statement, Command, Action, Choose, DoExpr, ForEach, IfThenElse, Valuin, Send, Receive, O, E, NP>
     createType_generic_Receive(String block, Class<Action> action, Class<Choose> choose, Class<DoExpr> doExpr, Class<ForEach> forEach, Class<IfThenElse> ifThenElse, Class<Valuin> valuing, Class<Send> send, Class<Receive> receive, Class<O> other, Class<E> type_expression, Class<NP> type_nonfinalbody, Environment gamma, ComplexName cn, boolean is_env, ModeType mode, DataType conn__tau, String x, Environment gamma1, Type_connectionname p1, Mode_receive p2, Equality p3) {
         return new Type_generic_Receive<>(block, action, choose, doExpr, forEach, ifThenElse, valuing, send,
