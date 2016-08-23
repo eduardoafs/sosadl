@@ -116,10 +116,14 @@ public abstract class TypeCheckerProtocol extends TypeCheckerBehavior {
                 ReceiveProtocolAction.class, getVariable1, SosADLPackage.Literals.RECEIVE_PROTOCOL_ACTION__VARIABLE,
                 Type_protocolprefix_other.class, prefix_other, Type_expression.class, this::type_expression,
                 Type_nonfinalprotocol.class, type_nonfinalprotocol, gamma, first);
-        Environment gamma1 = p1.getA();
-        Type_bodyprotocol proof = p(Type_bodyprotocol.class, gamma, (gamma_) ->
-                p(Type_bodyprotocol.class, gamma1, (gamma1_) -> createType_bodyprotocol_generic(gamma_, first, gamma1_, p1.getB())));
-        return new Pair<>(gamma1, proof);
+        if(p1 != null) {
+	        Environment gamma1 = p1.getA();
+	        Type_bodyprotocol proof = p(Type_bodyprotocol.class, gamma, (gamma_) ->
+	                p(Type_bodyprotocol.class, gamma1, (gamma1_) -> createType_bodyprotocol_generic(gamma_, first, gamma1_, p1.getB())));
+	        return new Pair<>(gamma1, proof);
+        } else {
+        	return new Pair<>(gamma, null);
+        }
     }
 
     protected Type_protocol type_protocol(Environment gamma, ProtocolDecl protocol) {
