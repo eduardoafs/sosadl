@@ -1,7 +1,7 @@
 package org.archware.sosadl.validation.typing.proof;
 
 public class Ex_intro<A, P> implements Ex<A, P> {
-	@Eluded
+	@Inferable
 	private final Object t = null;
 
 	@Mandatory

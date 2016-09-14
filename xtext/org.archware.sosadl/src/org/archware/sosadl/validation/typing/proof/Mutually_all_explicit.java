@@ -6,10 +6,10 @@ import org.archware.sosadl.validation.typing.Environment;
 
 @CoqConstructor("@mutually_all")
 public class Mutually_all_explicit<T, P> implements Mutually<T, P> {
-	@Eluded
+	@Inferable
 	private final Object t = null;
 
-	@Eluded
+	@Inferable
 	private final Object p = null;
 
 	@Mandatory

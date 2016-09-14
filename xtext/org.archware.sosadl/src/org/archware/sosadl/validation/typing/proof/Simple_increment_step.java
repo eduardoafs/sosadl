@@ -3,10 +3,10 @@ package org.archware.sosadl.validation.typing.proof;
 import org.archware.sosadl.validation.typing.Environment;
 
 public class Simple_increment_step<T, P> implements Simple_increment<T, P> {
-	@Eluded
+	@Inferable
 	private final Object t = null;
 
-	@Eluded
+	@Inferable
 	private final Object p = null;
 
 	@CoqLiteral

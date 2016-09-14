@@ -1,6 +1,6 @@
 package org.archware.sosadl.validation.typing.proof;
 
 public class Eq_refl implements Equality {
-	@Eluded
+	@Inferable
 	private final Object p = null;
 }

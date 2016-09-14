@@ -77,7 +77,7 @@ public interface ProofTerm {
 	 * Returns an array containing the fields for this object.
 	 * 
 	 * Each field, which encodes one parameter in the corresponding Coq term,
-	 * implements any of {@link Eluded}, {@link ListField},
+	 * implements any of {@link Inferable}, {@link ListField},
 	 * {@link MandatoryField} or {@link OptionalField}, depending on the
 	 * characteristics of the field. The actual choice of what type is returned
 	 * is delegated to the {@link #describeField(Field)} method, such that it
@@ -103,7 +103,7 @@ public interface ProofTerm {
 	 * 
 	 * Depending on the annotation and type of the field:
 	 * <ul>
-	 * <li>If the field is annotated with {@link Eluded}, then an
+	 * <li>If the field is annotated with {@link Inferable}, then an
 	 * {@link EludedField} is returned.</li>
 	 * <li>If the field has type {@link java.util.List} (or any subtype), then a
 	 * {@link ListField} is returned.</li>
@@ -127,7 +127,7 @@ public interface ProofTerm {
 	 *         the Coq code.
 	 */
 	default FieldDescriptor describeField(Field f) {
-		if (f.isAnnotationPresent(Eluded.class)) {
+		if (f.isAnnotationPresent(Inferable.class)) {
 			return new EludedField() {
 				@Override
 				public Field getField() {
