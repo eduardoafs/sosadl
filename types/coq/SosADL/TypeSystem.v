@@ -2130,6 +2130,7 @@ where "'behavior' b 'well' 'typed' 'in' Gamma" := (type_behavior Gamma b)
 
 (** ** Protocol and assertion
 
+%\todo{%revise this paragraph.%}%
 Protocols are handled similarly to behaviors, with the noticeable
 exception that [Any] is allowed in expressions, and [AnyAction] as a
 prefix statement.
@@ -2138,6 +2139,14 @@ prefix statement.
 
 Inductive type_protocolprefix_other:
   env -> SosADL.SosADL.t_ProtocolStatement -> env -> Prop :=
+
+| type_protocolprefix_AnyAction:
+    forall (Gamma: env)
+    ,
+      type_protocolprefix_other
+        Gamma
+        SosADL.SosADL.AnyAction
+        Gamma
 
 | type_protocolprefix_ReceiveAny:
     forall (Gamma: env)
@@ -2154,9 +2163,19 @@ Inductive type_protocolprefix_other:
            (Some cn)
            (Some SosADL.SosADL.ReceiveAnyProtocolAction))
         Gamma
-.
 
-Inductive type_bodyprotocol:
+| type_protocolprefix_Repeat:
+    forall (Gamma: env)
+      (l: list SosADL.SosADL.t_ProtocolStatement)
+      (p1: type_nonfinalprotocol Gamma l)
+    ,
+      type_protocolprefix_other
+        Gamma
+        (SosADL.SosADL.RepeatProtocol
+           (Some (SosADL.SosADL.Protocol l)))
+        Gamma
+
+with type_bodyprotocol:
   env -> SosADL.SosADL.t_ProtocolStatement -> env -> Prop :=
 
 | type_bodyprotocol_generic:

@@ -58,6 +58,23 @@ public abstract class TypeCheckerProtocol extends TypeCheckerBehavior {
             return genericAction(getComplexName, SosADLPackage.Literals.PROTOCOL_ACTION__COMPLEX_NAME,
                     getSuite, SosADLPackage.Literals.PROTOCOL_ACTION__SUITE,
                     gamma, a, doIt);
+        } else if (s instanceof RepeatProtocol) {
+            RepeatProtocol r = (RepeatProtocol) s;
+            Protocol p = r.getRepeated();
+            if (p != null) {
+                Type_nonfinalprotocol p1 = type_nonfinalprotocol(gamma, r.getRepeated());
+                Type_protocolprefix_other proof = p(Type_protocolprefix_other.class, gamma,
+                        (gamma_) -> createType_protocolprefix_Repeat(gamma_, p.getStatements(),
+                        p1));
+                return new Pair<>(gamma, proof);
+            } else {
+                error("There must be a repeated behavior", r, SosADLPackage.Literals.REPEAT_PROTOCOL__REPEATED);
+                return null;
+            }
+        } else if (s instanceof AnyAction) {
+            Type_protocolprefix_other proof = p(Type_protocolprefix_other.class, gamma,
+                    (gamma_) -> createType_protocolprefix_AnyAction(gamma_));
+            return new Pair<>(gamma, proof);
         } else {
             error("Protocol statement `" + labelOf(s) + "' not allowed at non-tail position", s, null);
             return null;

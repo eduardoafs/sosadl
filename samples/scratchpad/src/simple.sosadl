@@ -11,7 +11,10 @@ library simple is {
 			connection r is in { t }
 		} guarantee {
 			protocol p is {
-				repeat { via s send 0 via r receive any }
+				repeat { via s send 0
+					repeat { anyaction }
+					via r receive any
+				}
 			}
 		}
 		

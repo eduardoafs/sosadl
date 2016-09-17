@@ -755,6 +755,14 @@ public abstract class TypeCheckerProofConstructor extends TypeCheckerInference {
         return new Type_protocolprefix_ReceiveAny(gamma, cn, is_env, mode, conn__tau, p1, p2);
     }
 
+    protected Type_protocolprefix_other createType_protocolprefix_Repeat(Environment gamma, EList<ProtocolStatement> l, Type_nonfinalprotocol p1) {
+        return new Type_protocolprefix_Repeat(gamma, l, p1);
+    }
+
+    protected Type_protocolprefix_other createType_protocolprefix_AnyAction(Environment gamma) {
+        return new Type_protocolprefix_AnyAction(gamma);
+    }
+
     protected Type_connectionname createType_connectionname_qualified(Environment gamma, String gd, EList<Connection> endpoints, boolean is_env, String conn, ModeType mode, DataType conn__tau, Equality p1, Ex<BigInteger, Equality> p2) {
         return new Type_connectionname_qualified(gamma, gd, endpoints, is_env, conn, mode, conn__tau, p1, p2);
     }
