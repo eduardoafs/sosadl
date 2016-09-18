@@ -1989,28 +1989,6 @@ Inductive type_generic_prefixstatement
         Gamma
         (s_Action (Some cn) (Some (c_Receive (Some x))))
         Gamma1
-
-       (*
-
-
-
-| type_TellStatement:
-    forall Gamma name e l,
-      (expression e has type SosADL.SosADL.BooleanType in Gamma)
-      /\ (body l well typed in Gamma)
-      ->
-      body (SosADL.SosADL.BehaviorStatement_TellAssertion (Some name) (Some e) :: l) well typed in Gamma
-*)
-
-(*
-| type_AskStatement:
-    forall Gamma name e ee l,
-      (forall x, List.In x (names_of_expression e) <-> exists tau, contains ee x (EType tau))
-      /\ (expression e has type SosADL.SosADL.BooleanType in (Gamma <++ ee))
-      /\ (body l well typed in (Gamma <++ ee))
-      ->
-      body (SosADL.SosADL.BehaviorStatement_AskAssertion (Some name) (Some e) :: l) well typed in Gamma
-*)
 .
 
 Inductive type_generic_nonfinalbody
@@ -2662,47 +2640,9 @@ Definition type_mediators Gamma l Gamma1 :=
 (** %\todo{% %}% *)
 
 Inductive type_architecture: env -> SosADL.SosADL.t_ArchitectureDecl -> Prop :=
-(* TODO
-     | type_ArchitectureDecl:
-    forall Gamma name params datatypes gates b a,
-      (for each p of params, (exists t, SosADL.SosADL.FormalParameter_type p = Some t /\ type t well typed in Gamma))
-      /\ (architectureblock (SosADL.SosADL.ArchitectureDecl (Some name) nil datatypes gates (Some b) a)
-                           well typed in (env_add_params params Gamma))
-      ->
-      architecture (SosADL.SosADL.ArchitectureDecl (Some name) params datatypes gates (Some b) a)
-                   well typed in Gamma
-*)
+
 with type_architectureblock: env -> SosADL.SosADL.t_ArchitectureDecl -> Prop :=
 
-  (* TODO
-| type_ArchitectureDecl_datatype:
-    forall Gamma name d d_name l gates bhv a,
-      (typedecl d well typed in Gamma)
-      /\ (SosADL.SosADL.DataTypeDecl_name d = Some d_name)
-      /\ (architectureblock (SosADL.SosADL.ArchitectureDecl (Some name) nil l gates (Some bhv) a)
-                           well typed in Gamma [| d_name <- EType d |])
-      ->
-      architectureblock (SosADL.SosADL.ArchitectureDecl (Some name) nil (d::l) gates (Some bhv) a)
-                        well typed in Gamma
-
-  
-| type_ArchitectureDecl_gate:
-    forall Gamma name g g_name l bhv a,
-      (gate g well typed in Gamma)
-      /\ (SosADL.SosADL.GateDecl_name g = Some g_name)
-      /\ (architectureblock (SosADL.SosADL.ArchitectureDecl (Some name) nil nil l (Some bhv) a)
-                           well typed in Gamma [| g_name <- EGateOrDuty (build_gate_env g) |])
-      ->
-      architectureblock (SosADL.SosADL.ArchitectureDecl (Some name) nil nil (g::l) (Some bhv) a)
-                        well typed in Gamma
-
-| type_ArchitectureDecl_behavior:
-    forall Gamma name bhv a,
-      (archbehavior bhv well typed in Gamma)
-      /\ (assertion a well typed in Gamma)
-      ->
-      architectureblock (SosADL.SosADL.ArchitectureDecl (Some name) nil nil nil (Some bhv) (Some a)) well typed in Gamma
-*)
 
 
 (** ** Architecture behavior*)

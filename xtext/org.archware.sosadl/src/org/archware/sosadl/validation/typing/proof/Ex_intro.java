@@ -1,5 +1,6 @@
 package org.archware.sosadl.validation.typing.proof;
 
+@CoqNoStandalone
 public class Ex_intro<A, P> implements Ex<A, P> {
 	@Inferable
 	private final Object t = null;

@@ -2,6 +2,7 @@ package org.archware.sosadl.validation.typing.proof;
 
 @CoqType("forall (x: A) (l: list A), P x -> Forall P l -> Forall P (x :: l)")
 @CoqConstructor("Forall_cons")
+@CoqNoStandalone
 public class Forall_cons<A, T> implements Forall<A, T> {
 	@Mandatory
 	private final A x;

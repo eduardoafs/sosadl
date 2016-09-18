@@ -7,6 +7,7 @@ import org.archware.sosadl.sosADL.TupleElement;
 import org.archware.sosadl.validation.typing.Environment;
 import org.eclipse.emf.common.util.EList;
 
+@CoqNoStandalone
 public class Type_expression_Tuple<T> implements Type_expression_node<T> {
 	@Mandatory
 	private final Environment gamma;

@@ -4,6 +4,7 @@ import java.math.BigInteger;
 
 import org.archware.sosadl.validation.typing.Environment;
 
+@CoqNoStandalone
 public class Type_expression_IntegerValue<T> implements Type_expression_node<T> {
 	@Mandatory
 	private final Environment gamma;

@@ -1,5 +1,6 @@
 package org.archware.sosadl.validation.typing.proof;
 
+@CoqNoStandalone
 public class Conj<A, B> implements And<A, B> {
 	@Mandatory
 	private final A a;

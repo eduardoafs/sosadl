@@ -10,7 +10,7 @@ import org.archware.utils.Pair;
 public class Factorizor {
 	private static final int THRESHOLD = 16;
 	
-	private int lastGeneratedName = 0;
+	private long lastGeneratedName = 0;
 	
 	private final List<Pair<String,String>> definitions = new LinkedList<>();
 	

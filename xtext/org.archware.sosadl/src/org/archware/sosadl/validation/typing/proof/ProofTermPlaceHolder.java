@@ -258,4 +258,9 @@ public class ProofTermPlaceHolder<T extends ProofTerm> implements ProofTerm {
 			return super.defineClass(name, bc, 0, bc.length);
 		}
 	}
+	
+	@Override
+	public boolean isStandaloneCapable() {
+		return this.proxy.map(ProofTerm::isStandaloneCapable).orElse(false);
+	}
 }

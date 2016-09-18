@@ -30,6 +30,7 @@ import org.archware.sosadl.sosADL.FunctionDecl
 import org.archware.sosadl.sosADL.GateDecl
 import org.archware.sosadl.sosADL.Import
 import org.archware.sosadl.sosADL.MediatorDecl
+import org.archware.sosadl.sosADL.ModeType
 import org.archware.sosadl.sosADL.Multiplicity
 import org.archware.sosadl.sosADL.Protocol
 import org.archware.sosadl.sosADL.ProtocolActionSuite
@@ -53,7 +54,6 @@ import org.archware.sosadl.validation.typing.proof.fields.FieldDescriptor
 import org.archware.sosadl.validation.typing.proof.fields.ListField
 import org.archware.sosadl.validation.typing.proof.fields.MandatoryField
 import org.archware.sosadl.validation.typing.proof.fields.OptionalField
-import org.archware.sosadl.sosADL.ModeType
 import org.eclipse.emf.common.util.EList
 
 /**
@@ -143,7 +143,20 @@ class TypingProofGenerator2 {
 	
 	def CharSequence generatorFunction_(Object o) {
 		tryCount += 1;
-		return cache.computeIfAbsent(o, [ k | missCount += 1; o.generatorFunction]);
+		return cache.computeIfAbsent(o, [ k | missCount += 1; o.generatorFunction__]);
+	}
+	
+	def dispatch generatorFunction__(ProofTerm o) {
+		val s = generatorFunction(o)
+		if(o.standaloneCapable) {
+			return _hook(s)
+		} else {
+			return s			
+		}
+	}
+	def dispatch generatorFunction__(Object o) {
+		val s = generatorFunction(o)
+		return _hook(s)
 	}
 	
 	def dispatch generatorFunction(Integer content) { return coqGenerator.generateZ(content) }
@@ -154,6 +167,7 @@ class TypingProofGenerator2 {
 			return _hook(content.toString)
 		}
 	}
+	def dispatch generatorFunction(Class<?> content) { return ProofTerm.constructorName(content) }
 	def dispatch generatorFunction(EList<?> content) { return coqGenerator._generateL(content.map[x | x.generatorFunction_], [x | Optional.of(x).orAdmitted]) }
 	def dispatch generatorFunction(String content) { return coqGenerator.generatestring(content) }
 	def dispatch generatorFunction(Boolean content) { return coqGenerator.generatebool(content) }

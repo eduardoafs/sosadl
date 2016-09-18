@@ -5,6 +5,7 @@ import java.util.List;
 import org.archware.sosadl.validation.typing.Environment;
 
 @CoqConstructor("@mutually_all")
+@CoqNoStandalone
 public class Mutually_all_explicit<T, P> implements Mutually<T, P> {
 	@Inferable
 	private final Object t = null;

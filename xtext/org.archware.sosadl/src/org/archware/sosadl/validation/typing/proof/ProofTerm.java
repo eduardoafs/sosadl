@@ -248,4 +248,15 @@ public interface ProofTerm {
 			return f.getDeclaringClass().getMethod("get" + StringExtensions.toFirstUpper(f.getName()));
 		}
 	}
+
+	default boolean isStandaloneCapable() {
+		Class<? extends ProofTerm> cl = this.getClass();
+		boolean r = !cl.isAnnotationPresent(CoqNoStandalone.class);
+		if (r && Stream.of(cl.getDeclaredFields())
+				.anyMatch((f) -> f.isAnnotationPresent(Inferable.class))) {
+			System.err.println(
+					"WARNING: " + cl + " is not @CoqNotStandalone, but it contains some @Inferable field");
+		}
+		return r;
+	}
 }

@@ -2,6 +2,7 @@ package org.archware.sosadl.validation.typing.proof;
 
 import org.archware.sosadl.validation.typing.Environment;
 
+@CoqNoStandalone
 public class Simple_increment_step<T, P> implements Simple_increment<T, P> {
 	@Inferable
 	private final Object t = null;
