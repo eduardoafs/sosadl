@@ -1,14 +1,10 @@
 package org.archware.sosadl.validation.typing.proof;
 
 import org.archware.sosadl.sosADL.ComplexName;
-import org.archware.sosadl.sosADL.Connection;
 import org.archware.sosadl.sosADL.DataType;
 import org.archware.sosadl.sosADL.ModeType;
 import org.archware.sosadl.validation.typing.Environment;
-import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.ecore.EObject;
-
-import java.math.BigInteger;
 
 public class Type_generic_Receive<Body extends EObject, Statement extends EObject, Command extends EObject, Action extends Statement, Choose extends Statement, DoExpr extends Statement, ForEach extends Statement, IfThenElse extends Statement, Valuin extends Statement, Send extends Command, Receive extends Command, O extends ProofTerm, E extends ProofTerm, NP extends ProofTerm>
         implements

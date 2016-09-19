@@ -617,7 +617,7 @@ public abstract class TypeCheckerProofConstructor extends TypeCheckerInference {
     }
 
     protected Type_finalprotocol createType_finalprotocol_generic(Environment gamma, EList<ProtocolStatement> l,
-                                                                  Type_generic_finalbody<Protocol, ProtocolStatement, ChooseProtocol, DoneProtocol, IfThenElseProtocol, RepeatProtocol, Type_finalprotocol_other, Type_expression, Type_bodyprotocol, Type_nonfinalprotocol> p1) {
+                                                                  Type_generic_finalbody<Protocol, ProtocolStatement, ChooseProtocol, DoneProtocol, IfThenElseProtocol, RepeatProtocol, Type_finalprotocol_other, Type_protocol_root_expression, Type_bodyprotocol, Type_nonfinalprotocol> p1) {
         return new Type_finalprotocol_generic(gamma, l, p1);
     }
 
@@ -747,7 +747,7 @@ public abstract class TypeCheckerProofConstructor extends TypeCheckerInference {
                 receive, other, type_expression, type_nonfinalbody, gamma, cn, is_env, mode, conn__tau, x, gamma1, p1, p2, p3);
     }
 
-    protected Type_bodyprotocol createType_bodyprotocol_generic(Environment gamma, ProtocolStatement s, Environment gamma1, Type_generic_prefixstatement<Protocol, ProtocolStatement, ProtocolActionSuite, ProtocolAction, ChooseProtocol, DoExprProtocol, ForEachProtocol, IfThenElseProtocol, ValuingProtocol, SendProtocolAction, ReceiveProtocolAction, Type_protocolprefix_other, Type_expression, Type_nonfinalprotocol> p1) {
+    protected Type_bodyprotocol createType_bodyprotocol_generic(Environment gamma, ProtocolStatement s, Environment gamma1, Type_generic_prefixstatement<Protocol, ProtocolStatement, ProtocolActionSuite, ProtocolAction, ChooseProtocol, DoExprProtocol, ForEachProtocol, IfThenElseProtocol, ValuingProtocol, SendProtocolAction, ReceiveProtocolAction, Type_protocolprefix_other, Type_protocol_root_expression, Type_nonfinalprotocol> p1) {
         return new Type_bodyprotocol_generic(gamma, s, gamma1, p1);
     }
 
@@ -769,5 +769,35 @@ public abstract class TypeCheckerProofConstructor extends TypeCheckerInference {
 
     protected Type_connectionname createType_connectionname_simple(Environment gamma, boolean is_env, String conn, ModeType mode, DataType conn__tau, Equality p1) {
         return new Type_connectionname_simple(gamma, is_env, conn, mode, conn__tau, p1);
+    }
+
+    protected Type_protocol_root_expression createType_protocol_root_expression_and_type(Environment gamma, Expression e, DataType t,
+                                                                                         Type_protocol_root_expression_node p1, Check_datatype p2) {
+        return new Type_protocol_root_expression_and_type(gamma, e, t, p1, p2);
+    }
+
+    protected Type_protocol_nonroot_expression createType_protocol_nonroot_expression_and_type(Environment gamma, Expression e, DataType t,
+                                                                                         Type_protocol_nonroot_expression_node p1, Check_datatype p2) {
+        return new Type_protocol_nonroot_expression_and_type(gamma, e, t, p1, p2);
+    }
+
+    protected Type_protocol_root_expression_node createType_protocol_root_expression_nonroot(Environment gamma, Expression e, DataType t, Type_protocol_nonroot_expression_node p1) {
+        return new Type_protocol_root_expression_nonroot(gamma, e, t, p1);
+    }
+
+    protected Type_protocol_root_expression_node createType_protocol_root_expression_any(Environment gamma, DataType t) {
+        return new Type_protocol_root_expression_any(gamma, t);
+    }
+
+    protected Type_protocol_nonroot_expression_node createType_protocol_nonroot_expression_generic(Environment gamma, Expression e, DataType t, Type_expression_node<Type_protocol_nonroot_expression> p1) {
+        return new Type_protocol_nonroot_expression_generic(gamma, e, t, p1);
+    }
+
+    protected Type_protocol_nonroot_expression_node createType_protocol_nonroot_expression_MethodCall(Environment gamma, Expression self, DataType t, DataTypeDecl typeDecl,
+                                                                                                      DataType tau, EList<FunctionDecl> methods, String name, EList<FormalParameter> formalparams, DataType ret,
+                                                                                                      EList<Expression> params, Type_protocol_nonroot_expression p1, Ex<BigInteger, Equality> p2, Subtype p4,
+                                                                                                      Ex<BigInteger, And<Equality, And<Equality, And<Equality, Equality>>>> p5,
+                                                                                                      Forall2<FormalParameter, Expression, Ex<DataType, And<Equality, Ex<DataType, And<Type_protocol_root_expression, Subtype>>>>> p6) {
+        return new Type_protocol_nonroot_expression_MethodCall(gamma, self, t, typeDecl, tau, methods, name, formalparams, ret, params, p1, p2, p4, p5, p6);
     }
 }

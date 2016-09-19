@@ -33,15 +33,7 @@ import org.archware.sosadl.sosADL.UnaryExpression;
 import org.archware.sosadl.tv.typeCheckerHelper.TypeVariable;
 import org.archware.sosadl.validation.typing.impl.TypeEnvContent;
 import org.archware.sosadl.validation.typing.impl.VariableEnvContent;
-import org.archware.sosadl.validation.typing.proof.And;
-import org.archware.sosadl.validation.typing.proof.Equality;
-import org.archware.sosadl.validation.typing.proof.Ex;
-import org.archware.sosadl.validation.typing.proof.Forall;
-import org.archware.sosadl.validation.typing.proof.Forall2;
-import org.archware.sosadl.validation.typing.proof.Range_modulo_max;
-import org.archware.sosadl.validation.typing.proof.Range_modulo_min;
-import org.archware.sosadl.validation.typing.proof.Subtype;
-import org.archware.sosadl.validation.typing.proof.Type_expression_node;
+import org.archware.sosadl.validation.typing.proof.*;
 import org.archware.utils.DecaFunction;
 import org.archware.utils.IntPair;
 import org.archware.utils.ListUtils;
@@ -569,7 +561,7 @@ public abstract class TypeCheckerExpressionNode extends TypeCheckerDataType {
 		}
 	}
 
-	protected <T> Pair<Type_expression_node<T>, DataType> type_expression_node(Environment gamma, Expression e,
+	protected <T extends ProofTerm> Pair<Type_expression_node<T>, DataType> type_expression_node(Environment gamma, Expression e,
 			BiFunction<Environment, Expression, Pair<T, DataType>> te) {
 		saveEnvironment(e, gamma);
 		if (e instanceof IntegerValue) {
@@ -923,34 +915,27 @@ public abstract class TypeCheckerExpressionNode extends TypeCheckerDataType {
 		}
 	}
 
-	private class MethodCallTyper<T> implements Typer<T> {
-		private final Environment gamma;
-		private final MethodCall mc;
-		private final String methodName;
-		private final DataType selfType;
-		private final T selfP;
-		private final List<Pair<Expression, Pair<T, DataType>>> params;
-		@SuppressWarnings("unused")
-		private final BiFunction<Environment, Expression, Pair<T, DataType>> te;
+	protected abstract class CommonMethodCall<T> {
+		protected final Environment gamma;
+		protected final MethodCall mc;
+		protected final String methodName;
+		protected final DataType selfType;
+		protected final List<Pair<Expression, Pair<T, DataType>>> params;
 
-		private int tecRank;
-		private TypeEnvContent tec;
-		private int mRank;
-		private FunctionDecl decl;
+		protected int tecRank;
+		protected TypeEnvContent tec;
+		protected int mRank;
+		protected FunctionDecl decl;
 
-		public MethodCallTyper(Environment gamma, MethodCall mc, String methodName, DataType selfType, T selfP,
-				List<Pair<Expression, Pair<T, DataType>>> params,
-				BiFunction<Environment, Expression, Pair<T, DataType>> te) {
+		public CommonMethodCall(Environment gamma, MethodCall mc, String methodName, DataType selfType, List<Pair<Expression, Pair<T, DataType>>> params) {
 			this.gamma = gamma;
 			this.mc = mc;
 			this.methodName = methodName;
 			this.selfType = selfType;
-			this.selfP = selfP;
 			this.params = params;
-			this.te = te;
 		}
 
-		private Optional<DataType> lookupAndReturnType() {
+		protected Optional<DataType> lookupAndReturnType() {
 			DataType sSelfType = getSubstitute(selfType);
 			List<DataType> sParamsTypes = params.stream().map(Pair::getB).map(Pair::getB)
 					.map(TypeCheckerExpressionNode.this::getSubstitute).collect(Collectors.toList());
@@ -969,12 +954,6 @@ public abstract class TypeCheckerExpressionNode extends TypeCheckerDataType {
 			return method.map(IntPair::getB).map(Pair::getB).map(IntPair::getB).map(FunctionDecl::getType);
 		}
 
-		/*
-		 * (non-Javadoc)
-		 * 
-		 * @see org.archware.sosadl.validation.typing.Typer#computeReturnType()
-		 */
-		@Override
 		public Optional<DataType> computeReturnType() {
 			if (streamTypes().anyMatch(TypeInferenceSolver::containsVariable)) {
 				TypeVariable v = createFreshTypeVariable(mc, null, (lb, ub) -> lookupAndReturnType());
@@ -989,6 +968,17 @@ public abstract class TypeCheckerExpressionNode extends TypeCheckerDataType {
 		private Stream<DataType> streamTypes() {
 			return Stream.of(Stream.of(selfType), params.stream().map(Pair::getB).map(Pair::getB)).flatMap((i) -> i);
 		}
+	}
+
+	private class MethodCallTyper<T extends ProofTerm> extends CommonMethodCall<T> implements Typer<T> {
+		private final T selfP;
+
+		public MethodCallTyper(Environment gamma, MethodCall mc, String methodName, DataType selfType, T selfP,
+				List<Pair<Expression, Pair<T, DataType>>> params,
+				BiFunction<Environment, Expression, Pair<T, DataType>> te) {
+			super(gamma, mc, methodName, selfType, params);
+			this.selfP = selfP;
+		}
 
 		/*
 		 * (non-Javadoc)
@@ -1002,10 +992,11 @@ public abstract class TypeCheckerExpressionNode extends TypeCheckerDataType {
 		}
 
 		private Type_expression_node<T> buildProof(Environment gamma) {
+            List<Pair<Expression, Pair<T, DataType>>> p = params;
 			@SuppressWarnings("unchecked")
 			Type_expression_node<T> proof = p(Type_expression_node.class, selfType,
 					(DataType selfType_) -> p(Type_expression_node.class, decl.getData().getType(),
-							(DataType ddt_) -> p(Type_expression_node.class, params,
+							(DataType ddt_) -> p(Type_expression_node.class, p,
 									(params_) -> doBuildProof(gamma, selfType_, ddt_, params_))));
 			return proof;
 		}
@@ -1030,7 +1021,7 @@ public abstract class TypeCheckerExpressionNode extends TypeCheckerDataType {
 		}
 	}
 
-	private <T> Pair<Type_expression_node<T>, DataType> type_expression_node_MethodCall(Environment gamma,
+	private <T extends ProofTerm> Pair<Type_expression_node<T>, DataType> type_expression_node_MethodCall(Environment gamma,
 			MethodCall mc, BiFunction<Environment, Expression, Pair<T, DataType>> te) {
 		String methodName = mc.getMethod();
 		if (methodName != null) {
@@ -1069,13 +1060,13 @@ public abstract class TypeCheckerExpressionNode extends TypeCheckerDataType {
 		}
 	}
 
-	private void noSuchMethod(MethodCall mc, DataType sSelfType, String methodName, List<DataType> sParamsTypes) {
+	protected void noSuchMethod(MethodCall mc, DataType sSelfType, String methodName, List<DataType> sParamsTypes) {
 		error("No method compatible with signature: `" + TypeInferenceSolver.typeToString(sSelfType) + "::" + methodName
 				+ "(" + sParamsTypes.stream().map(TypeInferenceSolver::typeToString).collect(Collectors.joining(", "))
 				+ ")'", mc, SosADLPackage.Literals.METHOD_CALL__METHOD);
 	}
 
-	private Optional<IntPair<Pair<TypeEnvContent, IntPair<FunctionDecl>>>> lookupForMethod(Environment gamma,
+	protected Optional<IntPair<Pair<TypeEnvContent, IntPair<FunctionDecl>>>> lookupForMethod(Environment gamma,
 			DataType selfType, String methodName, List<DataType> params) {
 		Stream<IntPair<TypeEnvContent>> indexedTypes = StreamUtils.indexed(gamma.stream()).flatMap((i) -> {
 			if (i.getB() instanceof TypeEnvContent) {

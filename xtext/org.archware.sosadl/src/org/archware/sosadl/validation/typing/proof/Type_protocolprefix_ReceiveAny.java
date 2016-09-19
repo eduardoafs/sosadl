@@ -1,13 +1,9 @@
 package org.archware.sosadl.validation.typing.proof;
 
 import org.archware.sosadl.sosADL.ComplexName;
-import org.archware.sosadl.sosADL.Connection;
 import org.archware.sosadl.sosADL.DataType;
 import org.archware.sosadl.sosADL.ModeType;
 import org.archware.sosadl.validation.typing.Environment;
-import org.eclipse.emf.common.util.EList;
-
-import java.math.BigInteger;
 
 public class Type_protocolprefix_ReceiveAny implements Type_protocolprefix_other {
     @Mandatory

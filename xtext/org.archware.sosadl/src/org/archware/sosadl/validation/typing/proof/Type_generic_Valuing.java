@@ -1,7 +1,5 @@
 package org.archware.sosadl.validation.typing.proof;
 
-import org.archware.sosadl.sosADL.DataType;
-import org.archware.sosadl.sosADL.Expression;
 import org.archware.sosadl.sosADL.Valuing;
 import org.archware.sosadl.validation.typing.Environment;
 import org.eclipse.emf.ecore.EObject;

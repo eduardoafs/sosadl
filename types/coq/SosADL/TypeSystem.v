@@ -2115,6 +2115,92 @@ prefix statement.
 
  *)
 
+Inductive type_protocol_root_expression:
+  env -> SosADL.SosADL.t_Expression -> SosADL.SosADL.t_DataType -> Prop :=
+  
+| type_protocol_root_expression_and_type:
+    forall
+      (Gamma: env)
+      (e: SosADL.SosADL.t_Expression)
+      (t: SosADL.SosADL.t_DataType)
+      (p1: type_protocol_root_expression_node Gamma e t)
+      (p2: type t looks fine)
+    ,
+      type_protocol_root_expression Gamma e t
+
+with type_protocol_nonroot_expression:
+  env -> SosADL.SosADL.t_Expression -> SosADL.SosADL.t_DataType -> Prop :=
+  
+| type_protocol_nonroot_expression_and_type:
+    forall
+      (Gamma: env)
+      (e: SosADL.SosADL.t_Expression)
+      (t: SosADL.SosADL.t_DataType)
+      (p1: type_protocol_nonroot_expression_node Gamma e t)
+      (p2: type t looks fine)
+    ,
+      type_protocol_nonroot_expression Gamma e t
+                                       
+with type_protocol_root_expression_node:
+  env -> SosADL.SosADL.t_Expression -> SosADL.SosADL.t_DataType -> Prop :=
+
+| type_protocol_root_expression_nonroot:
+    forall (Gamma: env)
+      (e: SosADL.SosADL.t_Expression)
+      (t: SosADL.SosADL.t_DataType)
+      (p1: type_protocol_nonroot_expression_node
+             Gamma e t)
+    ,
+      type_protocol_root_expression_node Gamma e t
+
+| type_protocol_root_expression_any:
+    forall (Gamma: env)
+      (t: SosADL.SosADL.t_DataType)
+    ,
+      type_protocol_root_expression_node Gamma SosADL.SosADL.Any t
+
+with type_protocol_nonroot_expression_node:
+  env -> SosADL.SosADL.t_Expression -> SosADL.SosADL.t_DataType -> Prop :=
+
+| type_protocol_nonroot_expression_generic:
+    forall (Gamma: env)
+      (e: SosADL.SosADL.t_Expression)
+      (t: SosADL.SosADL.t_DataType)
+      (p1: @type_expression_node
+             type_protocol_nonroot_expression
+             Gamma e t)
+    ,
+      type_protocol_nonroot_expression_node Gamma e t
+
+| type_protocol_nonroot_expression_MethodCall:
+    forall (Gamma: env)
+      (self: SosADL.SosADL.t_Expression)
+      (t: SosADL.SosADL.t_DataType)
+      (typeDecl: SosADL.SosADL.t_DataTypeDecl)
+      (tau: SosADL.SosADL.t_DataType)
+      (methods: list SosADL.SosADL.t_FunctionDecl)
+      (name: string)
+      (formalparams: list SosADL.SosADL.t_FormalParameter)
+      (ret: SosADL.SosADL.t_DataType)
+      (params: list SosADL.SosADL.t_Expression)
+      (p1: type_protocol_nonroot_expression Gamma self t)
+      (p2: binds Gamma (EType typeDecl tau methods))
+      (p4: t </ tau)
+      (p5: method name defined in methods
+       with tau parameters formalparams returns ret)
+      (p6: for each fp p of formalparams params,
+           (exists t, SosADL.SosADL.FormalParameter_type fp = Some t
+                 /\ (exists tp, (type_protocol_root_expression Gamma p tp)
+                          /\ tp </ t)))
+    ,
+      type_protocol_nonroot_expression_node
+        Gamma
+        (SosADL.SosADL.MethodCall
+           (Some self) (Some name) params)
+        ret
+
+.
+
 Inductive type_protocolprefix_other:
   env -> SosADL.SosADL.t_ProtocolStatement -> env -> Prop :=
 
@@ -2172,7 +2258,7 @@ with type_bodyprotocol:
              SosADL.SosADL.SendProtocolAction
              SosADL.SosADL.ReceiveProtocolAction
              type_protocolprefix_other
-             type_expression
+             type_protocol_root_expression
              type_nonfinalprotocol
              Gamma s Gamma1)
     ,
@@ -2209,7 +2295,7 @@ Inductive type_finalprotocol: env -> list SosADL.SosADL.t_ProtocolStatement -> P
              SosADL.SosADL.IfThenElseProtocol
              SosADL.SosADL.RepeatProtocol
              type_finalprotocol_other
-             type_expression
+             type_protocol_root_expression
              type_bodyprotocol type_nonfinalprotocol
              Gamma l)
     ,

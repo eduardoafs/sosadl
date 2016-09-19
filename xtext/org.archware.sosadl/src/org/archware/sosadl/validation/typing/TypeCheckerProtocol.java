@@ -9,7 +9,7 @@ import org.eclipse.emf.common.util.EList;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-public abstract class TypeCheckerProtocol extends TypeCheckerBehavior {
+public abstract class TypeCheckerProtocol extends TypeCheckerProtocolExpression {
 
     private Type_finalprotocol type_finalprotocol(Environment gamma, EList<ProtocolStatement> b, Protocol behavior,
                                                   @SuppressWarnings("unused") int index) {
@@ -22,14 +22,14 @@ public abstract class TypeCheckerProtocol extends TypeCheckerBehavior {
         Function<IfThenElseProtocol, Protocol> getThen = IfThenElseProtocol::getIfTrue;
         Function<IfThenElseProtocol, Protocol> getElse = IfThenElseProtocol::getIfFalse;
         Function<RepeatProtocol, Protocol> getRepeated = RepeatProtocol::getRepeated;
-        Type_generic_finalbody<Protocol, ProtocolStatement, ChooseProtocol, DoneProtocol, IfThenElseProtocol, RepeatProtocol, Type_finalprotocol_other, Type_expression, Type_bodyprotocol, Type_nonfinalprotocol> p1 = type_generic_finalbody(
+        Type_generic_finalbody<Protocol, ProtocolStatement, ChooseProtocol, DoneProtocol, IfThenElseProtocol, RepeatProtocol, Type_finalprotocol_other, Type_protocol_root_expression, Type_bodyprotocol, Type_nonfinalprotocol> p1 = type_generic_finalbody(
                 Protocol.class, ProtocolStatement.class, getBlock, "Protocol", ChooseProtocol.class, getBranches,
                 DoneProtocol.class, IfThenElseProtocol.class, getCondition,
                 SosADLPackage.Literals.IF_THEN_ELSE_PROTOCOL__CONDITION, getThen,
                 SosADLPackage.Literals.IF_THEN_ELSE_PROTOCOL__IF_TRUE, getElse,
                 SosADLPackage.Literals.IF_THEN_ELSE_PROTOCOL__IF_FALSE, RepeatProtocol.class, getRepeated,
                 SosADLPackage.Literals.REPEAT_PROTOCOL__REPEATED, Type_finalprotocol_other.class, proveOther,
-                Type_expression.class, this::type_expression, Type_bodyprotocol.class, gp, Type_nonfinalprotocol.class,
+                Type_protocol_root_expression.class, this::type_protocol_root_expression, Type_bodyprotocol.class, gp, Type_nonfinalprotocol.class,
                 gnf, gamma, b, behavior, SosADLPackage.Literals.PROTOCOL__STATEMENTS, 0);
         Type_finalprotocol proof = p(Type_finalprotocol.class, gamma,
                 (gamma_) -> createType_finalprotocol_generic(gamma_, b, p1));
@@ -52,7 +52,7 @@ public abstract class TypeCheckerProtocol extends TypeCheckerBehavior {
             ProtocolAction a = (ProtocolAction) s;
             OctaFunction<Environment, ProtocolAction, ComplexName, ProtocolActionSuite, Type_connectionname, Boolean, ModeType, DataType,
                     Pair<Environment, Type_protocolprefix_other>> doIt =
-                    (gamma_, a_, cn, as, p1, is_env, mode, conn__tau) -> doReceiveAny(gamma_, a_, cn, as, p1, is_env, mode, conn__tau);
+                    this::doReceiveAny;
             Function<ProtocolAction, ComplexName> getComplexName = ProtocolAction::getComplexName;
             Function<ProtocolAction, ProtocolActionSuite> getSuite = ProtocolAction::getSuite;
             return genericAction(getComplexName, SosADLPackage.Literals.PROTOCOL_ACTION__COMPLEX_NAME,
@@ -73,7 +73,7 @@ public abstract class TypeCheckerProtocol extends TypeCheckerBehavior {
             }
         } else if (s instanceof AnyAction) {
             Type_protocolprefix_other proof = p(Type_protocolprefix_other.class, gamma,
-                    (gamma_) -> createType_protocolprefix_AnyAction(gamma_));
+                    this::createType_protocolprefix_AnyAction);
             return new Pair<>(gamma, proof);
         } else {
             error("Protocol statement `" + labelOf(s) + "' not allowed at non-tail position", s, null);
@@ -114,7 +114,7 @@ public abstract class TypeCheckerProtocol extends TypeCheckerBehavior {
         Pair<Environment, Type_generic_prefixstatement<Protocol, ProtocolStatement, ProtocolActionSuite,
                 ProtocolAction, ChooseProtocol, DoExprProtocol, ForEachProtocol, IfThenElseProtocol,
                 ValuingProtocol, SendProtocolAction, ReceiveProtocolAction,
-                Type_protocolprefix_other, Type_expression, Type_nonfinalprotocol>> p1 = type_generic_prefix(
+                Type_protocolprefix_other, Type_protocol_root_expression, Type_nonfinalprotocol>> p1 = type_generic_prefix(
                 Protocol.class,
                 ProtocolStatement.class, getStatements,
                 "SosADL.SosADL.Protocol", ProtocolActionSuite.class, ProtocolAction.class, getComplexName,
@@ -130,7 +130,7 @@ public abstract class TypeCheckerProtocol extends TypeCheckerBehavior {
                 ValuingProtocol.class, getValuing, SosADLPackage.Literals.VALUING_PROTOCOL__VALUING,
                 SendProtocolAction.class, getExpression1, SosADLPackage.Literals.SEND_PROTOCOL_ACTION__EXPRESSION,
                 ReceiveProtocolAction.class, getVariable1, SosADLPackage.Literals.RECEIVE_PROTOCOL_ACTION__VARIABLE,
-                Type_protocolprefix_other.class, prefix_other, Type_expression.class, this::type_expression,
+                Type_protocolprefix_other.class, prefix_other, Type_protocol_root_expression.class, this::type_protocol_root_expression,
                 Type_nonfinalprotocol.class, type_nonfinalprotocol, gamma, first);
         if (p1 != null) {
             Environment gamma1 = p1.getA();
