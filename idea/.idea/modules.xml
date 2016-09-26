@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/org.archware.sosadl.iml" filepath="$PROJECT_DIR$/org.archware.sosadl.iml" />
+      <module fileurl="file://$PROJECT_DIR$/org.archware.sosadl.ide.iml" filepath="$PROJECT_DIR$/org.archware.sosadl.ide.iml" />
+      <module fileurl="file://$PROJECT_DIR$/org.archware.sosadl.tests.iml" filepath="$PROJECT_DIR$/org.archware.sosadl.tests.iml" />
+      <module fileurl="file://$PROJECT_DIR$/org.archware.sosadl.ui.iml" filepath="$PROJECT_DIR$/org.archware.sosadl.ui.iml" />
+      <module fileurl="file://$PROJECT_DIR$/org.archware.sosadl.ui.tests.iml" filepath="$PROJECT_DIR$/org.archware.sosadl.ui.tests.iml" />
+    </modules>
+  </component>
+</project>

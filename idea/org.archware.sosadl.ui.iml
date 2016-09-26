@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="JAVA_MODULE" version="4">
+  <component name="FacetManager">
+    <facet type="Osmorc" name="OSGi">
+      <configuration manifestGenerationMode="Manually" manifestLocation="META-INF/MANIFEST.MF" jarfileLocation="org.archware.sosadl.ui.jar" outputPathType="CompilerOutputPath" bndFileLocation="" bundlorFileLocation="" bundleActivator="" bundleSymbolicName="" bundleVersion="1.0.0" ignoreFilePattern="" useProjectDefaultManifestFileLocation="false" alwaysRebuildBundleJAR="false" doNotSynchronizeWithMaven="false">
+        <additionalProperties />
+        <additionalJARContents />
+      </configuration>
+    </facet>
+    <facet type="org.eclipse.xtend.core.Xtend" name="Xtend">
+      <configuration>
+        <option name="activated" value="true" />
+        <option name="createDirectory" value="true" />
+        <option name="deleteGenerated" value="true" />
+        <option name="generateSuppressWarnings" value="true" />
+        <option name="hideLocalSyntheticVariables" value="true" />
+        <option name="outputDirectory" value="$MODULE_DIR$/../xtext/org.archware.sosadl.ui/xtend-gen" />
+        <option name="overwriteExisting" value="true" />
+        <option name="testOutputDirectory" value="$MODULE_DIR$/../xtext/org.archware.sosadl.ui/xtend-gen" />
+      </configuration>
+    </facet>
+  </component>
+  <component name="NewModuleRootManager" inherit-compiler-output="false">
+    <output url="file://$MODULE_DIR$/../xtext/org.archware.sosadl.ui/bin" />
+    <exclude-output />
+    <content url="file://$MODULE_DIR$/../xtext/org.archware.sosadl.ui">
+      <sourceFolder url="file://$MODULE_DIR$/../xtext/org.archware.sosadl.ui/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../xtext/org.archware.sosadl.ui/src-gen" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../xtext/org.archware.sosadl.ui/xtend-gen" isTestSource="false" generated="true" />
+    </content>
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="jdk" jdkName="JavaSE-1.8" jdkType="JavaSDK" />
+    <orderEntry type="module" module-name="org.archware.sosadl" />
+    <orderEntry type="module" module-name="org.archware.sosadl.ide" />
+    <orderEntry type="library" name="ECLIPSE" level="application" />
+  </component>
+</module>

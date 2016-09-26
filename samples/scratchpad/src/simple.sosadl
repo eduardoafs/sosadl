@@ -1,0 +1,230 @@
+library simple is {
+	datatype t is integer {0..0} {
+		function (self: t) :: f(): t is {
+			return self
+		}
+	}
+	
+	system client() is {
+		gate rr is {
+			connection s is out { t }
+			connection r is in { t }
+		} guarantee {
+			protocol p is {
+				repeat { via s send any
+					repeat { anyaction }
+					via r receive any
+				}
+			}
+		}
+		
+		behavior main is {
+			repeat {
+				value msg : t = 0
+				via rr::s send msg
+				via rr::r receive v
+			}
+		}
+	}
+	
+	system server() is {
+		gate rr is {
+			connection s is in { t }
+			connection r is out { t }
+		} guarantee {
+			protocol p is {
+				// repeat { via s receive any via r send any }
+				if 1=1 then {
+				done } else {
+					done
+				}
+			}
+		}
+		
+		behavior main is {
+			repeat {
+				via rr::s receive v
+				via rr::r send v::f()
+			}
+		}
+	}
+	
+	system better_server() is {
+		gate rr is {
+			connection s is in { t }
+			connection r is out { t }
+		} guarantee {
+			protocol p is {
+				// repeat { via s receive any via r send any }
+				choose { done } or { done }
+//				done
+			}
+		}
+		
+		behavior main is {
+			repeat {
+				via rr::s receive v
+				via rr::r send v::f()
+			}
+		}
+	}
+
+	mediator buffer() is {
+		
+		duty push is {
+			connection c is in { t }
+		} assume {
+			property p is {
+				// repeat { anyaction }
+				done
+			}
+		} guarantee {
+			protocol p is {
+				// repeat { via c receive any }
+				done
+			}
+		}
+		
+		duty pull is {
+			connection c is out { t }
+		} assume {
+			property p is {
+				// repeat { anyaction }
+				done
+			}
+		} guarantee {
+			protocol p is {
+				// repeat { via c send any }
+				done
+			}
+		}
+		
+		behavior main is {
+			repeat {
+				via push::c receive v
+				via pull::c send v
+			}
+		}
+	}
+	
+	mediator shared_memory() is {
+		datatype t
+	
+		duty write is {
+			connection c is in { t }
+		} assume {
+			property p is {
+				// repeat { anyaction }
+				done
+			}
+		} guarantee {
+			protocol p is {
+				// repeat { via c receive any }
+				done
+			}	
+		}
+		
+		duty read is {
+			connection c is out { t }
+		} assume {
+			property p is {
+				// repeat { anyaction }
+				done
+			}
+		} guarantee {
+			protocol p is {
+				// repeat { via c send any }
+				done
+			}
+		}
+		
+		behavior main is {
+			via write::c receive v
+			repeat {
+				choose {
+					via read::c send v
+				} or {
+					// TODO behavior()
+					via write::c receive v2
+				}
+			}
+		}
+	}
+
+/*
+	mediator reconf() is {
+		duty d is {
+			connection c is in { t }
+		} assume {
+			property p is { done }
+		} guarantee {
+			protocol p is { done }
+		}
+		
+		behavior main is {
+			tell a1 is {
+				forall { c in client suchthat
+					exists { s in server suchthat
+						exists { b1 in buffer suchthat
+							unify one { c::rr::s } to one { b1::push::c }
+							and unify one { b1::pull::c } to one { s::rr::s }
+						}
+						and
+						exists { b2 in buffer suchthat
+							unify one { s::rr::r } to one { b2::push::c }
+							and unify one { b2::pull::c } to one { c::rr::r }
+						}
+					}
+				}
+			}
+			tell a2 is { // a1 -> a2, so the concrete architecture conforms to a2
+				forall { c in client suchthat
+					exists { s in server suchthat
+						exists { b1 in buffer suchthat
+							unify one { c::rr::s } to one { b1::push::c }
+							and unify one { b1::pull::c } to one { s::rr::s }
+						}
+						and
+						exists { b2 in buffer suchthat
+							unify one { s::rr::r } to one { b2::push::c }
+							and unify one { b2::pull::c } to one { c::rr::r }
+						}
+					}
+					or
+					exists { s in better_server suchthat
+						exists { b1 in buffer suchthat
+							unify one { c::rr::s } to one { b1::push::c }
+							and unify one { b1::pull::c } to one { s::rr::s }
+						}
+						and
+						exists { b2 in buffer suchthat
+							unify one { s::rr::r } to one { b2::push::c }
+							and unify one { b2::pull::c } to one { c::rr::r }
+						}
+					}
+				}
+			}
+			// unsaid a1 // starts the reconfiguration
+			tell a3 is { // a3 -> a2, so tell waits until the reconfiguration completes
+				forall { c in client suchthat
+					exists { s in better_server suchthat
+						exists { b1 in buffer suchthat
+							unify one { c::rr::s } to one { b1::push::c }
+							and unify one { b1::pull::c } to one { s::rr::s }
+						}
+						and
+						exists { b2 in buffer suchthat
+							unify one { s::rr::r } to one { b2::push::c }
+							and unify one { b2::pull::c } to one { c::rr::r }
+						}
+					}
+				}
+			}
+			// unsaid a2 // once the reconfiguration is completed, the transient binding is not useful anymore
+			done
+		}
+	}
+	* 
+	*/
+	
+}

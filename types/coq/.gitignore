@@ -4,4 +4,6 @@
 *.aux
 *.v.d
 Makefile
-all.pdf
+all.*
+_CoqProject
+coqdoc.sty
