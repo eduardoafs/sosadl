@@ -11,13 +11,13 @@ library testValuing1 is {
     } guarantee {
       protocol gate1protocol is {
         // valuing is alone
-        value data is integer = 0
+        value data : integer = 0
       }
     }
   
     behavior test is {
       // valuing is alone
-      value data is integer = 0
+      value data : integer = 0
     }
   }
 }

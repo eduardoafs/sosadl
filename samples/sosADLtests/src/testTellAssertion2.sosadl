@@ -10,8 +10,8 @@ library testAskAssertion1 is {
       connection connection1 is in{type1}
     } guarantee {
       protocol gate1protocol is {
-      	value a1 is type1 = 1
-        value a2 is type1 = 2
+      	value a1 : type1 = 1
+        value a2 : type1 = 2
         tell something1 is {b1 = a1 and b2 = a2}
         //via gate1::connection1 send a1
         //via gate1::connection1 receive b1
@@ -19,8 +19,8 @@ library testAskAssertion1 is {
     }
     
     behavior test is {
-      value a1 is type1 = 1
-      value a2 is type1 = 2
+      value a1 : type1 = 1
+      value a2 : type1 = 2
       tell something1 is {b1 = a1 and b2 = a2}
       //via gate1::connection1 send a1
       //via gate1::connection1 receive b1

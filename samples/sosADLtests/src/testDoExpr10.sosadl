@@ -19,7 +19,7 @@ library testDoExpr10 is {
     }
     
     behavior test is {
-      value x is type1 = tuple{z=1,t=2} 
+      value x : type1 = tuple{z=1,t=2} 
       do x::y(5)::z
     }
   }

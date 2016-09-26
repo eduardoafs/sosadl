@@ -10,16 +10,16 @@ library testDoExprValuing2 is {
       connection connection1 is in{type1}
     } guarantee {
       protocol gate1protocol is {
-        value data1 is integer = 1
+        value data1 : integer = 1
         do y(5)::z
-        value data2 is integer = 2
+        value data2 : integer = 2
       }
     }
     
     behavior test is {
-      value data1 is integer = 1
+      value data1 : integer = 1
       do y(5)::z
-      value data2 is integer = 2
+      value data2 : integer = 2
     }
   }
 }

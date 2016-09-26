@@ -6,7 +6,6 @@ package org.archware.sosadl.generator;
 import java.io.File;
 import java.util.List;
 
-import org.archware.sosadl.SosADLStandaloneSetupGenerated;
 import org.archware.sosadl.sosADL.SosADL;
 import org.eclipse.emf.common.util.TreeIterator;
 import org.eclipse.emf.common.util.URI;
@@ -15,8 +14,6 @@ import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.xtext.generator.IGenerator;
 import org.eclipse.xtext.generator.JavaIoFileSystemAccess;
-import org.eclipse.xtext.resource.XtextResource;
-import org.eclipse.xtext.resource.XtextResourceSet;
 import org.eclipse.xtext.util.CancelIndicator;
 import org.eclipse.xtext.validation.CheckMode;
 import org.eclipse.xtext.validation.IResourceValidator;
@@ -161,7 +158,7 @@ public class Main {
 			for (final SosADL e : _filter) {
 				Resource eResource = e.eResource();
 				URI _uRI = eResource.getURI();
-				String resourceFilename = _uRI.trimFileExtension().lastSegment();
+				//String resourceFilename = _uRI.trimFileExtension().lastSegment();
 				String _sourceDir = _uRI.trimSegments(1).toString();
 				fileAccess.setOutputPath(_sourceDir);
 				// }

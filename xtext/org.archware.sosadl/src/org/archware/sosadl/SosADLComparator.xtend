@@ -52,7 +52,6 @@ import org.archware.sosadl.sosADL.Map
 import org.archware.sosadl.sosADL.MethodCall
 import org.archware.sosadl.sosADL.Select
 import org.archware.sosadl.sosADL.UnaryExpression
-import org.archware.sosadl.sosADL.UnobservableValue
 import org.archware.sosadl.sosADL.ElementInConstituent
 import org.archware.sosadl.sosADL.ComplexName
 import org.archware.sosadl.sosADL.Sequence
@@ -68,6 +67,7 @@ import org.archware.sosadl.sosADL.ReceiveAction
 import org.archware.sosadl.sosADL.SendAction
 import org.archware.sosadl.sosADL.AnyAction
 import org.archware.sosadl.sosADL.AskAssertion
+import org.archware.sosadl.sosADL.UntellAssertion
 import org.archware.sosadl.sosADL.TellAssertion
 import org.archware.sosadl.sosADL.ChooseProtocol
 import org.archware.sosadl.sosADL.ForEachBehavior
@@ -91,6 +91,8 @@ import org.archware.sosadl.sosADL.DoExprBehavior
 import org.archware.sosadl.sosADL.DoneBehavior
 import org.archware.sosadl.sosADL.AssertBehavior
 import org.archware.sosadl.sosADL.ValuingBehavior
+import org.archware.sosadl.sosADL.UnobservableBehavior
+
 
 class SosADLComparator {
 	def static compare(SosADL l, SosADL r) {
@@ -154,7 +156,7 @@ class SosADLComparator {
 		&& sameElements(l.datatypes, r.datatypes, [p, q | compare(p, q)])
 		&& sameElements(l.gates, r.gates, [p, q | compare(p, q)])
 		&& compare(l.behavior, r.behavior)
-		&& compareOpt(l.assertion, r.assertion, [p, q | compare(p, q)])
+		&& sameElements(l.assertions, r.assertions, [p, q | compare(p, q)])
 	}
 	
 	def static compare(MediatorDecl l, MediatorDecl r) {
@@ -162,8 +164,8 @@ class SosADLComparator {
         && sameElements(l.datatypes, r.datatypes, [p, q | compare(p, q)])
         && sameElements(l.duties, r.duties, [p, q | compare(p, q)])
         && compare(l.behavior, r.behavior)
-        && compareOpt(l.assumption, r.assumption, [p, q | compare(p, q)])
-        && compareOpt(l.assertion, r.assertion, [p, q | compare(p, q)])
+        && sameElements(l.assumptions, r.assumptions, [p, q | compare(p, q)])
+        && sameElements(l.assertions, r.assertions, [p, q | compare(p, q)])
     }
 	/* WAS:
 	def static compare(MediatorDecl l, MediatorDecl r) {
@@ -179,20 +181,20 @@ class SosADLComparator {
 		&& sameElements(l.datatypes, r.datatypes, [p, q | compare(p, q)])
 		&& sameElements(l.gates, r.gates, [p, q | compare(p, q)])
 		&& compare(l.behavior, r.behavior)
-		&& compareOpt(l.assertion, r.assertion, [p, q | compare(p, q)])
+		&& sameElements(l.assertions, r.assertions, [p, q | compare(p, q)])
 	}
 	
 	def static compare(GateDecl l, GateDecl r) {
 		l.name.equals(r.name)
 		&& sameElements(l.connections, r.connections, [p, q | compare(p, q)])
-		&& compare(l.protocol, r.protocol)
+		&& sameElements(l.protocols, r.protocols, [p, q | compare(p, q)])
 	}
 
 	def static compare(DutyDecl l, DutyDecl r) {
 		l.name.equals(r.name)
 		&& sameElements(l.connections, r.connections, [p, q | compare(p, q)])
-		&& compare(l.assertion, r.assertion)
-		&& compare(l.protocol, r.protocol)
+		&& sameElements(l.assertions, r.assertions, [p, q | compare(p, q)])
+		&& sameElements(l.protocols, r.protocols, [p, q | compare(p, q)])
 	}
 	
 	def static compare(Connection l, Connection r) {
@@ -264,7 +266,7 @@ class SosADLComparator {
 	def static dispatch boolean compareExpression(MethodCall l, MethodCall r)				{ compareExpression(l.object, r.object) && l.method.equals(r.method) && sameElements(l.parameters, r.parameters, [p, q | compareExpression(p, q)]) }
 	def static dispatch boolean compareExpression(Select l, Select r)						{ compareExpression(l.object, r.object) && l.variable.equals(r.variable) && compareExpression(l.condition, r.condition) }
 	def static dispatch boolean compareExpression(UnaryExpression l, UnaryExpression r)		{ l.op.equals(r.op) && compareExpression(l.right, r.right) }
-	def static dispatch boolean compareExpression(UnobservableValue l, UnobservableValue r)	{ true }
+	//def static dispatch boolean compareExpression(UnobservableValue l, UnobservableValue r)	{ true }
 	def static dispatch boolean compareExpression(Expression l, Expression r)				{ false }
 	
 	def static compare(ElementInConstituent l, ElementInConstituent r) {
@@ -291,6 +293,7 @@ class SosADLComparator {
 	
 	def static dispatch boolean compareAssert(AskAssertion l, AskAssertion r)				{ l.name.equals(r.name) && compareExpression(l.expression, r.expression) }
 	def static dispatch boolean compareAssert(TellAssertion l, TellAssertion r)				{ l.name.equals(r.name) && compareExpression(l.expression, r.expression) }
+	def static dispatch boolean compareAssert(UntellAssertion l, UntellAssertion r)			{ l.name.equals(r.name) }
 	
 	
 	def static dispatch boolean compareProtocolStatement(AnyAction l, AnyAction r)						{ true }
@@ -320,6 +323,6 @@ class SosADLComparator {
 	def static dispatch boolean compareBehaviorStatement(RecursiveCall l, RecursiveCall r)				{ sameElements(l.parameters, r.parameters, [p, q | compareExpression(p, q)]) }
 	def static dispatch boolean compareBehaviorStatement(RepeatBehavior l, RepeatBehavior r)			{ compare(l.repeated, r.repeated) }
 	def static dispatch boolean compareBehaviorStatement(ValuingBehavior l, ValuingBehavior r)							{ compare(l.valuing, r.valuing) }
-	def static dispatch boolean compareBehaviorStatement(BehaviorStatement l, BehaviorStatement r)		{ false }
-	
+	def static dispatch boolean compareBehaviorStatement(UnobservableBehavior l, UnobservableBehavior r)			{ true }
+	def static dispatch boolean compareBehaviorStatement(BehaviorStatement l, BehaviorStatement r)		{ false }	
 }

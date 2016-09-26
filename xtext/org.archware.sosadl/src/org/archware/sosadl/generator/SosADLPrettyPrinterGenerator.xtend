@@ -3,15 +3,96 @@
  */
 package org.archware.sosadl.generator
 
-import org.eclipse.emf.ecore.resource.Resource
-import org.eclipse.xtext.generator.IGenerator
-import org.eclipse.xtext.generator.IFileSystemAccess
-import org.archware.sosadl.sosADL.*
-import org.archware.sosadl.SosADLStandaloneSetupGenerated
-import org.eclipse.emf.common.util.URI
-import org.archware.sosadl.SosADLComparator
-import org.eclipse.xtext.parser.IParser
 import java.io.StringReader
+import org.archware.sosadl.SosADLComparator
+import org.archware.sosadl.SosADLStandaloneSetupGenerated
+import org.archware.sosadl.sosADL.Action
+import org.archware.sosadl.sosADL.Any
+import org.archware.sosadl.sosADL.AnyAction
+import org.archware.sosadl.sosADL.ArchBehaviorDecl
+import org.archware.sosadl.sosADL.ArchitectureDecl
+import org.archware.sosadl.sosADL.AskAssertion
+import org.archware.sosadl.sosADL.Assert
+import org.archware.sosadl.sosADL.AssertBehavior
+import org.archware.sosadl.sosADL.AssertProtocol
+import org.archware.sosadl.sosADL.AssertionDecl
+import org.archware.sosadl.sosADL.Behavior
+import org.archware.sosadl.sosADL.BehaviorDecl
+import org.archware.sosadl.sosADL.BehaviorStatement
+import org.archware.sosadl.sosADL.BinaryExpression
+import org.archware.sosadl.sosADL.CallExpression
+import org.archware.sosadl.sosADL.ChooseBehavior
+import org.archware.sosadl.sosADL.ChooseProtocol
+import org.archware.sosadl.sosADL.ComplexName
+import org.archware.sosadl.sosADL.Connection
+import org.archware.sosadl.sosADL.ConnectionType
+import org.archware.sosadl.sosADL.Constituent
+import org.archware.sosadl.sosADL.DataType
+import org.archware.sosadl.sosADL.DataTypeDecl
+import org.archware.sosadl.sosADL.DoExprBehavior
+import org.archware.sosadl.sosADL.DoExprProtocol
+import org.archware.sosadl.sosADL.DoneBehavior
+import org.archware.sosadl.sosADL.DoneProtocol
+import org.archware.sosadl.sosADL.DutyDecl
+import org.archware.sosadl.sosADL.ElementInConstituent
+import org.archware.sosadl.sosADL.EntityBlock
+import org.archware.sosadl.sosADL.Expression
+import org.archware.sosadl.sosADL.Field
+import org.archware.sosadl.sosADL.FieldDecl
+import org.archware.sosadl.sosADL.ForEachBehavior
+import org.archware.sosadl.sosADL.ForEachProtocol
+import org.archware.sosadl.sosADL.FormalParameter
+import org.archware.sosadl.sosADL.FunctionDecl
+import org.archware.sosadl.sosADL.GateDecl
+import org.archware.sosadl.sosADL.IdentExpression
+import org.archware.sosadl.sosADL.IfThenElseBehavior
+import org.archware.sosadl.sosADL.IfThenElseProtocol
+import org.archware.sosadl.sosADL.Import
+import org.archware.sosadl.sosADL.IntegerType
+import org.archware.sosadl.sosADL.IntegerValue
+import org.archware.sosadl.sosADL.Library
+import org.archware.sosadl.sosADL.Map
+import org.archware.sosadl.sosADL.MediatorDecl
+import org.archware.sosadl.sosADL.MethodCall
+import org.archware.sosadl.sosADL.ModeType
+import org.archware.sosadl.sosADL.NamedType
+import org.archware.sosadl.sosADL.Protocol
+import org.archware.sosadl.sosADL.ProtocolAction
+import org.archware.sosadl.sosADL.ProtocolDecl
+import org.archware.sosadl.sosADL.ProtocolStatement
+import org.archware.sosadl.sosADL.Quantify
+import org.archware.sosadl.sosADL.RangeType
+import org.archware.sosadl.sosADL.ReceiveAction
+import org.archware.sosadl.sosADL.ReceiveAnyProtocolAction
+import org.archware.sosadl.sosADL.ReceiveProtocolAction
+import org.archware.sosadl.sosADL.RecursiveCall
+import org.archware.sosadl.sosADL.Relay
+import org.archware.sosadl.sosADL.RepeatBehavior
+import org.archware.sosadl.sosADL.RepeatProtocol
+import org.archware.sosadl.sosADL.Select
+import org.archware.sosadl.sosADL.SendAction
+import org.archware.sosadl.sosADL.SendProtocolAction
+import org.archware.sosadl.sosADL.Sequence
+import org.archware.sosadl.sosADL.SequenceType
+import org.archware.sosadl.sosADL.SoS
+import org.archware.sosadl.sosADL.SosADL
+import org.archware.sosadl.sosADL.SystemDecl
+import org.archware.sosadl.sosADL.TellAssertion
+import org.archware.sosadl.sosADL.Tuple
+import org.archware.sosadl.sosADL.TupleElement
+import org.archware.sosadl.sosADL.TupleType
+import org.archware.sosadl.sosADL.UnaryExpression
+import org.archware.sosadl.sosADL.Unify
+import org.archware.sosadl.sosADL.UnobservableBehavior
+import org.archware.sosadl.sosADL.UntellAssertion
+import org.archware.sosadl.sosADL.Valuing
+import org.archware.sosadl.sosADL.ValuingBehavior
+import org.archware.sosadl.sosADL.ValuingProtocol
+import org.eclipse.emf.common.util.URI
+import org.eclipse.emf.ecore.resource.Resource
+import org.eclipse.xtext.generator.IFileSystemAccess
+import org.eclipse.xtext.generator.IGenerator
+import org.eclipse.xtext.parser.IParser
 
 /**
  * Generates code from your model files on save.
@@ -119,8 +200,10 @@ class SosADLPrettyPrinterGenerator implements IGenerator {
         «ENDFOR»
       
         «s.behavior.compile»
-      }«IF s.assertion != null» guarantee {
-        «s.assertion.compile»
+      }«IF ! s.assertions.empty» guarantee {
+      	«FOR a : s.assertions»
+      	«a.compile»
+      	«ENDFOR»
       }
       «ENDIF»
 	'''
@@ -135,8 +218,10 @@ class SosADLPrettyPrinterGenerator implements IGenerator {
         «ENDFOR»
         
         «a.behavior.compile»
-      }«IF a.assertion != null» guarantee {
-        «a.assertion.compile»
+      }«IF ! a.assertions.empty» guarantee {
+        «FOR aa : a.assertions»
+        «aa.compile»
+        «ENDFOR»
       }
       «ENDIF»
 	'''
@@ -151,10 +236,14 @@ class SosADLPrettyPrinterGenerator implements IGenerator {
         «ENDFOR»
         
         «m.behavior.compile»
-      }«IF m.assumption != null» assume {
-        «m.assumption.compile»
-      }«ENDIF»«IF m.assertion != null» guarantee {
-        «m.assertion.compile»
+      }«IF ! m.assumptions.empty» assume {
+        «FOR a : m.assumptions»
+        «a.compile»
+        «ENDFOR»
+      }«ENDIF»«IF ! m.assertions.empty» guarantee {
+        «FOR a : m.assertions»
+        «a.compile»
+        «ENDFOR»
       }«ENDIF»
 	'''
 	
@@ -165,7 +254,9 @@ class SosADLPrettyPrinterGenerator implements IGenerator {
         «c.compile»
         «ENDFOR»
       } guarantee {
-        «g.protocol.compile»
+      	«FOR p : g.protocols»
+      	«p.compile»
+      	«ENDFOR»
       }
 	'''
 	
@@ -176,9 +267,13 @@ class SosADLPrettyPrinterGenerator implements IGenerator {
         «c.compile»
         «ENDFOR»
       } assume {
-        «d.assertion.compile»
+      	«FOR a : d.assertions»
+        «a.compile»
+        «ENDFOR»
       } guarantee {
-        «d.protocol.compile»
+        «FOR p : d.protocols»
+        «p.compile»
+        «ENDFOR»
       }
       '''
 	
@@ -307,8 +402,13 @@ class SosADLPrettyPrinterGenerator implements IGenerator {
       «(b as DoneBehavior).compile»
     «ELSEIF b instanceof RecursiveCall»
       «(b as RecursiveCall).compile»
+    «ELSEIF b instanceof UnobservableBehavior»
+      «(b as UnobservableBehavior).compile»
     «ENDIF»
     '''
+
+	
+
 
 	def compile(RepeatBehavior f)'''
     repeat «f.repeated.compile»
@@ -333,9 +433,13 @@ class SosADLPrettyPrinterGenerator implements IGenerator {
     behavior («r.parameters.map[compile].join(", ")»)
 	'''
 	
+	def compile(UnobservableBehavior u)'''unobservable'''
+	
     def compile(Assert a)'''
     «IF a instanceof TellAssertion»
        «(a as TellAssertion).compile»
+    «ELSEIF a instanceof UntellAssertion»
+       «(a as UntellAssertion).compile»
     «ELSEIF a instanceof AskAssertion»
        «(a as AskAssertion).compile»
     «ENDIF»
@@ -343,6 +447,10 @@ class SosADLPrettyPrinterGenerator implements IGenerator {
     
     def compile(TellAssertion a)'''
     tell «a.name» is {«a.expression.compile»}
+    '''
+    
+    def compile(UntellAssertion a)'''
+    untell «a.name»
     '''
     
     def compile(AskAssertion a)'''
@@ -452,7 +560,7 @@ class SosADLPrettyPrinterGenerator implements IGenerator {
     def compile(ComplexName c)'''«IF c.name != null»«c.name.join("::")»«ENDIF»'''
     
 	def compile(Valuing v)'''
-      value «v.name»«IF v.type != null» is «v.type.compile»«ENDIF» = «v.expression.compile»
+      value «v.name»«IF v.type != null» : «v.type.compile»«ENDIF» = «v.expression.compile»
 	'''
 	
 	def compile(IntegerValue i)'''«i.absInt»'''
@@ -472,7 +580,6 @@ class SosADLPrettyPrinterGenerator implements IGenerator {
     ELSEIF e instanceof UnaryExpression»«(e as UnaryExpression).compile»«
 	ELSEIF e instanceof CallExpression»«(e as CallExpression).compile»«
 	ELSEIF e instanceof IdentExpression»«(e as IdentExpression).compile»«
-	ELSEIF e instanceof UnobservableValue»«(e as UnobservableValue).compile»«
 	ELSEIF e instanceof Any»«(e as Any).compile»«
     ELSEIF e instanceof Tuple»«(e as Tuple).compile»«
     ELSEIF e instanceof Sequence»«(e as Sequence).compile»«
@@ -513,9 +620,7 @@ class SosADLPrettyPrinterGenerator implements IGenerator {
 	def compile(MethodCall e)'''«
 	e.object.compile»::«e.method»(«e.parameters.map[compile].join(", ")»)'''
 	
-	def compile(UnobservableValue u)'''unobservable'''
-	
-    /* Assertion rules are not used anymore
+	/* Assertion rules are not used anymore
     def compile(Assertion a)'''«
 	IF a instanceof BinaryAssertion»(«(a as BinaryAssertion).left.compile») «(a as BinaryAssertion).op» («(a as BinaryAssertion).right.compile»)«
 	ELSEIF a instanceof UnaryAssertion» «(a as UnaryAssertion).op» («(a as UnaryAssertion).right.compile»)«

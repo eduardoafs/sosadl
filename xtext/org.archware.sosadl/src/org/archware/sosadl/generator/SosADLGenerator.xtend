@@ -21,6 +21,6 @@ class SosADLGenerator extends AbstractGenerator {
   
 	override void doGenerate(Resource resource, IFileSystemAccess2 fsa, IGeneratorContext context) {
 		gen1.doGenerate(resource, fsa)
-    		gen2.doGenerate(resource, fsa)
+    	gen2.doGenerate(resource, fsa)
 	}
 }

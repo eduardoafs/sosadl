@@ -50,9 +50,9 @@ library WsnGateway is {
 		}
 
 		behavior serving is {
-			value depththreshold is Depth = 10
-			value localbase is sequence { MeasureData } = sequence { }
-			value gatewaycoordinate is Coordinate = lps
+			value depththreshold : Depth = 10
+			value localbase : sequence { MeasureData } = sequence { }
+			value gatewaycoordinate : Coordinate = lps
 			//tell gatewaylocation is { gatewaycoordinate = lps }
 			via location::coordinate send gatewaycoordinate
 			repeat {
