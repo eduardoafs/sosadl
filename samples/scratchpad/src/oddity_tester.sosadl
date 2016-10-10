@@ -1,0 +1,30 @@
+library oddity_tester is {
+  datatype bool is integer {0..1}
+  datatype t is integer {0..42}
+
+  system server() is {
+    gate svc is {
+      connection s is in { t }
+      connection r is out { bool }
+    } guarantee {
+      protocol p is {
+        repeat {
+	  via s receive any
+	  via r send any
+	}
+      }
+    }
+    behavior main is {
+      value true: bool = 1
+      value false: bool = 0
+      repeat {
+        via svc::s receive v
+	if v mod 2 = 0 then {
+	  via svc::r send true
+	} else {
+	  via svc::r send false
+	}
+      }
+    }
+  }
+}

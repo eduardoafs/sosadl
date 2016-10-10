@@ -33,9 +33,10 @@ library simple is {
 			connection r is out { t }
 		} guarantee {
 			protocol p is {
-				// repeat { via s receive any via r send any }
+				repeat { via s receive any via r send any }
 				if 1=1 then {
-				done } else {
+					done
+				} else {
 					done
 				}
 			}
@@ -55,9 +56,8 @@ library simple is {
 			connection r is out { t }
 		} guarantee {
 			protocol p is {
-				// repeat { via s receive any via r send any }
+				repeat { via s receive any via r send any }
 				choose { done } or { done }
-//				done
 			}
 		}
 		
@@ -75,12 +75,12 @@ library simple is {
 			connection c is in { t }
 		} assume {
 			property p is {
-				// repeat { anyaction }
+				repeat { anyaction }
 				done
 			}
 		} guarantee {
 			protocol p is {
-				// repeat { via c receive any }
+				repeat { via c receive any }
 				done
 			}
 		}
@@ -89,12 +89,12 @@ library simple is {
 			connection c is out { t }
 		} assume {
 			property p is {
-				// repeat { anyaction }
+				repeat { anyaction }
 				done
 			}
 		} guarantee {
 			protocol p is {
-				// repeat { via c send any }
+				repeat { via c send any }
 				done
 			}
 		}
@@ -114,12 +114,12 @@ library simple is {
 			connection c is in { t }
 		} assume {
 			property p is {
-				// repeat { anyaction }
+				repeat { anyaction }
 				done
 			}
 		} guarantee {
 			protocol p is {
-				// repeat { via c receive any }
+				repeat { via c receive any }
 				done
 			}	
 		}
@@ -128,12 +128,12 @@ library simple is {
 			connection c is out { t }
 		} assume {
 			property p is {
-				// repeat { anyaction }
+				repeat { anyaction }
 				done
 			}
 		} guarantee {
 			protocol p is {
-				// repeat { via c send any }
+				repeat { via c send any }
 				done
 			}
 		}
