@@ -600,9 +600,29 @@ class SosADLPrettyPrinterGenerator implements IGenerator {
       (e as Sequence).compile»«
     ENDIF»'''
 	
-	def compile(BinaryExpression e)'''(«e.left.compile») «e.op» («e.right.compile»)'''
+//	def compile(BinaryExpression e)'''(«e.left.compile») «e.op» («e.right.compile»)'''
 	
-	def compile(UnaryExpression e)''' «e.op» («e.right.compile»)'''
+	def compile(BinaryExpression e) {
+		var left = e.left.compile
+		if (! (e.left instanceof IntegerValue)) {
+			left = '''(«left»)'''
+		}
+		var right = e.right.compile
+		if (! (e.right instanceof IntegerValue)) {
+			right = '''(«right»)'''
+		}
+		'''«left» «e.op» «right»'''
+	}
+	
+//	def compile(UnaryExpression e)''' «e.op» («e.right.compile»)'''
+	
+	def compile(UnaryExpression e) {
+		if (e.right instanceof IntegerValue) {
+			'''«e.op»«e.right.compile»'''
+		} else {
+			''' «e.op»(«e.right.compile»)'''
+		}
+	}
 	
 	def compile(IdentExpression e)'''«e.ident»'''
 	
