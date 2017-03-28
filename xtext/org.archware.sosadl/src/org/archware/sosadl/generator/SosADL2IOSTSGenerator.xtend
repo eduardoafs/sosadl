@@ -73,6 +73,9 @@ import org.eclipse.xtext.generator.IGenerator
 import org.eclipse.xtext.resource.XtextResource
 import org.eclipse.xtext.resource.XtextResourceSet
 import org.archware.sosadl.validation.typing.TypeChecker
+import org.archware.sosadl.sosADL.IntegerValue
+import org.archware.sosadl.sosADL.UnaryExpression
+import java.math.BigInteger
 
 /**
  * Generates IOSTS code from the given SosADL model files on save.
@@ -1530,6 +1533,59 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 	}
 	
 	/*
+	 * Computing Integer values when possible
+	 * Remember that the type systems consider every integer is a Java BigInteger!
+	 */
+	def dispatch BigInteger evaluateIntegerExpression(Expression e) {
+		switch e {
+			IntegerValue: (e as IntegerValue).evaluateIntegerExpression
+			UnaryExpression: (e as UnaryExpression).evaluateIntegerExpression
+			BinaryExpression: (e as BinaryExpression).evaluateIntegerExpression
+			//TODO? IdentExpression
+			//TODO? CallExpression
+			//TODO? MethodCall
+			//TODO? Field
+			default: {
+				System.err.println("evaluateIntegerExpression: cannot evaluate expression: '"+e.compile+"'... returning 0!")
+				BigInteger.ZERO
+			}
+		}
+	}
+	
+	def dispatch BigInteger evaluateIntegerExpression(IntegerValue e) {
+		new BigInteger(e.absInt.toString)
+	}
+	
+	def dispatch BigInteger evaluateIntegerExpression(UnaryExpression e) {
+		val right = evaluateIntegerExpression(e.right)
+		switch e.op {
+			case '+': right
+			case '-': right.negate
+			default: {
+				System.err.println("evaluateIntegerExpression: unknown unary operator in expression: '"+e.compile+"'... returning 0!")
+				BigInteger.ZERO
+			}
+		}
+	}
+	
+	def dispatch BigInteger evaluateIntegerExpression(BinaryExpression e) {
+		val left = evaluateIntegerExpression(e.left)
+		val right = evaluateIntegerExpression(e.right)
+		switch e.op {
+			case '+': left.add(right)
+			case '-': left.add(right.negate)
+			case '*': left.multiply(right)
+			case '/': left.divide(right)
+			case 'mod': left.mod(right)
+			case 'div': left.divide(right)
+			default: {
+				System.err.println("evaluateIntegerExpression: unknown binary operator in expression: '"+e.compile+"'... returning 0!")
+				BigInteger.ZERO
+			}
+		}
+	}
+	
+	/*
 	 * IOstsType computeIOstsType(DataType t)
 	 * returns an IOstsType out of the given DataType t  
 	 */
@@ -1579,9 +1635,9 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
     }
     
     def dispatch IOstsType computeIOstsType(RangeType t) {
-        //FIXME: min et max peuvent etre des constantes au lieu de nombres
-        val int min=Integer.valueOf(t.vmin.compile.toString)
-        val int max=Integer.valueOf(t.vmax.compile.toString)
+        //FIXME: min et max may not be integer literals
+		val int min=evaluateIntegerExpression(t.vmin).intValue
+		val int max=evaluateIntegerExpression(t.vmax).intValue
         new IOstsRangeType(min, max)
     }
     
@@ -1783,6 +1839,8 @@ class IOstsBoolType extends IOstsType {
 
 class IOstsRangeType extends IOstsType {
     
+    //FIXME: IOstsRangeType bounds should be plain Expressions, not only integers  
+        
     int min
     int max
     
