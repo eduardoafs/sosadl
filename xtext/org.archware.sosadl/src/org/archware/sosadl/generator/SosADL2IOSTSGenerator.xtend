@@ -72,6 +72,7 @@ import org.eclipse.xtext.generator.IFileSystemAccess
 import org.eclipse.xtext.generator.IGenerator
 import org.eclipse.xtext.resource.XtextResource
 import org.eclipse.xtext.resource.XtextResourceSet
+import org.archware.sosadl.validation.typing.TypeChecker
 
 /**
  * Generates IOSTS code from the given SosADL model files on save.
@@ -217,19 +218,12 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 		// generate a new dumb variable
 		lastDoExprResultNumber++
 		val String dumbVarName="_doExprResult"+lastDoExprResultNumber
+		/*
 		// FIXME: retrieve the type of Expression!
 		val String typeName = "TYPE_TODO"+lastDoExprResultNumber
 		val DataType datatype = newNamedType(typeName)
-		/*
-		 * We can't do this here:
-		 *   val IOstsType iostsType = computeIOstsType(typeName)
-		 *   currentSystem.typesMap.put(typeName, iostsType)
-		 * Because it's too late to compute an IOstsType and register it:
-		 * type declaration have already been generated!
-		 * So, at this point:
-		 * - either we must give the name of an already declared type (eg 'SomeDataType')
-		 * - or we must give the definition of the type (eg 'sequence{integer}')
-		 */
+		*/
+		val DataType datatype = TypeChecker.getType(doExpr)
 		// create a Valuing
 		val factory = SosADLFactory.eINSTANCE
 		var result = factory.createValuing()  // will create a ValuingImpl!
