@@ -4,6 +4,7 @@
 package org.archware.sosadl.generator
 
 import com.google.inject.Injector
+import com.google.inject.Inject
 import java.util.ArrayList
 import java.util.LinkedHashMap
 import java.util.List
@@ -86,9 +87,9 @@ import java.math.BigInteger
  */
 class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGenerator {
     
-    var DEBUG=false
-    var DEBUG2=false
-    var DEBUG3=false
+    public static var DEBUG=false
+    public static var DEBUG2=false
+    public static var DEBUG3=false
     
     // global variables making the generation much easier
     // librariesMap contains all known libraries
@@ -1527,7 +1528,7 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
         	}
         }
         if (name == "") {
-            name=type.toString()    
+            name=type.toString()
         }
         name
 	}
@@ -1635,10 +1636,9 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
     }
     
     def dispatch IOstsType computeIOstsType(RangeType t) {
-        //FIXME: min et max may not be integer literals
-		val int min=evaluateIntegerExpression(t.vmin).intValue
-		val int max=evaluateIntegerExpression(t.vmax).intValue
-        new IOstsRangeType(min, max)
+//		val int min=evaluateIntegerExpression(t.vmin).intValue
+//		val int max=evaluateIntegerExpression(t.vmax).intValue
+        new IOstsRangeType(t.vmin, t.vmax)
     }
     
     def dispatch IOstsType computeIOstsType(NamedType t) {
@@ -1837,20 +1837,81 @@ class IOstsBoolType extends IOstsType {
     }
 }
 
+//class IOstsRangeType extends IOstsType {
+//    
+//    //FIXME: IOstsRangeType bounds should be plain Expressions, not only integers  
+//        
+//    int min
+//    int max
+//    
+//    // private thus inaccessible, because one cannot create range without min and max values
+//    private new() {
+//        min = 0
+//        max = 0
+//    }
+//    
+//    new(int min, int max) {
+//        this.min = min
+//        this.max = max
+//    }
+//    
+//    def min() {
+//        this.min
+//    }
+//    
+//    def max() {
+//        this.max
+//    }
+//    
+//    override def String toString() {
+//        "integer{"+min+".."+max+"}"
+//    }
+//    
+//    override def equals(IOstsType other) {
+//        if (other instanceof IOstsRangeType) {
+//            (other.min == min) && (other.max == max)
+//        } else {
+//            false
+//        }
+//    }
+//}
+
 class IOstsRangeType extends IOstsType {
+	    
+    Expression min
+    Expression max
     
-    //FIXME: IOstsRangeType bounds should be plain Expressions, not only integers  
-        
-    int min
-    int max
+    private def Expression newIntegerExpression(int v) {
+    	val factory = SosADLFactory.eINSTANCE
+    	var intValue = factory.createIntegerValue()
+    	intValue.setAbsInt(Math.abs(v))
+		if (v >= 0) {
+			intValue
+	    } else {
+			var unaryExpression = factory.createUnaryExpression()
+			unaryExpression.setOp('-')
+			unaryExpression.setRight(intValue)
+			unaryExpression
+		}
+    }
     
     // private thus inaccessible, because one cannot create range without min and max values
     private new() {
-        min = 0
-        max = 0
+    	min = newIntegerExpression(0)
+        max = newIntegerExpression(0)
     }
     
     new(int min, int max) {
+        this.min = newIntegerExpression(min)
+        this.max = newIntegerExpression(max)
+    }
+    
+    new(BigInteger min, BigInteger max) {
+        this.min = newIntegerExpression(min.intValueExact)
+        this.max = newIntegerExpression(max.intValueExact)
+    }
+    
+    new(Expression min, Expression max) {
         this.min = min
         this.max = max
     }
@@ -1864,12 +1925,27 @@ class IOstsRangeType extends IOstsType {
     }
     
     override def String toString() {
-        "integer{"+min+".."+max+"}"
+    	//"integer{"+min+".."+max+"}"
+        var SosADLPrettyPrinterGenerator gen = new SosADLPrettyPrinterGenerator()
+    	
+    	if (SosADL2IOSTSGenerator.DEBUG) {	
+	    	if (min == null) {
+	    		System.err.println("IOstsRangeType: null min!")
+	    	} else {
+	    		System.err.println("IOstsRangeType: min.compile='"+gen.compile(min)+"'")
+	    	}
+	    	if (max == null) {
+	    		System.err.println("IOstsRangeType: null max!")
+	    	} else {
+	    		System.err.println("IOstsRangeType: max.compile='"+gen.compile(max)+"'")
+	    	}
+    	}
+    	"integer{"+gen.compile(min)+".."+gen.compile(max)+"}"
     }
-    
-    override def equals(IOstsType other) {
+	
+	override def equals(IOstsType other) {
         if (other instanceof IOstsRangeType) {
-            (other.min == min) && (other.max == max)
+            (other.min.equals(min)) && (other.max.equals(max))
         } else {
             false
         }
