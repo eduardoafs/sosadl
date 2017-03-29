@@ -1,0 +1,56 @@
+library CMBeverage is {
+  
+  system Beverage (cBeverageQuantity:integer{0..5}, cPrice:integer{0..10}) is {    
+    
+  	datatype bool is integer{0..1}    
+    
+    gate CoffeeMachine is {
+      environment connection PressButton is inout{bool}
+      environment connection Deliver is inout{bool}
+    } guarantee {
+      	protocol env_UserBeverage is {
+		    via PressButton send any
+			repeat{
+				via PressButton send any
+	    			repeat{via PressButton send any}
+	    			via Deliver receive any		  		
+	    		}
+    		}
+    }
+    	
+    gate InformationExchange is {
+      connection SendPrice is out{integer{0..10}}
+      connection Paid is in{bool}
+      connection NotPaid is in{bool}
+    } guarantee {
+		protocol allowAll is { 
+			repeat{anyaction}
+		}
+    }
+  
+    behavior delivering is {
+    		if cBeverageQuantity>0 and cPrice>0 then {
+    		  value vBeverageQuantity : integer{0..5} = 0
+          repeat{
+          	if vBeverageQuantity >= cBeverageQuantity then {
+    		  		via CoffeeMachine::PressButton receive pPressed
+    		  	} else{
+    		  		via CoffeeMachine::PressButton receive pPressed
+    		  		via InformationExchange::SendPrice send cPrice
+    		  		choose{
+    		  		  via InformationExchange::NotPaid receive pInfo
+    		  		} or { 
+    		  			via InformationExchange::Paid receive pInfo
+    		  		    via CoffeeMachine::Deliver send 1
+    		  	        value vBeverageQuantity = vBeverageQuantity + 1
+    		  	    }
+    		    }
+    		  } // end of repeat
+    	   } else {done}
+    }
+} guarantee {
+    property paying is {
+		repeat{anyaction}
+    }
+  }
+}// end of library
