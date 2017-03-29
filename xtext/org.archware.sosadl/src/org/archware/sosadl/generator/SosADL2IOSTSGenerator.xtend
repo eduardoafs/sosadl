@@ -87,8 +87,8 @@ import java.math.BigInteger
  */
 class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGenerator {
     
-    public static var DEBUG=true
-    public static var DEBUG2=true
+    public static var DEBUG=false
+    public static var DEBUG2=false
     public static var DEBUG3=false
     
     // global variables making the generation much easier
@@ -943,11 +943,15 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
     def dispatch ArrayList<Integer> computeSTS(int startState, ProtocolAction a){
         val int final=currentProcess.newState()
         var IOstsTransition action = new IOstsTransition(startState,final)
-        var String channel=a.getNameOfGateOrDuty+"::"+a.complexName.compile.toString
-        // In ProtocolAction, the type-checker only accept connection without the prefix gateName:: or dutyName::
-        // Example: "via connection1 receive any" but not "via gate1::connection1 receive any"
-        // So we must retrieve the gate or duty name in the ProtocolAction container.
-        
+        var String channel=a.complexName.compile.toString
+        if (channel.split('::').size < 2) {
+            // We are in the case of a connection name that does not include the gate's or duty's name.
+            // This happens in ProtocolAction occurring in guarantee/assume protocols of GateDecl/DutyDecl:
+            // the type-checker only accept connection without the prefix gateName:: or dutyName::
+            // Example: "via connection1 receive any" but not "via gate1::connection1 receive any"
+            // So we must retrieve the gate or duty name in the ProtocolAction container.
+            channel=a.getNameOfGateOrDuty+"::"+a.complexName.compile.toString
+        }
         if (DEBUG2) System.out.println("ProtocolAction: Searching channel '"+channel+"' among all known connections")
         val IOstsConnection connection=currentProcess.getConnection(channel)
         if (connection == null) {
