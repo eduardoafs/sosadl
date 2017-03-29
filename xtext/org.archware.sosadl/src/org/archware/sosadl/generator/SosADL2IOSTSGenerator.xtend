@@ -87,8 +87,8 @@ import java.math.BigInteger
  */
 class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGenerator {
     
-    public static var DEBUG=false
-    public static var DEBUG2=false
+    public static var DEBUG=true
+    public static var DEBUG2=true
     public static var DEBUG3=false
     
     // global variables making the generation much easier
@@ -144,7 +144,7 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 		val IOstsType _saved_currentType = currentType
 		val LinkedHashMap<String,IOstsType> _saved_currentTypesMap = currentTypesMap
 		val IOstsSystem _saved_currentSystem = currentSystem
-    		val IOstsProcess _saved_currentProcess = currentProcess
+    	val IOstsProcess _saved_currentProcess = currentProcess
    	 	val LinkedHashMap<String,IOstsConnection> _saved_currentConnectionsMap = currentConnectionsMap
 		// ok: generate the iosts!
         var String resourceFilename = sfile.eResource.URI.trimFileExtension.lastSegment
@@ -552,6 +552,9 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
     override def compile(GateDecl g){
     	currentConnectionsMap = new LinkedHashMap()
 	    for (c : g.connections) {
+	    	if (DEBUG2) {
+	    		System.err.println("Declaring gate connection = '"+g.name+"::"+c.name+"'")
+	    	}
 	        val name=g.name+"::"+c.name
 	        val IOstsType type = computeIOstsType(c.valueType)
 	        val typeName = nameOfIOstsType(type) //finalNameOfIOstsType(nameOfIOstsType(type))
@@ -564,6 +567,9 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 	override def compile(DutyDecl d){
 		currentConnectionsMap = new LinkedHashMap()
         for (c : d.connections) {
+        	if (DEBUG2) {
+	    		System.err.println("Declaring duty connection = '"+d.name+"::"+c.name+"'")
+	    	}
             val name=d.name+"::"+c.name
             val IOstsType type = computeIOstsType(c.valueType)
             val typeName = nameOfIOstsType(type) //finalNameOfIOstsType(nameOfIOstsType(type))
@@ -857,6 +863,7 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
         val int final=currentProcess.newState()
         var IOstsTransition action = new IOstsTransition(startState,final)
         var String channel=a.complexName.compile.toString
+        if (DEBUG2) System.out.println("Behavior Action: Searching channel '"+channel+"' among all known connections")
         val IOstsConnection connection=currentSystem.getConnection(channel)
         if (connection == null) {
             System.err.println("Warning! Channel '"+channel+"' not declared! Ignoring statement...")
@@ -908,6 +915,27 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
         currentProcess.addTransition(action)
         newArrayList(final)
     }
+    
+    /*
+     * utility function: get the name of the gate or duty in a ProtocolAction.
+     * This is needed because the type-checker does not allow to specify the gate or duty
+     * name in the connection name.
+     */
+    def String getNameOfGateOrDuty(ProtocolAction a) {
+    	var gd = a.eContainer
+    	var name=""
+    	while(name == "") {
+    		switch gd {
+    			GateDecl: name = (gd as GateDecl).name
+    			DutyDecl: name = (gd as DutyDecl).name
+    			default: gd = gd.eContainer
+    		}
+    		if (gd == null) {
+    			name = "unknown"
+    		}
+    	}
+    	name
+    }
 
     /*
      * - computeSTS for a Send/Receive Protocol statement.
@@ -915,7 +943,12 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
     def dispatch ArrayList<Integer> computeSTS(int startState, ProtocolAction a){
         val int final=currentProcess.newState()
         var IOstsTransition action = new IOstsTransition(startState,final)
-        var String channel=a.complexName.compile.toString
+        var String channel=a.getNameOfGateOrDuty+"::"+a.complexName.compile.toString
+        // In ProtocolAction, the type-checker only accept connection without the prefix gateName:: or dutyName::
+        // Example: "via connection1 receive any" but not "via gate1::connection1 receive any"
+        // So we must retrieve the gate or duty name in the ProtocolAction container.
+        
+        if (DEBUG2) System.out.println("ProtocolAction: Searching channel '"+channel+"' among all known connections")
         val IOstsConnection connection=currentProcess.getConnection(channel)
         if (connection == null) {
             System.err.println("Warning! Channel '"+channel+"' not declared! Ignoring statement...")
