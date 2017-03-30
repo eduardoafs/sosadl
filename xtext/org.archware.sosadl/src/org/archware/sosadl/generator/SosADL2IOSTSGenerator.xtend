@@ -76,6 +76,7 @@ import org.eclipse.xtext.resource.XtextResourceSet
 import org.archware.sosadl.validation.typing.TypeChecker
 import org.archware.sosadl.sosADL.IntegerValue
 import org.archware.sosadl.sosADL.UnaryExpression
+import org.archware.sosadl.sosADL.BooleanType
 import java.math.BigInteger
 
 /**
@@ -1634,6 +1635,7 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 	        TupleType: computeIOstsType(t)
 	        RangeType: computeIOstsType(t)
 	        NamedType: computeIOstsType(t)
+	        BooleanType: computeIOstsType(t)
 	        default: {
 	            System.err.println("BUG! computeIOstsType of this datatype '"+t.toString+"' is not implemented! Assuming 'integer'...")
                 new IOstsIntType()
@@ -1678,9 +1680,14 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
         new IOstsRangeType(t.vmin, t.vmax)
     }
     
+    def dispatch IOstsType computeIOstsType(BooleanType t) {
+    	new IOstsBoolType()
+    }
+    
     def dispatch IOstsType computeIOstsType(NamedType t) {
     	computeIOstsType(t.name as String)
     }
+    
     
     def dispatch IOstsType computeIOstsType(String t) {
     	var result1 = getIOstsType(t)
@@ -1873,45 +1880,6 @@ class IOstsBoolType extends IOstsType {
         (other instanceof IOstsBoolType)
     }
 }
-
-//class IOstsRangeType extends IOstsType {
-//    
-//    //FIXME: IOstsRangeType bounds should be plain Expressions, not only integers  
-//        
-//    int min
-//    int max
-//    
-//    // private thus inaccessible, because one cannot create range without min and max values
-//    private new() {
-//        min = 0
-//        max = 0
-//    }
-//    
-//    new(int min, int max) {
-//        this.min = min
-//        this.max = max
-//    }
-//    
-//    def min() {
-//        this.min
-//    }
-//    
-//    def max() {
-//        this.max
-//    }
-//    
-//    override def String toString() {
-//        "integer{"+min+".."+max+"}"
-//    }
-//    
-//    override def equals(IOstsType other) {
-//        if (other instanceof IOstsRangeType) {
-//            (other.min == min) && (other.max == max)
-//        } else {
-//            false
-//        }
-//    }
-//}
 
 class IOstsRangeType extends IOstsType {
 	    
