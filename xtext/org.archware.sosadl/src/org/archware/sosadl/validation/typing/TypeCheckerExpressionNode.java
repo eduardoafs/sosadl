@@ -1151,7 +1151,7 @@ public abstract class TypeCheckerExpressionNode extends TypeCheckerDataType {
 						}
 					}
 				}
-				error("Unknown unary operator with types " + TypeInferenceSolver.typeToString(t1) + " `" + e.getOp()
+				error("Unknown binary operator with types " + TypeInferenceSolver.typeToString(t1) + " `" + e.getOp()
 						+ "' " + TypeInferenceSolver.typeToString(t3), e, SosADLPackage.Literals.BINARY_EXPRESSION__OP);
 				return new Pair<>(null, null);
 			} else {
