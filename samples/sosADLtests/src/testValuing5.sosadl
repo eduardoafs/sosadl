@@ -7,23 +7,25 @@ library testValuing5 is {
     datatype type1
     
     gate gate1 is {
-      connection connection1 is out{type1}
+      connection connection1 is in{type1}
     } guarantee {
       protocol gate1protocol is {
         // 2 valuings
-        value data1 : integer = 1
-        value data2 : integer = 2
-        via gate1::connection1 receive any
-        value data3 : integer = 3
+        value data1 : integer{0..10} = 1
+        value data2 : integer{0..10} = 2
+        via connection1 receive any
+        value data3 : integer{0..10} = 3
+        done
       }
     }
   
     behavior test is {
       // 2 valuings
-      value data1 : integer = 1
-      value data2 : integer = 2
+      value data1 : integer{0..10} = 1
+      value data2 : integer{0..10} = 2
       via gate1::connection1 receive data
-      value data3 : integer = 3
+      value data3 : integer{0..10} = 3
+      done
     }
   }
 }

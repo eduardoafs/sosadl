@@ -1,0 +1,9 @@
+// KO: fails because the type-checker doesn't know how to handle imports
+with Base
+with testLibrary7  // imports testLibrary7 which declares Complex datatype
+
+library testLibrary8 is {
+  function (a:Complex)::sqr():Complex is {
+    return a::mult(a)
+  }
+}

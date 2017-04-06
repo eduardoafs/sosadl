@@ -1,24 +1,27 @@
 // ok
-
-library testSend1 is {
+ 
+library testDuty2 is {
   
-  system test() is {
+  mediator test() is {
     
     datatype type1 is integer{0..10}
     
-    gate gate1 is {
+    duty duty1 is {
       connection connection1 is out{type1}
-    } guarantee {
+    } assume {
+    	  protocol duty1protocol is {
+        via connection1 send any
+        done
+      }
+    	} guarantee {
       protocol gate1protocol is {
-        // send action is first statement
         via connection1 send any
         done
       }
     }
-  
+    
     behavior test is {
-      // send action is first statement
-      via gate1::connection1 send 0
+      via duty1::connection1 send 2
       done
     }
   }

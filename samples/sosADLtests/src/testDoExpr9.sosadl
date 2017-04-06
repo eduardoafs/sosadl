@@ -4,7 +4,7 @@ library testDoExpr8 is {
   
   system test() is {
     
-    datatype type1 is tuple {x:integer, y:integer}
+    datatype type1 is tuple {x:integer{0..10}, y:integer{0..10}}
     
     gate gate1 is {
       connection connection1 is in{type1}
@@ -12,12 +12,14 @@ library testDoExpr8 is {
       protocol gate1protocol is {
       	value v : type1 = tuple{x=0, y=1}
         do v::x
+        done
       }
     }
     
     behavior test is {
       value v : type1 = tuple{x=1, y=2}
       do v::x
+      done
     }
   }
 }

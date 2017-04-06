@@ -1,5 +1,6 @@
 // ok
-library testDoExpr8 is {
+
+library testDoExprValuing3 is {
   
   system test() is {
     
@@ -9,13 +10,17 @@ library testDoExpr8 is {
       connection connection1 is in{type1}
     } guarantee {
       protocol gate1protocol is {
-        do 0<1 xor 1>=1 implies 0<>1
+        value data1 : integer{0..10} = 1
+        do data1+1
+        value data2 : integer{0..12} = data1 + 2
         done
       }
     }
     
     behavior test is {
-      do 1<2 xor 2>=2 implies 1<>2
+      value data1 : integer{0..10} = 1
+      do data1+1
+      value data2 : integer{0..12} = data1 + 2
       done
     }
   }

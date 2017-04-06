@@ -15,7 +15,8 @@ library testRepeat11 is {
         repeat{
           anyaction
         }
-        via gate1::connection3 send any
+        via connection3 send any
+        done
       }
     }
     

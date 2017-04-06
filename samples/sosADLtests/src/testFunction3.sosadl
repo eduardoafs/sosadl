@@ -3,7 +3,7 @@
 library testFunction3 is {
   
   datatype type1 is integer{0..1} {
-  	function (left : type1)::add(right : type1) : type1 is {
+  	function (left : type1)::add(right : type1) : integer{0..2} is {
   	  return left+right
   	}
   	function (left : type1)::mult(right : type1) : type1 is {
@@ -11,17 +11,17 @@ library testFunction3 is {
     }
   }
   
-  function (left : type1)::divide(right : type1) : type1 is {
-  	return left div right
+  function (left : type1)::divide(right : integer{1..2}) : integer{0..11} is {
+  	return left / right
   }
   
   system test() is {
     
     datatype type2 is integer{1..2} {
-  	  function (left : type2)::add(right : type2) : type2 is {
+  	  function (left : type2)::add(right : type2) : integer{2..4} is {
   		return left+right
   	  }
-  	  function (left : type2)::mult(right : type2) : type2 is {
+  	  function (left : type2)::mult(right : type2) : integer{1..4} is {
 	  	return left*right
 	  }
     }

@@ -12,6 +12,7 @@ library testAnyAction2 is {
     } guarantee {
       protocol gate1protocol is {
         anyaction
+        done
       }
     }
     

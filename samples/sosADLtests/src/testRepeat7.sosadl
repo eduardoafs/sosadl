@@ -15,11 +15,11 @@ library testRepeat7 is {
         value data = 0
         repeat{
           choose
-            {via gate1::connection1 receive any}
+            {via connection1 receive any}
           or 
-            {via gate1::connection2 send any}
+            {via connection2 send any}
           or 
-            {via gate1::connection3 send any}
+            {via connection3 send any}
         }
       }
     }

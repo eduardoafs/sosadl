@@ -1,0 +1,29 @@
+// ok
+
+library testDoExpr12 is {
+  
+  system test() is {
+    
+    datatype type2 is tuple{z:integer{0..10}, t:integer{0..10}}
+    
+    datatype type1 is tuple{z:integer{0..5}, t:integer{0..5}} {
+    	  function (data:type1)::y(x:integer{0..5}):type2 is {
+    	    return tuple{z=data::z+x, t=data::t+x}
+    	  } 
+    }
+    
+    gate gate1 is {
+      connection connection1 is in{type1}
+    } guarantee {
+      protocol gate1protocol is {
+        do tuple{z=0,t=1}::y(5)::z
+        done
+      }
+    }
+    
+    behavior test is {
+      do tuple{z=0,t=1}::y(5)::z
+      done
+    }
+  }
+}

@@ -12,7 +12,7 @@ library testRepeat4 is {
       protocol gate1protocol is {
         value data = 0
         repeat{
-          via gate1::connection1 receive any
+          via connection1 receive any
         }
       }
     }

@@ -4,18 +4,20 @@ library testDoExpr4 is {
   
   system test() is {
     
-    datatype type1
+    datatype type1 is integer{0..1}
     
     gate gate1 is {
       connection connection1 is in{type1}
     } guarantee {
       protocol gate1protocol is {
         do 1=2
+        done
       }
     }
     
     behavior test is {
       do 2=3
+      done
     }
   }
 }

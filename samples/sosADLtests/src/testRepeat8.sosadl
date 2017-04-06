@@ -23,6 +23,7 @@ library testRepeat8 is {
         value data7 = 7
         value data8 = 8
         value data9 = 9
+        done
       }
     }
     

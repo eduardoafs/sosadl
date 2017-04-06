@@ -1,27 +1,29 @@
-// ok
+// KO: type-checker does not know how to type ask statements
  
 library testAskAssertion1 is {
   
   system test() is {
     
-    datatype type1
+    datatype type1 is integer{0..10}
     
     gate gate1 is {
-      connection connection1 is in{type1}
+      connection connection1 is inout{type1}
     } guarantee {
       protocol gate1protocol is {
       	value a1 : type1 = 1
         ask something1 is {a1 = b1}
-        //via gate1::connection1 send a1
-        //via gate1::connection1 receive b1
+        via connection1 send a1
+        via connection1 receive b1
+        done
       }
     }
     
     behavior test is {
       value a1 : type1 = 1
       ask something1 is {a1 = b1}
-      //via gate1::connection1 send a1
-      //via gate1::connection1 receive b1
+      via gate1::connection1 send a1
+      via gate1::connection1 receive b1
+      done
     }
   }
 }

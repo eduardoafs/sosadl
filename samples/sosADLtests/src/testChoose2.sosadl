@@ -6,24 +6,36 @@ library testChoose2 is {
   
   system test() is {
     
-    datatype type1
+    datatype type1 is integer{0..10}
     
     gate gate1 is {
       connection connection1 is inout{type1}
     } guarantee {
       protocol gate1protocol is {
         choose
-          {via gate1::connection1 receive any}
+          {
+          	via connection1 receive any
+          	done
+          }
         or 
-          {via gate1::connection1 send any}
+          {
+          	via connection1 send any
+          	done
+          }
       }
     }
     
     behavior test is {
       choose
-          {via gate1::connection1 receive data}
+          {
+          	via gate1::connection1 receive data
+          	done
+          }
       or 
-          {via gate1::connection1 send 1}
+          {
+          	via gate1::connection1 send 1
+          	done
+          }
     }
   }
 }

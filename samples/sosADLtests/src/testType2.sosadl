@@ -2,11 +2,11 @@
 
 library testType2 is {
   
-  datatype type1 is integer
+  datatype type1 is integer{0..10}
   
   system test() is {
     
-    datatype type2 is integer
+    datatype type2 is integer{0..10}
     
     gate gate1 is {
       connection connection1 is out{type1}

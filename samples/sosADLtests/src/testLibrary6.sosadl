@@ -2,13 +2,15 @@
 with Base
 
 library testLibrary6 is {
-  datatype Complex is tuple{r:integer,i:integer} {
-  	function (a:Complex)::add(b:Complex):Complex is {
+  datatype BigComplex is tuple{r:integer{0..100},i:integer{0..100}}
+  
+  datatype Complex is tuple{r:integer{0..10},i:integer{0..10}} {
+  	function (a:Complex)::add(b:Complex):BigComplex is {
   	  return tuple{r = a::r + b::r, i = a::i + b::i}
   	}
   }
 
-  function (a:Complex)::mult(b:tuple{r:integer,i:integer}):tuple{r:integer,i:integer} is {
+  function (a:Complex)::mult(b:tuple{r:integer{0..10},i:integer{0..10}}):tuple{r:integer{-100..100},i:integer{0..200}} is {
   	return tuple{r = (a::r * b::r) - (a::i * b::i),
   				 i = (a::r * b::i) + (a::i * b::r)
   	}

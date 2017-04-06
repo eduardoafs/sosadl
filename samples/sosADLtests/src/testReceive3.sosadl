@@ -11,15 +11,17 @@ library testReceive3 is {
     } guarantee {
       protocol gate1protocol is {
         // send action is not first statement
-        value data : integer = 0
-        via gate1::connection1 receive any
+        value data : integer{0..0} = 0
+        via connection1 receive any
+        done
       }
     }
   
     behavior test is {
       // send action is not first statement
-      value data : integer = 0  // required to type data
+      value data : integer{0..0} = 0  // required to type data
       via gate1::connection1 receive data
+      done
     }
   }
 }

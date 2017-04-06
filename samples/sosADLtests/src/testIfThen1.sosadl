@@ -1,6 +1,4 @@
-// KO: the iosts translation fails, while the "if then else" test succeeds.
-// It may be because the "if then" is transformed into an STS with only one transition: "from s0 if 1=1 to s1;"
-// If the transformation adds an second transition "from s1 sync tau to s2;", then STG is happy again.
+// ok
 
 library testfThen1 is {
   
@@ -12,12 +10,14 @@ library testfThen1 is {
       connection connection1 is in{type1}
     } guarantee {
       protocol gate1protocol is {
-        if (1 = 1) then {done}
+        if (1 = 1) then {via connection1 receive any}
+        done
       }
     }
     
     behavior test is {
-      if (1 = 1) then {done}
+      if (1 = 1) then {via gate1::connection1 receive data}
+      done
     }
   }
 }

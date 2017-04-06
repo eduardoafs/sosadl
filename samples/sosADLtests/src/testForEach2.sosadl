@@ -1,33 +1,34 @@
-// ok: testForEach2.iosts
-
+// ok
 library testForEach2 is {
   
   system test() is {
     
-    datatype type1
+    datatype type1 is integer{0..10}
     
     gate gate1 is {
       connection connection1 is inout{type1}
     } guarantee {
       protocol gate1protocol is {
-      	value s : sequence{integer} = sequence{1, 2, 3, 4}
+      	value s : sequence{type1} = sequence{1, 2, 3, 4}
         foreach e in s {
           choose
-            {via gate1::connection1 receive any}
+            {via connection1 receive any}
           or 
-            {via gate1::connection1 send any}
+            {via connection1 send any}
         }
+        done
       }
     }
     
     behavior test is {
-      value s : sequence{integer} = sequence{1, 2, 3, 4}
+      value s : sequence{type1} = sequence{1, 2, 3, 4}
       foreach e in s {
         choose
           {via gate1::connection1 receive data}
         or 
           {via gate1::connection1 send 1}
       }
+      done
     }
   }
 }

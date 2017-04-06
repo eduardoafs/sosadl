@@ -1,9 +1,0 @@
-// ok: will require testLibrary7 and testLibrary6
-with Base
-with testLibrary7  // imports testLibrary6 which declares Complex datatype
-
-library testLibrary8 is {
-  function (a:Complex)::sqr():Complex is {
-    return a::mult(a)
-  }
-}

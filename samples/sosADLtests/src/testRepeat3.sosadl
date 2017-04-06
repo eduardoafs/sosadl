@@ -11,7 +11,7 @@ library testRepeat3 is {
     } guarantee {
       protocol gate1protocol is {
         repeat{
-          via gate1::connection1 receive any
+          via connection1 receive any
         }
       }
     }

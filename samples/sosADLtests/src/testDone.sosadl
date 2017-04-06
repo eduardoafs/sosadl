@@ -1,7 +1,4 @@
-// ok: no testDone.iosts file will be generated
-// because: "done" generates no transition,
-// thus "behavior{done}" and "protocol{done}" will translate into nothing,
-// thus no iosts system.
+// ok
 
 library testDone is {
   

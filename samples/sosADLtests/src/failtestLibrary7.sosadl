@@ -1,4 +1,4 @@
-// ok: will require testLibrary6
+// KO: fails because the type-checker doesn't know how to handle imports
 with Base
 with testLibrary6  // declares Complex datatype
 
