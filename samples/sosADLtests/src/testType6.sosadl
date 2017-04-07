@@ -2,16 +2,16 @@
 
 library testType6 is {
   
-  datatype type1 is integer
+  //datatype type1 is integer
   datatype type2 is integer{0..1}
-  datatype type3 is tuple{x:type1, y:type2}
+  datatype type3 is tuple{x:type2, y:type2}
   
   system test() is {
     
-    datatype type4 is tuple{x:type1, y:type2}
+    datatype type4 is tuple{x:type2, y:type2}
     
     gate gate1 is {
-      connection connection1 is out{type1}
+      connection connection1 is out{type2}
     } guarantee {
       protocol gate1protocol is {
         done

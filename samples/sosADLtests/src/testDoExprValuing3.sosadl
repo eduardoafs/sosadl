@@ -1,0 +1,27 @@
+// ok
+
+library testDoExprValuing3 is {
+  
+  system test() is {
+    
+    datatype type1
+    
+    gate gate1 is {
+      connection connection1 is in{type1}
+    } guarantee {
+      protocol gate1protocol is {
+        value data1 : integer{0..10} = 1
+        do data1+1
+        value data2 : integer{0..12} = data1 + 2
+        done
+      }
+    }
+    
+    behavior test is {
+      value data1 : integer{0..10} = 1
+      do data1+1
+      value data2 : integer{0..12} = data1 + 2
+      done
+    }
+  }
+}

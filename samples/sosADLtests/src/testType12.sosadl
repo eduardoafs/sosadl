@@ -1,0 +1,28 @@
+// ok
+
+library testType1 is {
+  
+  
+  //datatype type1 is type2 //wrong because cannot refer to undefined type2
+  datatype type1
+  datatype type2 is type1
+  
+  system test() is {
+    
+    //datatype type3 is type4  //wrong because cannot refer to undefined type4
+    datatype type3
+    datatype type4 is type3
+    
+    gate gate1 is {
+      connection connection1 is out{type1}
+    } guarantee {
+      protocol gate1protocol is {
+        done
+      }
+    }
+    
+    behavior test is {
+      done
+    }
+  }
+}

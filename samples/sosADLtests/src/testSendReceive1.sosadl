@@ -4,21 +4,23 @@ library testSendReceive1 is {
   
   system test() is {
     
-    datatype type1
+    datatype type1 is integer{0..5}
     
     gate gate1 is {
       connection connection1 is out{type1}
       connection connection2 is in{type1}
     } guarantee {
       protocol gate1protocol is {
-        via gate1::connection1 send any
-        via gate1::connection2 receive any
+        via connection1 send any
+        via connection2 receive any
+        done
       }
     }
   
     behavior test is {
       via gate1::connection1 send 0
       via gate1::connection2 receive data
+      done
     }
   }
 }

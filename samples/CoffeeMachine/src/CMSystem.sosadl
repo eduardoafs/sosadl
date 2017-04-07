@@ -1,0 +1,30 @@
+with CMBeverage
+with CMPayment
+
+sos CMSystem is {
+  
+  architecture CMSystem () is {
+  	
+  	datatype t is integer{0..0}
+  	
+ 	gate unusedGate is {
+		connection unusedConnection is in{ t } 
+	} 
+	guarantee { 
+		protocol allowAll is { 
+			repeat{anyaction}
+		}
+	}
+	  
+    behavior coalition is compose {
+      beverage is Beverage
+      payment is Payment
+    } binding {
+			unify one { beverage::InformationExchange::Paid } to one { payment::InformationExchange::Paid }
+			and
+			unify one { beverage::InformationExchange::NotPaid } to one { payment::InformationExchange::NotPaid }
+			and			
+			unify one { beverage::InformationExchange::SendPrice } to one { payment::InformationExchange::ReceivePrice }
+    }
+  } 
+}

@@ -1,10 +1,10 @@
-// ok
+// KO: sqr and sqrt not known because the Base library does not exist 
 with Base
 
-library testLibrary3 is {
-  datatype Abscissa
-  datatype Ordinate
-  datatype Distance
+sos testSoS3 is {
+  datatype Abscissa is integer{0..10}
+  datatype Ordinate is integer{0..10}
+  datatype Distance is integer{0..10}
   datatype Coordinate is tuple{x:Abscissa,y:Ordinate} {
   	function (onecoordinate:Coordinate)::distance(othercoordinate:Coordinate):Distance is {
       		return sqrt(sqr(onecoordinate::x-othercoordinate::x)+sqr(onecoordinate::y-othercoordinate::y))

@@ -10,14 +10,16 @@ library testReceiveSend2 is {
       connection connection1 is inout{type1}
     } guarantee {
       protocol gate1protocol is {
-        via gate1::connection1 receive any
-        via gate1::connection1 send any
+        via connection1 receive any
+        via connection1 send any
+        done
       }
     }
   
     behavior test is {
       via gate1::connection1 receive data
       via gate1::connection1 send data
+      done
     }
   }
 }

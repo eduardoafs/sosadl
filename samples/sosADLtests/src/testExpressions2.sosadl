@@ -1,0 +1,89 @@
+// ok
+
+library testExpressions2 is {
+  
+  system test() is {
+
+  	datatype boolean is integer{0..1} {
+  		function (self: boolean)::true(): boolean is { return 1 }
+		function (self: boolean)::false(): boolean is { return 0 }
+  		function (self: boolean)::b_not(): boolean is { return (self+1) mod 2 }
+		function (self: boolean)::b_and(other: boolean): boolean is { return self*other }
+		function (self: boolean)::b_or(other: boolean): boolean is { return self::b_not() }
+		function (self: boolean)::b_xor(other: boolean): boolean is { return (self+other) mod 2 }
+		function (self: boolean)::b_implies(other: boolean): boolean is { return self::b_not()::b_or(other) }
+		function (self: boolean)::b_isTrue(): boolean is { return self }
+		function (self: boolean)::b_isFalse(): boolean is { return self::b_not() }
+    }
+    
+    
+    
+    gate gate1 is {
+      connection connection1 is out{boolean}
+    } guarantee {
+      protocol gate1protocol is {
+        done
+      }
+    }
+
+    gate gate2 is {
+      connection connection1 is in{boolean}
+    } guarantee {
+      protocol gate1protocol is {
+        done
+      }
+    }
+    
+    behavior test is {
+      do 1=1
+      do 2*3<3*3
+      do 4 <> 7
+      value false : boolean = 0
+      value true : boolean = 1
+      value a : boolean = true
+      value b : boolean = false
+      value not_a : boolean = a::b_not()
+      value a_and_b : boolean = a::b_and(b)
+      value a_or_b : boolean = a::b_or(b)
+      value a_xor_b : boolean = a::b_xor(b)
+      value a_implies_b : boolean = a::b_implies(b)
+      value a_isTrue : boolean = a::b_isTrue()
+      value b_isFalse : boolean = a::b_isFalse()
+      
+      
+      via gate1::connection1 send a
+      via gate2::connection1 receive message
+      via gate1::connection1 send b
+      via gate1::connection1 send message
+      do a::b_or(b)
+      foreach x in sequence{1,2,3,4} { value y : integer{0..1} = (x+1)mod 2 }
+      //
+      value v1 = tuple { a=a, b=b }
+      value v2 = tuple { a=a::b_not(), b=b::b_not() }
+      value v3 = tuple { a=a::b_or(b), b=b::b_or(a) }
+      value seq = sequence { v1, v2, v3 }
+      foreach x in seq { do 1 }
+      foreach x in seq { value field1 = x::a }
+      foreach x in seq { value field2 : boolean = x::a }
+      value toto : integer{0..5} = 4
+      if toto=0 then { value titi : integer{0..0} = toto }
+      if toto>1 then { value titi : boolean = true } else { value tutu : boolean = false }
+      choose { do 1 } or { do 2 }
+      if toto < 3 and toto >= 1 then {
+      	value titi : integer{1..2} = toto
+      	if titi > 0 and titi <= 1 then {
+      		if titi=1 then {
+      			value tata : integer{1..1} = titi
+      			done
+      		} else {
+      			choose { done }	or { done }
+      		}
+      	} else {
+      		repeat { do 1+1 }
+      	}
+      } else {
+      	behavior()
+      }
+    }
+  }
+}

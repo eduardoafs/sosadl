@@ -2,21 +2,24 @@
 
 library testSend5 is {
   
-  system test(arg : integer) is {
+  system test(arg : integer{0..10}) is {
     
-    datatype type1 {
-    	function (data:type1)::add(x:type1):type1 is {
-    		return data+x
-    	}
+    datatype type2 is integer{0..10}
+    
+    datatype type1 is integer{0..5} {
+	    	function (data:type1)::add(x:type1): type2 is {
+	    		return data+x
+	    	}
     }
     
     gate gate1 is {
-      connection connection1 is out{type1}
+      connection connection1 is out{type2}
     } guarantee {
       protocol gate1protocol is {
         // send action is not first statement
         value data : type1 = 0
-        via gate1::connection1 send any
+        via connection1 send any
+        done
       }
     }
   
@@ -24,6 +27,7 @@ library testSend5 is {
       // send action is not first statement
       value data : type1 = 1
       via gate1::connection1 send data::add(1)
+      done
     }
   }
 }

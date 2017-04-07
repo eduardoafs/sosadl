@@ -1,6 +1,6 @@
-// ok: testDoExpr.iosts
+// ok
 
-library testDoExprValuing2 is {
+library testDone2 is {
   
   system test() is {
     
@@ -10,14 +10,12 @@ library testDoExprValuing2 is {
       connection connection1 is in{type1}
     } guarantee {
       protocol gate1protocol is {
-        do y(5)::z
-        value data1 : integer = 1
+        done
       }
     }
     
     behavior test is {
-      do y(5)::z
-      value data1 : integer = 1
+      done
     }
   }
 }

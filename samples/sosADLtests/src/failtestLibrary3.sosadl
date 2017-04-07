@@ -1,15 +1,16 @@
-// ok
+// KO: the type-checker does not recognize sqr and sqrt from the Base library 
 with Base
 
-sos testSoS3 is {
-  datatype Abscissa
-  datatype Ordinate
+library testLibrary3 is {
+  datatype Abscissa is integer{0..10}
+  datatype Ordinate is integer{0..10}
+  datatype Distance is integer{0..10}
   datatype Coordinate is tuple{x:Abscissa,y:Ordinate} {
   	function (onecoordinate:Coordinate)::distance(othercoordinate:Coordinate):Distance is {
       		return sqrt(sqr(onecoordinate::x-othercoordinate::x)+sqr(onecoordinate::y-othercoordinate::y))
     }
   }
-  datatype Depth
+  datatype Depth is integer{0..10}
   datatype MeasureData is tuple{coordinate:Coordinate,depth:Depth}
   datatype MeasureDataBase is sequence{MeasureData}
 }

@@ -1,21 +1,23 @@
-// ok: testDoExpr.iosts
-
-library testDoExpr is {
+// ok
+ 
+library testGate1 is {
   
   system test() is {
     
-    datatype type1
+    datatype type1 is integer{0..10}
     
     gate gate1 is {
       connection connection1 is in{type1}
     } guarantee {
       protocol gate1protocol is {
-        do y(5)::z
+        via connection1 receive any
+        done
       }
     }
     
     behavior test is {
-      do y(5)::z
+      via gate1::connection1 receive data
+      done
     }
   }
 }

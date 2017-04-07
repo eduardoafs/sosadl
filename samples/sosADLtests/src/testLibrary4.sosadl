@@ -2,13 +2,18 @@
 with Base
 
 library testLibrary4 is {
-  datatype type1 is integer {
-  	function (i:type1)::add(j:type1):type1 is {
+  
+  datatype type3 is integer{0..25}
+  
+  datatype type2 is integer{0..10}
+  
+  datatype type1 is integer{0..5} {
+  	function (i:type1)::add(j:type1):type2 is {
   	  return (i+j)
   	}
   }
 
-  function (i:type1)::mult(j:type1):type1 is {
+  function (i:type1)::mult(j:type1):type3 is {
   	return (i*j)
   }
 }

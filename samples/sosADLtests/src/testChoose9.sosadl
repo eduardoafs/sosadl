@@ -1,5 +1,4 @@
-// ok: the iosts translation is ok.
-
+// ok
 /*
  * Note: the translation to IOSTS shows that
  *   choose {b1} or {choose {b21} or {b22}} or {b3}
@@ -11,7 +10,7 @@ library testChoose9 is {
   
   system test() is {
     
-    datatype type1
+    datatype type1 is integer{0..10}
     
     gate gate1 is {
       connection connection1 is inout{type1}
@@ -22,29 +21,29 @@ library testChoose9 is {
     } guarantee {
       protocol gate1protocol is {
         choose
-          {via gate1::connection1 receive any}
+          {via connection1 receive any done}
         or 
           {choose
-            {via gate1::connection2 receive any}
+            {via connection2 receive any done}
             or 
-            {via gate1::connection3 send any}
+            {via connection3 send any done}
           }
         or 
-          {via gate1::connection4 send any}
+          {via connection4 send any done}
       }
     }
     
     behavior test is {
         choose
-          {via gate1::connection1 receive data1}
+          {via gate1::connection1 receive data1 done}
         or 
           {choose
-            {via gate1::connection2 receive data2}
+            {via gate1::connection2 receive data2 done}
             or 
-            {via gate1::connection3 send 3}
+            {via gate1::connection3 send 3 done}
           }
         or 
-          {via gate1::connection4 send 4}
+          {via gate1::connection4 send 4 done}
     }
   }
 }

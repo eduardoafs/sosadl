@@ -4,7 +4,7 @@ library testSend4 is {
   
   system test() is {
     
-    datatype type1
+    datatype type1 is integer{0..10}
     
     gate gate1 is {
       connection connection1 is out{type1}
@@ -12,14 +12,16 @@ library testSend4 is {
       protocol gate1protocol is {
         // send action is not first statement
         value data : type1 = 0
-        via gate1::connection1 send any
+        via connection1 send any
+        done
       }
     }
   
     behavior test is {
       // send action is not first statement
       value data : type1 = 1
-      via gate1::connection1 send (data+1)
+      via gate1::connection1 send (data+1-1)
+      done
     }
   }
 }

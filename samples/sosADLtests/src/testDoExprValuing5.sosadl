@@ -1,27 +1,31 @@
-// ok: testDoExpr.iosts
+// ok
 
 library testDoExprValuing1 is {
   
   system test() is {
     
-    datatype type1 is tuple{z:integer, t:integer} {
-    	function (data:type1)::y(x:integer):type1 is {
-    		return tuple{z=data::z+x, t=data::t+x}
-    	} 
+    datatype type2 is tuple{z:integer{0..20}, t:integer{0..20}}
+    
+    datatype type1 is tuple{z:integer{0..10}, t:integer{0..10}} {
+    	  function (data:type1)::y(x:integer{0..10}):type2 is {
+    	    return tuple{z=data::z+x, t=data::t+x}
+      } 
     }
     
     gate gate1 is {
       connection connection1 is in{type1}
     } guarantee {
       protocol gate1protocol is {
-        value data1 : integer = 1
-        do y(5)::z
+        value data1 : type1 = tuple{z=1,t=2}
+        do data1::y(5)::z
+        done
       }
     }
     
     behavior test is {
-      value data1 : integer = 1
-      do y(5)::z
+      value data1 : type1 = tuple{z=1,t=2}
+      do data1::y(5)::z
+      done
     }
   }
 }

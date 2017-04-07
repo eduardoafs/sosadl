@@ -4,10 +4,12 @@ library testDoExpr11 is {
   
   system test() is {
     
-    datatype type1 is integer {
-    	function (left:type1)::add(right:type1):type1 is {
-    		return left+right
-    	} 
+    datatype type2 is integer{0..20}
+    
+    datatype type1 is integer{0..10} {
+	    	function (left:type1)::add(right:type1):type2 is {
+	    		return left+right
+	    	} 
     }
     
     gate gate1 is {
@@ -16,12 +18,14 @@ library testDoExpr11 is {
       protocol gate1protocol is {
       	value x : type1 = 0
         do x::add(1)
+        done
       }
     }
     
     behavior test is {
       value x : type1 = 1
       do x::add(1)
+      done
     }
   }
 }

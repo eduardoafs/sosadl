@@ -11,11 +11,13 @@ library testDoExpr1 is {
     } guarantee {
       protocol gate1protocol is {
         do 0
+        done
       }
     }
     
     behavior test is {
       do 1
+      done
     }
   }
 }

@@ -1,0 +1,28 @@
+// ok
+ 
+library testDuty2 is {
+  
+  mediator test() is {
+    
+    datatype type1 is integer{0..10}
+    
+    duty duty1 is {
+      connection connection1 is out{type1}
+    } assume {
+    	  protocol duty1protocol is {
+        via connection1 send any
+        done
+      }
+    	} guarantee {
+      protocol gate1protocol is {
+        via connection1 send any
+        done
+      }
+    }
+    
+    behavior test is {
+      via duty1::connection1 send 2
+      done
+    }
+  }
+}

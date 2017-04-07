@@ -1,0 +1,23 @@
+// KO: y(5)::z cannot be typed.
+
+library testDoExpr1 is {
+  
+  system test() is {
+    
+    datatype type1
+    
+    gate gate1 is {
+      connection connection1 is in{type1}
+    } guarantee {
+      protocol gate1protocol is {
+        do tuple{a=1, b=2}::a + 3
+        done
+      }
+    }
+    
+    behavior test is {
+      do tuple{a=1, b=2}::a + 3
+      done
+    }
+  }
+}

@@ -1,4 +1,4 @@
-// ok: the iosts translation is ok.
+// ok
  
 library testIfThenElse3 is {
   
@@ -11,11 +11,12 @@ library testIfThenElse3 is {
     } guarantee {
       protocol gate1protocol is {
         if (1 = 1) then {
-          via gate1::connection1 receive any
+          via connection1 receive any
         } else {
-          via gate1::connection1 receive any
+          via connection1 receive any
         }
-        via gate1::connection1 send any
+        via connection1 receive any
+        done
       }
     }
     
@@ -25,7 +26,8 @@ library testIfThenElse3 is {
       } else {
         via gate1::connection1 receive data2
       }
-      via gate1::connection1 send 0
+      via gate1::connection1 receive data3
+      done
     }
   }
 }

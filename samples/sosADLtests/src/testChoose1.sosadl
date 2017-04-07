@@ -1,4 +1,4 @@
-// ok: nothing is generated!
+// ok
  
 library testChoose1 is {
   

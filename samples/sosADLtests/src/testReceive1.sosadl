@@ -11,13 +11,15 @@ library testReceive1 is {
     } guarantee {
       protocol gate1protocol is {
         // receive action is first statement
-        via gate1::connection1 receive any
+        via connection1 receive any
+        done
       }
     }
   
     behavior test is {
       // receive action is first statement
       via gate1::connection1 receive data
+      done
     }
   }
 }

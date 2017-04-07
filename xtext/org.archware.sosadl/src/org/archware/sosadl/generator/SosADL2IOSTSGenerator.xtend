@@ -4,6 +4,7 @@
 package org.archware.sosadl.generator
 
 import com.google.inject.Injector
+import com.google.inject.Inject
 import java.util.ArrayList
 import java.util.LinkedHashMap
 import java.util.List
@@ -72,6 +73,11 @@ import org.eclipse.xtext.generator.IFileSystemAccess
 import org.eclipse.xtext.generator.IGenerator
 import org.eclipse.xtext.resource.XtextResource
 import org.eclipse.xtext.resource.XtextResourceSet
+import org.archware.sosadl.validation.typing.TypeChecker
+import org.archware.sosadl.sosADL.IntegerValue
+import org.archware.sosadl.sosADL.UnaryExpression
+import org.archware.sosadl.sosADL.BooleanType
+import java.math.BigInteger
 
 /**
  * Generates IOSTS code from the given SosADL model files on save.
@@ -82,9 +88,9 @@ import org.eclipse.xtext.resource.XtextResourceSet
  */
 class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGenerator {
     
-    var DEBUG=false
-    var DEBUG2=false
-    var DEBUG3=false
+    public static var DEBUG=false
+    public static var DEBUG2=false
+    public static var DEBUG3=false
     
     // global variables making the generation much easier
     // librariesMap contains all known libraries
@@ -139,7 +145,7 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 		val IOstsType _saved_currentType = currentType
 		val LinkedHashMap<String,IOstsType> _saved_currentTypesMap = currentTypesMap
 		val IOstsSystem _saved_currentSystem = currentSystem
-    		val IOstsProcess _saved_currentProcess = currentProcess
+    	val IOstsProcess _saved_currentProcess = currentProcess
    	 	val LinkedHashMap<String,IOstsConnection> _saved_currentConnectionsMap = currentConnectionsMap
 		// ok: generate the iosts!
         var String resourceFilename = sfile.eResource.URI.trimFileExtension.lastSegment
@@ -217,19 +223,12 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 		// generate a new dumb variable
 		lastDoExprResultNumber++
 		val String dumbVarName="_doExprResult"+lastDoExprResultNumber
+		/*
 		// FIXME: retrieve the type of Expression!
 		val String typeName = "TYPE_TODO"+lastDoExprResultNumber
 		val DataType datatype = newNamedType(typeName)
-		/*
-		 * We can't do this here:
-		 *   val IOstsType iostsType = computeIOstsType(typeName)
-		 *   currentSystem.typesMap.put(typeName, iostsType)
-		 * Because it's too late to compute an IOstsType and register it:
-		 * type declaration have already been generated!
-		 * So, at this point:
-		 * - either we must give the name of an already declared type (eg 'SomeDataType')
-		 * - or we must give the definition of the type (eg 'sequence{integer}')
-		 */
+		*/
+		val DataType datatype = TypeChecker.getType(doExpr)
 		// create a Valuing
 		val factory = SosADLFactory.eINSTANCE
 		var result = factory.createValuing()  // will create a ValuingImpl!
@@ -554,6 +553,9 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
     override def compile(GateDecl g){
     	currentConnectionsMap = new LinkedHashMap()
 	    for (c : g.connections) {
+	    	if (DEBUG2) {
+	    		System.err.println("Declaring gate connection = '"+g.name+"::"+c.name+"'")
+	    	}
 	        val name=g.name+"::"+c.name
 	        val IOstsType type = computeIOstsType(c.valueType)
 	        val typeName = nameOfIOstsType(type) //finalNameOfIOstsType(nameOfIOstsType(type))
@@ -566,6 +568,9 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 	override def compile(DutyDecl d){
 		currentConnectionsMap = new LinkedHashMap()
         for (c : d.connections) {
+        	if (DEBUG2) {
+	    		System.err.println("Declaring duty connection = '"+d.name+"::"+c.name+"'")
+	    	}
             val name=d.name+"::"+c.name
             val IOstsType type = computeIOstsType(c.valueType)
             val typeName = nameOfIOstsType(type) //finalNameOfIOstsType(nameOfIOstsType(type))
@@ -859,6 +864,7 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
         val int final=currentProcess.newState()
         var IOstsTransition action = new IOstsTransition(startState,final)
         var String channel=a.complexName.compile.toString
+        if (DEBUG2) System.out.println("Behavior Action: Searching channel '"+channel+"' among all known connections")
         val IOstsConnection connection=currentSystem.getConnection(channel)
         if (connection == null) {
             System.err.println("Warning! Channel '"+channel+"' not declared! Ignoring statement...")
@@ -910,6 +916,27 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
         currentProcess.addTransition(action)
         newArrayList(final)
     }
+    
+    /*
+     * utility function: get the name of the gate or duty in a ProtocolAction.
+     * This is needed because the type-checker does not allow to specify the gate or duty
+     * name in the connection name.
+     */
+    def String getNameOfGateOrDuty(ProtocolAction a) {
+    	var gd = a.eContainer
+    	var name=""
+    	while(name == "") {
+    		switch gd {
+    			GateDecl: name = (gd as GateDecl).name
+    			DutyDecl: name = (gd as DutyDecl).name
+    			default: gd = gd.eContainer
+    		}
+    		if (gd == null) {
+    			name = "unknown"
+    		}
+    	}
+    	name
+    }
 
     /*
      * - computeSTS for a Send/Receive Protocol statement.
@@ -918,6 +945,15 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
         val int final=currentProcess.newState()
         var IOstsTransition action = new IOstsTransition(startState,final)
         var String channel=a.complexName.compile.toString
+        if (channel.split('::').size < 2) {
+            // We are in the case of a connection name that does not include the gate's or duty's name.
+            // This happens in ProtocolAction occurring in guarantee/assume protocols of GateDecl/DutyDecl:
+            // the type-checker only accept connection without the prefix gateName:: or dutyName::
+            // Example: "via connection1 receive any" but not "via gate1::connection1 receive any"
+            // So we must retrieve the gate or duty name in the ProtocolAction container.
+            channel=a.getNameOfGateOrDuty+"::"+a.complexName.compile.toString
+        }
+        if (DEBUG2) System.out.println("ProtocolAction: Searching channel '"+channel+"' among all known connections")
         val IOstsConnection connection=currentProcess.getConnection(channel)
         if (connection == null) {
             System.err.println("Warning! Channel '"+channel+"' not declared! Ignoring statement...")
@@ -1530,9 +1566,62 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
         	}
         }
         if (name == "") {
-            name=type.toString()    
+            name=type.toString()
         }
         name
+	}
+	
+	/*
+	 * Computing Integer values when possible
+	 * Remember that the type systems consider every integer is a Java BigInteger!
+	 */
+	def dispatch BigInteger evaluateIntegerExpression(Expression e) {
+		switch e {
+			IntegerValue: (e as IntegerValue).evaluateIntegerExpression
+			UnaryExpression: (e as UnaryExpression).evaluateIntegerExpression
+			BinaryExpression: (e as BinaryExpression).evaluateIntegerExpression
+			//TODO? IdentExpression
+			//TODO? CallExpression
+			//TODO? MethodCall
+			//TODO? Field
+			default: {
+				System.err.println("evaluateIntegerExpression: cannot evaluate expression: '"+e.compile+"'... returning 0!")
+				BigInteger.ZERO
+			}
+		}
+	}
+	
+	def dispatch BigInteger evaluateIntegerExpression(IntegerValue e) {
+		new BigInteger(e.absInt.toString)
+	}
+	
+	def dispatch BigInteger evaluateIntegerExpression(UnaryExpression e) {
+		val right = evaluateIntegerExpression(e.right)
+		switch e.op {
+			case '+': right
+			case '-': right.negate
+			default: {
+				System.err.println("evaluateIntegerExpression: unknown unary operator in expression: '"+e.compile+"'... returning 0!")
+				BigInteger.ZERO
+			}
+		}
+	}
+	
+	def dispatch BigInteger evaluateIntegerExpression(BinaryExpression e) {
+		val left = evaluateIntegerExpression(e.left)
+		val right = evaluateIntegerExpression(e.right)
+		switch e.op {
+			case '+': left.add(right)
+			case '-': left.add(right.negate)
+			case '*': left.multiply(right)
+			case '/': left.divide(right)
+			case 'mod': left.mod(right)
+			case 'div': left.divide(right)
+			default: {
+				System.err.println("evaluateIntegerExpression: unknown binary operator in expression: '"+e.compile+"'... returning 0!")
+				BigInteger.ZERO
+			}
+		}
 	}
 	
 	/*
@@ -1546,6 +1635,7 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 	        TupleType: computeIOstsType(t)
 	        RangeType: computeIOstsType(t)
 	        NamedType: computeIOstsType(t)
+	        BooleanType: computeIOstsType(t)
 	        default: {
 	            System.err.println("BUG! computeIOstsType of this datatype '"+t.toString+"' is not implemented! Assuming 'integer'...")
                 new IOstsIntType()
@@ -1585,15 +1675,19 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
     }
     
     def dispatch IOstsType computeIOstsType(RangeType t) {
-        //FIXME: min et max peuvent etre des constantes au lieu de nombres
-        val int min=Integer.valueOf(t.vmin.compile.toString)
-        val int max=Integer.valueOf(t.vmax.compile.toString)
-        new IOstsRangeType(min, max)
+//		val int min=evaluateIntegerExpression(t.vmin).intValue
+//		val int max=evaluateIntegerExpression(t.vmax).intValue
+        new IOstsRangeType(t.vmin, t.vmax)
+    }
+    
+    def dispatch IOstsType computeIOstsType(BooleanType t) {
+    	new IOstsBoolType()
     }
     
     def dispatch IOstsType computeIOstsType(NamedType t) {
     	computeIOstsType(t.name as String)
     }
+    
     
     def dispatch IOstsType computeIOstsType(String t) {
     	var result1 = getIOstsType(t)
@@ -1788,17 +1882,41 @@ class IOstsBoolType extends IOstsType {
 }
 
 class IOstsRangeType extends IOstsType {
+	    
+    Expression min
+    Expression max
     
-    int min
-    int max
+    private def Expression newIntegerExpression(int v) {
+    	val factory = SosADLFactory.eINSTANCE
+    	var intValue = factory.createIntegerValue()
+    	intValue.setAbsInt(Math.abs(v))
+		if (v >= 0) {
+			intValue
+	    } else {
+			var unaryExpression = factory.createUnaryExpression()
+			unaryExpression.setOp('-')
+			unaryExpression.setRight(intValue)
+			unaryExpression
+		}
+    }
     
     // private thus inaccessible, because one cannot create range without min and max values
     private new() {
-        min = 0
-        max = 0
+    	min = newIntegerExpression(0)
+        max = newIntegerExpression(0)
     }
     
     new(int min, int max) {
+        this.min = newIntegerExpression(min)
+        this.max = newIntegerExpression(max)
+    }
+    
+    new(BigInteger min, BigInteger max) {
+        this.min = newIntegerExpression(min.intValueExact)
+        this.max = newIntegerExpression(max.intValueExact)
+    }
+    
+    new(Expression min, Expression max) {
         this.min = min
         this.max = max
     }
@@ -1812,12 +1930,27 @@ class IOstsRangeType extends IOstsType {
     }
     
     override def String toString() {
-        "integer{"+min+".."+max+"}"
+    	//"integer{"+min+".."+max+"}"
+        var SosADLPrettyPrinterGenerator gen = new SosADLPrettyPrinterGenerator()
+    	
+    	if (SosADL2IOSTSGenerator.DEBUG) {	
+	    	if (min == null) {
+	    		System.err.println("IOstsRangeType: null min!")
+	    	} else {
+	    		System.err.println("IOstsRangeType: min.compile='"+gen.compile(min)+"'")
+	    	}
+	    	if (max == null) {
+	    		System.err.println("IOstsRangeType: null max!")
+	    	} else {
+	    		System.err.println("IOstsRangeType: max.compile='"+gen.compile(max)+"'")
+	    	}
+    	}
+    	"integer{"+gen.compile(min)+".."+gen.compile(max)+"}"
     }
-    
-    override def equals(IOstsType other) {
+	
+	override def equals(IOstsType other) {
         if (other instanceof IOstsRangeType) {
-            (other.min == min) && (other.max == max)
+            (other.min.equals(min)) && (other.max.equals(max))
         } else {
             false
         }
