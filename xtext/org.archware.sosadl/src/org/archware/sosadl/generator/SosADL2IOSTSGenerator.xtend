@@ -78,6 +78,7 @@ import org.archware.sosadl.sosADL.IntegerValue
 import org.archware.sosadl.sosADL.UnaryExpression
 import org.archware.sosadl.sosADL.BooleanType
 import java.math.BigInteger
+import org.eclipse.emf.ecore.util.EcoreUtil
 
 /**
  * Generates IOSTS code from the given SosADL model files on save.
@@ -232,9 +233,11 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 		// create a Valuing
 		val factory = SosADLFactory.eINSTANCE
 		var result = factory.createValuing()  // will create a ValuingImpl!
-		result.setType(datatype)
+		//result.setType(datatype)
+		result.setType(EcoreUtil.copy(datatype))
 		result.setName(dumbVarName)
-		result.setExpression(doExpr)
+		//result.setExpression(doExpr)
+		result.setExpression(EcoreUtil.copy(doExpr))
 		// since result is really a ValuingImpl, cast to a Valuing!
 		(result as Valuing)
 	}
