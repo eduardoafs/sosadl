@@ -71,7 +71,7 @@ public abstract class TypeCheckerProtocolExpression extends TypeCheckerBehavior 
         if(p1 != null && t != null) {
             Type_protocol_root_expression_node proof = p(Type_protocol_root_expression_node.class, gamma,
                     (gamma_) -> p(Type_protocol_root_expression_node.class, t,
-                            (t_) -> createType_protocol_root_expression_nonroot(gamma, e, t_, p1)));
+                            (t_) -> createType_protocol_root_expression_nonroot(gamma_, e, t_, p1)));
             return new Pair<>(proof, t);
         } else {
             return new Pair<>(null, null);
