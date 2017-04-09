@@ -97,15 +97,6 @@ public abstract class TypeCheckerProtocol extends TypeCheckerProtocolExpression 
 	}
 
 	private Pair<Environment, Type_bodyprotocol> type_bodyprotocol(Environment gamma, ProtocolStatement first) {
-		first.eAdapters().add(new EContentAdapter() {
-			@Override
-			public void notifyChanged(Notification notification) {
-				super.notifyChanged(notification);
-				if(SosADLPackage.Literals.DO_EXPR_PROTOCOL__EXPRESSION.equals(notification.getFeature())) {
-					throw new AssertionError();
-				}
-			}
-		});
 		Function<Protocol, EList<ProtocolStatement>> getStatements = Protocol::getStatements;
 		Function<ProtocolAction, ComplexName> getComplexName = ProtocolAction::getComplexName;
 		Function<ProtocolAction, ProtocolActionSuite> getSuite = ProtocolAction::getSuite;
