@@ -105,7 +105,6 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
     var IOstsSystem currentSystem                       // system currently generated
     var IOstsProcess currentProcess                     // process currently generated
     var IOstsFunction currentFunction                   // function currently generated
-    var LinkedHashMap<String,IOstsConnection> currentConnectionsMap // current connection map
     var int lastIOstsTypeNum
     var int lastDoExprResultNumber
     var int lastForEachVarNumber
@@ -126,7 +125,6 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 	    currentSystem = null
 	    currentProcess = null
 	    currentFunction = null
-	    currentConnectionsMap = new LinkedHashMap()
 	    lastIOstsTypeNum = 0
 	    lastDoExprResultNumber=0
 	    lastForEachVarNumber=0
@@ -147,8 +145,7 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 		val LinkedHashMap<String,IOstsType> _saved_currentTypesMap = currentTypesMap
 		val IOstsSystem _saved_currentSystem = currentSystem
     	val IOstsProcess _saved_currentProcess = currentProcess
-   	 	val LinkedHashMap<String,IOstsConnection> _saved_currentConnectionsMap = currentConnectionsMap
-		// ok: generate the iosts!
+   	 	// ok: generate the iosts!
         var String resourceFilename = sfile.eResource.URI.trimFileExtension.lastSegment
         var String iostsFileName = resourceFilename+".iosts"
         System.out.println("Transforming '"+sfile.eResource.URI.lastSegment+"' into '"+iostsFileName+"'")
@@ -160,8 +157,7 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
         currentTypesMap = _saved_currentTypesMap
         currentSystem = _saved_currentSystem
         currentProcess = _saved_currentProcess
-        currentConnectionsMap = _saved_currentConnectionsMap
-	}
+    }
 	 
 	
 	def SosADL loadSosADLResource(String resourceName) {
@@ -554,31 +550,31 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 	}
     
     override def compile(GateDecl g){
-    	currentConnectionsMap = new LinkedHashMap()
-	    for (c : g.connections) {
+    	for (c : g.connections) {
 	    	if (DEBUG2) {
 	    		System.err.println("Declaring gate connection = '"+g.name+"::"+c.name+"'")
 	    	}
 	        val name=g.name+"::"+c.name
 	        val IOstsType type = computeIOstsType(c.valueType)
 	        val typeName = nameOfIOstsType(type) //finalNameOfIOstsType(nameOfIOstsType(type))
-	        currentConnectionsMap.put(name, new IOstsConnection(name, typeName, c.mode.toString))
+            val connection = new IOstsConnection(name, typeName, c.mode.toString)
+	        currentSystem.addConnection(connection)
 	    }
 	    super.compile(g)
 	}
 
 	
 	override def compile(DutyDecl d){
-		currentConnectionsMap = new LinkedHashMap()
-        for (c : d.connections) {
+		for (c : d.connections) {
         	if (DEBUG2) {
 	    		System.err.println("Declaring duty connection = '"+d.name+"::"+c.name+"'")
 	    	}
             val name=d.name+"::"+c.name
             val IOstsType type = computeIOstsType(c.valueType)
             val typeName = nameOfIOstsType(type) //finalNameOfIOstsType(nameOfIOstsType(type))
-            currentConnectionsMap.put(name, new IOstsConnection(name, typeName, c.mode.toString))
-        }
+            val connection = new IOstsConnection(name, typeName, c.mode.toString)
+	        currentSystem.addConnection(connection)
+	    }
         super.compile(d)
     }
     
@@ -588,7 +584,6 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
         var IOstsTransition firstTransition = initTransition("true")
         firstTransition.setComment("FIXME: system/mediator/architecture parameters may change this guard!")
         currentProcess = new IOstsProcess(p.name)
-        currentProcess.addAllConnections(currentConnectionsMap)
         currentProcess.addTransition(firstTransition)
         computeSTS(firstTransition.toState(),p.body)
         currentSystem.addProcess(currentProcess)
@@ -599,7 +594,6 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
         var IOstsTransition firstTransition = initTransition("true")
         firstTransition.setComment("FIXME: system/mediator/architecture parameters may change this guard!")
         currentProcess = new IOstsProcess(b.name)
-        currentProcess.addAllConnections(currentConnectionsMap)
         currentProcess.addTransition(firstTransition)
         computeSTS(firstTransition.toState(),b.body)
         currentSystem.addProcess(currentProcess)
@@ -870,7 +864,13 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
         if (DEBUG2) System.out.println("Behavior Action: Searching channel '"+channel+"' among all known connections")
         val IOstsConnection connection=currentSystem.getConnection(channel)
         if (connection == null) {
-            System.err.println("Warning! Channel '"+channel+"' not declared! Ignoring statement...")
+            System.err.println("Warning! Channel '"+channel+"' not declared for this behavior! Ignoring statement...")
+            System.err.println("         Known channels are:")
+            System.err.print("- Known channels are:")
+            for (c : currentSystem.connectionsMap.entrySet) {
+            	System.err.print(" '"+c.key+"'")
+            }
+            System.err.println(".")
         } else if (a.suite instanceof SendAction) {
             val parameter=currentProcess.newParameter()
             if (connection.mode == "inout") {
@@ -921,6 +921,26 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
     }
     
     /*
+     * utility function: get the name of the gate or duty in a AnyAction.
+     * This function returns a valid gate/duty name only if the given AnyAction
+     * occurs in a protocol of a gate/duty!
+     */
+    def String getNameOfGateOrDuty(AnyAction a) {
+    	var gd = a.eContainer
+    	var name=""
+    	while(name == "") {
+    		switch gd {
+    			GateDecl: name = (gd as GateDecl).name
+    			DutyDecl: name = (gd as DutyDecl).name
+    			default: gd = gd.eContainer
+    		}
+    		if (gd == null) {
+    			name = "unknown"
+    		}
+    	}
+    	name
+    }
+    /*
      * utility function: get the name of the gate or duty in a ProtocolAction.
      * This is needed because the type-checker does not allow to specify the gate or duty
      * name in the connection name.
@@ -957,9 +977,14 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
             channel=a.getNameOfGateOrDuty+"::"+a.complexName.compile.toString
         }
         if (DEBUG2) System.out.println("ProtocolAction: Searching channel '"+channel+"' among all known connections")
-        val IOstsConnection connection=currentProcess.getConnection(channel)
+        val IOstsConnection connection=currentSystem.getConnection(channel)
         if (connection == null) {
-            System.err.println("Warning! Channel '"+channel+"' not declared! Ignoring statement...")
+            System.err.println("Warning! Channel '"+channel+"' not declared for this protocol! Ignoring statement...")
+            System.err.print("- Known channels are:")
+            for (c : currentSystem.connectionsMap.entrySet) {
+            	System.err.print(" '"+c.key+"'")
+            }
+            System.err.println(".")
         } else if (a.suite instanceof SendProtocolAction) {
             val parameter=currentProcess.newParameter()
             if (connection.mode == "inout") {
@@ -1383,7 +1408,9 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
      * - computeSTS for an AnyAction statement.
      */
     def dispatch ArrayList<Integer> computeSTS(int startState, AnyAction a){
-        val choose = newChooseProtocolActionFromConnections(currentProcess.connectionsMap)
+        val gateOrDutyName = getNameOfGateOrDuty(a)
+        val processConnectionsMap = new LinkedHashMap(currentSystem.connectionsMap.filter[p1, p2|p1.contains(gateOrDutyName+"::")])
+        val choose = newChooseProtocolActionFromConnections(processConnectionsMap)
         computeSTS(startState, choose)
     }
     
@@ -2198,7 +2225,6 @@ class IOstsTransition {
  * 
  * Note:
  * - has an immutable name, which is required at creation time.
- * - connectionsMap: map of connexions declared for this specific process (protocol of gate or duty, behavior)
  * - inputMap, outputMap, and parametersMap are mutable maps of input, output of the Process.
  * - inoutputMap is a map that lives only during the translation from SoS-ADL to IOSTS
  *   because SOS-ADL has inout connections.
@@ -2212,7 +2238,6 @@ class IOstsTransition {
 class IOstsProcess{
     val String name
     var String comment=""
-    public var LinkedHashMap<String,IOstsConnection> connectionsMap = new LinkedHashMap()  // map of (connection name -> Connection)
     public var inputMap = new LinkedHashMap()    // map of (in connection -> type name)
     public var outputMap = new LinkedHashMap()   // map of (out connection -> type name)
     public var inoutputMap = new LinkedHashMap() // map of (inout connection -> type name)
@@ -2234,21 +2259,7 @@ class IOstsProcess{
     def setComment(String comment) {
         this.comment = comment
     }
-    
-    def addAllConnections(LinkedHashMap<String,IOstsConnection> connectionsMap) {
-    	this.connectionsMap.putAll(connectionsMap)
-    }
-    
-    /*
-    def addConnection(IOstsConnection connection) {
-        this.connectionsMap.put(connection.name, connection)
-    }
-    */
-    
-    def getConnection(String name) {
-    	connectionsMap.get(name)
-    }
-    
+        
     def addInput(String name, String typeName) {
         this.inputMap.put(name, typeName)
     }
@@ -2383,6 +2394,7 @@ class IOstsProcess{
  * Notes:
  * - has an immutable name, which is required at creation time.
  * - fileName is the name of the file to be saved.
+ * - connectionsMap is the map of all gates or duties connections declared in this system 
  * - constantsMap is not used at this time.
  * - typesMap is a mutable map containing the declaration of all types used in this system.
  * - processesMap is the map of processes of this system.
@@ -2393,6 +2405,7 @@ class IOstsSystem{
     val String name
     var String comment=""
     //OLD version: not needed anymore: var String behaviorName="UNDEFINED"
+    public var LinkedHashMap<String,IOstsConnection> connectionsMap = new LinkedHashMap()  // map of (connection name -> Connection)
     public var LinkedHashMap<String,String> constantsMap = new LinkedHashMap()     // map of (name -> value as tring)
     public var LinkedHashMap<String,IOstsType> typesMap = new LinkedHashMap()     // map of (name -> iosts type)
     public var LinkedHashMap<String,IOstsProcess> processesMap = new LinkedHashMap()  // map of (process name -> Process)
@@ -2409,19 +2422,20 @@ class IOstsSystem{
        this.comment = comment
     }
     
-    // Returns all connections known to this system.
-    // These connections are declared in local gate/duty or behavior
-    def LinkedHashMap<String,IOstsConnection> allConnections() {
-    	var allConnections = new LinkedHashMap()
-    	for (p : processesMap.entrySet) {
-    		allConnections.putAll(p.value.connectionsMap)
-    	}
-    	allConnections
+    def addAllConnections(LinkedHashMap<String,IOstsConnection> connectionsMap) {
+    	this.connectionsMap.putAll(connectionsMap)
+    }
+    
+    def addConnection(IOstsConnection connection) {
+        this.connectionsMap.put(connection.name, connection)
     }
     
     def getConnection(String name) {
-    	val allConnections = allConnections()
-    	allConnections.get(name)
+    	connectionsMap.get(name)
+    }
+
+    def LinkedHashMap<String,IOstsConnection> allConnections() {
+    	connectionsMap
     }
     
     def addProcess(IOstsProcess process) {
