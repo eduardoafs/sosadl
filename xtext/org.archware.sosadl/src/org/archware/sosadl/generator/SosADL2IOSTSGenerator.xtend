@@ -1640,7 +1640,9 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 	        NamedType: computeIOstsType(t)
 	        BooleanType: computeIOstsType(t)
 	        default: {
-	            System.err.println("BUG! computeIOstsType of this datatype '"+t.toString+"' is not implemented! Assuming 'integer'...")
+	            var tstr=t.compile.toString
+	            if (tstr.empty) tstr = t.class.name
+	            System.err.println("BUG! computeIOstsType of this datatype '"+tstr+"' is not implemented! Assuming 'integer'...")
                 new IOstsIntType()
 	        }
 	    }
