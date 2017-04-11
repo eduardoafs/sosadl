@@ -8,6 +8,7 @@ import org.archware.sosadl.sosADL.Expression;
 import org.archware.sosadl.validation.AccumulatingValidator;
 import org.archware.sosadl.validation.typing.interp.InterpInZ;
 import org.eclipse.emf.ecore.EObject;
+import org.eclipse.emf.ecore.util.EcoreUtil;
 
 public class TypeCheckerAnnotate extends AccumulatingValidator {
 
@@ -33,7 +34,7 @@ public class TypeCheckerAnnotate extends AccumulatingValidator {
 	}
 
 	public static DataType getType(EObject eObject) {
-		return (DataType) AttributeAdapter.adapterOf(eObject).getAttribute(TYPE);
+		return getInference(EcoreUtil.getRootContainer(eObject)).deepSubstitute((DataType) AttributeAdapter.adapterOf(eObject).getAttribute(TYPE));
 	}
 
 	public static void saveMin(EObject eObject, Expression e) {
