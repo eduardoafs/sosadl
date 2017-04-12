@@ -1,0 +1,27 @@
+//ok
+
+library testDoExpr15 is {
+  
+  system test() is {
+    
+    datatype type3 is integer{1..10}
+    datatype type2 is integer{1..2}
+    datatype type1 is tuple{a : type2, b : type2}
+    
+    gate gate1 is {
+      connection connection1 is in{type1}
+    } guarantee {
+      protocol gate1protocol is {
+      	value v3 : type3 = tuple{a=1,b=2}::a
+        do v3 + 3
+        done
+      }
+    }
+    
+    behavior test is {
+      value v3 : type3 = tuple{a=1,b=2}::a
+      do v3 + 3
+      done
+    }
+  }
+}

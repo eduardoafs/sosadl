@@ -1,0 +1,33 @@
+// ok
+ 
+library testGate4 is {
+  
+  system test() is {
+    
+    datatype type1 is integer{0..10}
+    
+    gate gate1 is {
+      connection connection1 is in{type1}
+    } guarantee {
+      protocol gate1protocol is {
+      	via connection1 receive any
+        done
+      }
+    }
+    
+    gate gate2 is {
+      connection connection1 is out{type1}
+    } guarantee {
+      protocol gate1protocol is {
+        via connection1 send any
+        done
+      }
+    }
+    
+    behavior test is {
+    	  via gate1::connection1 receive data
+      via gate2::connection1 send data
+      done
+    }
+  }
+}
