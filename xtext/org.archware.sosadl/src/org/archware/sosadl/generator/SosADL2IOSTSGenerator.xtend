@@ -4,7 +4,7 @@
 package org.archware.sosadl.generator
 
 import com.google.inject.Injector
-import com.google.inject.Inject
+import java.math.BigInteger
 import java.util.ArrayList
 import java.util.LinkedHashMap
 import java.util.List
@@ -19,6 +19,7 @@ import org.archware.sosadl.sosADL.AssertProtocol
 import org.archware.sosadl.sosADL.Behavior
 import org.archware.sosadl.sosADL.BehaviorDecl
 import org.archware.sosadl.sosADL.BinaryExpression
+import org.archware.sosadl.sosADL.BooleanType
 import org.archware.sosadl.sosADL.ChooseBehavior
 import org.archware.sosadl.sosADL.ChooseProtocol
 import org.archware.sosadl.sosADL.ComplexName
@@ -67,18 +68,14 @@ import org.archware.sosadl.sosADL.UntellAssertion
 import org.archware.sosadl.sosADL.Valuing
 import org.archware.sosadl.sosADL.ValuingBehavior
 import org.archware.sosadl.sosADL.ValuingProtocol
+import org.archware.sosadl.validation.typing.TypeChecker
 import org.eclipse.emf.common.util.URI
 import org.eclipse.emf.ecore.resource.Resource
+import org.eclipse.emf.ecore.util.EcoreUtil
 import org.eclipse.xtext.generator.IFileSystemAccess
 import org.eclipse.xtext.generator.IGenerator
 import org.eclipse.xtext.resource.XtextResource
 import org.eclipse.xtext.resource.XtextResourceSet
-import org.archware.sosadl.validation.typing.TypeChecker
-import org.archware.sosadl.sosADL.IntegerValue
-import org.archware.sosadl.sosADL.UnaryExpression
-import org.archware.sosadl.sosADL.BooleanType
-import java.math.BigInteger
-import org.eclipse.emf.ecore.util.EcoreUtil
 
 /**
  * Generates IOSTS code from the given SosADL model files on save.
@@ -220,21 +217,13 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
 		// generate a new dumb variable
 		lastDoExprResultNumber++
 		val String dumbVarName="_doExprResult"+lastDoExprResultNumber
-		/*
-		// FIXME: retrieve the type of Expression!
-		val String typeName = "TYPE_TODO"+lastDoExprResultNumber
-		val DataType datatype = newNamedType(typeName)
-		*/
 		val DataType datatype = TypeChecker.getType(doExpr)
 		// create a Valuing
 		val factory = SosADLFactory.eINSTANCE
 		var result = factory.createValuing()  // will create a ValuingImpl!
-		//result.setType(datatype)
 		result.setType(EcoreUtil.copy(datatype))
 		result.setName(dumbVarName)
-		//result.setExpression(doExpr)
 		result.setExpression(EcoreUtil.copy(doExpr))
-		// since result is really a ValuingImpl, cast to a Valuing!
 		(result as Valuing)
 	}
 	
@@ -1166,8 +1155,6 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
         
     /*
      * - computeSTS for a RepeatBehavior statement.
-     * 
-     * TODO: Remove RepeatBehavior which is not allowed anymore!
      */
     def dispatch ArrayList<Integer> computeSTS(int startState, RepeatBehavior r){
         var ArrayList<Integer> finalStates = newArrayList()
@@ -1601,58 +1588,58 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
         name
 	}
 	
-	/*
-	 * Computing Integer values when possible
-	 * Remember that the type systems consider every integer is a Java BigInteger!
-	 */
-	def dispatch BigInteger evaluateIntegerExpression(Expression e) {
-		switch e {
-			IntegerValue: (e as IntegerValue).evaluateIntegerExpression
-			UnaryExpression: (e as UnaryExpression).evaluateIntegerExpression
-			BinaryExpression: (e as BinaryExpression).evaluateIntegerExpression
-			//TODO? IdentExpression
-			//TODO? CallExpression
-			//TODO? MethodCall
-			//TODO? Field
-			default: {
-				System.err.println("evaluateIntegerExpression: cannot evaluate expression: '"+e.compile+"'... returning 0!")
-				BigInteger.ZERO
-			}
-		}
-	}
+//	/*
+//	 * Computing Integer values when possible
+//	 * Remember that the type systems consider every integer is a Java BigInteger!
+//	 */
+//	def dispatch BigInteger evaluateIntegerExpression(Expression e) {
+//		switch e {
+//			IntegerValue: (e as IntegerValue).evaluateIntegerExpression
+//			UnaryExpression: (e as UnaryExpression).evaluateIntegerExpression
+//			BinaryExpression: (e as BinaryExpression).evaluateIntegerExpression
+//			//TODO? IdentExpression
+//			//TODO? CallExpression
+//			//TODO? MethodCall
+//			//TODO? Field
+//			default: {
+//				System.err.println("evaluateIntegerExpression: cannot evaluate expression: '"+e.compile+"'... returning 0!")
+//				BigInteger.ZERO
+//			}
+//		}
+//	}
 	
-	def dispatch BigInteger evaluateIntegerExpression(IntegerValue e) {
-		new BigInteger(e.absInt.toString)
-	}
+//	def dispatch BigInteger evaluateIntegerExpression(IntegerValue e) {
+//		new BigInteger(e.absInt.toString)
+//	}
 	
-	def dispatch BigInteger evaluateIntegerExpression(UnaryExpression e) {
-		val right = evaluateIntegerExpression(e.right)
-		switch e.op {
-			case '+': right
-			case '-': right.negate
-			default: {
-				System.err.println("evaluateIntegerExpression: unknown unary operator in expression: '"+e.compile+"'... returning 0!")
-				BigInteger.ZERO
-			}
-		}
-	}
+//	def dispatch BigInteger evaluateIntegerExpression(UnaryExpression e) {
+//		val right = evaluateIntegerExpression(e.right)
+//		switch e.op {
+//			case '+': right
+//			case '-': right.negate
+//			default: {
+//				System.err.println("evaluateIntegerExpression: unknown unary operator in expression: '"+e.compile+"'... returning 0!")
+//				BigInteger.ZERO
+//			}
+//		}
+//	}
 	
-	def dispatch BigInteger evaluateIntegerExpression(BinaryExpression e) {
-		val left = evaluateIntegerExpression(e.left)
-		val right = evaluateIntegerExpression(e.right)
-		switch e.op {
-			case '+': left.add(right)
-			case '-': left.add(right.negate)
-			case '*': left.multiply(right)
-			case '/': left.divide(right)
-			case 'mod': left.mod(right)
-			case 'div': left.divide(right)
-			default: {
-				System.err.println("evaluateIntegerExpression: unknown binary operator in expression: '"+e.compile+"'... returning 0!")
-				BigInteger.ZERO
-			}
-		}
-	}
+//	def dispatch BigInteger evaluateIntegerExpression(BinaryExpression e) {
+//		val left = evaluateIntegerExpression(e.left)
+//		val right = evaluateIntegerExpression(e.right)
+//		switch e.op {
+//			case '+': left.add(right)
+//			case '-': left.add(right.negate)
+//			case '*': left.multiply(right)
+//			case '/': left.divide(right)
+//			case 'mod': left.mod(right)
+//			case 'div': left.divide(right)
+//			default: {
+//				System.err.println("evaluateIntegerExpression: unknown binary operator in expression: '"+e.compile+"'... returning 0!")
+//				BigInteger.ZERO
+//			}
+//		}
+//	}
 	
 	/*
 	 * IOstsType computeIOstsType(DataType t)
@@ -1707,8 +1694,6 @@ class SosADL2IOSTSGenerator extends SosADLPrettyPrinterGenerator implements IGen
     }
     
     def dispatch IOstsType computeIOstsType(RangeType t) {
-//		val int min=evaluateIntegerExpression(t.vmin).intValue
-//		val int max=evaluateIntegerExpression(t.vmax).intValue
         new IOstsRangeType(t.vmin, t.vmax)
     }
     
