@@ -1,6 +1,4 @@
-// KO
-//BUG: java.lang.IllegalArgumentException: field: private final org.archware.sosadl.validation.typing.proof.Type_unit org.archware.sosadl.validation.typing.proof.Type_SosADL_file.p
-//     Caused by: java.lang.IllegalArgumentException: Unhandled parameter types: [org.archware.sosadl.tv.typeCheckerHelper.impl.TypeVariableImpl@4a3012a4 (name: b, solver: org.archware.sosadl.validation.typing.TypeCheckerGenericBehavior0$$Lambda$113/144826864@418488cb)]
+// ok
 
 library testForEach1 is {
   
