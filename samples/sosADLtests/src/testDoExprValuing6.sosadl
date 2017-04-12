@@ -1,4 +1,4 @@
-// ok: testDoExpr.iosts
+// ok
 
 library testDoExprValuing2 is {
   

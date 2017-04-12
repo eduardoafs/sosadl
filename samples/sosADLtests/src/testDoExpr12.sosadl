@@ -1,5 +1,6 @@
 // ok
 
+
 library testDoExpr12 is {
   
   system test() is {

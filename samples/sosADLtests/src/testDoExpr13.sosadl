@@ -1,6 +1,6 @@
-// KO: y(5)::z cannot be typed.
+// ok
 
-library testDoExpr1 is {
+library testDoExpr13 is {
   
   system test() is {
     
