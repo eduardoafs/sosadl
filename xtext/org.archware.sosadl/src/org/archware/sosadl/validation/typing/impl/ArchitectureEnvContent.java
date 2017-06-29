@@ -14,7 +14,7 @@ public class ArchitectureEnvContent implements EnvContent {
 		this.architectureDecl = dtd;
 	}
 
-	public ArchitectureDecl getMediatorDecl() {
+	public ArchitectureDecl getArchitectureDecl() {
 		return this.architectureDecl;
 	}
 }
