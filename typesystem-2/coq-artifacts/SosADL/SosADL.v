@@ -169,6 +169,8 @@ Definition SoS name decls := sosADL_Unit_sosADL_SoS decls name.
 Definition t_Valuing := sosADL_Valuing.
 Definition Valuing name type expression := sosADL_Valuing_sosADL_Valuing expression name type.
 
+Require SosADL.Accessors.
+Include SosADL.Accessors.
 
 
 (*
