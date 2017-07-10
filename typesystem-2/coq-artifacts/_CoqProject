@@ -1,0 +1,10 @@
+-R SosADL SosADL
+./SosADL/Accessors.v
+./SosADL/Utils.v
+./SosADL/TypeSystem.v
+./SosADL/sosADL.v
+./SosADL/SosADL.v
+./SosADL/SosADLNotations.v
+./SosADL/Properties.v
+./SosADL/Interpretation.v
+./SosADL/Environment.v
