@@ -21,6 +21,7 @@ public class ConnectionEnvContent implements EnvContent {
 		this.connection = connection;
 	}
 
+	@Override
 	public EObject getBinder() {
 		return binder;
 	}

@@ -11,6 +11,7 @@ import org.archware.sosadl.validation.typing.proof.CoqConstructor;
 import org.archware.sosadl.validation.typing.proof.Mandatory;
 import org.eclipse.emf.common.util.ECollections;
 import org.eclipse.emf.common.util.EList;
+import org.eclipse.emf.ecore.EObject;
 
 @CoqConstructor("EType")
 public class TypeEnvContent implements EnvContent {
@@ -50,5 +51,10 @@ public class TypeEnvContent implements EnvContent {
 		EList<T> ret = ECollections.asEList(lv);
 		ret.addAll(l);
 		return ECollections.unmodifiableEList(ret);
+	}
+
+	@Override
+	public EObject getBinder() {
+		return this.getDataTypeDecl();
 	}
 }

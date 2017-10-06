@@ -9,20 +9,17 @@ import org.eclipse.emf.ecore.EObject;
 
 @CoqConstructor("EFunction")
 public class FunctionEnvContent implements EnvContent {
-	@CoqTransient
-	private final EObject binder;
-
 	@Mandatory
 	private final FunctionDecl function;
 
-	public FunctionEnvContent(EObject binder, FunctionDecl function) {
+	public FunctionEnvContent(FunctionDecl function) {
 		super();
-		this.binder = binder;
 		this.function = function;
 	}
 
+	@Override
 	public EObject getBinder() {
-		return binder;
+		return this.getFunction();
 	}
 
 	public FunctionDecl getFunction() {

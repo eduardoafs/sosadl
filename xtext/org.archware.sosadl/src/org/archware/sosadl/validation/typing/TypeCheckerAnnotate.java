@@ -19,11 +19,11 @@ public class TypeCheckerAnnotate extends AccumulatingValidator {
 	public static final String TYPE = "Type";
 	public static final String BINDER = "Binder";
 	public static final String INFERENCE = "Inference";
-	
+
 	public static void saveInference(EObject eObject, TypeInferenceSolver i) {
 		AttributeAdapter.adapterOf(eObject).putAttribute(INFERENCE, i);
 	}
-	
+
 	public static TypeInferenceSolver getInference(EObject eObject) {
 		return (TypeInferenceSolver) AttributeAdapter.adapterOf(eObject).getAttribute(INFERENCE);
 	}
@@ -34,7 +34,8 @@ public class TypeCheckerAnnotate extends AccumulatingValidator {
 	}
 
 	public static DataType getType(EObject eObject) {
-		return getInference(EcoreUtil.getRootContainer(eObject)).deepSubstitute((DataType) AttributeAdapter.adapterOf(eObject).getAttribute(TYPE));
+		return getInference(EcoreUtil.getRootContainer(eObject))
+				.deepSubstitute((DataType) AttributeAdapter.adapterOf(eObject).getAttribute(TYPE));
 	}
 
 	public static void saveMin(EObject eObject, Expression e) {
@@ -57,8 +58,19 @@ public class TypeCheckerAnnotate extends AccumulatingValidator {
 		AttributeAdapter.adapterOf(eObject).putAttribute(ENVIRONMENT, env);
 	}
 
+	public static Environment getEnvironment(EObject eObject) {
+		Object e =AttributeAdapter.adapterOf(eObject).getAttribute(ENVIRONMENT);
+		if(e == null) {
+			return null;
+		} else {
+			return (Environment) e;
+		}
+	}
+
 	public static <T> T saveProof(EObject eObject, T proof) {
-		if(proof == null) { System.out.println("ummm"); }
+		if (proof == null) {
+			System.out.println("ummm");
+		}
 		AttributeAdapter.adapterOf(eObject).putAttribute(PROOF, proof);
 		return proof;
 	}

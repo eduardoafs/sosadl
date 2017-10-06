@@ -22,6 +22,7 @@ public class GateOrDutyEnvContent implements EnvContent {
 		this.connections = connections;
 	}
 
+	@Override
 	public EObject getBinder() {
 		return binder;
 	}
