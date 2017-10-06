@@ -19,10 +19,12 @@ class SosADLGenerator extends AbstractGenerator {
   @Inject SosADLPrettyPrinterGenerator gen1
   @Inject SosADL2IOSTSGenerator gen2
   @Inject TypingProofGenerator gen3
+  @Inject TestGenerator gen4
   
   override void doGenerate(Resource resource, IFileSystemAccess2 fsa, IGeneratorContext context) {
     gen1.doGenerate(resource, fsa)
     gen2.doGenerate(resource, fsa)
     gen3.doGenerate(resource, fsa)
+    gen4.doGenerate(resource, fsa)
   }
 }

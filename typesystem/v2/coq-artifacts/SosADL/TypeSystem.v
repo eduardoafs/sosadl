@@ -2728,9 +2728,11 @@ Definition type_mediators Gamma l Gamma1 :=
 (** %\todo{% %}% *)
 
 Inductive type_architecture: env -> SosADL.SosADL.t_ArchitectureDecl -> Prop :=
-
-with type_architectureblock: env -> SosADL.SosADL.t_ArchitectureDecl -> Prop :=
-
+| type_ArchitectureDecl:
+    forall (Gamma: env)
+      (a: SosADL.SosADL.t_ArchitectureDecl)
+    ,
+      architecture a well typed in Gamma
 
 
 (** ** Architecture behavior*)
@@ -2741,7 +2743,6 @@ with type_archbehavior: env ->  SosADL.SosADL.t_ArchBehaviorDecl -> Prop :=
 
 
 where "'architecture' a 'well' 'typed' 'in' Gamma" := (type_architecture Gamma a)
-and "'architectureblock' a 'well' 'typed' 'in' Gamma" := (type_architectureblock Gamma a)
 and "'archbehavior' b 'well' 'typed' 'in' Gamma" := (type_archbehavior Gamma b)
 .
 
