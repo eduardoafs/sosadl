@@ -25,8 +25,11 @@ import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.ui.IObjectActionDelegate;
 import org.eclipse.ui.IWorkbenchPart;
+import org.eclipse.xtext.resource.XtextResource;
+import org.eclipse.xtext.util.CancelIndicator;
 import org.eclipse.xtext.validation.CheckMode;
 import org.eclipse.xtext.validation.IResourceValidator;
+import org.eclipse.xtext.validation.Issue;
 
 public class Action implements IObjectActionDelegate {
 
@@ -65,8 +68,10 @@ public class Action implements IObjectActionDelegate {
         ResourceSet resourceSet = new ResourceSetImpl();
         URI fileURIModelSource = URI.createFileURI(file.getFullPath().toString());
 
-        Resource resource = resourceSet.getResource(fileURIModelSource, true);
-
+        XtextResource resource = (XtextResource) resourceSet.getResource(fileURIModelSource, true);
+        IResourceValidator validator = resource.getResourceServiceProvider().get(IResourceValidator.class);
+        List<Issue> issues = validator.validate(resource, CheckMode.ALL, CancelIndicator.NullImpl);
+        
         System.out.println(resource.getContents());
         EObject obj = resource.getContents().get(0);
         SoSImpl s = (SoSImpl) ((SosADLImpl) obj).getContent();
