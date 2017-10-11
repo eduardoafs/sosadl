@@ -505,7 +505,7 @@ public class TypeChecker extends TypeCheckerConnections {
 
 	private Type_architecture type_architecture(Environment gamma, ArchitectureDecl architecture) {
 		saveEnvironment(architecture, gamma);
-		// TODO Auto-generated method stub
-		return null;
+		return saveProof(architecture,
+				createType_ArchitectureDecl(gamma, architecture));
 	}
 }

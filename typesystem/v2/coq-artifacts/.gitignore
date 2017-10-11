@@ -2,4 +2,4 @@
 *.vo
 *.glob
 *.v.d
-.*.vo.aux
+.*.aux
