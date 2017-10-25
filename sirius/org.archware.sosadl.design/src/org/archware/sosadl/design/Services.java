@@ -2,13 +2,18 @@ package org.archware.sosadl.design;
 
 import java.util.List;
 
+import org.archware.sosadl.sosADL.ComplexName;
 import org.archware.sosadl.sosADL.Constituent;
 import org.archware.sosadl.sosADL.DutyDecl;
+import org.archware.sosadl.sosADL.EntityBlock;
 import org.archware.sosadl.sosADL.GateDecl;
 import org.archware.sosadl.sosADL.IdentExpression;
 import org.archware.sosadl.sosADL.MediatorDecl;
+import org.archware.sosadl.sosADL.SosADL;
 import org.archware.sosadl.sosADL.SystemDecl;
+import org.archware.sosadl.sosADL.Unify;
 import org.archware.sosadl.validation.TypeInformation;
+import org.eclipse.emf.common.util.BasicEList;
 import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.xtext.resource.XtextResource;
@@ -34,6 +39,7 @@ public class Services {
 	 * @param c constituent
 	 * @return list of gates
 	 */
+	@SuppressWarnings("all")
 	public EList<GateDecl> allGates(Constituent c) {
 		// For some unknown reason, Xtext is not validating this resource
 		XtextResource resource = (XtextResource) c.eResource();
@@ -53,6 +59,7 @@ public class Services {
 	 * @param c constituent
 	 * @return list of duties
 	 */
+	@SuppressWarnings("all")
 	public EList<DutyDecl> allDuties(Constituent c) {
 		// For some unknown reason, Xtext is not validating this resource
 		XtextResource resource = (XtextResource) c.eResource();
@@ -67,4 +74,64 @@ public class Services {
 		} else return null;
 	}
 
+	public GateDecl firstGate(Unify u) {
+		return findGate(u.getConnLeft());
+	}
+	public GateDecl secondGate(Unify u) {
+		return findGate(u.getConnRight());
+	}
+
+	public DutyDecl firstDuty(Unify u) {
+		return findDuty(u.getConnLeft());
+	}
+	public DutyDecl secondDuty(Unify u) {
+		return findDuty(u.getConnRight());
+	}
+
+	/**
+	 * TODO
+	 * resolves a complex name, returning a gate
+	 * @param n
+	 * @return
+	 */
+	private GateDecl findGate(ComplexName n) {
+		return null;
+	}
+	
+	/**
+	 * TODO
+	 * resolves a complex name, returning a duty
+	 * @param n
+	 * @return
+	 */
+	private DutyDecl findDuty(ComplexName n) {
+		return null;
+	}
+	
+	/**
+	 * 
+	 * @param e
+	 * @return
+	 */
+	public EList<EObject> availableConstituent(EObject e) {
+		EList<EObject> constituents = new BasicEList<EObject>();
+		
+		EObject find = e;
+		while (!(find instanceof SosADL)) {
+			find = find.eContainer();
+		}
+		// Now find is a SosADL
+		EntityBlock entity = ((SosADL) find).getContent().getDecls();
+		
+		// Add all systems and mediators
+		constituents.addAll(entity.getSystems());
+		constituents.addAll(entity.getMediators());
+		
+		// TODO resolve imports
+		/*for (Import i : ((SosADL)find).getImports()) {
+			String libName = i.getImportedLibrary();
+		}*/
+		
+		return constituents;
+	}
 }

@@ -34,19 +34,5 @@
             contributorClass="org.archware.sosadl.sosADL.presentation.SosADLActionBarContributor">
       </editor>
    </extension>
-   <extension
-         point="org.eclipse.ui.popupMenus">
-      <objectContribution
-            id="org.archware.sosadl.editor.PopupMenu"
-            nameFilter="*.sosadl"
-            objectClass="org.eclipse.core.resources.IFile">
-         <action
-               class="org.archware.sosadl.editor.Action"
-               enablesFor="*"
-               id="org.archware.sosadl.editor.action1"
-               label="Test SosADL">
-         </action>
-      </objectContribution>
-   </extension>
 
 </plugin>

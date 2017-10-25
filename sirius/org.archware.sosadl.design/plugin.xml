@@ -7,4 +7,15 @@
 	       name="sosadl">
     </component>
   </extension>
+  <extension
+        point="org.eclipse.sirius.externalJavaAction">
+     <javaActions
+           actionClass="org.archware.sosadl.design.tools.CreateDuty"
+           id="org.archware.sosadl.design.tools.createDuty">
+     </javaActions>
+     <javaActions
+           actionClass="org.archware.sosadl.design.tools.CreateGate"
+           id="org.archware.sosadl.design.tools.createDuty">
+     </javaActions>
+  </extension>
 </plugin>
