@@ -59,7 +59,7 @@ public class TypeCheckerAnnotate extends AccumulatingValidator {
 	}
 
 	public static Environment getEnvironment(EObject eObject) {
-		Object e =AttributeAdapter.adapterOf(eObject).getAttribute(ENVIRONMENT);
+		Object e = AttributeAdapter.adapterOf(eObject).getAttribute(ENVIRONMENT);
 		if(e == null) {
 			return null;
 		} else {

@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <description:Group xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:description="http://www.eclipse.org/sirius/description/1.1.0" xmlns:description_1="http://www.eclipse.org/sirius/diagram/description/1.1.0" xmlns:style="http://www.eclipse.org/sirius/diagram/description/style/1.1.0" xmlns:tool="http://www.eclipse.org/sirius/diagram/description/tool/1.1.0" xmlns:tool_1="http://www.eclipse.org/sirius/description/tool/1.1.0" name="sosadl" version="11.1.1.201610211630">
-  <ownedViewpoints name="org.archware.sosadl" label="SosADL" modelFileExtension="sosadl">
+  <ownedViewpoints name="org.archware.sosadl.viewpoints" label="SosADL">
     <ownedRepresentations xsi:type="description_1:DiagramDescription" name="org.archware.sosadl.main" label="Import Diagram" initialisation="true" showOnStartup="true" domainClass="sosADL.SosADL">
       <metamodel href="../../org.archware.sosadl/model/generated/SosADL.ecore#/"/>
       <defaultLayer name="Default">
         <containerMappings name="org.archware.sosadl.main.self" semanticCandidatesExpression="var:self" domainClass="sosADL.SosADL">
-          <subNodeMappings name="org.archware.sosadl.library" label="Library" semanticCandidatesExpression="feature:content" doubleClickDescription="//@ownedViewpoints[name='org.archware.sosadl']/@ownedRepresentations[name='org.archware.sosadl.main']/@defaultLayer/@toolSections.0/@ownedTools[name='org.archware.sosadl.defTools.nagivate']" domainClass="sosADL.Library">
+          <subNodeMappings name="org.archware.sosadl.library" label="Library" semanticCandidatesExpression="feature:content" doubleClickDescription="//@ownedViewpoints[name='org.archware.sosadl.viewpoints']/@ownedRepresentations[name='org.archware.sosadl.main']/@defaultLayer/@toolSections.0/@ownedTools[name='org.archware.sosadl.defTools.nagivate']" domainClass="sosADL.Library">
             <style xsi:type="style:SquareDescription" borderColor="//@userColorsPalettes[name='org.archware.sosadl.colors']/@entries[name='org.archware.sosadl.colors.borders']" showIcon="false" labelExpression="['&lt;&lt;Library>>\n'+self.name/]" labelColor="//@userColorsPalettes[name='org.archware.sosadl.colors']/@entries[name='org.archware.sosadl.colors.labels']" labelPosition="node" resizeKind="NSEW" color="//@userColorsPalettes[name='org.archware.sosadl.colors']/@entries[name='org.archware.sosadl.colors.library']"/>
           </subNodeMappings>
           <subNodeMappings name="org.archware.sosadl.import" label="Import" semanticCandidatesExpression="feature:imports" domainClass="sosADL.Import">
             <style xsi:type="style:SquareDescription" borderColor="//@userColorsPalettes[name='org.archware.sosadl.colors']/@entries[name='org.archware.sosadl.colors.borders']" showIcon="false" labelExpression="['&lt;&lt;import>>\n'+self.oclAsType(Import).importedLibrary/]" labelColor="//@userColorsPalettes[name='org.archware.sosadl.colors']/@entries[name='org.archware.sosadl.colors.labels']" labelPosition="node" resizeKind="NSEW" color="//@userColorsPalettes[name='org.archware.sosadl.colors']/@entries[name='org.archware.sosadl.colors.import']"/>
           </subNodeMappings>
-          <subNodeMappings name="org.archware.sosadl.sos" label="SoS" semanticCandidatesExpression="feature:content" doubleClickDescription="//@ownedViewpoints[name='org.archware.sosadl']/@ownedRepresentations[name='org.archware.sosadl.main']/@defaultLayer/@toolSections.0/@ownedTools[name='org.archware.sosadl.defTools.nagivate']" domainClass="sosADL.SoS">
+          <subNodeMappings name="org.archware.sosadl.sos" label="SoS" semanticCandidatesExpression="feature:content" doubleClickDescription="//@ownedViewpoints[name='org.archware.sosadl.viewpoints']/@ownedRepresentations[name='org.archware.sosadl.main']/@defaultLayer/@toolSections.0/@ownedTools[name='org.archware.sosadl.defTools.nagivate']" domainClass="sosADL.SoS">
             <style xsi:type="style:SquareDescription" borderColor="//@userColorsPalettes[name='org.archware.sosadl.colors']/@entries[name='org.archware.sosadl.colors.borders']" showIcon="false" labelExpression="['&lt;&lt;SoS>>\n'+self.name/]" labelColor="//@userColorsPalettes[name='org.archware.sosadl.colors']/@entries[name='org.archware.sosadl.colors.labels']" labelPosition="node" resizeKind="NSEW" color="//@userColorsPalettes[name='org.archware.sosadl.colors']/@entries[name='org.archware.sosadl.colors.sos']"/>
           </subNodeMappings>
           <style xsi:type="style:FlatContainerStyleDescription" borderSizeComputationExpression="1" borderColor="//@userColorsPalettes[name='org.archware.sosadl.colors']/@entries[name='org.archware.sosadl.colors.borders']" showIcon="false" labelExpression="['Import Diagram'+if self.content.oclIsUndefined() then ' ' else ' for '+self.content.name endif/]" labelColor="//@userColorsPalettes[name='org.archware.sosadl.colors']/@entries[name='org.archware.sosadl.colors.labels']" labelAlignment="LEFT" widthComputationExpression="6" heightComputationExpression="8" backgroundColor="//@userColorsPalettes[name='org.archware.sosadl.colors']/@entries[name='org.archware.sosadl.colors.diagrams']" foregroundColor="//@userColorsPalettes[name='org.archware.sosadl.colors']/@entries[name='org.archware.sosadl.colors.diagrams']">
@@ -19,7 +19,7 @@
           </style>
         </containerMappings>
         <toolSections name="org.archware.sosadl.defTools" label="Tools">
-          <ownedTools xsi:type="tool:NodeCreationDescription" name="org.archware.sosadl.defTools.newLib" label="New Library" forceRefresh="true" nodeMappings="//@ownedViewpoints[name='org.archware.sosadl']/@ownedRepresentations[name='org.archware.sosadl.main']/@defaultLayer/@containerMappings[name='org.archware.sosadl.main.self']/@subNodeMappings[name='org.archware.sosadl.library']">
+          <ownedTools xsi:type="tool:NodeCreationDescription" name="org.archware.sosadl.defTools.newLib" label="New Library" forceRefresh="true" nodeMappings="//@ownedViewpoints[name='org.archware.sosadl.viewpoints']/@ownedRepresentations[name='org.archware.sosadl.main']/@defaultLayer/@containerMappings[name='org.archware.sosadl.main.self']/@subNodeMappings[name='org.archware.sosadl.library']">
             <variable name="container"/>
             <viewVariable name="containerView"/>
             <initialOperation>
@@ -33,7 +33,7 @@
               </firstModelOperations>
             </initialOperation>
           </ownedTools>
-          <ownedTools xsi:type="tool:NodeCreationDescription" name="org.archware.sosadl.defTools.Import" label="New Import" forceRefresh="true" nodeMappings="//@ownedViewpoints[name='org.archware.sosadl']/@ownedRepresentations[name='org.archware.sosadl.main']/@defaultLayer/@containerMappings[name='org.archware.sosadl.main.self']/@subNodeMappings[name='org.archware.sosadl.import']">
+          <ownedTools xsi:type="tool:NodeCreationDescription" name="org.archware.sosadl.defTools.Import" label="New Import" forceRefresh="true" nodeMappings="//@ownedViewpoints[name='org.archware.sosadl.viewpoints']/@ownedRepresentations[name='org.archware.sosadl.main']/@defaultLayer/@containerMappings[name='org.archware.sosadl.main.self']/@subNodeMappings[name='org.archware.sosadl.import']">
             <variable name="container"/>
             <viewVariable name="containerView"/>
             <initialOperation>
@@ -46,7 +46,7 @@
               </firstModelOperations>
             </initialOperation>
           </ownedTools>
-          <ownedTools xsi:type="tool:NodeCreationDescription" name="org.archware.sosadl.defTools.sos" label="New System of Systems" precondition="[container.oclAsType(sosADL.SosADL).content.oclIsUndefined()/]" forceRefresh="true" nodeMappings="//@ownedViewpoints[name='org.archware.sosadl']/@ownedRepresentations[name='org.archware.sosadl.main']/@defaultLayer/@containerMappings[name='org.archware.sosadl.main.self']/@subNodeMappings[name='org.archware.sosadl.sos']">
+          <ownedTools xsi:type="tool:NodeCreationDescription" name="org.archware.sosadl.defTools.sos" label="New System of Systems" precondition="[container.oclAsType(sosADL.SosADL).content.oclIsUndefined()/]" forceRefresh="true" nodeMappings="//@ownedViewpoints[name='org.archware.sosadl.viewpoints']/@ownedRepresentations[name='org.archware.sosadl.main']/@defaultLayer/@containerMappings[name='org.archware.sosadl.main.self']/@subNodeMappings[name='org.archware.sosadl.sos']">
             <variable name="container"/>
             <viewVariable name="containerView"/>
             <initialOperation>
@@ -60,12 +60,12 @@
               </firstModelOperations>
             </initialOperation>
           </ownedTools>
-          <ownedTools xsi:type="tool:DoubleClickDescription" name="org.archware.sosadl.defTools.nagivate" label="Nagivate to Definition Diagram" forceRefresh="true" mappings="//@ownedViewpoints[name='org.archware.sosadl']/@ownedRepresentations[name='org.archware.sosadl.main']/@defaultLayer/@containerMappings[name='org.archware.sosadl.main.self']/@subNodeMappings[name='org.archware.sosadl.library'] //@ownedViewpoints[name='org.archware.sosadl']/@ownedRepresentations[name='org.archware.sosadl.main']/@defaultLayer/@containerMappings[name='org.archware.sosadl.main.self']/@subNodeMappings[name='org.archware.sosadl.sos']">
+          <ownedTools xsi:type="tool:DoubleClickDescription" name="org.archware.sosadl.defTools.nagivate" label="Nagivate to Definition Diagram" forceRefresh="true" mappings="//@ownedViewpoints[name='org.archware.sosadl.viewpoints']/@ownedRepresentations[name='org.archware.sosadl.main']/@defaultLayer/@containerMappings[name='org.archware.sosadl.main.self']/@subNodeMappings[name='org.archware.sosadl.library'] //@ownedViewpoints[name='org.archware.sosadl.viewpoints']/@ownedRepresentations[name='org.archware.sosadl.main']/@defaultLayer/@containerMappings[name='org.archware.sosadl.main.self']/@subNodeMappings[name='org.archware.sosadl.sos']">
             <element name="element"/>
             <elementView name="elementView"/>
             <initialOperation>
               <firstModelOperations xsi:type="tool_1:ChangeContext" browseExpression="var:element">
-                <subModelOperations xsi:type="tool:Navigation" createIfNotExistent="true" diagramDescription="//@ownedViewpoints[name='org.archware.sosadl']/@ownedRepresentations[name='org.archware.sosadl.sos.dd']"/>
+                <subModelOperations xsi:type="tool:Navigation" createIfNotExistent="true" diagramDescription="//@ownedViewpoints[name='org.archware.sosadl.viewpoints']/@ownedRepresentations[name='org.archware.sosadl.sos.dd']"/>
               </firstModelOperations>
             </initialOperation>
           </ownedTools>
@@ -98,7 +98,7 @@
           <subContainerMappings name="org.archware.sosadl.dd.function" label="Function" semanticCandidatesExpression="[self.decls.functions/]" domainClass="sosADL.FunctionDecl" childrenPresentation="List">
             <style xsi:type="style:FlatContainerStyleDescription" borderSizeComputationExpression="1" borderColor="//@userColorsPalettes[name='org.archware.sosadl.colors']/@entries[name='org.archware.sosadl.colors.borders']" labelColor="//@userColorsPalettes[name='org.archware.sosadl.colors']/@entries[name='org.archware.sosadl.colors.labels']" backgroundColor="//@userColorsPalettes[name='org.archware.sosadl.colors']/@entries[name='org.archware.sosadl.colors.function']" foregroundColor="//@userColorsPalettes[name='org.archware.sosadl.colors']/@entries[name='org.archware.sosadl.colors.function']"/>
           </subContainerMappings>
-          <subContainerMappings name="org.archware.sosadl.dd.architecture" label="Architecture" semanticCandidatesExpression="[self.decls.architectures/]" doubleClickDescription="//@ownedViewpoints[name='org.archware.sosadl']/@ownedRepresentations[name='org.archware.sosadl.sos.dd']/@defaultLayer/@toolSections.3/@ownedTools[name='org.archware.sosadl.sos.dd.tools.arch.navigation']" domainClass="sosADL.ArchitectureDecl" childrenPresentation="List">
+          <subContainerMappings name="org.archware.sosadl.dd.architecture" label="Architecture" semanticCandidatesExpression="[self.decls.architectures/]" doubleClickDescription="//@ownedViewpoints[name='org.archware.sosadl.viewpoints']/@ownedRepresentations[name='org.archware.sosadl.sos.dd']/@defaultLayer/@toolSections.3/@ownedTools[name='org.archware.sosadl.sos.dd.tools.arch.navigation']" domainClass="sosADL.ArchitectureDecl" childrenPresentation="List">
             <style xsi:type="style:FlatContainerStyleDescription" borderSizeComputationExpression="1" borderColor="//@userColorsPalettes[name='org.archware.sosadl.colors']/@entries[name='org.archware.sosadl.colors.borders']" showIcon="false" labelExpression="['&lt;&lt;architecture>>\n'+self.name/]" labelColor="//@userColorsPalettes[name='org.archware.sosadl.colors']/@entries[name='org.archware.sosadl.colors.labels']" backgroundColor="//@userColorsPalettes[name='org.archware.sosadl.colors']/@entries[name='org.archware.sosadl.colors.architecture']" foregroundColor="//@userColorsPalettes[name='org.archware.sosadl.colors']/@entries[name='org.archware.sosadl.colors.architecture']"/>
           </subContainerMappings>
           <style xsi:type="style:FlatContainerStyleDescription" borderSizeComputationExpression="1" borderColor="//@userColorsPalettes[name='org.archware.sosadl.colors']/@entries[name='org.archware.sosadl.colors.borders']" showIcon="false" labelExpression="['[Definition Diagram] '+if self.oclIsKindOf(SoS) then 'SoS ' else 'Library ' endif +self.name/]" labelColor="//@userColorsPalettes[name='org.archware.sosadl.colors']/@entries[name='org.archware.sosadl.colors.labels']" labelAlignment="LEFT" backgroundColor="//@userColorsPalettes[name='org.archware.sosadl.colors']/@entries[name='org.archware.sosadl.colors.diagrams']" foregroundColor="//@userColorsPalettes[name='org.archware.sosadl.colors']/@entries[name='org.archware.sosadl.colors.diagrams']">
@@ -106,7 +106,7 @@
           </style>
         </containerMappings>
         <toolSections name="org.archware.sosadl.sos.dd.tools.systems" label="Systems">
-          <ownedTools xsi:type="tool:ContainerCreationDescription" name="org.archware.sosadl.sos.dd.tools.System" label="New System" forceRefresh="true" containerMappings="//@ownedViewpoints[name='org.archware.sosadl']/@ownedRepresentations[name='org.archware.sosadl.sos.dd']/@defaultLayer/@containerMappings[name='org.archware.sosadl.sos.dd.root']/@subContainerMappings[name='org.archware.sosadl.dd.system']">
+          <ownedTools xsi:type="tool:ContainerCreationDescription" name="org.archware.sosadl.sos.dd.tools.System" label="New System" forceRefresh="true" containerMappings="//@ownedViewpoints[name='org.archware.sosadl.viewpoints']/@ownedRepresentations[name='org.archware.sosadl.sos.dd']/@defaultLayer/@containerMappings[name='org.archware.sosadl.sos.dd.root']/@subContainerMappings[name='org.archware.sosadl.dd.system']">
             <variable name="container"/>
             <viewVariable name="containerView"/>
             <initialOperation>
@@ -115,7 +115,7 @@
               </firstModelOperations>
             </initialOperation>
           </ownedTools>
-          <ownedTools xsi:type="tool:NodeCreationDescription" name="org.archware.sosadl.sos.dd.tools.System" label="Gate" nodeMappings="//@ownedViewpoints[name='org.archware.sosadl']/@ownedRepresentations[name='org.archware.sosadl.sos.dd']/@defaultLayer/@containerMappings[name='org.archware.sosadl.sos.dd.root']/@subContainerMappings[name='org.archware.sosadl.dd.system']/@subNodeMappings[name='org.archware.sosadl.dd.system.gate']">
+          <ownedTools xsi:type="tool:NodeCreationDescription" name="org.archware.sosadl.sos.dd.tools.System" label="Gate" nodeMappings="//@ownedViewpoints[name='org.archware.sosadl.viewpoints']/@ownedRepresentations[name='org.archware.sosadl.sos.dd']/@defaultLayer/@containerMappings[name='org.archware.sosadl.sos.dd.root']/@subContainerMappings[name='org.archware.sosadl.dd.system']/@subNodeMappings[name='org.archware.sosadl.dd.system.gate']">
             <variable name="container"/>
             <viewVariable name="containerView"/>
             <initialOperation>
@@ -124,7 +124,7 @@
           </ownedTools>
         </toolSections>
         <toolSections name="org.archware.sosadl.sos.dd.tools.types" label="Data Types">
-          <ownedTools xsi:type="tool:ContainerCreationDescription" name="org.archware.sosadl.sos.dd.tools.DataType" label="Data Type" forceRefresh="true" containerMappings="//@ownedViewpoints[name='org.archware.sosadl']/@ownedRepresentations[name='org.archware.sosadl.sos.dd']/@defaultLayer/@containerMappings[name='org.archware.sosadl.sos.dd.root']/@subContainerMappings[name='org.archware.sysadl.dd.datatype']">
+          <ownedTools xsi:type="tool:ContainerCreationDescription" name="org.archware.sosadl.sos.dd.tools.DataType" label="Data Type" forceRefresh="true" containerMappings="//@ownedViewpoints[name='org.archware.sosadl.viewpoints']/@ownedRepresentations[name='org.archware.sosadl.sos.dd']/@defaultLayer/@containerMappings[name='org.archware.sosadl.sos.dd.root']/@subContainerMappings[name='org.archware.sysadl.dd.datatype']">
             <variable name="container"/>
             <viewVariable name="containerView"/>
             <initialOperation>
@@ -133,7 +133,7 @@
           </ownedTools>
         </toolSections>
         <toolSections name="org.archware.sosadl.sos.dd.tools.functions" label="Functions">
-          <ownedTools xsi:type="tool:ContainerCreationDescription" name="org.archware.sosadl.sos.dd.tools.functions.fun" label="New Function" containerMappings="//@ownedViewpoints[name='org.archware.sosadl']/@ownedRepresentations[name='org.archware.sosadl.sos.dd']/@defaultLayer/@containerMappings[name='org.archware.sosadl.sos.dd.root']/@subContainerMappings[name='org.archware.sosadl.dd.function']">
+          <ownedTools xsi:type="tool:ContainerCreationDescription" name="org.archware.sosadl.sos.dd.tools.functions.fun" label="New Function" containerMappings="//@ownedViewpoints[name='org.archware.sosadl.viewpoints']/@ownedRepresentations[name='org.archware.sosadl.sos.dd']/@defaultLayer/@containerMappings[name='org.archware.sosadl.sos.dd.root']/@subContainerMappings[name='org.archware.sosadl.dd.function']">
             <variable name="container"/>
             <viewVariable name="containerView"/>
             <initialOperation>
@@ -144,7 +144,7 @@
           </ownedTools>
         </toolSections>
         <toolSections name="org.archware.sosadl.sos.dd.tools.archs" label="Architectures">
-          <ownedTools xsi:type="tool:ContainerCreationDescription" name="org.archware.sosadl.sos.dd.tools.archs.self" label="New Architecture" forceRefresh="true" containerMappings="//@ownedViewpoints[name='org.archware.sosadl']/@ownedRepresentations[name='org.archware.sosadl.sos.dd']/@defaultLayer/@containerMappings[name='org.archware.sosadl.sos.dd.root']/@subContainerMappings[name='org.archware.sosadl.dd.architecture']">
+          <ownedTools xsi:type="tool:ContainerCreationDescription" name="org.archware.sosadl.sos.dd.tools.archs.self" label="New Architecture" forceRefresh="true" containerMappings="//@ownedViewpoints[name='org.archware.sosadl.viewpoints']/@ownedRepresentations[name='org.archware.sosadl.sos.dd']/@defaultLayer/@containerMappings[name='org.archware.sosadl.sos.dd.root']/@subContainerMappings[name='org.archware.sosadl.dd.architecture']">
             <variable name="container"/>
             <viewVariable name="containerView"/>
             <initialOperation>
@@ -153,12 +153,12 @@
               </firstModelOperations>
             </initialOperation>
           </ownedTools>
-          <ownedTools xsi:type="tool:DoubleClickDescription" name="org.archware.sosadl.sos.dd.tools.arch.navigation" forceRefresh="true" mappings="//@ownedViewpoints[name='org.archware.sosadl']/@ownedRepresentations[name='org.archware.sosadl.sos.dd']/@defaultLayer/@containerMappings[name='org.archware.sosadl.sos.dd.root']/@subContainerMappings[name='org.archware.sosadl.dd.architecture']">
+          <ownedTools xsi:type="tool:DoubleClickDescription" name="org.archware.sosadl.sos.dd.tools.arch.navigation" forceRefresh="true" mappings="//@ownedViewpoints[name='org.archware.sosadl.viewpoints']/@ownedRepresentations[name='org.archware.sosadl.sos.dd']/@defaultLayer/@containerMappings[name='org.archware.sosadl.sos.dd.root']/@subContainerMappings[name='org.archware.sosadl.dd.architecture']">
             <element name="element"/>
             <elementView name="elementView"/>
             <initialOperation>
               <firstModelOperations xsi:type="tool_1:ChangeContext" browseExpression="var:element">
-                <subModelOperations xsi:type="tool:Navigation" createIfNotExistent="true" diagramDescription="//@ownedViewpoints[name='org.archware.sosadl']/@ownedRepresentations[name='orc.archware.sosadl.architecture']"/>
+                <subModelOperations xsi:type="tool:Navigation" createIfNotExistent="true" diagramDescription="//@ownedViewpoints[name='org.archware.sosadl.viewpoints']/@ownedRepresentations[name='orc.archware.sosadl.architecture']"/>
               </firstModelOperations>
             </initialOperation>
           </ownedTools>
@@ -168,7 +168,7 @@
     <ownedRepresentations xsi:type="description_1:DiagramDescription" name="orc.archware.sosadl.architecture" label="Architecture Editor" initialisation="true" showOnStartup="true" domainClass="sosADL.ArchitectureDecl">
       <metamodel href="../../org.archware.sosadl/model/generated/SosADL.ecore#/"/>
       <defaultLayer name="Default">
-        <edgeMappings name="org.archware.sosadl.sos.ae.unify" sourceMapping="//@ownedViewpoints[name='org.archware.sosadl']/@ownedRepresentations[name='orc.archware.sosadl.architecture']/@defaultLayer/@containerMappings[name='org.archware.sosadl.ae.root']/@subNodeMappings[name='org.archware.sosadl.ae.root.constituent']/@borderedNodeMappings[name='Gate']" targetMapping="//@ownedViewpoints[name='org.archware.sosadl']/@ownedRepresentations[name='orc.archware.sosadl.architecture']/@defaultLayer/@containerMappings[name='org.archware.sosadl.ae.root']/@subNodeMappings[name='org.archware.sosadl.ae.root.constituent']/@borderedNodeMappings[name='Gate']" sourceFinderExpression="feature:" domainClass="sosADL.Unify" useDomainElement="true">
+        <edgeMappings name="org.archware.sosadl.sos.ae.unify" sourceMapping="//@ownedViewpoints[name='org.archware.sosadl.viewpoints']/@ownedRepresentations[name='orc.archware.sosadl.architecture']/@defaultLayer/@containerMappings[name='org.archware.sosadl.ae.root']/@subNodeMappings[name='org.archware.sosadl.ae.root.constituent']/@borderedNodeMappings[name='Gate']" targetMapping="//@ownedViewpoints[name='org.archware.sosadl.viewpoints']/@ownedRepresentations[name='orc.archware.sosadl.architecture']/@defaultLayer/@containerMappings[name='org.archware.sosadl.ae.root']/@subNodeMappings[name='org.archware.sosadl.ae.root.constituent']/@borderedNodeMappings[name='Gate']" sourceFinderExpression="feature:" domainClass="sosADL.Unify" useDomainElement="true">
           <style sizeComputationExpression="2">
             <strokeColor xsi:type="description:SystemColor" href="environment:/viewpoint#//@systemColors/@entries[name='gray']"/>
             <centerLabelStyleDescription>
@@ -177,15 +177,20 @@
           </style>
         </edgeMappings>
         <containerMappings name="org.archware.sosadl.ae.root" semanticCandidatesExpression="feature:behavior" domainClass="sosADL.ArchBehaviorDecl">
-          <subNodeMappings name="org.archware.sosadl.ae.root.constituent" label="Constituent System" semanticCandidatesExpression="feature:constituents" domainClass="sosADL.Constituent">
-            <borderedNodeMappings name="Gate" semanticCandidatesExpression="service:allGates(self)" domainClass="sosADL.GateDecl">
-              <style xsi:type="style:SquareDescription" labelPosition="node" resizeKind="NSEW">
+          <subNodeMappings name="org.archware.sosadl.ae.root.constituent" label="Constituent System" semanticCandidatesExpression="feature:constituents" semanticElements="feature:value" domainClass="sosADL.Constituent">
+            <borderedNodeMappings name="Gate" semanticCandidatesExpression="service:allGates" domainClass="sosADL.GateDecl">
+              <style xsi:type="style:SquareDescription" showIcon="false" labelPosition="node" resizeKind="NSEW" color="//@userColorsPalettes[name='org.archware.sosadl.colors']/@entries[name='org.archware.sosadl.colors.gate']">
                 <borderColor xsi:type="description:SystemColor" href="environment:/viewpoint#//@systemColors/@entries[name='black']"/>
                 <labelColor xsi:type="description:SystemColor" href="environment:/viewpoint#//@systemColors/@entries[name='black']"/>
-                <color xsi:type="description:SystemColor" href="environment:/viewpoint#//@systemColors/@entries[name='gray']"/>
               </style>
             </borderedNodeMappings>
-            <style xsi:type="style:SquareDescription" showIcon="false" labelExpression="['&lt;&lt;constituent>>\n'+self.name/]" labelPosition="node" resizeKind="NSEW" color="//@userColorsPalettes[name='org.archware.sosadl.colors']/@entries[name='org.archware.sosadl.colors.function']">
+            <borderedNodeMappings name="Duty" semanticCandidatesExpression="service:allDuties" domainClass="sosADL.DutyDecl">
+              <style xsi:type="style:SquareDescription" showIcon="false" labelPosition="node" resizeKind="NSEW" color="//@userColorsPalettes[name='org.archware.sosadl.colors']/@entries[name='org.archware.sosadl.colors.duty']">
+                <borderColor xsi:type="description:SystemColor" href="environment:/viewpoint#//@systemColors/@entries[name='black']"/>
+                <labelColor xsi:type="description:SystemColor" href="environment:/viewpoint#//@systemColors/@entries[name='black']"/>
+              </style>
+            </borderedNodeMappings>
+            <style xsi:type="style:SquareDescription" showIcon="false" labelExpression="['&lt;&lt;constituent>>\n'+self.name+' : '+self.value.oclAsType(IdentExpression).ident/]" labelPosition="node" resizeKind="NSEW" color="//@userColorsPalettes[name='org.archware.sosadl.colors']/@entries[name='org.archware.sosadl.colors.system']">
               <borderColor xsi:type="description:SystemColor" href="environment:/viewpoint#//@systemColors/@entries[name='black']"/>
               <labelColor xsi:type="description:SystemColor" href="environment:/viewpoint#//@systemColors/@entries[name='black']"/>
             </style>
@@ -195,14 +200,14 @@
           </style>
         </containerMappings>
         <toolSections name="org.archware.sosadl.ae.tools" label="Tools">
-          <ownedTools xsi:type="tool:NodeCreationDescription" name="org.archware.sosadl.ae.tools.constituent" label="New Constituent" nodeMappings="//@ownedViewpoints[name='org.archware.sosadl']/@ownedRepresentations[name='orc.archware.sosadl.architecture']/@defaultLayer/@containerMappings[name='org.archware.sosadl.ae.root']/@subNodeMappings[name='org.archware.sosadl.ae.root.constituent']">
+          <ownedTools xsi:type="tool:NodeCreationDescription" name="org.archware.sosadl.ae.tools.constituent" label="New Constituent" nodeMappings="//@ownedViewpoints[name='org.archware.sosadl.viewpoints']/@ownedRepresentations[name='orc.archware.sosadl.architecture']/@defaultLayer/@containerMappings[name='org.archware.sosadl.ae.root']/@subNodeMappings[name='org.archware.sosadl.ae.root.constituent']">
             <variable name="container"/>
             <viewVariable name="containerView"/>
             <initialOperation>
               <firstModelOperations xsi:type="tool_1:CreateInstance" typeName="sosADL.Constituent" referenceName="constituents"/>
             </initialOperation>
           </ownedTools>
-          <ownedTools xsi:type="tool:EdgeCreationDescription" name="org.archware.sosadl.sos.ae.tools.unify" label="Unify Interfaces" edgeMappings="//@ownedViewpoints[name='org.archware.sosadl']/@ownedRepresentations[name='orc.archware.sosadl.architecture']/@defaultLayer/@edgeMappings[name='org.archware.sosadl.sos.ae.unify']">
+          <ownedTools xsi:type="tool:EdgeCreationDescription" name="org.archware.sosadl.sos.ae.tools.unify" label="Unify Interfaces" edgeMappings="//@ownedViewpoints[name='org.archware.sosadl.viewpoints']/@ownedRepresentations[name='orc.archware.sosadl.architecture']/@defaultLayer/@edgeMappings[name='org.archware.sosadl.sos.ae.unify']">
             <sourceVariable name="source"/>
             <targetVariable name="target"/>
             <sourceViewVariable name="sourceView"/>
@@ -226,5 +231,7 @@
     <entries xsi:type="description:UserFixedColor" red="255" green="255" blue="255" name="org.archware.sosadl.colors.mediator"/>
     <entries xsi:type="description:UserFixedColor" red="255" green="255" blue="255" name="org.archware.sosadl.colors.function"/>
     <entries xsi:type="description:UserFixedColor" red="255" green="255" blue="255" name="org.archware.sosadl.colors.datatype"/>
+    <entries xsi:type="description:UserFixedColor" name="org.archware.sosadl.colors.gate"/>
+    <entries xsi:type="description:UserFixedColor" name="org.archware.sosadl.colors.duty"/>
   </userColorsPalettes>
 </description:Group>
