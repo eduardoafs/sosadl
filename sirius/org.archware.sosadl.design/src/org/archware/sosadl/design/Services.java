@@ -15,7 +15,9 @@ import org.archware.sosadl.sosADL.Unify;
 import org.archware.sosadl.validation.TypeInformation;
 import org.eclipse.emf.common.util.BasicEList;
 import org.eclipse.emf.common.util.EList;
+import org.eclipse.emf.common.util.TreeIterator;
 import org.eclipse.emf.ecore.EObject;
+import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.xtext.resource.XtextResource;
 import org.eclipse.xtext.util.CancelIndicator;
 import org.eclipse.xtext.validation.CheckMode;
@@ -95,6 +97,21 @@ public class Services {
 	 * @return
 	 */
 	private GateDecl findGate(ComplexName n) {
+		String relevantName = n.getName().get(n.getName().size()-1);
+		
+		SosADL model = getModel(n);
+		
+		TreeIterator<EObject> t = model.eAllContents();
+		EObject obj;
+		// Scan all contents of the model, trying to find the gate
+		while (t.hasNext()) {
+			obj = t.next();
+			if (obj instanceof GateDecl) {
+				if (((GateDecl) obj).getName().equals(relevantName)) {
+					return (GateDecl) obj;
+				}
+			}
+		}
 		return null;
 	}
 	
@@ -105,6 +122,21 @@ public class Services {
 	 * @return
 	 */
 	private DutyDecl findDuty(ComplexName n) {
+		String relevantName = n.getName().get(n.getName().size()-1);
+		
+		SosADL model = getModel(n);
+		
+		TreeIterator<EObject> t = model.eAllContents();
+		EObject obj;
+		// Scan all contents of the model, trying to find the gate
+		while (t.hasNext()) {
+			obj = t.next();
+			if (obj instanceof DutyDecl) {
+				if (((DutyDecl) obj).getName().equals(relevantName)) {
+					return (DutyDecl) obj;
+				}
+			}
+		}
 		return null;
 	}
 	
@@ -116,12 +148,10 @@ public class Services {
 	public EList<EObject> availableConstituent(EObject e) {
 		EList<EObject> constituents = new BasicEList<EObject>();
 		
-		EObject find = e;
-		while (!(find instanceof SosADL)) {
-			find = find.eContainer();
-		}
+		SosADL find = getModel(e);
+
 		// Now find is a SosADL
-		EntityBlock entity = ((SosADL) find).getContent().getDecls();
+		EntityBlock entity = find.getContent().getDecls();
 		
 		// Add all systems and mediators
 		constituents.addAll(entity.getSystems());
@@ -134,4 +164,9 @@ public class Services {
 		
 		return constituents;
 	}
+	
+	private SosADL getModel(EObject o) {
+		return (SosADL) EcoreUtil.getRootContainer(o);
+	}
+	
 }

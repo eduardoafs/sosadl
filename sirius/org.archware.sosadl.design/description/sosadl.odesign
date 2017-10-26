@@ -209,7 +209,7 @@
           </style>
         </edgeMappings>
         <containerMappings name="org.archware.sosadl.ae.root" semanticCandidatesExpression="feature:behavior" domainClass="sosADL.ArchBehaviorDecl">
-          <subNodeMappings name="org.archware.sosadl.ae.root.constituent" label="Constituent" semanticCandidatesExpression="feature:constituents" semanticElements="feature:value" domainClass="sosADL.Constituent">
+          <subNodeMappings name="org.archware.sosadl.ae.root.constituent" label="Constituent" deletionDescription="//@ownedViewpoints[name='org.archware.sosadl.viewpoints']/@ownedRepresentations[name='orc.archware.sosadl.architecture']/@defaultLayer/@toolSections.0/@ownedTools[name='org.archware.sosadl.sos.ae.tools.constituent.delete']" semanticCandidatesExpression="feature:constituents" semanticElements="feature:value" domainClass="sosADL.Constituent">
             <borderedNodeMappings name="Gate" semanticCandidatesExpression="service:allGates" domainClass="sosADL.GateDecl">
               <style xsi:type="style:SquareDescription" showIcon="false" labelPosition="node" resizeKind="NSEW" color="//@userColorsPalettes[name='org.archware.sosadl.colors']/@entries[name='org.archware.sosadl.colors.gate']">
                 <borderColor xsi:type="description:SystemColor" href="environment:/viewpoint#//@systemColors/@entries[name='black']"/>
@@ -232,12 +232,18 @@
           </style>
         </containerMappings>
         <toolSections name="org.archware.sosadl.ae.tools" label="Tools">
-          <ownedTools xsi:type="tool:EdgeCreationDescription" name="org.archware.sosadl.sos.ae.tools.unify" label="Unify Interfaces" edgeMappings="//@ownedViewpoints[name='org.archware.sosadl.viewpoints']/@ownedRepresentations[name='orc.archware.sosadl.architecture']/@defaultLayer/@edgeMappings[name='org.archware.sosadl.sos.ae.unify1'] //@ownedViewpoints[name='org.archware.sosadl.viewpoints']/@ownedRepresentations[name='orc.archware.sosadl.architecture']/@defaultLayer/@edgeMappings[name='org.archware.sosadl.sos.ae.unify2']">
+          <ownedTools xsi:type="tool:EdgeCreationDescription" name="org.archware.sosadl.sos.ae.tools.unify" label="Unify Interfaces" forceRefresh="true" edgeMappings="//@ownedViewpoints[name='org.archware.sosadl.viewpoints']/@ownedRepresentations[name='orc.archware.sosadl.architecture']/@defaultLayer/@edgeMappings[name='org.archware.sosadl.sos.ae.unify1'] //@ownedViewpoints[name='org.archware.sosadl.viewpoints']/@ownedRepresentations[name='orc.archware.sosadl.architecture']/@defaultLayer/@edgeMappings[name='org.archware.sosadl.sos.ae.unify2']">
             <sourceVariable name="source"/>
             <targetVariable name="target"/>
             <sourceViewVariable name="sourceView"/>
             <targetViewVariable name="targetView"/>
-            <initialOperation/>
+            <initialOperation>
+              <firstModelOperations xsi:type="tool_1:ExternalJavaAction" name="org.archware.sosadl.design.tools.java.createUnify" id="org.archware.sosadl.design.tools.createUnify">
+                <parameters name="source" value="[source/]"/>
+                <parameters name="target" value="[target/]"/>
+                <parameters name="view" value="[sourceView/]"/>
+              </firstModelOperations>
+            </initialOperation>
           </ownedTools>
           <ownedTools xsi:type="tool_1:SelectionWizardDescription" name="org.archware.sosadl.sos.ae.tools.constituent" label="Constituent" candidatesExpression="service:availableConstituent" message="Select System or Mediator">
             <element name="element"/>
@@ -256,11 +262,18 @@
               </firstModelOperations>
             </initialOperation>
           </ownedTools>
+          <ownedTools xsi:type="tool:DeleteElementDescription" name="org.archware.sosadl.sos.ae.tools.constituent.delete" label="Delete Constituent" forceRefresh="true">
+            <element name="element"/>
+            <elementView name="elementView"/>
+            <containerView name="containerView"/>
+            <initialOperation>
+              <firstModelOperations xsi:type="tool_1:ExternalJavaAction" name="org.archware.sosadl.design.tools.java.DeleteConstituent" id="org.archware.sosadl.design.tools.deleteConstituent"/>
+            </initialOperation>
+          </ownedTools>
         </toolSections>
       </defaultLayer>
     </ownedRepresentations>
     <ownedJavaExtensions qualifiedClassName="org.archware.sosadl.design.Services"/>
-    <ownedJavaExtensions qualifiedClassName="org.archware.sosadl.design.tools.CreateDuty"/>
   </ownedViewpoints>
   <userColorsPalettes name="org.archware.sosadl.colors">
     <entries xsi:type="description:UserFixedColor" red="0" green="0" blue="0" name="org.archware.sosadl.colors.labels"/>

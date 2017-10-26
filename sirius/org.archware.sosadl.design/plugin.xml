@@ -15,7 +15,15 @@
      </javaActions>
      <javaActions
            actionClass="org.archware.sosadl.design.tools.CreateGate"
-           id="org.archware.sosadl.design.tools.createDuty">
+           id="org.archware.sosadl.design.tools.createGate">
+     </javaActions>
+     <javaActions
+           actionClass="org.archware.sosadl.design.tools.DeleteConstituent"
+           id="org.archware.sosadl.design.tools.deleteConstituent">
+     </javaActions>
+     <javaActions
+           actionClass="org.archware.sosadl.design.tools.CreateUnify"
+           id="org.archware.sosadl.design.tools.createUnify">
      </javaActions>
   </extension>
 </plugin>
