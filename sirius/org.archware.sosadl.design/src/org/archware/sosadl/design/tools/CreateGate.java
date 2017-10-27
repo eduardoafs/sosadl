@@ -3,7 +3,6 @@ package org.archware.sosadl.design.tools;
 import java.util.Collection;
 import java.util.Map;
 
-import org.archware.sosadl.sosADL.AssertionDecl;
 import org.archware.sosadl.sosADL.Connection;
 import org.archware.sosadl.sosADL.GateDecl;
 import org.archware.sosadl.sosADL.ModeType;
@@ -12,7 +11,6 @@ import org.archware.sosadl.sosADL.ProtocolDecl;
 import org.archware.sosadl.sosADL.SosADLFactory;
 import org.archware.sosadl.sosADL.SystemDecl;
 import org.eclipse.emf.ecore.EObject;
-
 import org.eclipse.sirius.business.api.action.AbstractExternalJavaAction;
 
 public class CreateGate extends AbstractExternalJavaAction {
@@ -25,7 +23,6 @@ public class CreateGate extends AbstractExternalJavaAction {
 
 	@Override
 	public void execute(Collection<? extends EObject> arg0, Map<String, Object> arg1) {
-		// TODO Auto-generated method stub
 		SosADLFactory fac = SosADLFactory.eINSTANCE;
 		Object o = arg0.toArray()[0];
 		if (!(o instanceof SystemDecl)) {

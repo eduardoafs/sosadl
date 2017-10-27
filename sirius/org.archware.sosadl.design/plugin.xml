@@ -18,12 +18,16 @@
            id="org.archware.sosadl.design.tools.createGate">
      </javaActions>
      <javaActions
-           actionClass="org.archware.sosadl.design.tools.DeleteConstituent"
-           id="org.archware.sosadl.design.tools.deleteConstituent">
+           actionClass="org.archware.sosadl.design.tools.DeleteElement"
+           id="org.archware.sosadl.design.tools.deleteElement">
      </javaActions>
      <javaActions
            actionClass="org.archware.sosadl.design.tools.CreateUnify"
            id="org.archware.sosadl.design.tools.createUnify">
+     </javaActions>
+     <javaActions
+           actionClass="org.archware.sosadl.design.tools.CreateElement"
+           id="org.archware.sosadl.design.tools.createElement">
      </javaActions>
   </extension>
 </plugin>

@@ -6,7 +6,10 @@ import java.util.Map;
 import org.archware.sosadl.sosADL.ArchBehaviorDecl;
 import org.archware.sosadl.sosADL.BinaryExpression;
 import org.archware.sosadl.sosADL.ComplexName;
+import org.archware.sosadl.sosADL.Connection;
+import org.archware.sosadl.sosADL.Constituent;
 import org.archware.sosadl.sosADL.DutyDecl;
+import org.archware.sosadl.sosADL.Expression;
 import org.archware.sosadl.sosADL.GateDecl;
 import org.archware.sosadl.sosADL.Multiplicity;
 import org.archware.sosadl.sosADL.SosADLFactory;
@@ -26,44 +29,53 @@ public class CreateUnify extends AbstractExternalJavaAction {
 
 	@Override
 	public void execute(Collection<? extends EObject> arg0, Map<String, Object> arg1) {
-		DNode view = (DNode) getOptionalParameter(arg1, "view", EObject.class);
-		EObject constituent = ((DNode) view.eContainer()).getTarget();
+		DNode sourceView = (DNode) getOptionalParameter(arg1, "sourceView", EObject.class);
+		Constituent sourceConstituent = (Constituent) ((DNode) sourceView.eContainer().eContainer()).getTarget();
+		DNode targetView = (DNode) getOptionalParameter(arg1, "targetView", EObject.class);
+		Constituent targetConstituent = (Constituent) ((DNode) targetView.eContainer().eContainer()).getTarget();
 		
 		Unify newU = SosADLFactory.eINSTANCE.createUnify();
-		newU.setMultLeft(Multiplicity.MULTIPLICITY_ALL);
-		newU.setMultRight(Multiplicity.MULTIPLICITY_ALL);
+		newU.setMultLeft(Multiplicity.MULTIPLICITY_ONE);
+		newU.setMultRight(Multiplicity.MULTIPLICITY_ONE);
 		
-		EObject source = getOptionalParameter(arg1, "source", EObject.class);
-		EObject target = getOptionalParameter(arg1, "target", EObject.class);
+		Connection source = getOptionalParameter(arg1, "source", Connection.class);
+		Connection target = getOptionalParameter(arg1, "target", Connection.class);
 		
-		// If source is a gate, target is a duty
-		if (source instanceof GateDecl) {
-			ComplexName sourceName = SosADLFactory.eINSTANCE.createComplexName();
-			sourceName.getName().add(((GateDecl) source).getName());
-			newU.setConnLeft(sourceName);
-			
-			ComplexName targetName = SosADLFactory.eINSTANCE.createComplexName();
-			targetName.getName().add(((DutyDecl) target).getName());
-		} else { // source is a Duty, target is a Gate
-			ComplexName sourceName = SosADLFactory.eINSTANCE.createComplexName();
-			sourceName.getName().add(((DutyDecl) source).getName());
-			newU.setConnLeft(sourceName);
-			
-			ComplexName targetName = SosADLFactory.eINSTANCE.createComplexName();
-			targetName.getName().add(((GateDecl) target).getName());
-		}
+		EObject sourceContainer = source.eContainer();
+		String srcContainerName = (sourceContainer instanceof GateDecl)? ((GateDecl)sourceContainer).getName() : ((DutyDecl)sourceContainer).getName();
+		EObject targetContainer = target.eContainer();
+		String tarContainerName = (targetContainer instanceof GateDecl)? ((GateDecl)targetContainer).getName() : ((DutyDecl)targetContainer).getName();
+		// Source and target are connections
+		// Build names like constituent::source.eContainer()::source
+		ComplexName sourceName = SosADLFactory.eINSTANCE.createComplexName();
+		ComplexName targetName = SosADLFactory.eINSTANCE.createComplexName();
 		
-		ArchBehaviorDecl arch = (ArchBehaviorDecl) constituent.eContainer();
+		sourceName.getName().add(sourceConstituent.getName());
+		sourceName.getName().add(srcContainerName);
+		sourceName.getName().add(source.getName());
 		
+		targetName.getName().add(targetConstituent.getName());
+		targetName.getName().add(tarContainerName);
+		targetName.getName().add(target.getName());
+		
+		newU.setConnLeft(sourceName);
+		newU.setConnRight(targetName);
+
+		ArchBehaviorDecl arch = (ArchBehaviorDecl) sourceConstituent.eContainer();
 		// Create new binary expression
-		BinaryExpression exp = SosADLFactory.eINSTANCE.createBinaryExpression();
-		exp.setLeft(newU);
-		if (arch.getBindings()!=null) {
+		
+		Expression curBinding = arch.getBindings();
+		if (curBinding!=null) {
+			BinaryExpression exp = SosADLFactory.eINSTANCE.createBinaryExpression();
 			exp.setOp("and");
-			exp.setRight(arch.getBindings());
+			exp.setLeft(newU);
+			exp.setRight(curBinding);
+			arch.setBindings(exp);
+		} else {
+			arch.setBindings(newU);
 		}
 		
-		arch.setBindings(exp);
+		//arch.setBindings(exp);
 	}
 
 }
