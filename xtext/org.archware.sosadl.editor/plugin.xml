@@ -29,7 +29,7 @@
             id="org.archware.sosadl.sosADL.presentation.SosADLEditorID"
             name="%_UI_SosADLEditor_label"
             icon="icons/full/obj16/SosADLModelFile.gif"
-            extensions="sosadl"
+            extensions="sosadl,sos"
             class="org.archware.sosadl.sosADL.presentation.SosADLEditor"
             contributorClass="org.archware.sosadl.sosADL.presentation.SosADLActionBarContributor">
       </editor>
