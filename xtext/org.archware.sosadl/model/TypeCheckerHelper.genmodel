@@ -10,16 +10,13 @@
   <foreignModel>TypeCheckerHelper.ecore</foreignModel>
   <genPackages prefix="TypeCheckerHelper" basePackage="org.archware.sosadl.tv" disposableProviderFactory="true"
       contentTypeIdentifier="" ecorePackage="TypeCheckerHelper.ecore#/">
-    <genDataTypes ecoreDataType="TypeCheckerHelper.ecore#//Observer"/>
     <genDataTypes ecoreDataType="TypeCheckerHelper.ecore#//Solver"/>
     <genClasses ecoreClass="TypeCheckerHelper.ecore#//TypeVariable">
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute TypeCheckerHelper.ecore#//TypeVariable/name"/>
-      <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference TypeCheckerHelper.ecore#//TypeVariable/upperBounds"/>
-      <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference TypeCheckerHelper.ecore#//TypeVariable/lowerBounds"/>
-      <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference TypeCheckerHelper.ecore#//TypeVariable/substitute"/>
-      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute TypeCheckerHelper.ecore#//TypeVariable/delayedTask"/>
       <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference TypeCheckerHelper.ecore#//TypeVariable/dependencies"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute TypeCheckerHelper.ecore#//TypeVariable/solver"/>
+      <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference TypeCheckerHelper.ecore#//TypeVariable/concernedObject"/>
+      <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference TypeCheckerHelper.ecore#//TypeVariable/concernedStructuralFeature"/>
     </genClasses>
   </genPackages>
 </genmodel:GenModel>

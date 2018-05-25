@@ -9,7 +9,8 @@ import com.google.inject.Inject;
 import org.archware.sosadl.services.SosADLGrammarAccess
 import org.eclipse.xtext.IGrammarAccess
 import org.eclipse.xtext.Keyword
-
+import org.archware.sosadl.sosADL.SystemDecl
+import org.eclipse.xtext.formatting2.IFormattableDocument
 
 /**
  * This class contains custom formatting description.
