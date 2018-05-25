@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension
+         point="org.eclipse.ui.commands">
+      <command
+            defaultHandler="org.archware.sosadl.execution.ui.ExecuteModel"
+            id="org.archware.sosadl.execution.run"
+            name="Execute SoS">
+      </command>
+   </extension>
+   <extension
+         point="org.eclipse.core.expressions.definitions">
+      <definition
+            id="org.archware.sosadl.file">
+            <adapt type="org.eclipse.core.resources.IFile">
+               <test property="org.eclipse.core.resources.name" 
+                     value="*.sos"/>
+            </adapt>
+      </definition>
+   </extension>
+   <extension
+         point="org.eclipse.ui.menus">
+      <menuContribution
+            allPopups="false"
+            locationURI="popup:org.eclipse.jdt.ui.PackageExplorer?endof=group.edit">
+         <command
+               commandId="org.archware.sosadl.execution.run"
+               id="LaunchExecution"
+               label="Execute Model"
+               style="push">
+            <visibleWhen
+                  checkEnabled="true">
+            </visibleWhen>
+         </command>
+      </menuContribution>
+   </extension>
+
+</plugin>
