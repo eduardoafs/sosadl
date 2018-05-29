@@ -1,22 +1,25 @@
 package org.archware.sosadl.execution.context;
 
 import java.util.HashMap;
+import java.util.List;
 
 import org.archware.sosadl.sosADL.ComplexName;
 import org.archware.sosadl.sosADL.MediatorDecl;
 import org.archware.sosadl.sosADL.SosADLFactory;
 import org.archware.sosadl.sosADL.SystemDecl;
 import org.archware.sosadl.sosADL.Unify;
+import org.archware.sosadl.utility.ModelUtils;
 
 public class Context {
 	private HashMap<ComplexName, VariableValue> context;
-	
+	//private QualifiedNameTree<VariableValue> context;
 	public Context() {
 		context = new HashMap<ComplexName, VariableValue>();
+		//context = new QualifiedNameTree<VariableValue>();
 	}
-	
+
 	public void changeValue(ComplexName c, Object newValue) {
-		VariableValue var = context.get(c);
+		VariableValue var = this.getValue(c);
 		if (var == null) {
 			var = new VariableValue();
 			context.put(c, var);
@@ -24,50 +27,97 @@ public class Context {
 		var.setValue(newValue);
 	}
 
-	public void unify(Unify f) {
-		ComplexName left = f.getConnLeft();
-		ComplexName right = f.getConnRight();
-		
-		VariableValue v = null;
-		
-		if (context.containsKey(left)) {
-			v = context.get(left);
-		}
-		if (v==null && context.containsKey(right)) {
-			v = context.get(right);
-		}
-		if (v==null) {
-			v = new VariableValue();
-		}
-		
-		context.put(left,v);
-		context.put(right,v);
-	}
-
-	public Context subContext(MediatorDecl o) {
-		Context c = new Context();
-		for (ComplexName name : this.context.keySet()) {
-			String mediatorName = o.getName();
-			
-			if (name.getName().get(0).equals(mediatorName)) {
-				ComplexName internalName = SosADLFactory.eINSTANCE.createComplexName();
-				Boolean control = false;
-				for (String s : name.getName()) {
-					if (control) internalName.getName().add(s);
-					control = true;
+	private VariableValue getValue(ComplexName name) {
+		for (ComplexName c : context.keySet()) {
+			if (name.getName().size() == c.getName().size()) {
+				int size = name.getName().size();
+				List<String> nameName = name.getName();
+				List<String> cName = c.getName();
+				for (int i=0; i<size;i++) {
+					if (nameName.get(i).equals(cName.get(i))) { 
+						if (i==size-1) return context.get(c);
+					}
 				}
-				VariableValue originalValue = context.get(name);
-				c.changeValue(internalName, originalValue);
 			}
-			
 		}
-		return c;
-	}
-
-	public Context subContext(SystemDecl o) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
-	
+	public void unify(Unify f) {
+		ComplexName left = f.getConnLeft();
+		ComplexName right = f.getConnRight();
+
+		VariableValue v = new VariableValue();
+
+		if (this.contains(left)) {
+			v = context.get(left);
+		} else if (this.contains(right)) {
+			v = context.get(right);
+		}
+		v.setValue("empty");
+		System.out.println("Unified " + ModelUtils.printName(left) + " and " + ModelUtils.printName(right));
+		context.put(left, v);
+		context.put(right, v);
+	}
+
+	private boolean contains(ComplexName left) {
+		for (ComplexName c : context.keySet()) {
+			if (left.getName().size() == c.getName().size()) {
+				int size = left.getName().size();
+				List<String> leftName = left.getName();
+				List<String> cName = c.getName();
+				for (int i=0; i<size;i++) {
+					if (leftName.get(i).equals(cName.get(i))) { 
+						if (i==size-1) return true;
+					}
+				}
+			}
+		}
+		return false;
+	}
+
+	public Context subContext(MediatorDecl o) {
+		Context newContext = new Context();
+		for (ComplexName n : this.context.keySet()) {
+			if (n.getName().get(0).equals(o.getName())) {
+				if (n.getName().get(0).equals(o.getName())) {
+					ComplexName newName = SosADLFactory.eINSTANCE.createComplexName();
+
+					for (int i = 1; i < n.getName().size(); i++) {
+						newName.getName().add(n.getName().get(i));
+					}
+					newContext.context.put(newName, this.context.get(n));
+				} else {
+					// do nothing
+				}
+			}
+		}
+		return newContext;
+	}
+
+	public Context subContext(SystemDecl o) {
+		Context newContext = new Context();
+		for (ComplexName n : this.context.keySet()) {
+			if (n.getName().get(0).equals(o.getName())) {
+				ComplexName newName = SosADLFactory.eINSTANCE.createComplexName();
+
+				for (int i = 1; i < n.getName().size(); i++) {
+					newName.getName().add(n.getName().get(i));
+				}
+				newContext.context.put(newName, this.context.get(n));
+			} else {
+				// do nothing
+			}
+		}
+		return newContext;
+	}
+
+	public String toString() {
+		String s = "";
+		for (ComplexName n : context.keySet()) {
+			s += ModelUtils.printName(n) + " value=" + context.get(n).getValue() + "\n";
+		}
+		return s;
+	}
+
 }

@@ -33,7 +33,6 @@ import events.Event;
 public class Simulator {
 	private ArchitectureDecl model;
 	private List<List> eventList;
-	// private HashMap<ComplexName, VariableValue> unifiedConnections;
 	private StatementInterpreter st;
 	private InputFile file;
 	private Iterator inputIt;
@@ -41,7 +40,7 @@ public class Simulator {
 	public ArchitectureDecl getModel() { return model; }
 	public InputFile getFile() { return file; }
 	
-	int time = 0;
+	int time = 1;
 	private Context defaultContext;
 	private InputLine currentInputLine;
 
@@ -59,7 +58,22 @@ public class Simulator {
 		} catch (Exception e) {
 			System.out.println(e.getMessage());
 		}
-
+	}
+	public Simulator(SosADL model, String configFilePath) throws IOException {
+		st = new StatementInterpreterImpl();
+		Unit unit = model.getContent();
+		try {
+			if (unit instanceof SoS) {
+				EntityBlock entity = ((SoS) unit).getDecls();
+				if (entity.getArchitectures().isEmpty()) throw new Exception("No architecture found in model");
+				this.model = entity.getArchitectures().get(0);
+			} else {
+				throw new Exception("Unable to execute model");
+			}
+		} catch (Exception e) {
+			System.out.println(e.getMessage());
+		}
+		this.setInputFile(configFilePath);
 	}
 	
 	public void setInputFile(String filePath) throws IOException {
@@ -70,7 +84,7 @@ public class Simulator {
 	public void init() {
 		System.out.println("Initializing simulator...");
 		eventList = new ArrayList<List>();
-		time = 0;
+		time = 1;
 		inputIt = file.getLines().iterator();
 		if (inputIt.hasNext()) currentInputLine = (InputLine) inputIt.next();
 		else currentInputLine = null;
@@ -101,11 +115,8 @@ public class Simulator {
 			else currentInputLine = null;
 		}
 		
-		List<Event> events = new ArrayList<Event>();
+		List<Event> stepEvents = new ArrayList<Event>();
 		// do something
-		/*for (GateDecl g : model.getGates()) {
-			// propagate values from input (not necessary to propagate, its automatic now
-		}*/
 
 		// try to execute components' behavior
 		for (Constituent c : model.getBehavior().getConstituents()) { // TODO error-proof loop
@@ -118,14 +129,18 @@ public class Simulator {
 			}
 		}
 
-		eventList.add(events);
-		time++;
+		System.out.println("Current context:");
+		System.out.println(defaultContext);
+		eventList.add(stepEvents);
 		System.out.println("Finished step "+time+".");
-		return events;
+		time++;
+		return stepEvents;
 	}
 
 	private void execute(SystemDecl o, Context context) {
 		Context context2 = context.subContext(o);
+		/*System.out.println("Internal context for system "+o.getName()+":");
+		System.out.println(context2);*/
 		for (BehaviorStatement b : o.getBehavior().getBody().getStatements()) {
 			try {
 				st.execute(b, context2);
@@ -138,6 +153,7 @@ public class Simulator {
 
 	private void execute(MediatorDecl o, Context context) {
 		Context context2 = context.subContext(o);
+		/*System.out.println("Trying to execute mediator "+o.getName());*/
 		for (BehaviorStatement b : o.getBehavior().getBody().getStatements()) {
 			try {
 				st.execute(b, context2);

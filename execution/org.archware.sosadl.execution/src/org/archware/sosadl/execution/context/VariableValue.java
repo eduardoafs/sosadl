@@ -10,4 +10,8 @@ public class VariableValue {
 	public VariableValue() {
 		this.value = null;
 	}
+	
+	public Object getValue() {
+		return value;
+	}
 }

@@ -5,6 +5,7 @@ import java.util.regex.MatchResult;
 
 import org.archware.sosadl.sosADL.ComplexName;
 import org.archware.sosadl.sosADL.SosADLFactory;
+import org.archware.sosadl.utility.ModelUtils;
 
 public class InputLine {
 	private int it;
@@ -42,17 +43,10 @@ public class InputLine {
 	}
 
 	public String toString() {
-		return "Step " + it + ", name: " + printName() + ", value: " + value;
+		return "Step " + it + ", name: " + ModelUtils.printName(name) + ", value: " + value;
 	}
 
-	public String printName() {
-		String s = "";
-		for (String p : this.name.getName()) {
-			s = s + ">" + p;
-		}
-		return s;
-	}
-
+	
 	public int getNumber() {
 		return it;
 	}

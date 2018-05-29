@@ -126,4 +126,13 @@ public class ModelUtils {
 		}
 		return obj;
 	}
+	
+	public static String printName(ComplexName name) {
+		String s = "";
+		for (String p : name.getName()) {
+			s = s + ">" + p;
+		}
+		return s;
+	}
+
 }

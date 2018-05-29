@@ -69,8 +69,14 @@ public class ExecuteModel extends AbstractHandler {
 		
 		sim.init();
 		System.out.println("Starting iteractions...");
-		sim.runCompleteSimulation();
-		System.out.println("Finished");
+		Thread thread = new Thread() {
+			@Override
+			public void run() {
+				sim.runCompleteSimulation();
+				System.out.println("Finished");
+			}
+		};
+		thread.start();
 		return null;
 	}
 }
