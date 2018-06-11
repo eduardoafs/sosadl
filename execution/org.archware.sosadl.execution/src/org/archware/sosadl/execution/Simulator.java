@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+
+import org.archware.sosadl.execution.asserts.AssertEvaluator;
 import org.archware.sosadl.execution.context.Context;
 import org.archware.sosadl.execution.input.InputFile;
 import org.archware.sosadl.execution.input.InputLine;
@@ -36,10 +38,15 @@ public class Simulator {
 	private StatementInterpreter st;
 	private InputFile file;
 	private Iterator inputIt;
-	
-	public ArchitectureDecl getModel() { return model; }
-	public InputFile getFile() { return file; }
-	
+
+	public ArchitectureDecl getModel() {
+		return model;
+	}
+
+	public InputFile getFile() {
+		return file;
+	}
+
 	int time = 1;
 	private Context defaultContext;
 	private InputLine currentInputLine;
@@ -50,7 +57,8 @@ public class Simulator {
 		try {
 			if (unit instanceof SoS) {
 				EntityBlock entity = ((SoS) unit).getDecls();
-				if (entity.getArchitectures().isEmpty()) throw new Exception("No architecture found in model");
+				if (entity.getArchitectures().isEmpty())
+					throw new Exception("No architecture found in model");
 				this.model = entity.getArchitectures().get(0);
 			} else {
 				throw new Exception("Unable to execute model");
@@ -59,13 +67,15 @@ public class Simulator {
 			System.out.println(e.getMessage());
 		}
 	}
+
 	public Simulator(SosADL model, String configFilePath) throws IOException {
 		st = new StatementInterpreterImpl();
 		Unit unit = model.getContent();
 		try {
 			if (unit instanceof SoS) {
 				EntityBlock entity = ((SoS) unit).getDecls();
-				if (entity.getArchitectures().isEmpty()) throw new Exception("No architecture found in model");
+				if (entity.getArchitectures().isEmpty())
+					throw new Exception("No architecture found in model");
 				this.model = entity.getArchitectures().get(0);
 			} else {
 				throw new Exception("Unable to execute model");
@@ -75,7 +85,7 @@ public class Simulator {
 		}
 		this.setInputFile(configFilePath);
 	}
-	
+
 	public void setInputFile(String filePath) throws IOException {
 		File f = new File(filePath);
 		this.file = InputFile.init(f);
@@ -86,9 +96,11 @@ public class Simulator {
 		eventList = new ArrayList<List>();
 		time = 1;
 		inputIt = file.getLines().iterator();
-		if (inputIt.hasNext()) currentInputLine = (InputLine) inputIt.next();
-		else currentInputLine = null;
-		
+		if (inputIt.hasNext())
+			currentInputLine = (InputLine) inputIt.next();
+		else
+			currentInputLine = null;
+
 		// initialize default context
 		defaultContext = new Context();
 
@@ -104,17 +116,19 @@ public class Simulator {
 	}
 
 	public List<Event> step() {
-		System.out.println("Running step "+time+".");
+		System.out.println("Running step " + time + ".");
 		// first of all, check if next value injection is in this step
-		if (currentInputLine!=null && currentInputLine.getNumber() == time) {
+		if (currentInputLine != null && currentInputLine.getNumber() == time) {
 			// inject value
 			defaultContext.changeValue(currentInputLine.getName(), currentInputLine.getValue());
-			
+
 			// update currentInputLine
-			if (inputIt.hasNext()) currentInputLine = (InputLine) inputIt.next();
-			else currentInputLine = null;
+			if (inputIt.hasNext())
+				currentInputLine = (InputLine) inputIt.next();
+			else
+				currentInputLine = null;
 		}
-		
+
 		List<Event> stepEvents = new ArrayList<Event>();
 		// do something
 
@@ -132,20 +146,29 @@ public class Simulator {
 		System.out.println("Current context:");
 		System.out.println(defaultContext);
 		eventList.add(stepEvents);
-		System.out.println("Finished step "+time+".");
+		System.out.println("Finished step " + time + ".");
 		time++;
 		return stepEvents;
 	}
 
 	private void execute(SystemDecl o, Context context) {
 		Context context2 = context.subContext(o);
-		/*System.out.println("Internal context for system "+o.getName()+":");
-		System.out.println(context2);*/
-		for (BehaviorStatement b : o.getBehavior().getBody().getStatements()) {
+		/*
+		 * System.out.println("Internal context for system "+o.getName()+":");
+		 * System.out.println(context2);
+		 */
+		/*for (BehaviorStatement b : o.getBehavior().getBody().getStatements()) {
 			try {
 				st.execute(b, context2);
 			} catch (StatementException e) {
 				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}*/
+		if (AssertEvaluator.canExecute(o, context)) {
+			try {
+				st.executeAll(o.getBehavior().getBody(), context2);
+			} catch (StatementException e) {
 				e.printStackTrace();
 			}
 		}
@@ -153,12 +176,16 @@ public class Simulator {
 
 	private void execute(MediatorDecl o, Context context) {
 		Context context2 = context.subContext(o);
-		/*System.out.println("Trying to execute mediator "+o.getName());*/
-		for (BehaviorStatement b : o.getBehavior().getBody().getStatements()) {
+		/* System.out.println("Trying to execute mediator "+o.getName()); */
+		/*
+		 * for (BehaviorStatement b : o.getBehavior().getBody().getStatements()) { try {
+		 * st.execute(b, context2); } catch (StatementException e) { // TODO
+		 * Auto-generated catch block e.printStackTrace(); } }
+		 */
+		if (AssertEvaluator.canExecute(o, context)) {
 			try {
-				st.execute(b, context2);
+				st.executeAll(o.getBehavior().getBody(), context2);
 			} catch (StatementException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
@@ -175,8 +202,9 @@ public class Simulator {
 	private ConnectionRef reqOf(Connection n) {
 		return new ConnectionRef(n.getName(), "req");
 	}
+
 	public void runCompleteSimulation() {
-		while (time<=file.getMaxIt()) {
+		while (time <= file.getMaxIt()) {
 			this.step();
 		}
 	}

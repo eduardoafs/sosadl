@@ -1,5 +1,6 @@
 package org.archware.sosadl.utility;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.archware.sosadl.sosADL.ArchBehaviorDecl;
@@ -21,6 +22,7 @@ import org.eclipse.xtext.validation.IResourceValidator;
 import org.eclipse.xtext.validation.Issue;
 
 public class ModelUtils {
+	static List<XtextResource> validatedResources = new ArrayList<XtextResource>();
 	/**
 	 * Goes up the the tree model until find an instance of class
 	 * @param n
@@ -42,9 +44,14 @@ public class ModelUtils {
 	@SuppressWarnings("all")
 	public static EObject resolve(IdentExpression e) {
 		XtextResource resource = (XtextResource) e.eResource();
-		IResourceValidator validator = resource.getResourceServiceProvider().get(IResourceValidator.class);
-		// Therefore I will validate it manually
-		List<Issue> issues = validator.validate(resource, CheckMode.ALL, CancelIndicator.NullImpl);
+		// check if resource was already validated -- significant performance update
+		if (!validatedResources.contains(resource)) {
+			// Therefore I will validate it manually
+			System.out.println("Validating resource...");
+			IResourceValidator validator = resource.getResourceServiceProvider().get(IResourceValidator.class);
+			List<Issue> issues = validator.validate(resource, CheckMode.ALL, CancelIndicator.NullImpl);
+			validatedResources.add(resource);
+		}
 
 		EObject o = TypeInformation.resolve(e);
 

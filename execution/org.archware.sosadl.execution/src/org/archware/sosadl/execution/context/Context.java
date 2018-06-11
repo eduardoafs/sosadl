@@ -27,7 +27,7 @@ public class Context {
 		var.setValue(newValue);
 	}
 
-	private VariableValue getValue(ComplexName name) {
+	public VariableValue getValue(ComplexName name) {
 		for (ComplexName c : context.keySet()) {
 			if (name.getName().size() == c.getName().size()) {
 				int size = name.getName().size();

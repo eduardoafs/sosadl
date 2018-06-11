@@ -4,7 +4,6 @@ import org.archware.sosadl.execution.context.Context;
 import org.archware.sosadl.execution.expression.ExpressionEvaluator;
 import org.archware.sosadl.sosADL.Action;
 import org.archware.sosadl.sosADL.AssertBehavior;
-import org.archware.sosadl.sosADL.Behavior;
 import org.archware.sosadl.sosADL.ChooseBehavior;
 import org.archware.sosadl.sosADL.DoExprBehavior;
 import org.archware.sosadl.sosADL.DoneBehavior;
@@ -35,7 +34,11 @@ public class StatementInterpreterImpl extends StatementInterpreter {
 
 	@Override
 	public void execute(RepeatBehavior s, Context context) throws StatementException {
-		// TODO Auto-generated method stub
+		try {
+			while (true) executeAll(s.getRepeated(), context);
+		} catch (DoneStatementException exp) {
+			// do nothing
+		}
 	}
 
 	@Override
@@ -50,7 +53,7 @@ public class StatementInterpreterImpl extends StatementInterpreter {
 
 	@Override
 	public void execute(ChooseBehavior s, Context context) throws StatementException {
-		// TODO Auto-generated mssaethod stub
+		// TODO Auto-generated method stub
 	}
 
 	@Override
@@ -60,12 +63,12 @@ public class StatementInterpreterImpl extends StatementInterpreter {
 
 	@Override
 	public void execute(DoExprBehavior s, Context context) throws StatementException {
-		// TODO Auto-generated method stub
+		ExpressionEvaluator.evaluate(s.getExpression(), context);
 	}
 
 	@Override
 	public void execute(DoneBehavior s, Context context) throws StatementException {
-		// TODO Auto-generated method stub
+		throw new DoneStatementException();
 	}
 
 	@Override
@@ -75,7 +78,7 @@ public class StatementInterpreterImpl extends StatementInterpreter {
 
 	@Override
 	public void execute(UnobservableBehavior s, Context context) throws StatementException {
-		// TODO Auto-generated method stub
+		// do nothing
 	}
 
 }

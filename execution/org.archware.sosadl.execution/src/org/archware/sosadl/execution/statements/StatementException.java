@@ -11,4 +11,8 @@ public class StatementException extends Exception {
 		super(string);
 	}
 
+	public StatementException() {
+		super();
+	}
+
 }
