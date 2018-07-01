@@ -4,7 +4,7 @@ import java.io.IOException;
 
 import org.archware.sosadl.SosADLStandaloneSetup;
 import org.archware.sosadl.execution.Simulator;
-import org.archware.sosadl.execution.input.InputLine;
+import org.archware.sosadl.execution.input.DataInject;
 import org.archware.sosadl.sosADL.SosADL;
 import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
@@ -31,8 +31,7 @@ public class ExecuteModel extends AbstractHandler {
 		TreeSelection tree = (TreeSelection) HandlerUtil.getVariable(event, ISources.ACTIVE_CURRENT_SELECTION_NAME);
 		File file = (File) tree.getFirstElement();
 
-		System.out.println(file.getName());
-		XtextResource res;
+		System.out.println("Executing "+file.getName()+"...");
 		Injector injector = (new SosADLStandaloneSetup()).createInjectorAndDoEMFRegistration();
 
 		XtextResourceSet resSet = injector.getInstance(XtextResourceSet.class);
@@ -50,7 +49,7 @@ public class ExecuteModel extends AbstractHandler {
 		dialog.setFilterExtensions(new String[] { "*.sosconf" });
 		//dialog.setFilterPath("c:\\temp");
 		String confFile = dialog.open();
-
+		System.out.println("Configuration file: "+confFile+".\nSetting up configuration");
 		try {
 			sim.setInputFile(confFile);
 		} catch (IOException e) {
@@ -62,11 +61,18 @@ public class ExecuteModel extends AbstractHandler {
 		// test
 		System.out.println("Simulator ready");
 		System.out.println("Architecture name: "+sim.getModel().getName());
-		System.out.println("Config file:");
-		for (InputLine i : sim.getFile().getLines()) {
-			System.out.println(i);
+		System.out.println("[Configuration]");
+		System.out.println("# iterations: "+sim.getConfig().getNumIterations());
+		System.out.println("External simulators:");
+		for (String s : sim.getConfig().getExternalSimulators().keySet()) {
+			System.out.println("# "+s+ "("+sim.getConfig().getExternalSimulators().get(s)+")");
+		}
+		System.out.println("Data injection:");
+		for (DataInject i : sim.getConfig().getInjectionData()) {
+			System.out.println("# "+i);
 		}
 		
+	
 		sim.init();
 		System.out.println("Starting iteractions...");
 		Thread thread = new Thread() {

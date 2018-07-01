@@ -1,6 +1,5 @@
 package org.archware.sosadl.execution;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -8,19 +7,18 @@ import java.util.List;
 
 import org.archware.sosadl.execution.asserts.AssertEvaluator;
 import org.archware.sosadl.execution.context.Context;
-import org.archware.sosadl.execution.input.InputFile;
-import org.archware.sosadl.execution.input.InputLine;
+import org.archware.sosadl.execution.context.ValueObserver;
+import org.archware.sosadl.execution.input.DataInject;
+import org.archware.sosadl.execution.input.SimConfiguration;
 import org.archware.sosadl.execution.statements.StatementException;
 import org.archware.sosadl.execution.statements.StatementInterpreter;
 import org.archware.sosadl.execution.statements.StatementInterpreterImpl;
 import org.archware.sosadl.execution.util.ExecutionUtils;
 import org.archware.sosadl.sosADL.ArchitectureDecl;
-import org.archware.sosadl.sosADL.BehaviorStatement;
 import org.archware.sosadl.sosADL.BinaryExpression;
 import org.archware.sosadl.sosADL.Connection;
 import org.archware.sosadl.sosADL.Constituent;
 import org.archware.sosadl.sosADL.EntityBlock;
-import org.archware.sosadl.sosADL.GateDecl;
 import org.archware.sosadl.sosADL.IdentExpression;
 import org.archware.sosadl.sosADL.MediatorDecl;
 import org.archware.sosadl.sosADL.SoS;
@@ -29,27 +27,25 @@ import org.archware.sosadl.sosADL.SystemDecl;
 import org.archware.sosadl.sosADL.Unify;
 import org.archware.sosadl.sosADL.Unit;
 import org.archware.sosadl.utility.ModelUtils;
+
 import events.ConnectionRef;
 import events.Event;
 
 public class Simulator {
 	private ArchitectureDecl model;
-	private List<List> eventList;
+	private List<List> eventList; // event list per iteration
 	private StatementInterpreter st;
-	private InputFile file;
 	private Iterator inputIt;
 
+	private SimConfiguration config;
+	
 	public ArchitectureDecl getModel() {
 		return model;
 	}
 
-	public InputFile getFile() {
-		return file;
-	}
-
 	int time = 1;
 	private Context defaultContext;
-	private InputLine currentInputLine;
+	private DataInject currentInputLine;
 
 	public Simulator(SosADL model) {
 		st = new StatementInterpreterImpl();
@@ -87,17 +83,25 @@ public class Simulator {
 	}
 
 	public void setInputFile(String filePath) throws IOException {
-		File f = new File(filePath);
-		this.file = InputFile.init(f);
+		//File f = new File(filePath);
+		//this.file = InputFile.init(f);
+		try {
+			config = new SimConfiguration(filePath);
+		} catch (IOException e) {
+			e.printStackTrace();
+			System.out.println(e.getMessage());
+			throw e;
+		}
 	}
 
 	public void init() {
 		System.out.println("Initializing simulator...");
 		eventList = new ArrayList<List>();
-		time = 1;
-		inputIt = file.getLines().iterator();
+		time = 0;
+		//inputIt = file.getLines().iterator();
+		inputIt = config.getInjectionData().iterator();
 		if (inputIt.hasNext())
-			currentInputLine = (InputLine) inputIt.next();
+			currentInputLine = (DataInject) inputIt.next();
 		else
 			currentInputLine = null;
 
@@ -110,26 +114,34 @@ public class Simulator {
 			defaultContext.unify(f); // unifies variable values
 		}
 
+		List<Event> events = new ArrayList<Event>();
+		eventList.add(events);
 		// list of events with create node and create links
+		
 		// TODO
+		time = 1;
 		System.out.println("Simulator initialized.");
 	}
 
 	public List<Event> step() {
 		System.out.println("Running step " + time + ".");
+		List<Event> stepEvents = new ArrayList<Event>();
+		eventList.add(stepEvents);
+
 		// first of all, check if next value injection is in this step
-		if (currentInputLine != null && currentInputLine.getNumber() == time) {
+		
+		// new version, use the iterator in a loop
+		while (currentInputLine != null && currentInputLine.getNumber() == time) {
 			// inject value
 			defaultContext.changeValue(currentInputLine.getName(), currentInputLine.getValue());
 
 			// update currentInputLine
 			if (inputIt.hasNext())
-				currentInputLine = (InputLine) inputIt.next();
+				currentInputLine = (DataInject) inputIt.next();
 			else
 				currentInputLine = null;
 		}
 
-		List<Event> stepEvents = new ArrayList<Event>();
 		// do something
 
 		// try to execute components' behavior
@@ -145,7 +157,6 @@ public class Simulator {
 
 		System.out.println("Current context:");
 		System.out.println(defaultContext);
-		eventList.add(stepEvents);
 		System.out.println("Finished step " + time + ".");
 		time++;
 		return stepEvents;
@@ -204,9 +215,17 @@ public class Simulator {
 	}
 
 	public void runCompleteSimulation() {
-		while (time <= file.getMaxIt()) {
+		while (time <= config.getNumIterations()) {
 			this.step();
 		}
+	}
+	
+	public SimConfiguration getConfig() {
+		return config;
+	}
+
+	public void addEventInCurrentIteration(Event e) {
+		eventList.get(time).add(e);
 	}
 
 }

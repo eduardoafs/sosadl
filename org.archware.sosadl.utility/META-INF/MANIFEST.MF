@@ -4,6 +4,7 @@ Bundle-Name: Utility
 Bundle-SymbolicName: org.archware.sosadl.utility
 Bundle-Version: 1.0.0.qualifier
 Export-Package: org.archware.sosadl.utility
-Require-Bundle: org.eclipse.xtext
+Require-Bundle: org.eclipse.xtext,
+ org.eclipse.emf.ecore
 Import-Package: org.archware.sosadl.sosADL,
  org.archware.sosadl.validation

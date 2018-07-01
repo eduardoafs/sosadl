@@ -1,16 +1,23 @@
 package org.archware.sosadl.utility;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import org.archware.sosadl.sosADL.ArchBehaviorDecl;
+import org.archware.sosadl.sosADL.ArchitectureDecl;
 import org.archware.sosadl.sosADL.ComplexName;
 import org.archware.sosadl.sosADL.Connection;
 import org.archware.sosadl.sosADL.Constituent;
 import org.archware.sosadl.sosADL.DutyDecl;
+import org.archware.sosadl.sosADL.EntityBlock;
 import org.archware.sosadl.sosADL.GateDecl;
 import org.archware.sosadl.sosADL.IdentExpression;
+import org.archware.sosadl.sosADL.MediatorDecl;
 import org.archware.sosadl.sosADL.SosADL;
+import org.archware.sosadl.sosADL.SosADLFactory;
+import org.archware.sosadl.sosADL.SystemDecl;
+import org.archware.sosadl.sosADL.Unit;
 import org.archware.sosadl.validation.TypeInformation;
 import org.eclipse.emf.common.util.TreeIterator;
 import org.eclipse.emf.ecore.EObject;
@@ -59,6 +66,17 @@ public class ModelUtils {
 	}
 
 	public static EObject resolve(ComplexName n) {
+		// remake
+		Iterator it =  n.getName().iterator();
+		
+		SosADL model = getModel(n);
+		Iterator<EObject> t = model.eContents().iterator();
+		EObject next;
+		
+		while (it.hasNext()) {
+			
+		}
+		/*
 		String relevantName = n.getName().get(n.getName().size() - 1);
 
 		SosADL model = getModel(n);
@@ -97,8 +115,14 @@ public class ModelUtils {
 						}
 					}
 				}
+			} else if (obj instanceof SystemDecl) {
+				if (((SystemDecl) obj).getName().equals(relevantName))
+					return (SystemDecl) obj;
+			} else if (obj instanceof MediatorDecl) {
+				if (((MediatorDecl) obj).getName().equals(relevantName))
+					return (MediatorDecl) obj;
 			}
-		}
+		}*/
 		return null;
 	}
 
@@ -125,8 +149,9 @@ public class ModelUtils {
 	 */
 	public static EObject resolve2(ComplexName n) {
 		EObject obj = null;
-		SosADL model = getModel(n);
-		TreeIterator<EObject> t = model.eAllContents();
+		// TODO implement me
+		//SosADL model = getModel(n);
+		//TreeIterator<EObject> t = model.eAllContents();
 
 		for (int i = 0; i < n.getName().size(); i++) {
 
@@ -137,9 +162,28 @@ public class ModelUtils {
 	public static String printName(ComplexName name) {
 		String s = "";
 		for (String p : name.getName()) {
-			s = s + ">" + p;
+			s = s + (s.isEmpty()? "" : ".") + p;
 		}
 		return s;
+	}
+
+	public static boolean areComplexNameEqual(ComplexName n1, ComplexName n2) {
+		List ln1 = n1.getName();
+		List ln2 = n2.getName();
+		int size = ln1.size();
+		if (ln2.size()!=size) return false;
+		for (int index=0; index<size;index++) {
+			if (!ln1.get(index).equals(ln2.get(index))) return false;
+		}
+		return true;
+	}
+
+	public static ComplexName createComplexName(String complexName) {
+		ComplexName c = SosADLFactory.eINSTANCE.createComplexName();
+		String[] s = complexName.split("."); 
+		for (int i=0; i<s.length;i++) 
+			c.getName().add(s[i]);
+		return c;
 	}
 
 }

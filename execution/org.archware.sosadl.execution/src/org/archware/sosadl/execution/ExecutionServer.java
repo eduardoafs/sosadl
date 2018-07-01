@@ -61,6 +61,7 @@ public class ExecutionServer {
 							break;
 						case END:
 							System.out.println("Received END request");
+							end = true;
 							break;
 						default:
 							System.err.println("Unknown request" + r);

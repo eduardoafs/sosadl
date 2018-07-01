@@ -29,16 +29,7 @@ public class Context {
 
 	public VariableValue getValue(ComplexName name) {
 		for (ComplexName c : context.keySet()) {
-			if (name.getName().size() == c.getName().size()) {
-				int size = name.getName().size();
-				List<String> nameName = name.getName();
-				List<String> cName = c.getName();
-				for (int i=0; i<size;i++) {
-					if (nameName.get(i).equals(cName.get(i))) { 
-						if (i==size-1) return context.get(c);
-					}
-				}
-			}
+			if (ModelUtils.areComplexNameEqual(c, name)) return context.get(c);
 		}
 		return null;
 	}
@@ -115,7 +106,7 @@ public class Context {
 	public String toString() {
 		String s = "";
 		for (ComplexName n : context.keySet()) {
-			s += ModelUtils.printName(n) + " value=" + context.get(n).getValue() + "\n";
+			s += (s.isEmpty()? "" : "\n") +ModelUtils.printName(n) + " value=" + context.get(n).getValue();
 		}
 		return s;
 	}

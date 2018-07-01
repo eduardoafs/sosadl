@@ -4,21 +4,20 @@ import java.util.Scanner;
 import java.util.regex.MatchResult;
 
 import org.archware.sosadl.sosADL.ComplexName;
-import org.archware.sosadl.sosADL.SosADLFactory;
 import org.archware.sosadl.utility.ModelUtils;
 
-public class InputLine {
+public class DataInject {
 	private int it;
 	private ComplexName name;
 	private String value;
 
-	public InputLine(int it, ComplexName id, String value) {
+	public DataInject(int it, ComplexName id, String value) {
 		this.it = it;
 		this.name = id;
 		this.value = value;
 	}
 
-	public static InputLine fromString(String line) {
+	public static DataInject fromString(String line) {
 		Scanner sc = new Scanner(line);
 		MatchResult result = null;
 		try {
@@ -33,13 +32,9 @@ public class InputLine {
 		String complexName = result.group(2);
 		String value = result.group(3);
 
-		ComplexName name = SosADLFactory.eINSTANCE.createComplexName();
 		// initialize complex name
-		String[] names = complexName.split("\\.");
-		for (String s : names) {
-			name.getName().add(s);
-		}
-		return new InputLine(it, name, value);
+		ComplexName name = ModelUtils.createComplexName(complexName);
+		return new DataInject(it, name, value);
 	}
 
 	public String toString() {
