@@ -19,15 +19,18 @@ public class Context {
 	}
 
 	public void changeValue(ComplexName c, Object newValue) {
+		//Connection target = (Connection) ModelUtils.resolve(c);
 		VariableValue var = this.getValue(c);
 		if (var == null) {
 			var = new VariableValue();
 			context.put(c, var);
+			var.addObserver(c);
 		}
-		var.setValue(newValue);
+		var.setValue(c, newValue);
 	}
 
 	public VariableValue getValue(ComplexName name) {
+		//Connection target = (Connection) ModelUtils.resolve(name);
 		for (ComplexName c : context.keySet()) {
 			if (ModelUtils.areComplexNameEqual(c, name)) return context.get(c);
 		}
@@ -45,7 +48,7 @@ public class Context {
 		} else if (this.contains(right)) {
 			v = context.get(right);
 		}
-		v.setValue("empty");
+		v.setValue(null, null);
 		System.out.println("Unified " + ModelUtils.printName(left) + " and " + ModelUtils.printName(right));
 		context.put(left, v);
 		context.put(right, v);
@@ -70,7 +73,7 @@ public class Context {
 	public Context subContext(MediatorDecl o) {
 		Context newContext = new Context();
 		for (ComplexName n : this.context.keySet()) {
-			if (n.getName().get(0).equals(o.getName())) {
+			if (!n.getName().isEmpty() && n.getName().get(0).equals(o.getName())) {
 				if (n.getName().get(0).equals(o.getName())) {
 					ComplexName newName = SosADLFactory.eINSTANCE.createComplexName();
 
@@ -89,7 +92,7 @@ public class Context {
 	public Context subContext(SystemDecl o) {
 		Context newContext = new Context();
 		for (ComplexName n : this.context.keySet()) {
-			if (n.getName().get(0).equals(o.getName())) {
+			if (!n.getName().isEmpty() && n.getName().get(0).equals(o.getName())) {
 				ComplexName newName = SosADLFactory.eINSTANCE.createComplexName();
 
 				for (int i = 1; i < n.getName().size(); i++) {

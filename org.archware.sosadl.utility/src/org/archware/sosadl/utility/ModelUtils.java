@@ -13,7 +13,9 @@ import org.archware.sosadl.sosADL.DutyDecl;
 import org.archware.sosadl.sosADL.EntityBlock;
 import org.archware.sosadl.sosADL.GateDecl;
 import org.archware.sosadl.sosADL.IdentExpression;
+import org.archware.sosadl.sosADL.Library;
 import org.archware.sosadl.sosADL.MediatorDecl;
+import org.archware.sosadl.sosADL.SoS;
 import org.archware.sosadl.sosADL.SosADL;
 import org.archware.sosadl.sosADL.SosADLFactory;
 import org.archware.sosadl.sosADL.SystemDecl;
@@ -66,17 +68,7 @@ public class ModelUtils {
 	}
 
 	public static EObject resolve(ComplexName n) {
-		// remake
-		Iterator it =  n.getName().iterator();
 		
-		SosADL model = getModel(n);
-		Iterator<EObject> t = model.eContents().iterator();
-		EObject next;
-		
-		while (it.hasNext()) {
-			
-		}
-		/*
 		String relevantName = n.getName().get(n.getName().size() - 1);
 
 		SosADL model = getModel(n);
@@ -122,7 +114,7 @@ public class ModelUtils {
 				if (((MediatorDecl) obj).getName().equals(relevantName))
 					return (MediatorDecl) obj;
 			}
-		}*/
+		}
 		return null;
 	}
 
@@ -180,7 +172,7 @@ public class ModelUtils {
 
 	public static ComplexName createComplexName(String complexName) {
 		ComplexName c = SosADLFactory.eINSTANCE.createComplexName();
-		String[] s = complexName.split("."); 
+		String[] s = complexName.split("\\."); 
 		for (int i=0; i<s.length;i++) 
 			c.getName().add(s[i]);
 		return c;

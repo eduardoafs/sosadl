@@ -9,6 +9,8 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.util.ArrayList;
 
+import org.archware.sosadl.execution.events.EventStorage;
+
 import events.Event;
 import requests.Request;
 import responses.Events;
@@ -91,7 +93,7 @@ public class ExecutionServer {
 	private void fillEvents() {
 		ArrayList<Event> evs = new ArrayList<Event>();
 		for (int i = 0; i < eventsSize; i++) {
-			evs.addAll(simu.step());
+			evs.addAll(EventStorage.getInstance().popEvents());
 		}
 		events = new Events(evs);
 	}

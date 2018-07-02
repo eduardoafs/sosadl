@@ -34,7 +34,9 @@ public class DataInject {
 
 		// initialize complex name
 		ComplexName name = ModelUtils.createComplexName(complexName);
-		return new DataInject(it, name, value);
+		DataInject newD = new DataInject(it, name, value);
+		//System.out.println("New DataInject: "+newD);
+		return newD;
 	}
 
 	public String toString() {

@@ -7,7 +7,6 @@ import java.util.List;
 
 import org.archware.sosadl.execution.asserts.AssertEvaluator;
 import org.archware.sosadl.execution.context.Context;
-import org.archware.sosadl.execution.context.ValueObserver;
 import org.archware.sosadl.execution.input.DataInject;
 import org.archware.sosadl.execution.input.SimConfiguration;
 import org.archware.sosadl.execution.statements.StatementException;
@@ -27,9 +26,6 @@ import org.archware.sosadl.sosADL.SystemDecl;
 import org.archware.sosadl.sosADL.Unify;
 import org.archware.sosadl.sosADL.Unit;
 import org.archware.sosadl.utility.ModelUtils;
-
-import events.ConnectionRef;
-import events.Event;
 
 public class Simulator {
 	private ArchitectureDecl model;
@@ -114,8 +110,6 @@ public class Simulator {
 			defaultContext.unify(f); // unifies variable values
 		}
 
-		List<Event> events = new ArrayList<Event>();
-		eventList.add(events);
 		// list of events with create node and create links
 		
 		// TODO
@@ -123,16 +117,15 @@ public class Simulator {
 		System.out.println("Simulator initialized.");
 	}
 
-	public List<Event> step() {
+	public void step() {
 		System.out.println("Running step " + time + ".");
-		List<Event> stepEvents = new ArrayList<Event>();
-		eventList.add(stepEvents);
 
 		// first of all, check if next value injection is in this step
 		
 		// new version, use the iterator in a loop
 		while (currentInputLine != null && currentInputLine.getNumber() == time) {
 			// inject value
+			//System.out.println("Injecting value ["+currentInputLine.getValue()+"] into ["+currentInputLine.getName()+"]");
 			defaultContext.changeValue(currentInputLine.getName(), currentInputLine.getValue());
 
 			// update currentInputLine
@@ -159,7 +152,6 @@ public class Simulator {
 		System.out.println(defaultContext);
 		System.out.println("Finished step " + time + ".");
 		time++;
-		return stepEvents;
 	}
 
 	private void execute(SystemDecl o, Context context) {
@@ -206,13 +198,13 @@ public class Simulator {
 
 	}
 
-	private ConnectionRef ackOf(Connection n) {
+	/*private ConnectionRef ackOf(Connection n) {
 		return new ConnectionRef(n.getName(), "ack");
 	}
 
 	private ConnectionRef reqOf(Connection n) {
 		return new ConnectionRef(n.getName(), "req");
-	}
+	}*/
 
 	public void runCompleteSimulation() {
 		while (time <= config.getNumIterations()) {
@@ -222,10 +214,6 @@ public class Simulator {
 	
 	public SimConfiguration getConfig() {
 		return config;
-	}
-
-	public void addEventInCurrentIteration(Event e) {
-		eventList.get(time).add(e);
 	}
 
 }
