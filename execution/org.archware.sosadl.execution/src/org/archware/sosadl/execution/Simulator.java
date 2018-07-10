@@ -29,9 +29,9 @@ import org.archware.sosadl.utility.ModelUtils;
 
 public class Simulator {
 	private ArchitectureDecl model;
-	private List<List> eventList; // event list per iteration
+	//private List<List> eventList; // event list per iteration
 	private StatementInterpreter st;
-	private Iterator inputIt;
+	private Iterator<?> inputIt;
 
 	private SimConfiguration config;
 	
@@ -75,10 +75,10 @@ public class Simulator {
 		} catch (Exception e) {
 			System.out.println(e.getMessage());
 		}
-		this.setInputFile(configFilePath);
+		this.setup(configFilePath);
 	}
 
-	public void setInputFile(String filePath) throws IOException {
+	public void setup(String filePath) throws IOException {
 		//File f = new File(filePath);
 		//this.file = InputFile.init(f);
 		try {
@@ -92,7 +92,7 @@ public class Simulator {
 
 	public void init() {
 		System.out.println("Initializing simulator...");
-		eventList = new ArrayList<List>();
+
 		time = 0;
 		//inputIt = file.getLines().iterator();
 		inputIt = config.getInjectionData().iterator();
