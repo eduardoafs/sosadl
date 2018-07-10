@@ -45,13 +45,25 @@ public class ExecuteModel extends AbstractHandler {
 		System.out.println("Setting up simulator...");
 		Simulator sim = new Simulator(model);
 
-		FileDialog dialog = new FileDialog(PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell(), SWT.OPEN);
-		dialog.setFilterExtensions(new String[] { "*.sosconf" });
-		//dialog.setFilterPath("c:\\temp");
-		String confFile = dialog.open();
+		String confFile = null;
+		// try to find the configuration file, look for the path
+		java.io.File f = new java.io.File(file.getRawLocation().toString().replace(".sos", ".sosconf"));
+		//System.out.println(file.getRawLocation().toString());
+		if (f.exists()) {
+			System.out.println("Configuration file automatically detected!");
+			confFile = f.getAbsolutePath();
+		}
+		// otherwise, ask the user
+		else {
+			FileDialog dialog = new FileDialog(PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell(), SWT.OPEN);
+			dialog.setFilterExtensions(new String[] { "*.sosconf" });
+			//dialog.setFilterPath("c:\\temp");
+			confFile = dialog.open();
+		}
+		
 		System.out.println("Configuration file: "+confFile+".\nSetting up configuration");
 		try {
-			sim.setInputFile(confFile);
+			sim.setup(confFile);
 		} catch (IOException e) {
 			System.out.println(e.getMessage());
 			System.out.println("Unable to find configuration file, aborting...");
