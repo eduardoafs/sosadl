@@ -5,16 +5,14 @@ import java.util.List;
 
 import org.eclipse.emf.ecore.EObject;
 
-import events.Event;
-
 
 public class EventStorage {
-	private List<Event> events;
+	private List<ExecutionEvent> events;
 	
 	private static EventStorage instance;
 	
 	private EventStorage() {
-		events = new ArrayList<Event>();
+		events = new ArrayList<ExecutionEvent>();
 	}
 	
 	public static EventStorage getInstance() {
@@ -22,13 +20,13 @@ public class EventStorage {
 		return instance;
 	}
 	
-	public void addEvent(InternalEvent type, EObject sender, Object... params) {
+	public void addEvent(InternalEvent type, Object sender, Object... params) {
 		events.add(EventGenerator.fromInternal(type, sender, params));
 	}
 	
-	public List<Event> popEvents() {
-		List<Event> oldList = events;
-		events = new ArrayList<Event>();
+	public List<ExecutionEvent> popEvents() {
+		List<ExecutionEvent> oldList = events;
+		events = new ArrayList<ExecutionEvent>();
 		
 		return oldList;
 	}

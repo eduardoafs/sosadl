@@ -1,10 +1,8 @@
 package org.archware.sosadl.execution.events;
 import org.eclipse.emf.ecore.EObject;
 
-import events.Event;
-
 public class EventGenerator {
-	public static Event fromInternal(InternalEvent type, EObject sender, Object... params) {
+	public static ExecutionEvent fromInternal(InternalEvent type, Object sender, Object... params) {
 		switch (type) {
 		case CONSTITUENT_EXECUTION: break;
 		case MEDIATOR_EXECUTION: break;
