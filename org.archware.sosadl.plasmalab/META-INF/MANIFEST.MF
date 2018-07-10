@@ -1,0 +1,11 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: PlasmaLab Connector
+Bundle-SymbolicName: org.archware.sosadl.plasmalab
+Bundle-Version: 1.0.0.qualifier
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Import-Package: events,
+ org.archware.sosadl.execution,
+ org.archware.sosadl.execution.events,
+ requests,
+ responses
