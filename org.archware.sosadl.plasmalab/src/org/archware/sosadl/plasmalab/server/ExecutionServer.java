@@ -1,4 +1,4 @@
-package org.archware.sosadl.execution;
+package org.archware.sosadl.plasmalab.server;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -9,7 +9,9 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.util.ArrayList;
 
+import org.archware.sosadl.execution.Simulator;
 import org.archware.sosadl.execution.events.EventStorage;
+import org.archware.sosadl.plasmalab.events.EventConverter;
 
 import events.Event;
 import requests.Request;
@@ -93,7 +95,7 @@ public class ExecutionServer {
 	private void fillEvents() {
 		ArrayList<Event> evs = new ArrayList<Event>();
 		for (int i = 0; i < eventsSize; i++) {
-			evs.addAll(EventStorage.getInstance().popEvents());
+			evs.addAll(EventConverter.convertAll(EventStorage.getInstance().popEvents()));
 		}
 		events = new Events(evs);
 	}

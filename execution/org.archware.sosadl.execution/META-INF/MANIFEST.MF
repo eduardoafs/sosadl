@@ -6,7 +6,6 @@ Bundle-Version: 1.0.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Require-Bundle: org.eclipse.emf.ecore,
  org.archware.sosadl,
- SoSADL_Plasma_commons,
  org.archware.sosadl.utility,
  org.eclipse.core.expressions,
  org.eclipse.ui,
@@ -15,3 +14,5 @@ Require-Bundle: org.eclipse.emf.ecore,
  org.eclipse.xtext,
  org.eclipse.core.resources,
  org.eclipse.equinox.registry
+Export-Package: org.archware.sosadl.execution,
+ org.archware.sosadl.execution.events
