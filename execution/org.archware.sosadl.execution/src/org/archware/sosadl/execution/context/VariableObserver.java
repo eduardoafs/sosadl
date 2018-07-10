@@ -7,24 +7,26 @@ import org.archware.sosadl.execution.events.EventStorage;
 import org.archware.sosadl.execution.events.InternalEvent;
 import org.archware.sosadl.sosADL.ComplexName;
 import org.archware.sosadl.utility.ModelUtils;
+import org.eclipse.emf.ecore.EObject;
 
-public class VariableObserver {
+public class VariableObserver<T> {
 	private VariableValue target;
-	private List<ComplexName> stakeholders;
+	private List<T> stakeholders;
 	
 	public VariableObserver(VariableValue variableValue) {
-		stakeholders = new ArrayList<ComplexName>();
+		stakeholders = new ArrayList<T>();
 		target = variableValue;
 	}
 
-	public void add(ComplexName c) {
+	public void add(T c) {
 		if (!stakeholders.contains(c)) stakeholders.add(c);
 	}
 
-	public void notifyAllExcept(ComplexName sender) {
+	public void notifyAllExcept(Object sender) {
 		InternalEvent event = target.getValue()==null? InternalEvent.VALUE_CONSUMPTION : InternalEvent.VALUE_TRANSMISSION;
-		for (ComplexName c : stakeholders) {
-			if (!ModelUtils.areComplexNameEqual(c, sender)) {
+		for (T c : stakeholders) {
+			//if (!ModelUtils.areComplexNameEqual(c, sender)) {
+			if (c.equals(sender)) {
 				EventStorage.getInstance().addEvent(event, sender, target);
 			}
 		}
